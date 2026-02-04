@@ -111,8 +111,8 @@ export async function presentationRoutes(app: FastifyInstance) {
           userId,
           title: title?.trim() || 'Без названия',
           coverImage: coverImage || null,
-          content: isSqlite ? JSON.stringify(contentVal) : contentVal,
-        } as Record<string, unknown>)
+          content: contentVal,
+        })
         .returning()
       return reply.status(201).send({
         id: created.id,
@@ -149,15 +149,20 @@ export async function presentationRoutes(app: FastifyInstance) {
           updatedAt: toIsoDate(updated.updatedAt),
         })
       }
-      const updates: Record<string, unknown> = {
-        updatedAt: isSqlite ? new Date().toISOString() : new Date(),
+      const updates: {
+        updatedAt: Date
+        title?: string
+        coverImage?: string | null
+        content?: { slides: unknown[] }
+      } = {
+        updatedAt: new Date(),
       }
       if (title !== undefined) updates.title = title.trim() || 'Без названия'
       if (coverImage !== undefined) updates.coverImage = coverImage || null
-      if (content !== undefined) updates.content = isSqlite ? JSON.stringify(content) : content
+      if (content !== undefined) updates.content = content
       const [updated] = await db!
         .update(schema!.presentations)
-        .set(updates as { updatedAt: Date | string; title?: string; coverImage?: string | null; content?: string | { slides: unknown[] } })
+        .set(updates)
         .where(and(eq(schema!.presentations.id, id), eq(schema!.presentations.userId, userId!)))
         .returning()
       if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
