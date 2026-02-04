@@ -159,8 +159,8 @@ export async function authRoutes(app: FastifyInstance) {
       await db!.insert(schema!.passwordResetTokens).values({
         userId: user.id,
         token,
-        expiresAt: isSqlite ? expiresAt.toISOString() : expiresAt,
-      } as Record<string, unknown>)
+        expiresAt,
+      })
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`
       if (process.env.NODE_ENV === 'development') {
         return reply.send({ message: 'Токен для сброса (только dev)', resetLink, token })
@@ -191,11 +191,10 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.send({ message: 'Пароль успешно изменён. Войдите с новым паролем.' })
       }
       const now = new Date()
-      const nowVal = isSqlite ? now.toISOString() : now
       const rows = await db!.query.passwordResetTokens.findMany({
         where: and(
           eq(schema!.passwordResetTokens.token, token.trim()),
-          gt(schema!.passwordResetTokens.expiresAt, nowVal as Date & string)
+          gt(schema!.passwordResetTokens.expiresAt, now)
         ),
         columns: { id: true, userId: true },
       })
@@ -204,7 +203,7 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Токен недействителен или истёк. Запросите сброс пароля снова.' })
       }
       const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS)
-      await db!.update(schema!.users).set({ passwordHash, updatedAt: nowVal } as Record<string, unknown>).where(eq(schema!.users.id, resetRow.userId))
+      await db!.update(schema!.users).set({ passwordHash, updatedAt: now }).where(eq(schema!.users.id, resetRow.userId))
       await db!.delete(schema!.passwordResetTokens).where(eq(schema!.passwordResetTokens.id, resetRow.id))
       return reply.send({ message: 'Пароль успешно изменён. Войдите с новым паролем.' })
     } catch (err) {
