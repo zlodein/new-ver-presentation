@@ -15,7 +15,7 @@
 
 ```bash
 ssh root@85.239.47.11
-# Пароль: tao8EGdKLu@82G
+# Пароль: uN9?9^Ke.6jdeM
 
 # Загрузите скрипт настройки
 wget https://raw.githubusercontent.com/your-repo/scripts/setup-server.sh

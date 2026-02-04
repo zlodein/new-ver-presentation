@@ -83,50 +83,101 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # Сохранение SSH ключа с правильным форматом
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # Удаление возможных пробелов в начале/конце
+          sed -i 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+          # Добавление сервера в known_hosts
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          chmod 644 ~/.ssh/known_hosts
+          # Проверка формата ключа
+          ssh-keygen -l -f ~/.ssh/id_rsa || echo "Warning: SSH key format check failed"
 
       - name: Create backup
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-            mkdir -p ${{ env.DEPLOY_DIR }}/backups
-            if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
-              tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
-                -C ${{ env.DEPLOY_DIR }} frontend server 2>/dev/null || true
-            fi
-          "
+          # Используем sshpass если есть пароль, иначе SSH ключ
+          if [ -n "$SSH_PASSWORD" ]; then
+            sudo apt-get update && sudo apt-get install -y sshpass
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/backups
+              if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
+                tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
+                  -C ${{ env.DEPLOY_DIR }} frontend server 2>/dev/null || true
+              fi
+            "
+          else
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/backups
+              if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
+                tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
+                  -C ${{ env.DEPLOY_DIR }} frontend server 2>/dev/null || true
+              fi
+            "
+          fi
 
       - name: Deploy frontend
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-            mkdir -p ${{ env.DEPLOY_DIR }}/frontend
-          "
-          scp -i ~/.ssh/id_rsa -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+          if [ -n "$SSH_PASSWORD" ]; then
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+          else
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
+            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+          fi
 
       - name: Deploy backend
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-            mkdir -p ${{ env.DEPLOY_DIR }}/server
-          "
-          scp -i ~/.ssh/id_rsa -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+          if [ -n "$SSH_PASSWORD" ]; then
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+          else
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+          fi
 
       - name: Install dependencies and restart
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-            cd ${{ env.DEPLOY_DIR }}/server
-            npm ci --production
-            if [ -f .env ]; then
-              export \$(cat .env | grep -v '^#' | xargs)
-              npm run deploy:migrate || echo 'Migrations skipped'
-            fi
-            if systemctl is-active --quiet presentation-backend; then
-              systemctl restart presentation-backend
-            fi
-            if systemctl is-active --quiet nginx; then
-              systemctl reload nginx
-            fi
-          "
+          if [ -n "$SSH_PASSWORD" ]; then
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              cd ${{ env.DEPLOY_DIR }}/server
+              npm ci --production
+              if [ -f .env ]; then
+                export \$(cat .env | grep -v '^#' | xargs)
+                npm run deploy:migrate || echo 'Migrations skipped'
+              fi
+              if systemctl is-active --quiet presentation-backend; then
+                systemctl restart presentation-backend
+              fi
+              if systemctl is-active --quiet nginx; then
+                systemctl reload nginx
+              fi
+            "
+          else
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              cd ${{ env.DEPLOY_DIR }}/server
+              npm ci --production
+              if [ -f .env ]; then
+                export \$(cat .env | grep -v '^#' | xargs)
+                npm run deploy:migrate || echo 'Migrations skipped'
+              fi
+              if systemctl is-active --quiet presentation-backend; then
+                systemctl restart presentation-backend
+              fi
+              if systemctl is-active --quiet nginx; then
+                systemctl reload nginx
+              fi
+            "
+          fi
 
       - name: Cleanup
         if: always()
