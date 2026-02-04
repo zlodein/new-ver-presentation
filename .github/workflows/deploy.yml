@@ -146,10 +146,12 @@ jobs:
           cd ../..
           
           if [ -n "$SSH_PASSWORD" ]; then
-            # Создаем директорию на сервере
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
-            # Передаем архив
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Создаем директорию на сервере и передаем архив через stdin
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/frontend
+              cat > /tmp/frontend.tar.gz
+            " < /tmp/frontend.tar.gz
+            
             # Распаковываем на сервере
             sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/frontend
@@ -158,10 +160,12 @@ jobs:
               chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/frontend || true
             "
           else
-            # Создаем директорию на сервере
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
-            # Передаем архив
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Создаем директорию на сервере и передаем архив через stdin
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/frontend
+              cat > /tmp/frontend.tar.gz
+            " < /tmp/frontend.tar.gz
+            
             # Распаковываем на сервере
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/frontend
@@ -182,10 +186,12 @@ jobs:
           cd ../..
           
           if [ -n "$SSH_PASSWORD" ]; then
-            # Создаем директорию на сервере
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            # Передаем архив
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Создаем директорию на сервере и передаем архив через stdin
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/server
+              cat > /tmp/backend.tar.gz
+            " < /tmp/backend.tar.gz
+            
             # Распаковываем на сервере
             sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
@@ -194,10 +200,12 @@ jobs:
               chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/server || true
             "
           else
-            # Создаем директорию на сервере
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            # Передаем архив
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Создаем директорию на сервере и передаем архив через stdin
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/server
+              cat > /tmp/backend.tar.gz
+            " < /tmp/backend.tar.gz
+            
             # Распаковываем на сервере
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
