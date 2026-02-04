@@ -17,7 +17,7 @@ export function hasApi(): boolean {
 
 async function request<T>(
   path: string,
-  options: RequestInit & { method?: string; body?: unknown } = {}
+  options: Omit<RequestInit, 'body'> & { method?: string; body?: unknown } = {}
 ): Promise<T> {
   const { method = 'GET', body, headers: optHeaders, ...rest } = options
   const headers: Record<string, string> = {
