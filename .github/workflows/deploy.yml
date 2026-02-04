@@ -1,0 +1,133 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  SERVER_IP: 85.239.47.11
+  SERVER_USER: root
+  DEPLOY_DIR: /var/www/presentation
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build:prod
+
+      - name: Setup Node.js for backend
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Build backend
+        working-directory: ./server
+        run: npm run deploy:build
+
+      - name: Create deployment archive
+        run: |
+          mkdir -p deploy
+          cp -r dist deploy/frontend
+          cp -r server/dist deploy/backend
+          cp server/package.json deploy/backend/
+          cp server/package-lock.json deploy/backend/
+          cp -r server/drizzle deploy/backend/ 2>/dev/null || true
+          tar -czf deploy.tar.gz deploy/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: deploy.tar.gz
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Extract artifacts
+        run: tar -xzf deploy.tar.gz
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Create backup
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            mkdir -p ${{ env.DEPLOY_DIR }}/backups
+            if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
+              tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
+                -C ${{ env.DEPLOY_DIR }} frontend server 2>/dev/null || true
+            fi
+          "
+
+      - name: Deploy frontend
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            mkdir -p ${{ env.DEPLOY_DIR }}/frontend
+          "
+          scp -i ~/.ssh/id_rsa -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+
+      - name: Deploy backend
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            mkdir -p ${{ env.DEPLOY_DIR }}/server
+          "
+          scp -i ~/.ssh/id_rsa -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+
+      - name: Install dependencies and restart
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            cd ${{ env.DEPLOY_DIR }}/server
+            npm ci --production
+            if [ -f .env ]; then
+              export \$(cat .env | grep -v '^#' | xargs)
+              npm run deploy:migrate || echo 'Migrations skipped'
+            fi
+            if systemctl is-active --quiet presentation-backend; then
+              systemctl restart presentation-backend
+            fi
+            if systemctl is-active --quiet nginx; then
+              systemctl reload nginx
+            fi
+          "
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf ~/.ssh/id_rsa
