@@ -102,6 +102,9 @@
                 </div>
               </div>
               <form @submit.prevent="handleSubmit">
+                <div v-if="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+                  {{ error }}
+                </div>
                 <div class="space-y-5">
                   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <!-- First Name -->
@@ -267,9 +270,10 @@
                   <div>
                     <button
                       type="submit"
-                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
+                      :disabled="loading"
+                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-60"
                     >
-                      Зарегистрироваться
+                      {{ loading ? 'Регистрация...' : 'Зарегистрироваться' }}
                     </button>
                   </div>
                 </div>
@@ -310,30 +314,59 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
-import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { ApiError } from '@/api/client'
 
+const router = useRouter()
+const { register, hasApi } = useAuth()
 const firstName = ref('')
 const lastName = ref('')
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const agreeToTerms = ref(false)
+const error = ref('')
+const loading = ref(false)
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Implement form submission logic here
-  console.log('Form submitted', {
-    firstName: firstName.value,
-    lastName: lastName.value,
-    email: email.value,
-    password: password.value,
-    agreeToTerms: agreeToTerms.value,
-  })
+const handleSubmit = async () => {
+  error.value = ''
+  if (!email.value?.trim() || !password.value) {
+    error.value = 'Введите email и пароль'
+    return
+  }
+  if (!agreeToTerms.value) {
+    error.value = 'Примите условия использования'
+    return
+  }
+  if (!hasApi()) {
+    error.value = 'API не настроен. Укажите VITE_API_URL в .env'
+    return
+  }
+  loading.value = true
+  try {
+    await register({
+      email: email.value.trim(),
+      password: password.value,
+      firstName: firstName.value.trim() || undefined,
+      lastName: lastName.value.trim() || undefined,
+    })
+    router.push('/')
+  } catch (e) {
+    if (e instanceof ApiError) {
+      error.value = e.message || 'Ошибка регистрации'
+    } else {
+      error.value = 'Ошибка соединения с сервером'
+    }
+  } finally {
+    loading.value = false
+  }
 }
 </script>

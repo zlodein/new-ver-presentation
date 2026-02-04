@@ -706,6 +706,8 @@ import type { Swiper as SwiperType } from 'swiper'
 import draggable from 'vuedraggable'
 import 'swiper/css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { api, hasApi, getToken } from '@/api/client'
+import type { PresentationFull } from '@/api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -1313,12 +1315,35 @@ function gridImages(slide: SlideItem): string[] {
 const presentationId = computed(() => route.params.id as string)
 const isNew = computed(() => route.path === '/presentations/new')
 
-onMounted(() => {
+onMounted(async () => {
   if (isNew.value) {
     objectName.value = String(slides.value[0]?.data?.title ?? '')
     objectDescription.value = String(slides.value[0]?.data?.subtitle ?? '')
     return
   }
+  const id = presentationId.value
+  if (hasApi() && getToken()) {
+    try {
+      const data = await api.get<PresentationFull>(`/api/presentations/${id}`)
+      if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
+        slides.value = (data.content.slides as SlideItem[]).map((s) => ({
+          ...s,
+          id: s.id ?? genSlideId(),
+          hidden: s.hidden ?? false,
+        }))
+      }
+      objectName.value = data.title || String(slides.value[0]?.data?.title ?? '')
+      objectDescription.value = String(slides.value[0]?.data?.subtitle ?? '')
+    } catch {
+      // fallback to localStorage
+      loadFromLocalStorage()
+    }
+  } else {
+    loadFromLocalStorage()
+  }
+})
+
+function loadFromLocalStorage() {
   try {
     const raw = localStorage.getItem(`presentation-${presentationId.value}`)
     if (raw) {
@@ -1334,20 +1359,47 @@ onMounted(() => {
   } catch {
     // keep default slides
   }
-})
+}
 
 const canSaveNew = computed(() => {
   return !isNew.value || objectName.value.trim().length > 0
 })
 
-function saveToStorage() {
+async function saveToStorage() {
   if (!canSaveNew.value && isNew.value) return
-  if (isNew.value) {
-    const cover = slides.value[0]
-    if (cover?.data) {
-      cover.data.title = objectName.value.trim() || 'Без названия'
-      cover.data.subtitle = objectDescription.value
+  const cover = slides.value[0]
+  if (cover?.data) {
+    cover.data.title = objectName.value.trim() || 'Без названия'
+    cover.data.subtitle = objectDescription.value
+  }
+  const title = objectName.value.trim() || (slides.value[0]?.data?.title ?? 'Без названия')
+  const content = { slides: slides.value }
+
+  if (hasApi() && getToken()) {
+    try {
+      if (isNew.value) {
+        const created = await api.post<PresentationFull>('/api/presentations', {
+          title,
+          content,
+        })
+        router.replace(`/presentations/${created.id}/edit`)
+      } else {
+        await api.put(`/api/presentations/${presentationId.value}`, {
+          title,
+          content,
+        })
+        router.push('/presentations')
+      }
+    } catch {
+      saveToLocalStorage()
     }
+    return
+  }
+  saveToLocalStorage()
+}
+
+function saveToLocalStorage() {
+  if (isNew.value) {
     const id = `pres-${Date.now()}`
     const listRaw = localStorage.getItem('presentations-list')
     const list = listRaw ? JSON.parse(listRaw) : []

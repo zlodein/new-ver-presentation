@@ -164,6 +164,14 @@ const router = createRouter({
         title: 'Регистрация',
       },
     },
+    {
+      path: '/reset-password',
+      name: 'ResetPassword',
+      component: () => import('../views/Auth/ResetPassword.vue'),
+      meta: {
+        title: 'Восстановление пароля',
+      },
+    },
   ],
 })
 

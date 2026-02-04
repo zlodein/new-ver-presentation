@@ -2,9 +2,12 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-6">
+      <div v-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+        {{ error }}
+      </div>
       <div class="flex flex-wrap items-center justify-between gap-4">
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Создавайте и редактируйте презентации
+          {{ loading ? 'Загрузка...' : 'Создавайте и редактируйте презентации' }}
         </p>
         <router-link
           to="/presentations/new"
@@ -89,6 +92,8 @@ import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import PlusIcon from '@/icons/PlusIcon.vue'
+import { api, hasApi, getToken } from '@/api/client'
+import type { PresentationListItem } from '@/api/client'
 
 const currentPageTitle = ref('Презентации')
 
@@ -100,6 +105,8 @@ interface Presentation {
 }
 
 const presentations = ref<Presentation[]>([])
+const loading = ref(false)
+const error = ref('')
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
@@ -110,7 +117,21 @@ function formatDate(dateStr: string): string {
   })
 }
 
-function loadPresentations() {
+async function loadFromApi() {
+  loading.value = true
+  error.value = ''
+  try {
+    const list = await api.get<PresentationListItem[]>('/api/presentations')
+    presentations.value = list
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Не удалось загрузить список'
+    presentations.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+function loadFromLocalStorage() {
   try {
     const raw = localStorage.getItem('presentations-list')
     if (raw) {
@@ -118,29 +139,48 @@ function loadPresentations() {
       presentations.value = list.sort(
         (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
+    } else {
+      presentations.value = []
     }
   } catch {
     presentations.value = []
   }
 }
 
-function confirmDelete(presentation: Presentation) {
+function loadPresentations() {
+  if (hasApi() && getToken()) {
+    loadFromApi()
+  } else {
+    loadFromLocalStorage()
+  }
+}
+
+async function confirmDelete(presentation: Presentation) {
   if (!window.confirm(`Удалить презентацию «${presentation.title || 'Без названия'}»?`)) {
     return
   }
-  try {
-    localStorage.removeItem(`presentation-${presentation.id}`)
-    const raw = localStorage.getItem('presentations-list')
-    if (raw) {
-      const list: Presentation[] = JSON.parse(raw)
-      const next = list.filter((p) => p.id !== presentation.id)
-      localStorage.setItem('presentations-list', JSON.stringify(next))
-      presentations.value = next.sort(
-        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      )
+  if (hasApi() && getToken()) {
+    try {
+      await api.delete(`/api/presentations/${presentation.id}`)
+      presentations.value = presentations.value.filter((p) => p.id !== presentation.id)
+    } catch {
+      loadPresentations()
     }
-  } catch {
-    loadPresentations()
+  } else {
+    try {
+      localStorage.removeItem(`presentation-${presentation.id}`)
+      const raw = localStorage.getItem('presentations-list')
+      if (raw) {
+        const list: Presentation[] = JSON.parse(raw)
+        const next = list.filter((p) => p.id !== presentation.id)
+        localStorage.setItem('presentations-list', JSON.stringify(next))
+        presentations.value = next.sort(
+          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        )
+      }
+    } catch {
+      loadPresentations()
+    }
   }
 }
 
