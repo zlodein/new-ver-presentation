@@ -27,12 +27,17 @@ async function request<T>(
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const fetchOptions: RequestInit = {
     method,
     headers,
-    ...(body !== undefined && { body: JSON.stringify(body) }),
     ...rest,
-  })
+  }
+
+  if (body !== undefined) {
+    fetchOptions.body = JSON.stringify(body) as BodyInit
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, fetchOptions)
 
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
