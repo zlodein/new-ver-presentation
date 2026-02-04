@@ -81,28 +81,45 @@ jobs:
         run: tar -xzf deploy.tar.gz
 
       - name: Setup SSH
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Сохранение SSH ключа с правильным форматом
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          # Удаление возможных пробелов в начале/конце
-          sed -i 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
           # Добавление сервера в known_hosts
           ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
           chmod 644 ~/.ssh/known_hosts
-          # Проверка формата ключа
-          ssh-keygen -l -f ~/.ssh/id_rsa || echo "Warning: SSH key format check failed"
+          
+          # Настройка SSH ключа только если пароль не указан
+          if [ -z "$SSH_PASSWORD" ] && [ -n "$SSH_PRIVATE_KEY" ]; then
+            echo "Setting up SSH key..."
+            echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+            # Удаление возможных пробелов в начале/конце
+            sed -i 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            # Проверка формата ключа
+            ssh-keygen -l -f ~/.ssh/id_rsa || echo "Warning: SSH key format check failed"
+          elif [ -n "$SSH_PASSWORD" ]; then
+            echo "Using password authentication (sshpass will be installed in deploy steps)"
+          else
+            echo "Warning: Neither SSH_PASSWORD nor SSH_PRIVATE_KEY is set!"
+          fi
 
+      - name: Install sshpass (if using password)
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          if [ -n "$SSH_PASSWORD" ]; then
+            sudo apt-get update && sudo apt-get install -y sshpass
+          fi
+      
       - name: Create backup
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          # Используем sshpass если есть пароль, иначе SSH ключ
           if [ -n "$SSH_PASSWORD" ]; then
-            sudo apt-get update && sudo apt-get install -y sshpass
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/backups
               if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
                 tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
@@ -110,7 +127,7 @@ jobs:
               fi
             "
           else
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/backups
               if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
                 tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
@@ -124,11 +141,11 @@ jobs:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
           else
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
+            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
           fi
 
       - name: Deploy backend
@@ -136,11 +153,11 @@ jobs:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
           else
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
           fi
 
       - name: Install dependencies and restart
@@ -148,7 +165,7 @@ jobs:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               npm ci --production
               if [ -f .env ]; then
@@ -163,7 +180,7 @@ jobs:
               fi
             "
           else
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               npm ci --production
               if [ -f .env ]; then
@@ -181,4 +198,6 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -rf ~/.ssh/id_rsa
+        run: |
+          rm -f ~/.ssh/id_rsa
+          rm -f ~/.ssh/known_hosts
