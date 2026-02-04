@@ -140,25 +140,73 @@ jobs:
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
+          # Создаем архив для передачи
+          cd deploy/frontend
+          tar -czf /tmp/frontend.tar.gz .
+          cd ../..
+          
           if [ -n "$SSH_PASSWORD" ]; then
+            # Создаем директорию на сервере
             sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+            # Передаем архив
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Распаковываем на сервере
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              cd ${{ env.DEPLOY_DIR }}/frontend
+              tar -xzf /tmp/frontend.tar.gz
+              rm /tmp/frontend.tar.gz
+              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/frontend || true
+            "
           else
+            # Создаем директорию на сервере
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/frontend"
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/frontend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/frontend/
+            # Передаем архив
+            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Распаковываем на сервере
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              cd ${{ env.DEPLOY_DIR }}/frontend
+              tar -xzf /tmp/frontend.tar.gz
+              rm /tmp/frontend.tar.gz
+              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/frontend || true
+            "
           fi
+          rm -f /tmp/frontend.tar.gz
 
       - name: Deploy backend
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
+          # Создаем архив для передачи
+          cd deploy/backend
+          tar -czf /tmp/backend.tar.gz .
+          cd ../..
+          
           if [ -n "$SSH_PASSWORD" ]; then
+            # Создаем директорию на сервере
             sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+            # Передаем архив
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Распаковываем на сервере
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              cd ${{ env.DEPLOY_DIR }}/server
+              tar -xzf /tmp/backend.tar.gz
+              rm /tmp/backend.tar.gz
+              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/server || true
+            "
           else
+            # Создаем директорию на сервере
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -r deploy/backend/* ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/
+            # Передаем архив
+            scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/
+            # Распаковываем на сервере
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              cd ${{ env.DEPLOY_DIR }}/server
+              tar -xzf /tmp/backend.tar.gz
+              rm /tmp/backend.tar.gz
+              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/server || true
+            "
           fi
+          rm -f /tmp/backend.tar.gz
 
       - name: Install dependencies and restart
         env:
