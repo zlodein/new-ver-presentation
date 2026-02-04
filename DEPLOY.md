@@ -30,7 +30,7 @@ chmod +x setup-server.sh
 Создайте файл `.env` на сервере:
 
 ```bash
-nano /var/www/presentation/server/.env
+nano /var/www/e_presentati_usr/data/www/e-presentation.ru/server/.env
 ```
 
 Добавьте:
@@ -38,7 +38,7 @@ nano /var/www/presentation/server/.env
 ```env
 NODE_ENV=production
 PORT=3001
-DATABASE_URL=postgresql://presentation_user:your_password@localhost:5432/presentation_db
+DATABASE_URL=postgresql://e_presentati:g&7W>0@z;fGznoDz@localhost:5432/e_presentati
 JWT_SECRET=your-secret-key-minimum-32-characters-long-please-change-this
 ```
 
@@ -66,13 +66,13 @@ npm run deploy:build
 cd ..
 
 # Копирование на сервер
-scp -r dist/* root@85.239.47.11:/var/www/presentation/frontend/
-scp -r server/dist/* root@85.239.47.11:/var/www/presentation/server/
-scp server/package*.json root@85.239.47.11:/var/www/presentation/server/
+scp -r dist/* root@85.239.47.11:/var/www/e_presentati_usr/data/www/e-presentation.ru/
+scp -r server/dist/* root@85.239.47.11:/var/www/e_presentati_usr/data/www/e-presentation.ru/server/
+scp server/package*.json root@85.239.47.11:/var/www/e_presentati_usr/data/www/e-presentation.ru/server/
 
 # На сервере
 ssh root@85.239.47.11
-cd /var/www/presentation/server
+cd /var/www/e_presentati_usr/data/www/e-presentation.ru/server
 npm ci --production
 npm run deploy:migrate
 systemctl restart presentation-backend
@@ -149,8 +149,9 @@ cat ~/.ssh/id_rsa
 ## Структура директорий на сервере
 
 ```
-/var/www/presentation/
-├── frontend/          # Собранные файлы frontend
+/var/www/e_presentati_usr/data/www/e-presentation.ru/
+├── index.html         # Frontend (Vue.js приложение)
+├── assets/            # Статические файлы frontend
 ├── server/            # Backend приложение
 │   ├── dist/         # Собранный TypeScript код
 │   ├── drizzle/      # Миграции базы данных
@@ -184,7 +185,7 @@ journalctl -u presentation-backend -f
 sudo -u postgres psql -d presentation_db
 
 # Запуск миграций
-cd /var/www/presentation/server
+cd /var/www/e_presentati_usr/data/www/e-presentation.ru/server
 npm run deploy:migrate
 
 # Создание резервной копии
@@ -209,11 +210,11 @@ tail -f /var/log/nginx/access.log
 
 ```bash
 # На сервере
-cd /var/www/presentation/backups
+cd /var/www/e_presentati_usr/data/www/e-presentation.ru/backups
 ls -la
 
 # Восстановление из backup
-tar -xzf backup-YYYYMMDD-HHMMSS.tar.gz -C /var/www/presentation/
+tar -xzf backup-YYYYMMDD-HHMMSS.tar.gz -C /var/www/e_presentati_usr/data/www/e-presentation.ru/
 
 # Перезапуск сервисов
 systemctl restart presentation-backend
@@ -242,7 +243,7 @@ sudo -u postgres psql -d presentation_db -c "SELECT 1;"
 npm install -g pm2
 
 # Запуск
-cd /var/www/presentation/server
+cd /var/www/e_presentati_usr/data/www/e-presentation.ru/server
 pm2 start ecosystem.config.js
 
 # Сохранение конфигурации
@@ -259,9 +260,9 @@ pm2 logs presentation-backend
 ### Backend не запускается
 
 1. Проверьте логи: `journalctl -u presentation-backend -n 50`
-2. Проверьте .env файл: `cat /var/www/presentation/server/.env`
+2. Проверьте .env файл: `cat /var/www/e_presentati_usr/data/www/e-presentation.ru/server/.env`
 3. Проверьте порт: `netstat -tulpn | grep 3001`
-4. Проверьте права доступа: `ls -la /var/www/presentation/server`
+4. Проверьте права доступа: `ls -la /var/www/e_presentati_usr/data/www/e-presentation.ru/server`
 
 ### База данных не подключается
 

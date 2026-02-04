@@ -9,9 +9,9 @@ set -e  # Остановка при ошибке
 ENVIRONMENT=${1:-production}
 SERVER_IP="85.239.47.11"
 SERVER_USER="root"
-DEPLOY_DIR="/var/www/presentation"
+DEPLOY_DIR="/var/www/e_presentati_usr/data/www/e-presentation.ru"
 BACKEND_DIR="$DEPLOY_DIR/server"
-FRONTEND_DIR="$DEPLOY_DIR/frontend"
+FRONTEND_DIR="$DEPLOY_DIR"
 BACKUP_DIR="$DEPLOY_DIR/backups"
 
 echo "🚀 Начало деплоя на $ENVIRONMENT окружение..."
@@ -59,7 +59,7 @@ cd ..
 info "Создание директорий на сервере..."
 ssh $SERVER_USER@$SERVER_IP "mkdir -p $FRONTEND_DIR $BACKEND_DIR"
 
-# Копирование frontend файлов
+# Копирование frontend файлов (в корень сайта)
 info "Копирование frontend файлов..."
 rsync -avz --delete \
     --exclude 'node_modules' \

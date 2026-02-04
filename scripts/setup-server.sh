@@ -84,34 +84,31 @@ else
 fi
 
 # Создание директорий для деплоя
-DEPLOY_DIR="/var/www/presentation"
+DEPLOY_DIR="/var/www/e_presentati_usr/data/www/e-presentation.ru"
+SITE_USER="e_presentati_usr"
 info "Создание директорий: $DEPLOY_DIR"
-mkdir -p $DEPLOY_DIR/{frontend,server,backups}
-chown -R www-data:www-data $DEPLOY_DIR
+mkdir -p $DEPLOY_DIR/{server,backups}
+chown -R $SITE_USER:$SITE_USER $DEPLOY_DIR
 
-# Создание пользователя для базы данных (если нужно)
-info "Настройка PostgreSQL..."
-sudo -u postgres psql << EOF
--- Создание базы данных и пользователя (измените пароль!)
-CREATE DATABASE presentation_db;
-CREATE USER presentation_user WITH PASSWORD 'changeme_strong_password';
-GRANT ALL PRIVILEGES ON DATABASE presentation_db TO presentation_user;
-\q
-EOF
-
-info "⚠️  Не забудьте изменить пароль для пользователя базы данных!"
+# Информация о базе данных (уже настроена в FastPanel)
+info "Информация о базе данных:"
+info "  База данных: e_presentati"
+info "  Пользователь: e_presentati"
+info "  Пароль: g&7W>0@z;fGznoDz"
+info ""
+info "⚠️  База данных уже настроена в FastPanel. Используйте эти данные в .env файле."
 
 # Создание systemd сервиса для backend
 info "Создание systemd сервиса для backend..."
-cat > /etc/systemd/system/presentation-backend.service << 'EOF'
+cat > /etc/systemd/system/presentation-backend.service << EOF
 [Unit]
 Description=Presentation Backend Service
 After=network.target postgresql.service
 
 [Service]
 Type=simple
-User=www-data
-WorkingDirectory=/var/www/presentation/server
+User=$SITE_USER
+WorkingDirectory=$DEPLOY_DIR/server
 Environment=NODE_ENV=production
 Environment=PORT=3001
 ExecStart=/usr/bin/node dist/index.js
@@ -130,12 +127,12 @@ info "Systemd сервис создан (не запущен, будет зап�
 
 # Настройка Nginx
 info "Создание конфигурации Nginx..."
-cat > /etc/nginx/sites-available/presentation << 'EOF'
+cat > /etc/nginx/sites-available/e-presentation << EOF
 server {
     listen 80;
-    server_name _;  # Замените на ваш домен
+    server_name e-presentation.ru www.e-presentation.ru;
     
-    root /var/www/presentation/frontend;
+    root $DEPLOY_DIR;
     index index.html;
 
     # Gzip compression
@@ -176,7 +173,7 @@ server {
 EOF
 
 # Активация конфигурации Nginx
-ln -sf /etc/nginx/sites-available/presentation /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/e-presentation /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 info "Конфигурация Nginx создана и активирована"
 
@@ -194,7 +191,7 @@ info "✅ Настройка сервера завершена!"
 info ""
 info "Следующие шаги:"
 info "1. Создайте .env файл в $DEPLOY_DIR/server/ с настройками:"
-info "   DATABASE_URL=postgresql://presentation_user:your_password@localhost:5432/presentation_db"
+info "   DATABASE_URL=postgresql://e_presentati:g&7W>0@z;fGznoDz@localhost:5432/e_presentati"
 info "   JWT_SECRET=your-secret-key-min-32-characters-long"
 info "   PORT=3001"
 info ""

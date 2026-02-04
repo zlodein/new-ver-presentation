@@ -11,7 +11,8 @@ env:
   NODE_VERSION: '20'
   SERVER_IP: 85.239.47.11
   SERVER_USER: root
-  DEPLOY_DIR: /var/www/presentation
+  DEPLOY_DIR: /var/www/e_presentati_usr/data/www/e-presentation.ru
+  SITE_USER: e_presentati_usr
 
 jobs:
   build:
@@ -129,9 +130,9 @@ jobs:
           else
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/backups
-              if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
+              if [ -d ${{ env.DEPLOY_DIR }}/server ] || [ -f ${{ env.DEPLOY_DIR }}/index.html ]; then
                 tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
-                  -C ${{ env.DEPLOY_DIR }} frontend server 2>/dev/null || true
+                  -C ${{ env.DEPLOY_DIR }} server index.html assets 2>/dev/null || true
               fi
             "
           fi
@@ -148,30 +149,30 @@ jobs:
           if [ -n "$SSH_PASSWORD" ]; then
             # Создаем директорию на сервере и передаем архив через stdin
             sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}/frontend
+              mkdir -p ${{ env.DEPLOY_DIR }}
               cat > /tmp/frontend.tar.gz
             " < /tmp/frontend.tar.gz
             
             # Распаковываем на сервере
             sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}/frontend
+              cd ${{ env.DEPLOY_DIR }}
               tar -xzf /tmp/frontend.tar.gz
               rm /tmp/frontend.tar.gz
-              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/frontend || true
+              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true
             "
           else
             # Создаем директорию на сервере и передаем архив через stdin
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}/frontend
+              mkdir -p ${{ env.DEPLOY_DIR }}
               cat > /tmp/frontend.tar.gz
             " < /tmp/frontend.tar.gz
             
             # Распаковываем на сервере
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}/frontend
+              cd ${{ env.DEPLOY_DIR }}
               tar -xzf /tmp/frontend.tar.gz
               rm /tmp/frontend.tar.gz
-              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/frontend || true
+              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true
             "
           fi
           rm -f /tmp/frontend.tar.gz
@@ -197,7 +198,7 @@ jobs:
               cd ${{ env.DEPLOY_DIR }}/server
               tar -xzf /tmp/backend.tar.gz
               rm /tmp/backend.tar.gz
-              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/server || true
+              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true
             "
           else
             # Создаем директорию на сервере и передаем архив через stdin
@@ -211,7 +212,7 @@ jobs:
               cd ${{ env.DEPLOY_DIR }}/server
               tar -xzf /tmp/backend.tar.gz
               rm /tmp/backend.tar.gz
-              chown -R www-data:www-data ${{ env.DEPLOY_DIR }}/server || true
+              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true
             "
           fi
           rm -f /tmp/backend.tar.gz
