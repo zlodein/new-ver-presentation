@@ -44,4 +44,12 @@ if (useMysql && connectionString) {
   useFileStore = true
 }
 
+if (connectionString) {
+  const kind = useMysql ? 'MySQL' : usePg ? 'PostgreSQL' : 'unknown'
+  const safeUrl = connectionString.replace(/:([^:@]+)@/, ':****@')
+  console.log(`[db] DATABASE_URL: ${kind} (${safeUrl})`)
+} else {
+  console.log('[db] DATABASE_URL не задан — используется файловое хранилище (server/data/store.json)')
+}
+
 export { db, schema, isSqlite, useFileStore, useMysql }

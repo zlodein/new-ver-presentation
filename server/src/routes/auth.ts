@@ -9,9 +9,16 @@ import { fileStore } from '../db/file-store.js'
 
 const SALT_ROUNDS = 10
 const SERVER_ERR = 'Ошибка сервера. При использовании файлового хранилища проверьте папку server/data.'
-const DB_ERR = useMysql
-  ? 'Ошибка сервера. Проверьте: 1) в server/.env задан DATABASE_URL=mysql://... 2) MySQL запущен, база e_presentati и таблицы созданы (server/sql/). Точная причина — в логах бэкенда.'
-  : 'Ошибка сервера. Проверьте подключение к PostgreSQL и наличие таблиц (см. server/README.md). Точная причина — в логах бэкенда.'
+function getDbErr(): string {
+  const url = process.env.DATABASE_URL ?? ''
+  if (url.startsWith('mysql')) {
+    return 'Ошибка сервера. Проверьте: MySQL запущен, в server/.env задан DATABASE_URL=mysql://..., база и таблицы созданы (server/sql/e_presentati_schema.sql). Точная причина — в логах бэкенда.'
+  }
+  if (url.startsWith('postgres')) {
+    return 'Ошибка сервера. Проверьте подключение к PostgreSQL и наличие таблиц (см. server/README.md). Точная причина — в логах бэкенда.'
+  }
+  return 'Ошибка сервера. В server/.env задайте DATABASE_URL: для MySQL — mysql://user:pass@host:3306/e_presentati (таблицы — server/sql/). Точная причина — в логах бэкенда.'
+}
 
 export async function authRoutes(app: FastifyInstance) {
   app.post<{
@@ -92,7 +99,7 @@ export async function authRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
-        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : DB_ERR),
+        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
       })
     }
   })
@@ -142,7 +149,7 @@ export async function authRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
-        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : DB_ERR),
+        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
       })
     }
   })
@@ -180,7 +187,7 @@ export async function authRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
-        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : DB_ERR),
+        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
       })
     }
   })
@@ -236,7 +243,7 @@ export async function authRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
-        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : DB_ERR),
+        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
       })
     }
   })
@@ -293,7 +300,7 @@ export async function authRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
-        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : DB_ERR),
+        error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
       })
     }
   })
