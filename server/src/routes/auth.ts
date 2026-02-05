@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, gt } from 'drizzle-orm'
+import { eq, and, gt, ne } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
@@ -140,12 +140,14 @@ export async function authRoutes(app: FastifyInstance) {
       if (useMysql) {
         const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
           where: eq(mysqlSchema.users.email, normalizedEmail),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, password: true },
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true },
         })
         if (!user || !(await bcrypt.compare(password, user.password))) {
           return reply.status(401).send({ error: 'Неверный email или пароль' })
         }
         const token = await reply.jwtSign({ sub: String(user.id), email: user.email }, { expiresIn: '7d' })
+        const messengersData = user.messengers ? (typeof user.messengers === 'string' ? JSON.parse(user.messengers) : user.messengers) : null
+        
         return reply.send({
           user: { 
             id: String(user.id), 
@@ -154,6 +156,9 @@ export async function authRoutes(app: FastifyInstance) {
             last_name: user.last_name,
             middle_name: user.middle_name,
             user_img: user.user_img,
+            personal_phone: user.personal_phone,
+            position: user.position,
+            messengers: messengersData,
             // Для обратной совместимости
             firstName: user.name, 
             lastName: user.last_name 
@@ -192,9 +197,12 @@ export async function authRoutes(app: FastifyInstance) {
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
           where: eq(mysqlSchema.users.id, userId),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, created_at: true },
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true },
         })
         if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
+        
+        const messengersData = user.messengers ? (typeof user.messengers === 'string' ? JSON.parse(user.messengers) : user.messengers) : null
+
         return reply.send({
           id: String(user.id),
           email: user.email,
@@ -202,6 +210,9 @@ export async function authRoutes(app: FastifyInstance) {
           last_name: user.last_name,
           middle_name: user.middle_name,
           user_img: user.user_img,
+          personal_phone: user.personal_phone,
+          position: user.position,
+          messengers: messengersData,
           createdAt: user.created_at,
           // Для обратной совместимости
           firstName: user.name,
@@ -331,6 +342,84 @@ export async function authRoutes(app: FastifyInstance) {
       req.log.error(err)
       return reply.status(500).send({
         error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
+      })
+    }
+  })
+
+  // Обновление профиля пользователя
+  app.put<{
+    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string> }
+  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string> } }>, reply: FastifyReply) => {
+    try {
+      const payload = req.user as { sub: string; email: string }
+      const { name, last_name, email, personal_phone, position, messengers } = req.body
+
+      if (useFileStore) {
+        const user = fileStore.findUserById(payload.sub)
+        if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
+        // Обновление через fileStore (если нужно)
+        return reply.status(501).send({ error: 'Обновление профиля через файловое хранилище не реализовано' })
+      }
+
+      if (useMysql) {
+        const userId = Number(payload.sub)
+        if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
+        
+        const updateData: Record<string, unknown> = {}
+        if (name !== undefined) updateData.name = name.trim()
+        if (last_name !== undefined) updateData.last_name = last_name.trim() || null
+        if (email !== undefined) {
+          const normalizedEmail = email.trim().toLowerCase()
+          // Проверка, что email не занят другим пользователем
+          const existing = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+            where: and(eq(mysqlSchema.users.email, normalizedEmail), ne(mysqlSchema.users.id, userId)),
+            columns: { id: true },
+          })
+          if (existing) return reply.status(409).send({ error: 'Email уже используется другим пользователем' })
+          updateData.email = normalizedEmail
+        }
+        if (personal_phone !== undefined) updateData.personal_phone = personal_phone.trim() || null
+        if (position !== undefined) updateData.position = position.trim() || null
+        if (messengers !== undefined) updateData.messengers = JSON.stringify(messengers)
+        updateData.updated_at = new Date()
+
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .update(mysqlSchema.users)
+          .set(updateData)
+          .where(eq(mysqlSchema.users.id, userId))
+
+        // Получить обновленные данные
+        const updatedUser = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          where: eq(mysqlSchema.users.id, userId),
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true },
+        })
+        if (!updatedUser) return reply.status(401).send({ error: 'Пользователь не найден' })
+
+        const messengersData = updatedUser.messengers ? (typeof updatedUser.messengers === 'string' ? JSON.parse(updatedUser.messengers) : updatedUser.messengers) : null
+
+        return reply.send({
+          id: String(updatedUser.id),
+          email: updatedUser.email,
+          name: updatedUser.name,
+          last_name: updatedUser.last_name,
+          middle_name: updatedUser.middle_name,
+          user_img: updatedUser.user_img,
+          personal_phone: updatedUser.personal_phone,
+          position: updatedUser.position,
+          messengers: messengersData,
+          createdAt: updatedUser.created_at,
+          // Для обратной совместимости
+          firstName: updatedUser.name,
+          lastName: updatedUser.last_name,
+        })
+      }
+
+      // PostgreSQL (если используется)
+      return reply.status(501).send({ error: 'Обновление профиля для PostgreSQL не реализовано' })
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({
+        error: process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr(),
       })
     }
   })

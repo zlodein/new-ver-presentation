@@ -73,6 +73,9 @@ export interface AuthUser {
   last_name?: string | null
   middle_name?: string | null
   user_img?: string | null
+  personal_phone?: string | null
+  position?: string | null
+  messengers?: Record<string, string> | null
   createdAt?: string
   // Для обратной совместимости
   firstName?: string | null
