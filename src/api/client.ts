@@ -1,4 +1,5 @@
 const API_BASE = (import.meta as ImportMeta & { env: { VITE_API_URL?: string } }).env?.VITE_API_URL?.replace(/\/$/, '') ?? ''
+const IS_PROD = (import.meta as ImportMeta & { env: { PROD?: boolean } }).env?.PROD === true
 
 const TOKEN_KEY = 'auth_token'
 
@@ -11,8 +12,9 @@ export function setToken(token: string | null): void {
   else localStorage.removeItem(TOKEN_KEY)
 }
 
+/** API считается настроенным, если задан VITE_API_URL или это прод-сборка (запросы идут на тот же домен /api). */
 export function hasApi(): boolean {
-  return API_BASE.length > 0
+  return API_BASE.length > 0 || IS_PROD
 }
 
 async function request<T>(
