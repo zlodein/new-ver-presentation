@@ -53,6 +53,8 @@ server/logs/
 backups/
 *.tar.gz
 *.sql
+# Схема БД для деплоя — не игнорировать
+!server/sql/*.sql
 
 # Production config with passwords
 PRODUCTION_CONFIG.md
