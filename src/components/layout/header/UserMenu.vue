@@ -60,13 +60,21 @@
 <script setup>
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
 import { RouterLink, useRouter } from 'vue-router'
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const { currentUser, fetchUser, logout } = useAuth()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
+
+// Отладка: следить за изменениями currentUser
+watch(currentUser, (newUser) => {
+  console.log('UserMenu - currentUser изменился:', newUser)
+  console.log('UserMenu - name:', newUser?.name)
+  console.log('UserMenu - last_name:', newUser?.last_name)
+  console.log('UserMenu - user_img:', newUser?.user_img)
+}, { immediate: true, deep: true })
 
 const menuItems = [
   { href: '/dashboard/profile', icon: UserCircleIcon, text: 'Редактировать профиль' },
@@ -118,9 +126,13 @@ const handleClickOutside = (event) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
-  fetchUser()
+  await fetchUser()
+  // Отладка: проверить что загрузилось
+  console.log('UserMenu - currentUser:', currentUser.value)
+  console.log('UserMenu - shortName:', shortName.value)
+  console.log('UserMenu - userImage:', userImage.value)
 })
 
 onUnmounted(() => {
