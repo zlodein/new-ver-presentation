@@ -1,0 +1,70 @@
+/* ============================================
+   СТИЛИ ФОРМ ДЕКОРАТИВНЫХ ЭЛЕМЕНТОВ
+   ============================================ */
+
+/* Квадратная форма (по умолчанию) */
+.decoration-square .booklet-char__top-square,
+.decoration-square .booklet-char__bottom-square,
+.decoration-square .booklet-img__top-square,
+.decoration-square .booklet-img__bottom-square,
+.decoration-square .booklet-galery__top-square,
+.decoration-square .booklet-galery__bottom-square,
+.decoration-square .booklet-grid__top-square,
+.decoration-square .booklet-grid__bottom-square,
+.decoration-square .booklet-info__top-square,
+.decoration-square .booklet-info__bottom-square,
+.decoration-square .booklet-stroen__top-square,
+.decoration-square .booklet-stroen__bottom-square,
+.decoration-square .booklet-osobenn__bottom-square,
+.decoration-square .booklet-osobenn__top-square,
+.decoration-square .booklet-map__top-square,
+.decoration-square .booklet-map__bottom-square,
+.decoration-square .booklet-contacts__top-square,
+.decoration-square .booklet-contacts__bottom-square {
+    border-radius: 0;
+}
+
+/* Круглая форма */
+.decoration-circle .booklet-char__top-square,
+.decoration-circle .booklet-char__bottom-square,
+.decoration-circle .booklet-img__top-square,
+.decoration-circle .booklet-img__bottom-square,
+.decoration-circle .booklet-galery__top-square,
+.decoration-circle .booklet-galery__bottom-square,
+.decoration-circle .booklet-grid__top-square,
+.decoration-circle .booklet-grid__bottom-square,
+.decoration-circle .booklet-info__top-square,
+.decoration-circle .booklet-info__bottom-square,
+.decoration-circle .booklet-stroen__top-square,
+.decoration-circle .booklet-stroen__bottom-square,
+.decoration-circle .booklet-osobenn__bottom-square,
+.decoration-circle .booklet-osobenn__top-square,
+.decoration-circle .booklet-map__top-square,
+.decoration-circle .booklet-map__bottom-square,
+.decoration-circle .booklet-contacts__top-square,
+.decoration-circle .booklet-contacts__bottom-square {
+    border-radius: 50%;
+}
+
+/* Скругленная форма */
+.decoration-rounded .booklet-char__top-square,
+.decoration-rounded .booklet-char__bottom-square,
+.decoration-rounded .booklet-img__top-square,
+.decoration-rounded .booklet-img__bottom-square,
+.decoration-rounded .booklet-galery__top-square,
+.decoration-rounded .booklet-galery__bottom-square,
+.decoration-rounded .booklet-grid__top-square,
+.decoration-rounded .booklet-grid__bottom-square,
+.decoration-rounded .booklet-info__top-square,
+.decoration-rounded .booklet-info__bottom-square,
+.decoration-rounded .booklet-stroen__top-square,
+.decoration-rounded .booklet-stroen__bottom-square,
+.decoration-rounded .booklet-osobenn__bottom-square,
+.decoration-rounded .booklet-osobenn__top-square,
+.decoration-rounded .booklet-map__top-square,
+.decoration-rounded .booklet-map__bottom-square,
+.decoration-rounded .booklet-contacts__top-square,
+.decoration-rounded .booklet-contacts__bottom-square {
+    border-radius: 20px;
+}
+

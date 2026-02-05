@@ -749,6 +749,8 @@ function generateSlideHTML(slide, index) {
     try {
         const content = generator(slide, index);
         const themeClass = typeof currentThemeStyle !== 'undefined' ? `theme-${currentThemeStyle}` : 'theme-classic';
+        const decorationClass = typeof currentDecorationShape !== 'undefined' ? `decoration-${currentDecorationShape}` : 'decoration-square';
+        const styleClasses = `${themeClass} ${decorationClass}`.trim();
         return `
             <div class="swiper-slide editor__slide" data-slide-index="${index}" data-slide-type="${slide.type}">
                 <div class="editor__inner">
@@ -785,7 +787,7 @@ function generateSlideHTML(slide, index) {
                         </div>
                     </div>
                     <div class="editor__inner-content">
-                        ${content.replace('class="booklet-page', `class="booklet-page ${themeClass}`)}
+                        ${content.replace('class="booklet-page', `class="booklet-page ${styleClasses}`)}
                     </div>
                 </div>
             </div>

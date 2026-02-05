@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="/assets/css/main.css?v=3" />
-<link rel="stylesheet" type="text/css" href="/assets/css/themes.css?v=3" />
-<link rel="stylesheet" type="text/css" href="/assets/css/decoration-shapes.css?v=3" />
+<link rel="stylesheet" type="text/css" href="/assets/css/slide-layout.css?v=3" />
+<link rel="stylesheet" type="text/css" href="/assets/css/slide-styles.css?v=3" />
 <link rel="stylesheet" type="text/css" href="/assets/css/customization.css?v=3" />
 <link rel="stylesheet" type="text/css" href="/assets/css/custom.css?v=3" />
 <style>
