@@ -219,11 +219,11 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/
 
 ## Nginx: чтобы работали /api/suggest, генерация текста, метро
 
-Запросы с фронта идут на `/api/suggest`, `/api/generate_text` и т.д. Бэкенд слушает маршруты без префикса `/api` (`/suggest`, `/generate_text`). В Nginx нужно **убирать** префикс при проксировании:
+Запросы с фронта идут на `/api/suggest`, `/api/generate_text` и т.д. Бэкенд слушает маршруты **с префиксом** `/api` (`/api/suggest`, `/api/generate_text`). В Nginx проксируйте `/api` на бэкенд **без изменения пути**:
 
 ```nginx
 location /api {
-    proxy_pass http://localhost:3001/;   # слэш в конце — убирает /api
+    proxy_pass http://localhost:3001;   # без слэша — путь /api/... передаётся как есть
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -232,4 +232,4 @@ location /api {
 }
 ```
 
-Если у вас было `proxy_pass http://localhost:3001;` (без слэша), замените на `http://localhost:3001/;` и выполните `nginx -t && systemctl reload nginx`.
+Если у вас было `proxy_pass http://localhost:3001/;` (со слэшем — префикс убирался), замените на `http://localhost:3001;` и выполните `nginx -t && systemctl reload nginx`.

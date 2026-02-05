@@ -30,7 +30,7 @@ export async function buildApp() {
 
   await app.register(authRoutes, { prefix: '/' })
   await app.register(presentationRoutes, { prefix: '/' })
-  await app.register(editorApiRoutes, { prefix: '/' })
+  await app.register(editorApiRoutes, { prefix: '/api' })
 
   return app
 }
