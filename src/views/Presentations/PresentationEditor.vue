@@ -1313,7 +1313,7 @@ function gridImages(slide: SlideItem): string[] {
 }
 
 const presentationId = computed(() => route.params.id as string)
-const isNew = computed(() => route.path === '/presentations/new')
+const isNew = computed(() => route.path === '/dashboard/presentations/new')
 
 onMounted(async () => {
   if (isNew.value) {
@@ -1382,13 +1382,13 @@ async function saveToStorage() {
           title,
           content,
         })
-        router.replace(`/presentations/${created.id}/edit`)
+        router.replace(`/dashboard/presentations/${created.id}/edit`)
       } else {
         await api.put(`/api/presentations/${presentationId.value}`, {
           title,
           content,
         })
-        router.push('/presentations')
+        router.push('/dashboard/presentations')
       }
     } catch {
       saveToLocalStorage()
@@ -1411,7 +1411,7 @@ function saveToLocalStorage() {
     })
     localStorage.setItem('presentations-list', JSON.stringify(list))
     localStorage.setItem(`presentation-${id}`, JSON.stringify({ slides: slides.value }))
-    router.replace(`/presentations/${id}/edit`)
+    router.replace(`/dashboard/presentations/${id}/edit`)
     return
   }
   localStorage.setItem(
@@ -1428,7 +1428,7 @@ function saveToLocalStorage() {
       localStorage.setItem('presentations-list', JSON.stringify(list))
     }
   }
-  router.push('/presentations')
+  router.push('/dashboard/presentations')
 }
 </script>
 

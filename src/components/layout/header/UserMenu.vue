@@ -66,9 +66,9 @@ const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
 const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Редактировать профиль' },
+  { href: '/dashboard/profile', icon: UserCircleIcon, text: 'Редактировать профиль' },
   { href: '/chat', icon: SettingsIcon, text: 'Настройки аккаунта' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Поддержка' },
+  { href: '/dashboard/profile', icon: InfoCircleIcon, text: 'Поддержка' },
 ]
 
 const toggleDropdown = () => {

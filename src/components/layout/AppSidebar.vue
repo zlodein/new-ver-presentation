@@ -19,7 +19,7 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
+      <router-link to="/dashboard">
         <img
           v-if="isExpanded || isHovered || isMobileOpen"
           class="dark:hidden"
@@ -245,42 +245,42 @@ const menuGroups = [
       {
         icon: GridIcon,
         name: "Панель управления",
-        subItems: [{ name: "Электронная коммерция", path: "/", pro: false }],
+        subItems: [{ name: "Электронная коммерция", path: "/dashboard", pro: false }],
       },
       {
         icon: DocsIcon,
         name: "Презентации",
-        path: "/presentations",
+        path: "/dashboard/presentations",
       },
       {
         icon: CalenderIcon,
         name: "Календарь",
-        path: "/calendar",
+        path: "/dashboard/calendar",
       },
       {
         icon: UserCircleIcon,
         name: "Профиль пользователя",
-        path: "/profile",
+        path: "/dashboard/profile",
       },
 
       {
         name: "Формы",
         icon: ListIcon,
         subItems: [
-          { name: "Элементы формы", path: "/form-elements", pro: false },
+          { name: "Элементы формы", path: "/dashboard/form-elements", pro: false },
         ],
       },
       {
         name: "Таблицы",
         icon: TableIcon,
-        subItems: [{ name: "Базовые таблицы", path: "/basic-tables", pro: false }],
+        subItems: [{ name: "Базовые таблицы", path: "/dashboard/basic-tables", pro: false }],
       },
       {
         name: "Страницы",
         icon: PageIcon,
         subItems: [
-          { name: "Пустая страница", path: "/blank", pro: false },
-          { name: "Страница 404", path: "/error-404", pro: false },
+          { name: "Пустая страница", path: "/dashboard/blank", pro: false },
+          { name: "Страница 404", path: "/dashboard/error-404", pro: false },
         ],
       },
     ],
@@ -292,20 +292,20 @@ const menuGroups = [
         icon: PieChartIcon,
         name: "Графики",
         subItems: [
-          { name: "Линейный график", path: "/line-chart", pro: false },
-          { name: "Столбчатая диаграмма", path: "/bar-chart", pro: false },
+          { name: "Линейный график", path: "/dashboard/line-chart", pro: false },
+          { name: "Столбчатая диаграмма", path: "/dashboard/bar-chart", pro: false },
         ],
       },
       {
         icon: BoxCubeIcon,
         name: "Элементы интерфейса",
         subItems: [
-          { name: "Оповещения", path: "/alerts", pro: false },
-          { name: "Аватары", path: "/avatars", pro: false },
-          { name: "Значки", path: "/badge", pro: false },
-          { name: "Кнопки", path: "/buttons", pro: false },
-          { name: "Изображения", path: "/images", pro: false },
-          { name: "Видео", path: "/videos", pro: false },
+          { name: "Оповещения", path: "/dashboard/alerts", pro: false },
+          { name: "Аватары", path: "/dashboard/avatars", pro: false },
+          { name: "Значки", path: "/dashboard/badge", pro: false },
+          { name: "Кнопки", path: "/dashboard/buttons", pro: false },
+          { name: "Изображения", path: "/dashboard/images", pro: false },
+          { name: "Видео", path: "/dashboard/videos", pro: false },
         ],
       },
       {

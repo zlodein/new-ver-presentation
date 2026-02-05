@@ -8,6 +8,14 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'Landing',
+      component: () => import('../views/Home/Landing.vue'),
+      meta: {
+        title: 'E-Presentation',
+      },
+    },
+    {
+      path: '/dashboard',
       name: 'Ecommerce',
       component: () => import('../views/Ecommerce.vue'),
       meta: {
@@ -15,7 +23,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/presentations',
+      path: '/dashboard/presentations',
       name: 'Presentations',
       component: () => import('../views/Presentations/PresentationsList.vue'),
       meta: {
@@ -23,7 +31,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/presentations/new',
+      path: '/dashboard/presentations/new',
       name: 'PresentationNew',
       component: () => import('../views/Presentations/PresentationEditor.vue'),
       meta: {
@@ -31,7 +39,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/presentations/:id/edit',
+      path: '/dashboard/presentations/:id/edit',
       name: 'PresentationEdit',
       component: () => import('../views/Presentations/PresentationEditor.vue'),
       meta: {
@@ -39,7 +47,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/calendar',
+      path: '/dashboard/calendar',
       name: 'Calendar',
       component: () => import('../views/Others/Calendar.vue'),
       meta: {
@@ -47,7 +55,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/profile',
+      path: '/dashboard/profile',
       name: 'Profile',
       component: () => import('../views/Others/UserProfile.vue'),
       meta: {
@@ -55,7 +63,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/form-elements',
+      path: '/dashboard/form-elements',
       name: 'Form Elements',
       component: () => import('../views/Forms/FormElements.vue'),
       meta: {
@@ -63,7 +71,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/basic-tables',
+      path: '/dashboard/basic-tables',
       name: 'Basic Tables',
       component: () => import('../views/Tables/BasicTables.vue'),
       meta: {
@@ -71,17 +79,17 @@ const router = createRouter({
       },
     },
     {
-      path: '/line-chart',
+      path: '/dashboard/line-chart',
       name: 'Line Chart',
       component: () => import('../views/Chart/LineChart/LineChart.vue'),
     },
     {
-      path: '/bar-chart',
+      path: '/dashboard/bar-chart',
       name: 'Bar Chart',
       component: () => import('../views/Chart/BarChart/BarChart.vue'),
     },
     {
-      path: '/alerts',
+      path: '/dashboard/alerts',
       name: 'Alerts',
       component: () => import('../views/UiElements/Alerts.vue'),
       meta: {
@@ -89,7 +97,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/avatars',
+      path: '/dashboard/avatars',
       name: 'Avatars',
       component: () => import('../views/UiElements/Avatars.vue'),
       meta: {
@@ -97,25 +105,23 @@ const router = createRouter({
       },
     },
     {
-      path: '/badge',
+      path: '/dashboard/badge',
       name: 'Badge',
       component: () => import('../views/UiElements/Badges.vue'),
       meta: {
         title: 'Значки',
       },
     },
-
     {
-      path: '/buttons',
+      path: '/dashboard/buttons',
       name: 'Buttons',
       component: () => import('../views/UiElements/Buttons.vue'),
       meta: {
         title: 'Кнопки',
       },
     },
-
     {
-      path: '/images',
+      path: '/dashboard/images',
       name: 'Images',
       component: () => import('../views/UiElements/Images.vue'),
       meta: {
@@ -123,7 +129,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/videos',
+      path: '/dashboard/videos',
       name: 'Videos',
       component: () => import('../views/UiElements/Videos.vue'),
       meta: {
@@ -131,23 +137,29 @@ const router = createRouter({
       },
     },
     {
-      path: '/blank',
+      path: '/dashboard/blank',
       name: 'Blank',
       component: () => import('../views/Pages/BlankPage.vue'),
       meta: {
         title: 'Пустая страница',
       },
     },
-
     {
-      path: '/error-404',
+      path: '/dashboard/error-404',
       name: '404 Error',
       component: () => import('../views/Errors/FourZeroFour.vue'),
       meta: {
         title: 'Ошибка 404',
       },
     },
-
+    {
+      path: '/administration',
+      name: 'Administration',
+      component: () => import('../views/Administration/AdministrationIndex.vue'),
+      meta: {
+        title: 'Администрирование',
+      },
+    },
     {
       path: '/signin',
       name: 'Signin',
@@ -172,6 +184,14 @@ const router = createRouter({
         title: 'Восстановление пароля',
       },
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('../views/Errors/FourZeroFour.vue'),
+      meta: {
+        title: 'Ошибка 404',
+      },
+    },
   ],
 })
 
@@ -193,6 +213,8 @@ router.onError((err) => {
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
+  document.title = to.meta.title
+    ? `${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
+    : 'TailAdmin - Vue.js Tailwind CSS Dashboard Template'
   next()
 })

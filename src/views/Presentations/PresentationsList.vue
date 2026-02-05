@@ -10,7 +10,7 @@
           {{ loading ? 'Загрузка...' : 'Создавайте и редактируйте презентации' }}
         </p>
         <router-link
-          to="/presentations/new"
+          to="/dashboard/presentations/new"
           class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         >
           <PlusIcon />
@@ -27,7 +27,7 @@
           class="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-brand-800"
         >
           <router-link
-            :to="`/presentations/${presentation.id}/edit`"
+            :to="`/dashboard/presentations/${presentation.id}/edit`"
             class="flex flex-1 flex-col"
           >
             <div
@@ -76,7 +76,7 @@
           Презентаций пока нет
         </p>
         <router-link
-          to="/presentations/new"
+          to="/dashboard/presentations/new"
           class="mt-4 inline-flex items-center gap-2 text-brand-500 hover:text-brand-600"
         >
           <PlusIcon />

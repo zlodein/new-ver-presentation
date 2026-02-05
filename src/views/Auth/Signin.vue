@@ -7,7 +7,7 @@
         <div class="flex flex-col flex-1 w-full lg:w-1/2">
           <div class="w-full max-w-md pt-10 mx-auto">
             <router-link
-              to="/"
+              to="/dashboard"
               class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             >
               <svg
@@ -310,7 +310,7 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     await login(email.value.trim(), password.value)
-    router.push('/')
+    router.push('/dashboard')
   } catch (e) {
     if (e instanceof ApiError) {
       error.value = e.message || 'Ошибка входа'
