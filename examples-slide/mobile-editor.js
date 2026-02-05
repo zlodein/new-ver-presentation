@@ -2346,9 +2346,92 @@ async function generateTextWithAI(slideIndex, type) {
     }
 }
 
+// Подсказки адресов для мобильного редактора
+var mobileAddressSuggestTimer = null;
+var mobileAddressSuggestDropdown = null;
+
+function initMobileAddressSuggestions() {
+    document.addEventListener('input', function(e) {
+        var input = e.target;
+        if (!input.classList.contains('mobile-location-address-input') || !input.id) return;
+        var match = input.id.match(/mobile-location-address-(\d+)/);
+        var slideIndex = match ? parseInt(match[1], 10) : -1;
+        if (slideIndex < 0) return;
+
+        var q = (input.value || '').trim();
+        clearTimeout(mobileAddressSuggestTimer);
+        hideMobileAddressSuggestDropdown();
+
+        if (q.length < 2) return;
+
+        mobileAddressSuggestTimer = setTimeout(function() {
+            fetch('/api.php?action=suggest&q=' + encodeURIComponent(q))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var list = data.suggestions || [];
+                    if (list.length === 0) return;
+                    showMobileAddressSuggestDropdown(input, list, slideIndex);
+                })
+                .catch(function() {});
+        }, 300);
+    }, true);
+
+    document.addEventListener('click', function(e) {
+        if (mobileAddressSuggestDropdown && !mobileAddressSuggestDropdown.contains(e.target)) {
+            var input = document.querySelector('.mobile-location-address-input');
+            if (!input || !input.contains(e.target)) hideMobileAddressSuggestDropdown();
+        }
+    });
+}
+
+function showMobileAddressSuggestDropdown(input, list, slideIndex) {
+    hideMobileAddressSuggestDropdown();
+    var wrap = document.createElement('div');
+    wrap.className = 'mobile-address-suggest-dropdown';
+    wrap.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.2);max-height:200px;overflow-y:auto;left:8px;right:8px;';
+    list.forEach(function(item) {
+        var display = item.display_name || item.address || '';
+        var lat = item.lat != null ? item.lat : null;
+        var lon = item.lon != null ? item.lon : item.lng;
+        var el = document.createElement('div');
+        el.textContent = display;
+        el.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid #eee;';
+        el.addEventListener('click', function() {
+            input.value = display;
+            var latInput = document.getElementById('mobile-location-lat-' + slideIndex);
+            var lngInput = document.getElementById('mobile-location-lng-' + slideIndex);
+            if (latInput && lat != null) latInput.value = lat;
+            if (lngInput && lon != null) lngInput.value = lon;
+            if (slides[slideIndex]) {
+                slides[slideIndex].location_address = display;
+                if (lat != null) slides[slideIndex].location_lat = lat;
+                if (lon != null) slides[slideIndex].location_lng = lon;
+            }
+            hideMobileAddressSuggestDropdown();
+            hasUnsavedChanges = true;
+            triggerAutoSave();
+            if (typeof initMobileYandexMap === 'function') initMobileYandexMap(slideIndex);
+        });
+        wrap.appendChild(el);
+    });
+    document.body.appendChild(wrap);
+    mobileAddressSuggestDropdown = wrap;
+    var rect = input.getBoundingClientRect();
+    wrap.style.top = (rect.bottom + 4) + 'px';
+    wrap.style.width = (document.documentElement.clientWidth - 16) + 'px';
+}
+
+function hideMobileAddressSuggestDropdown() {
+    if (mobileAddressSuggestDropdown && mobileAddressSuggestDropdown.parentNode) {
+        mobileAddressSuggestDropdown.parentNode.removeChild(mobileAddressSuggestDropdown);
+    }
+    mobileAddressSuggestDropdown = null;
+}
+
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', function() {
     if (window.innerWidth <= 767) {
         initMobileEditor();
+        initMobileAddressSuggestions();
     }
 });

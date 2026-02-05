@@ -56,3 +56,6 @@ backups/
 
 # Production config with passwords
 PRODUCTION_CONFIG.md
+
+# API keys (copy from presentation-api-config.example.php)
+includes/presentation-api-config.php

@@ -136,6 +136,109 @@ function initThemeStyle() {
     }
 }
 
+// Подсказки адресов при вводе местоположения
+let addressSuggestTimer = null;
+let addressSuggestDropdown = null;
+
+function initAddressSuggestions() {
+    document.addEventListener('input', function(e) {
+        const input = e.target;
+        if (!input.classList.contains('location-address-input') || !input.id) return;
+        const match = input.id.match(/location-address-(\d+)/);
+        const slideIndex = match ? parseInt(match[1], 10) : -1;
+        if (slideIndex < 0) return;
+
+        const q = (input.value || '').trim();
+        clearTimeout(addressSuggestTimer);
+        hideAddressSuggestDropdown();
+
+        if (q.length < 2) return;
+
+        addressSuggestTimer = setTimeout(function() {
+            fetch('/api.php?action=suggest&q=' + encodeURIComponent(q))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    const list = data.suggestions || [];
+                    if (list.length === 0) return;
+                    showAddressSuggestDropdown(input, list, slideIndex);
+                })
+                .catch(function() {});
+        }, 300);
+    }, true);
+
+    document.addEventListener('focusin', function(e) {
+        if (e.target.classList.contains('location-address-input') && (e.target.value || '').trim().length >= 2) {
+            const q = (e.target.value || '').trim();
+            fetch('/api.php?action=suggest&q=' + encodeURIComponent(q))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    const list = data.suggestions || [];
+                    if (list.length === 0) return;
+                    const match = e.target.id.match(/location-address-(\d+)/);
+                    const slideIndex = match ? parseInt(match[1], 10) : -1;
+                    if (slideIndex >= 0) showAddressSuggestDropdown(e.target, list, slideIndex);
+                })
+                .catch(function() {});
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (addressSuggestDropdown && !addressSuggestDropdown.contains(e.target)) {
+            const input = document.querySelector('.location-address-input');
+            if (!input || !input.contains(e.target)) hideAddressSuggestDropdown();
+        }
+    });
+}
+
+function showAddressSuggestDropdown(input, list, slideIndex) {
+    hideAddressSuggestDropdown();
+    var wrap = document.createElement('div');
+    wrap.className = 'address-suggest-dropdown';
+    wrap.style.cssText = 'position:absolute;z-index:9999;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-height:240px;overflow-y:auto;min-width:200px;';
+    list.forEach(function(item) {
+        var display = item.display_name || item.address || '';
+        var lat = item.lat != null ? item.lat : null;
+        var lon = item.lon != null ? item.lon : item.lng;
+        var el = document.createElement('div');
+        el.className = 'address-suggest-item';
+        el.textContent = display;
+        el.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #eee;';
+        el.addEventListener('mouseenter', function() { this.style.background = '#f5f5f5'; });
+        el.addEventListener('mouseleave', function() { this.style.background = ''; });
+        el.addEventListener('click', function() {
+            input.value = display;
+            var latInput = document.getElementById('location-lat-' + slideIndex);
+            var lngInput = document.getElementById('location-lng-' + slideIndex);
+            if (latInput && lat != null) latInput.value = lat;
+            if (lngInput && lon != null) lngInput.value = lon;
+            if (slides[slideIndex]) {
+                slides[slideIndex].location_address = display;
+                if (lat != null) slides[slideIndex].location_lat = lat;
+                if (lon != null) slides[slideIndex].location_lng = lon;
+            }
+            hideAddressSuggestDropdown();
+            hasUnsavedChanges = true;
+            triggerAutoSave();
+            var ev = new CustomEvent('yandexMapLocationUpdate', { detail: { lat: lat, lng: lon, address: display } });
+            document.dispatchEvent(ev);
+        });
+        wrap.appendChild(el);
+    });
+    document.body.appendChild(wrap);
+    addressSuggestDropdown = wrap;
+    var rect = input.getBoundingClientRect();
+    wrap.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+    wrap.style.left = rect.left + 'px';
+    wrap.style.width = Math.max(rect.width, 280) + 'px';
+}
+
+function hideAddressSuggestDropdown() {
+    if (addressSuggestDropdown && addressSuggestDropdown.parentNode) {
+        addressSuggestDropdown.parentNode.removeChild(addressSuggestDropdown);
+    }
+    addressSuggestDropdown = null;
+}
+
 // Основная инициализация
 document.addEventListener('DOMContentLoaded', function() {
     initSlideGenerators();
@@ -146,5 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initActivityTracking();
     initPasteHandlers();
     initPriceFields();
+    initAddressSuggestions();
     loadCurrencyRates();
 });

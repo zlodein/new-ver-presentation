@@ -1,4 +1,8 @@
 <?php
+// Конфиг API (ключи GigaChat, Yandex) — опционально, можно задать через env
+if (file_exists(__DIR__ . '/../includes/presentation-api-config.php')) {
+    require_once __DIR__ . '/../includes/presentation-api-config.php';
+}
 // Подключаем хелпер для работы с Яндекс.Картами
 require_once __DIR__ . '/../includes/yandex-maps-helper.php';
 
@@ -595,6 +599,67 @@ function handlePresentationRequest($action) {
             } else {
                 jsonResponse(['error' => 'Ошибка обновления презентации'], 500);
             }
+            break;
+
+        case 'generate_text':
+            requireAuth();
+
+            if ($method !== 'POST') {
+                jsonResponse(['error' => 'Метод не разрешён'], 405);
+            }
+
+            $csrfToken = $_POST['csrf_token'] ?? '';
+            if (!verifyCsrfToken($csrfToken)) {
+                jsonResponse(['error' => 'Недействительный токен', 'success' => false], 403);
+            }
+
+            $type = trim($_POST['type'] ?? 'description');
+            if (!in_array($type, ['description', 'infrastructure'], true)) {
+                $type = 'description';
+            }
+            $prompt = trim($_POST['prompt'] ?? '');
+
+            if (!file_exists(__DIR__ . '/../includes/gigachat.php')) {
+                jsonResponse(['success' => false, 'error' => 'Сервис генерации текста не настроен']);
+            }
+            require_once __DIR__ . '/../includes/gigachat.php';
+
+            $result = gigachat_generate_text($prompt, $type);
+
+            if ($result['success'] && $result['text'] !== null) {
+                jsonResponse(['success' => true, 'text' => $result['text']]);
+            }
+            jsonResponse([
+                'success' => false,
+                'error' => $result['error'] ?? 'Не удалось сгенерировать текст',
+            ]);
+            break;
+
+        case 'suggest':
+            $q = trim($_GET['q'] ?? $_GET['text'] ?? '');
+            if ($q === '' || mb_strlen($q) < 2) {
+                jsonResponse(['suggestions' => []]);
+            }
+
+            require_once __DIR__ . '/../includes/yandex-maps-helper.php';
+            $yandexMaps = getYandexMapsHelper();
+            $suggestions = $yandexMaps->suggestAddresses($q, 10);
+
+            jsonResponse(['suggestions' => $suggestions]);
+            break;
+
+        case 'geocode':
+            $address = trim($_GET['address'] ?? $_GET['q'] ?? '');
+            if ($address === '') {
+                jsonResponse(['success' => false, 'error' => 'Укажите адрес']);
+            }
+            require_once __DIR__ . '/../includes/yandex-maps-helper.php';
+            $yandexMaps = getYandexMapsHelper();
+            $point = $yandexMaps->geocode($address);
+            if ($point) {
+                jsonResponse(['success' => true, 'lat' => $point['lat'], 'lng' => $point['lon']]);
+            }
+            jsonResponse(['success' => false, 'error' => 'Адрес не найден']);
             break;
 
 case 'find_nearest_metro':
