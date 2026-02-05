@@ -78,15 +78,24 @@ npm run deploy:migrate
 systemctl restart presentation-backend
 ```
 
-### 4. Запуск сервисов
+### 4. Запуск сервисов и автозапуск при перезагрузке
+
+Backend и Nginx (фронт отдаётся как статика через Nginx) настроены на:
+
+- **Постоянную работу**: при падении backend перезапускается (`Restart=always` в systemd).
+- **Автозапуск после перезагрузки сервера**: при настройке через `setup-server.sh` и при каждом деплое выполняется `systemctl enable presentation-backend` и `systemctl enable nginx`.
 
 ```bash
-# Запуск backend сервиса
+# Запуск backend (после первого деплоя)
 systemctl start presentation-backend
+
+# Включение автозапуска при загрузке (уже делается скриптами)
 systemctl enable presentation-backend
+systemctl enable nginx
 
 # Проверка статуса
 systemctl status presentation-backend
+systemctl status nginx
 
 # Просмотр логов
 journalctl -u presentation-backend -f

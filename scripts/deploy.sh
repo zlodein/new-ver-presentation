@@ -95,32 +95,28 @@ fi
 
 # Установка зависимостей и запуск на сервере
 info "Установка зависимостей и запуск на сервере..."
-ssh $SERVER_USER@$SERVER_IP << 'ENDSSH'
-set -e
-cd /var/www/presentation/server
+BACKEND_DIR_REMOTE="/var/www/e_presentati_usr/data/www/e-presentation.ru/server"
+ssh $SERVER_USER@$SERVER_IP "set -e; cd $BACKEND_DIR_REMOTE;
 
 # Установка зависимостей
 npm ci --production
 
 # Запуск миграций базы данных
-if [ -f ".env" ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-    npm run deploy:migrate || echo "Миграции пропущены или уже выполнены"
+if [ -f .env ]; then
+    export \$(grep -v '^#' .env | xargs)
+    npm run deploy:migrate || echo 'Миграции пропущены или уже выполнены'
 fi
 
-# Перезапуск сервиса (если используется systemd)
-if systemctl is-active --quiet presentation-backend; then
-    echo "Перезапуск сервиса presentation-backend..."
-    systemctl restart presentation-backend
-else
-    echo "Сервис presentation-backend не найден. Запустите вручную или настройте systemd."
-fi
+# Включение автозапуска при загрузке сервера
+systemctl enable presentation-backend
+systemctl enable nginx
 
-# Перезапуск Nginx
-if systemctl is-active --quiet nginx; then
-    systemctl reload nginx
-fi
-ENDSSH
+# Запуск или перезапуск backend
+systemctl restart presentation-backend
+
+# Перезагрузка Nginx (frontend)
+systemctl reload nginx
+"
 
 info "✅ Деплой завершен успешно!"
 info "Frontend: $FRONTEND_DIR"

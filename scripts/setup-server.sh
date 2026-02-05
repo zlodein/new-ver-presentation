@@ -72,6 +72,8 @@ if ! command -v nginx &> /dev/null; then
 else
     info "Nginx уже установлен"
 fi
+systemctl enable nginx
+info "Nginx включён в автозапуск при загрузке сервера"
 
 # Установка PM2 для управления процессами Node.js
 info "Установка PM2..."
@@ -123,7 +125,8 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-info "Systemd сервис создан (не запущен, будет запущен после деплоя)"
+systemctl enable presentation-backend
+info "Systemd сервис создан и включён автозапуск при загрузке сервера (запуск — после деплоя)"
 
 # Настройка Nginx
 info "Создание конфигурации Nginx..."
