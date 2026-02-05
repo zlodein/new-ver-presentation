@@ -1,39 +1,5 @@
 <template>
   <AdminLayout>
-    <!-- Форма названия и описания при создании новой презентации -->
-    <div
-      v-if="isNew"
-      class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900/50"
-    >
-      <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-        Новая презентация
-      </h3>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Название объекта <span class="text-red-500">*</span>
-          </label>
-          <input
-            v-model="objectName"
-            type="text"
-            placeholder="Введите название"
-            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-          />
-        </div>
-        <div class="sm:col-span-2">
-          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Описание (по желанию)
-          </label>
-          <textarea
-            v-model="objectDescription"
-            rows="2"
-            placeholder="Краткое описание объекта"
-            class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-          />
-        </div>
-      </div>
-    </div>
-
     <div class="flex flex-col gap-4 lg:flex-row lg:gap-6">
       <!-- Панель слайдов (с названиями, удаление/дублирование/перетаскивание) -->
       <aside class="flex w-full shrink-0 flex-col gap-4 lg:w-56 xl:w-64">
@@ -379,17 +345,11 @@
                         </li>
                       </ul>
                     </div>
-                    <div class="relative min-h-[140px] w-full flex-1 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
-                      <img
-                        v-if="locationMapUrl(slide)"
-                        :src="locationMapUrl(slide)"
-                        alt="Карта"
-                        class="h-full w-full object-cover"
-                      />
-                      <div v-else class="flex h-full w-full items-center justify-center text-gray-500 text-sm">
-                        Укажите адрес — карта появится здесь
-                      </div>
-                    </div>
+                    <LocationMap
+                      :key="slide.id"
+                      :lat="Number(slide.data?.lat)"
+                      :lng="Number(slide.data?.lng)"
+                    />
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                       <button
                         type="button"
@@ -685,11 +645,10 @@
             </button>
             <button
               type="button"
-              :disabled="isNew && !objectName.trim()"
-              class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+              class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
               @click="saveToStorage"
             >
-              {{ isNew ? 'Создать и сохранить' : 'Сохранить' }}
+              Сохранить
             </button>
           </div>
         </div>
@@ -706,6 +665,7 @@ import type { Swiper as SwiperType } from 'swiper'
 import draggable from 'vuedraggable'
 import 'swiper/css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import LocationMap from '@/components/presentations/LocationMap.vue'
 import { api, hasApi, getToken } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
 
@@ -797,10 +757,6 @@ const visibleSlideNumber = computed(() => {
   const idx = visibleSlides.value.findIndex((s) => s.id === current.id)
   return idx >= 0 ? idx + 1 : 0
 })
-
-// Название и описание при создании новой презентации (синхронизация с обложкой)
-const objectName = ref('')
-const objectDescription = ref('')
 
 // Цена на обложке: форматирование и валюты
 const CURRENCIES = [
@@ -1039,18 +995,6 @@ async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infra
     generateTextLoading.value = null
   }
 }
-
-watch(
-  [objectName, objectDescription],
-  () => {
-    const cover = slides.value[0]
-    if (cover?.type === 'cover' && cover.data) {
-      cover.data.title = objectName.value
-      cover.data.subtitle = objectDescription.value
-    }
-  },
-  { immediate: false }
-)
 
 const swiperOptions = {
   spaceBetween: 0,
@@ -1336,12 +1280,10 @@ function gridImages(slide: SlideItem): string[] {
 }
 
 const presentationId = computed(() => route.params.id as string)
-const isNew = computed(() => route.path === '/dashboard/presentations/new')
 
 onMounted(async () => {
-  if (isNew.value) {
-    objectName.value = String(slides.value[0]?.data?.title ?? '')
-    objectDescription.value = String(slides.value[0]?.data?.subtitle ?? '')
+  if (route.path === '/dashboard/presentations/new') {
+    router.replace('/dashboard/presentations')
     return
   }
   const id = presentationId.value
@@ -1355,10 +1297,7 @@ onMounted(async () => {
           hidden: s.hidden ?? false,
         }))
       }
-      objectName.value = data.title || String(slides.value[0]?.data?.title ?? '')
-      objectDescription.value = String(slides.value[0]?.data?.subtitle ?? '')
     } catch {
-      // fallback to localStorage
       loadFromLocalStorage()
     }
   } else {
@@ -1384,35 +1323,20 @@ function loadFromLocalStorage() {
   }
 }
 
-const canSaveNew = computed(() => {
-  return !isNew.value || objectName.value.trim().length > 0
-})
-
 async function saveToStorage() {
-  if (!canSaveNew.value && isNew.value) return
   const cover = slides.value[0]
-  if (cover?.data) {
-    cover.data.title = objectName.value.trim() || 'Без названия'
-    cover.data.subtitle = objectDescription.value
-  }
-  const title = objectName.value.trim() || (slides.value[0]?.data?.title ?? 'Без названия')
+  const title = (cover?.type === 'cover' && cover.data?.title)
+    ? String(cover.data.title).trim() || 'Без названия'
+    : 'Без названия'
   const content = { slides: slides.value }
 
   if (hasApi() && getToken()) {
     try {
-      if (isNew.value) {
-        const created = await api.post<PresentationFull>('/api/presentations', {
-          title,
-          content,
-        })
-        router.replace(`/dashboard/presentations/${created.id}/edit`)
-      } else {
-        await api.put(`/api/presentations/${presentationId.value}`, {
-          title,
-          content,
-        })
-        router.push('/dashboard/presentations')
-      }
+      await api.put(`/api/presentations/${presentationId.value}`, {
+        title,
+        content,
+      })
+      router.push('/dashboard/presentations')
     } catch {
       saveToLocalStorage()
     }
@@ -1422,21 +1346,9 @@ async function saveToStorage() {
 }
 
 function saveToLocalStorage() {
-  if (isNew.value) {
-    const id = `pres-${Date.now()}`
-    const listRaw = localStorage.getItem('presentations-list')
-    const list = listRaw ? JSON.parse(listRaw) : []
-    const title = objectName.value.trim() || (slides.value[0]?.data?.title ?? 'Без названия')
-    list.push({
-      id,
-      title: String(title),
-      updatedAt: new Date().toISOString(),
-    })
-    localStorage.setItem('presentations-list', JSON.stringify(list))
-    localStorage.setItem(`presentation-${id}`, JSON.stringify({ slides: slides.value }))
-    router.replace(`/dashboard/presentations/${id}/edit`)
-    return
-  }
+  const title = (slides.value[0]?.type === 'cover' && slides.value[0]?.data?.title)
+    ? String(slides.value[0].data.title).trim() || 'Без названия'
+    : 'Без названия'
   localStorage.setItem(
     `presentation-${presentationId.value}`,
     JSON.stringify({ slides: slides.value })
@@ -1446,7 +1358,7 @@ function saveToLocalStorage() {
     const list = JSON.parse(listRaw)
     const item = list.find((p: { id: string }) => p.id === presentationId.value)
     if (item) {
-      item.title = String(slides.value[0]?.data?.title ?? item.title)
+      item.title = title
       item.updatedAt = new Date().toISOString()
       localStorage.setItem('presentations-list', JSON.stringify(list))
     }
