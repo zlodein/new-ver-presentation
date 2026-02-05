@@ -27,17 +27,30 @@ export async function buildApp() {
   })
 
   await app.register(fjwt, { secret })
-  await app.register(multipart, {
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  })
+  
+  try {
+    await app.register(multipart, {
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    })
+  } catch (err) {
+    console.error('[app] Ошибка регистрации multipart:', err)
+    throw err
+  }
 
-  // Статические файлы для аватаров
-  await app.register(staticFiles, {
-    root: path.join(__dirname, '../uploads'),
-    prefix: '/uploads/',
-  })
+  // Статические файлы для аватаров (опционально, не блокируем запуск)
+  try {
+    const uploadsPath = path.join(__dirname, '../uploads')
+    await app.register(staticFiles, {
+      root: uploadsPath,
+      prefix: '/uploads/',
+    })
+    console.log('[app] Статические файлы зарегистрированы:', uploadsPath)
+  } catch (err) {
+    console.warn('[app] Предупреждение: не удалось зарегистрировать статические файлы (папка будет создана при первой загрузке):', err instanceof Error ? err.message : err)
+    // Не блокируем запуск сервера, если папка uploads не существует
+  }
 
   app.decorate('authenticate', async function (req: { jwtVerify: () => Promise<unknown> }, reply: { status: (code: number) => { send: (payload: unknown) => void } }) {
     try {

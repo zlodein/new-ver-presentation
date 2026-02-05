@@ -21,8 +21,10 @@ async function ensureAvatarsDir() {
   }
 }
 
-// Инициализировать папку при загрузке модуля
-ensureAvatarsDir().catch(console.error)
+// Инициализировать папку при загрузке модуля (не блокируем запуск сервера)
+ensureAvatarsDir().catch((err) => {
+  console.error('[upload] Ошибка создания папки для аватаров:', err)
+})
 
 export async function uploadRoutes(app: FastifyInstance) {
   // Загрузка аватара
