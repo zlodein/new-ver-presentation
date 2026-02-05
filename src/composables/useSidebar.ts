@@ -20,8 +20,9 @@
 //   }
 // }
 
-import { ref, computed, onMounted, onUnmounted, provide, inject } from 'vue'
-import type { Ref } from 'vue' //
+import { ref, computed, watch, onMounted, onUnmounted, provide, inject } from 'vue'
+import { useRouter } from 'vue-router'
+import type { Ref } from 'vue'
 
 interface SidebarContextType {
   isExpanded: Ref<boolean>
@@ -39,12 +40,21 @@ interface SidebarContextType {
 const SidebarSymbol = Symbol()
 
 export function useSidebarProvider() {
+  const router = useRouter()
   const isExpanded = ref(true)
   const isMobileOpen = ref(false)
   const isMobile = ref(false)
   const isHovered = ref(false)
   const activeItem = ref<string | null>(null)
   const openSubmenu = ref<string | null>(null)
+
+  watch(
+    () => router.currentRoute.value.path,
+    () => {
+      isMobileOpen.value = false
+      openSubmenu.value = null
+    }
+  )
 
   const handleResize = () => {
     const mobile = window.innerWidth < 768
