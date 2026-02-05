@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import fjwt from '@fastify/jwt'
 import { authRoutes } from './routes/auth.js'
 import { presentationRoutes } from './routes/presentations.js'
+import { editorApiRoutes } from './routes/editor-api.js'
 
 export async function buildApp() {
   const app = Fastify({ logger: true })
@@ -29,6 +30,7 @@ export async function buildApp() {
 
   await app.register(authRoutes, { prefix: '/' })
   await app.register(presentationRoutes, { prefix: '/' })
+  await app.register(editorApiRoutes, { prefix: '/' })
 
   return app
 }

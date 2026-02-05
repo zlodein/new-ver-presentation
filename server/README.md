@@ -22,6 +22,9 @@ npm install
 - `PORT` — порт сервера (по умолчанию 3001)
 - **`DATABASE_URL`** — не обязателен. Если **не задан** или пустой, данные хранятся в файле **`server/data/store.json`** (регистрация, вход и презентации работают без установки PostgreSQL). Если задан — используется PostgreSQL, например:  
   `postgresql://user:password@localhost:5432/presentation_db`
+- **`GIGACHAT_AUTH_KEY`** — ключ авторизации GigaChat (Base64, scope GIGACHAT_API_PERS) для генерации текста в редакторе презентаций. Без него кнопка «Сгенерировать текст (GigaChat)» не будет работать.
+- **`YANDEX_GEOCODER_API_KEY`** — ключ Яндекс.Карт (JavaScript API и HTTP Геокодер) для подсказок адресов и поиска ближайшего метро. Без него подсказки при вводе адреса и кнопка «Найти ближайшее метро» не будут работать.
+- **`PORT`** — порт сервера. Укажите тот же порт в корневом `.env` в переменной **`VITE_API_URL`** (например `http://localhost:3002`), чтобы фронтенд обращался к этому API.
 
 ## Создание базы данных (только при использовании PostgreSQL)
 
@@ -78,6 +81,15 @@ npm install
 - `POST /api/presentations` — создать (body: title?, coverImage?, content?)
 - `PUT /api/presentations/:id` — обновить
 - `DELETE /api/presentations/:id` — удалить
+
+### Редактор презентаций (подсказки, GigaChat, метро)
+
+- `GET /suggest?q=...` — подсказки адресов при вводе (Яндекс Suggest). Ответ: `{ suggestions: [{ display_name, address, lat?, lon? }] }`.
+- `GET /geocode?address=...` — координаты по адресу. Ответ: `{ success, lat, lng }`.
+- `POST /find_nearest_metro` — ближайшие станции метро (body: `{ lat, lng }`). Ответ: `{ success, stations: [{ name, distance_text, walk_time_text, drive_time_text }] }`.
+- `POST /generate_text` — генерация текста через GigaChat (body: `{ type: "description" | "infrastructure", prompt, object_title? }`). Ответ: `{ text }` или `{ error }`.
+
+Для работы этих маршрутов в `server/.env` должны быть заданы **GIGACHAT_AUTH_KEY** и **YANDEX_GEOCODER_API_KEY** (см. `server/.env.example`).
 
 ## Производительность
 
