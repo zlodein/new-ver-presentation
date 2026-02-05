@@ -880,10 +880,11 @@ function coverConvertedPrices(slide: SlideItem): string[] {
   })
 }
 
-// Местоположение: подсказки адреса, карта, метро
-const API_BASE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
-  ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '')
-  : ''
+// Местоположение и генерация: базовый URL API (в проде — относительный /api, в dev — VITE_API_URL)
+const EDITOR_API_BASE =
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
+    ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '')
+    : '/api'
 
 const addressSuggestionsBySlideId = ref<Record<string, Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>>>({})
 const addressSuggestionsVisibleBySlideId = ref<Record<string, boolean>>({})
@@ -896,11 +897,10 @@ function onLocationAddressInput(slide: SlideItem, value: string) {
     addressSuggestionsBySlideId.value[slide.id] = []
     return
   }
-  if (!API_BASE) return
   clearTimeout(addressSuggestionsFetchTimer ?? 0)
   const id = slide.id
   addressSuggestionsFetchTimer = setTimeout(() => {
-    fetch(`${API_BASE}/suggest?q=${encodeURIComponent(value)}`)
+    fetch(`${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`)
       .then((r) => r.json())
       .then((data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }> }) => {
         addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: data.suggestions ?? [] }
@@ -958,13 +958,9 @@ async function findNearestMetro(slide: SlideItem) {
     alert('Сначала укажите адрес и выберите подсказку, чтобы на карте отобразилась точка.')
     return
   }
-  if (!API_BASE) {
-    alert('Настройте VITE_API_URL для работы поиска метро.')
-    return
-  }
   metroLoadingBySlideId.value[slide.id] = true
   try {
-    const res = await fetch(`${API_BASE}/find_nearest_metro`, {
+    const res = await fetch(`${EDITOR_API_BASE}/find_nearest_metro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lat, lng }),
@@ -984,10 +980,6 @@ async function findNearestMetro(slide: SlideItem) {
 const generateTextLoading = ref<string | null>(null)
 
 async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infrastructure') {
-  if (!API_BASE) {
-    alert('Настройте VITE_API_URL в .env для работы генерации текста (GigaChat).')
-    return
-  }
   const cover = slides.value.find((s) => s.type === 'cover')
   const objectTitle = cover?.data?.title ? String(cover.data.title) : ''
   const currentText = type === 'description' ? String(slide.data?.text ?? '') : String(slide.data?.content ?? '')
@@ -995,7 +987,7 @@ async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infra
 
   generateTextLoading.value = slide.id
   try {
-    const res = await fetch(`${API_BASE}/generate_text`, {
+    const res = await fetch(`${EDITOR_API_BASE}/generate_text`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, prompt, object_title: objectTitle }),

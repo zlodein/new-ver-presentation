@@ -35,10 +35,12 @@ chown -R e_presentati_usr:e_presentati_usr /var/www/e_presentati_usr/data/www/e-
 chmod 600 /var/www/e_presentati_usr/data/www/e-presentation.ru/server/.env
 ```
 
-### 4. Проверить наличие dist директории
+### 4. Проверить наличие index.js (собранный backend)
+
+На сервере после деплоя файлы лежат в корне `server/`, а не в `server/dist/`:
 
 ```bash
-ls -la /var/www/e_presentati_usr/data/www/e-presentation.ru/server/dist/
+ls -la /var/www/e_presentati_usr/data/www/e-presentation.ru/server/index.js
 ```
 
 ### 5. Попробовать запустить вручную
@@ -172,6 +174,33 @@ systemctl restart presentation-backend
 systemctl status presentation-backend
 ```
 
+## Сервис не запускается после перезагрузки сервера
+
+1. **Убедиться, что сервис в автозагрузке:**
+   ```bash
+   systemctl is-enabled presentation-backend
+   # Должно быть: enabled
+   sudo systemctl enable presentation-backend
+   ```
+
+2. **Проверить, что unit запускает правильный файл** (не `dist/index.js`, а `index.js`):
+   ```bash
+   grep ExecStart /etc/systemd/system/presentation-backend.service
+   # Должно быть: ExecStart=/usr/bin/node index.js
+   ```
+
+3. **Проверить после перезагрузки:**
+   ```bash
+   journalctl -u presentation-backend -b --no-pager
+   ```
+   Если сервис падает при старте — см. раздел «Диагностика» выше.
+
+4. **Проверить целевой target:**
+   ```bash
+   systemctl get-default
+   # Обычно: multi-user.target
+   ```
+
 ## Проверка работы после исправления
 
 ```bash
@@ -184,6 +213,23 @@ netstat -tulpn | grep 3001
 # Проверить логи
 journalctl -u presentation-backend -n 20
 
-# Проверить работу API
-curl http://localhost:3001/api/health
+# Проверить работу API (404 на / — норма, бэкенд отвечает)
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/
 ```
+
+## Nginx: чтобы работали /api/suggest, генерация текста, метро
+
+Запросы с фронта идут на `/api/suggest`, `/api/generate_text` и т.д. Бэкенд слушает маршруты без префикса `/api` (`/suggest`, `/generate_text`). В Nginx нужно **убирать** префикс при проксировании:
+
+```nginx
+location /api {
+    proxy_pass http://localhost:3001/;   # слэш в конце — убирает /api
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Если у вас было `proxy_pass http://localhost:3001;` (без слэша), замените на `http://localhost:3001/;` и выполните `nginx -t && systemctl reload nginx`.

@@ -118,9 +118,9 @@ Environment=NODE_ENV=production
 Environment=PORT=3001
 ExecStart=/usr/bin/node index.js
 Restart=always
-RestartSec=10
-StartLimitIntervalSec=60
-StartLimitBurst=5
+RestartSec=5
+StartLimitIntervalSec=120
+StartLimitBurst=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=presentation-backend
@@ -159,9 +159,9 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # API проксирование на backend
+    # API проксирование на backend (trailing slash — убирает префикс /api, backend получает /suggest и т.д.)
     location /api {
-        proxy_pass http://localhost:3001;
+        proxy_pass http://localhost:3001/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
