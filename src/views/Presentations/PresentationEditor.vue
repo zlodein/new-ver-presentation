@@ -902,7 +902,10 @@ function onLocationAddressInput(slide: SlideItem, value: string) {
   addressSuggestionsFetchTimer = setTimeout(() => {
     fetch(`${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`)
       .then((r) => r.json())
-      .then((data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }> }) => {
+      .then((data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>; error?: string }) => {
+        if (data.error) {
+          alert(data.error)
+        }
         addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: data.suggestions ?? [] }
       })
       .catch(() => {
@@ -966,6 +969,10 @@ async function findNearestMetro(slide: SlideItem) {
       body: JSON.stringify({ lat, lng }),
     })
     const data = await res.json()
+    if (data.error) {
+      alert(data.error)
+      return
+    }
     if (data.stations && Array.isArray(data.stations)) {
       slide.data.metro_stations = data.stations
     }

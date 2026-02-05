@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 const GIGACHAT_AUTH_KEY = process.env.GIGACHAT_AUTH_KEY ?? ''
 const YANDEX_GEOCODER_API_KEY = process.env.YANDEX_GEOCODER_API_KEY ?? ''
 
-async function gigachatGetToken(): Promise<string | null> {
+async function gigachatGetToken(log?: { error: (e: unknown) => void }): Promise<string | null> {
   if (!GIGACHAT_AUTH_KEY) return null
   const rqUid = crypto.randomUUID()
   const res = await fetch('https://ngw.devices.sberbank.ru:9443/api/v2/oauth', {
@@ -16,17 +16,27 @@ async function gigachatGetToken(): Promise<string | null> {
     },
     body: 'scope=GIGACHAT_API_PERS',
   })
-  if (!res.ok) return null
+  if (!res.ok) {
+    const body = await res.text()
+    log?.error(new Error(`GigaChat OAuth ${res.status}: ${body}`))
+    return null
+  }
   const data = (await res.json()) as { access_token?: string }
   return data.access_token ?? null
 }
 
 async function gigachatGenerateText(
   prompt: string,
-  type: 'description' | 'infrastructure'
+  type: 'description' | 'infrastructure',
+  log?: { error: (e: unknown) => void }
 ): Promise<{ success: boolean; text?: string; error?: string }> {
-  const token = await gigachatGetToken()
-  if (!token) return { success: false, error: 'Не удалось получить токен GigaChat' }
+  if (!GIGACHAT_AUTH_KEY) {
+    return { success: false, error: 'GigaChat не настроен. Задайте GIGACHAT_AUTH_KEY в .env на сервере.' }
+  }
+  const token = await gigachatGetToken(log)
+  if (!token) {
+    return { success: false, error: 'Не удалось получить токен GigaChat. Проверьте GIGACHAT_AUTH_KEY и доступ к ngw.devices.sberbank.ru.' }
+  }
 
   const systemPrompt =
     type === 'description'
@@ -204,6 +214,9 @@ async function yandexFindNearestMetro(
 
 export async function editorApiRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { q?: string } }>('/suggest', async (req: FastifyRequest<{ Querystring: { q?: string } }>, reply: FastifyReply) => {
+    if (!YANDEX_GEOCODER_API_KEY) {
+      return reply.send({ suggestions: [], error: 'Подсказки адресов не настроены. Задайте YANDEX_GEOCODER_API_KEY в .env на сервере.' })
+    }
     const q = (req.query.q ?? '').trim()
     if (q.length < 2) {
       return reply.send({ suggestions: [] })
@@ -218,6 +231,9 @@ export async function editorApiRoutes(app: FastifyInstance) {
   })
 
   app.get<{ Querystring: { address?: string; q?: string } }>('/geocode', async (req: FastifyRequest<{ Querystring: { address?: string; q?: string } }>, reply: FastifyReply) => {
+    if (!YANDEX_GEOCODER_API_KEY) {
+      return reply.status(503).send({ success: false, error: 'Геокодер не настроен. Задайте YANDEX_GEOCODER_API_KEY в .env на сервере.' })
+    }
     const address = (req.query.address ?? req.query.q ?? '').trim()
     if (!address) {
       return reply.status(400).send({ success: false, error: 'Укажите адрес' })
@@ -233,6 +249,9 @@ export async function editorApiRoutes(app: FastifyInstance) {
   })
 
   app.post<{ Body: { lat?: number; lng?: number } }>('/find_nearest_metro', async (req: FastifyRequest<{ Body: { lat?: number; lng?: number } }>, reply: FastifyReply) => {
+    if (!YANDEX_GEOCODER_API_KEY) {
+      return reply.status(503).send({ success: false, stations: [], error: 'Поиск метро не настроен. Задайте YANDEX_GEOCODER_API_KEY в .env на сервере.' })
+    }
     const lat = Number(req.body?.lat)
     const lng = Number(req.body?.lng)
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -251,7 +270,7 @@ export async function editorApiRoutes(app: FastifyInstance) {
     const type = (req.body?.type === 'infrastructure' ? 'infrastructure' : 'description') as 'description' | 'infrastructure'
     const prompt = String(req.body?.prompt ?? req.body?.object_title ?? '').trim() || 'объект недвижимости'
     try {
-      const result = await gigachatGenerateText(prompt, type)
+      const result = await gigachatGenerateText(prompt, type, app.log)
       if (result.success && result.text) {
         return reply.send({ text: result.text })
       }
