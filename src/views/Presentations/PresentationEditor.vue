@@ -329,7 +329,8 @@
                         autocomplete="off"
                         @input="(slide.data as Record<string, string>).address = ($event.target as HTMLInputElement).value; onLocationAddressInput(slide, ($event.target as HTMLInputElement).value)"
                         @focus="showAddressSuggestions(slide)"
-                        @blur="hideAddressSuggestionsDelay(slide)"
+                        @blur="onLocationAddressBlur(slide)"
+                        @keydown.enter.prevent="geocodeAddress(slide)"
                       />
                       <ul
                         v-if="addressSuggestionsFor(slide).length > 0"
@@ -894,6 +895,36 @@ function hideAddressSuggestionsDelay(slide: SlideItem) {
   addressSuggestionsBlurTimer = setTimeout(() => {
     addressSuggestionsVisibleBySlideId.value[slide.id] = false
   }, 200)
+}
+
+const geocodeLoadingBySlideId = ref<Record<string, boolean>>({})
+
+async function geocodeAddress(slide: SlideItem) {
+  const address = String(slide.data?.address ?? '').trim()
+  if (!address) return
+  geocodeLoadingBySlideId.value[slide.id] = true
+  try {
+    const res = await fetch(`${EDITOR_API_BASE}/geocode?q=${encodeURIComponent(address)}`)
+    const data = (await res.json()) as { success?: boolean; lat?: number; lng?: number; error?: string }
+    if (data.success && typeof data.lat === 'number' && typeof data.lng === 'number') {
+      slide.data.lat = data.lat
+      slide.data.lng = data.lng
+    } else if (data.error && res.status !== 404) {
+      console.warn('Геокодирование:', data.error)
+    }
+  } catch {
+    // ignore
+  } finally {
+    geocodeLoadingBySlideId.value[slide.id] = false
+  }
+}
+
+function onLocationAddressBlur(slide: SlideItem) {
+  hideAddressSuggestionsDelay(slide)
+  setTimeout(() => {
+    const address = String(slide.data?.address ?? '').trim()
+    if (address.length >= 2) geocodeAddress(slide)
+  }, 350)
 }
 
 function selectAddressSuggestion(
