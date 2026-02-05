@@ -4,8 +4,9 @@
       class="flex items-center text-gray-700 dark:text-gray-400"
       @click.prevent="toggleDropdown"
     >
-      <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img :src="userImage" alt="User" />
+      <span class="mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-brand-500 text-white font-semibold text-sm">
+        <img v-if="userImage" :src="userImage" alt="User" class="w-full h-full object-cover" />
+        <span v-else>{{ userInitials }}</span>
       </span>
 
       <span class="block mr-1 font-medium text-theme-sm">{{ shortName || 'Пользователь' }}</span>
@@ -60,7 +61,7 @@
 <script setup>
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
 import { RouterLink, useRouter } from 'vue-router'
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
@@ -68,13 +69,6 @@ const { currentUser, fetchUser, logout } = useAuth()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
-// Отладка: следить за изменениями currentUser
-watch(currentUser, (newUser) => {
-  console.log('UserMenu - currentUser изменился:', newUser)
-  console.log('UserMenu - name:', newUser?.name)
-  console.log('UserMenu - last_name:', newUser?.last_name)
-  console.log('UserMenu - user_img:', newUser?.user_img)
-}, { immediate: true, deep: true })
 
 const menuItems = [
   { href: '/dashboard/profile', icon: UserCircleIcon, text: 'Редактировать профиль' },
@@ -91,19 +85,38 @@ const displayName = computed(() => {
 
 const shortName = computed(() => {
   if (!currentUser.value) return ''
-  // Используем name (имя), а не last_name (фамилия)
+  // Используем name (имя), если нет - используем last_name (может быть имя если перепутано)
   const name = currentUser.value.name || currentUser.value.firstName || ''
+  const last_name = currentUser.value.last_name || currentUser.value.lastName || ''
+  // Если name пустое, но есть last_name, используем его (на случай если перепутано в базе)
   if (name) return name
+  if (last_name) return last_name
   // Если имени нет, используем часть email
   return currentUser.value.email?.split('@')[0] || 'Пользователь'
 })
 
+const userInitials = computed(() => {
+  if (!currentUser.value) return 'П'
+  const name = currentUser.value.name || currentUser.value.firstName || ''
+  const last_name = currentUser.value.last_name || currentUser.value.lastName || ''
+  // Берем первую букву из name и первую букву из last_name
+  let initials = ''
+  if (name) initials += name.charAt(0).toUpperCase()
+  if (last_name) initials += last_name.charAt(0).toUpperCase()
+  // Если нет ни того ни другого, берем первую букву email
+  if (!initials && currentUser.value.email) {
+    initials = currentUser.value.email.charAt(0).toUpperCase()
+  }
+  return initials || 'П'
+})
+
 const userImage = computed(() => {
-  if (!currentUser.value) return '/images/user/owner.jpg'
-  // Используем user_img из базы, если есть, иначе заглушку
+  if (!currentUser.value) return null
+  // Используем user_img из базы, если есть
   const img = currentUser.value.user_img
   if (img && img.trim()) return img
-  return '/images/user/owner.jpg'
+  // Если нет изображения, возвращаем null - будет использован SVG с инициалами
+  return null
 })
 
 const toggleDropdown = () => {
@@ -129,10 +142,6 @@ const handleClickOutside = (event) => {
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   await fetchUser()
-  // Отладка: проверить что загрузилось
-  console.log('UserMenu - currentUser:', currentUser.value)
-  console.log('UserMenu - shortName:', shortName.value)
-  console.log('UserMenu - userImage:', userImage.value)
 })
 
 onUnmounted(() => {

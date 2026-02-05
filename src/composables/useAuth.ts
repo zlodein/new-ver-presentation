@@ -11,11 +11,8 @@ export function useAuth() {
   async function fetchUser() {
     if (!token.value || !hasApi()) return
     try {
-      const userData = await api.get<AuthUser>('/api/auth/me')
-      console.log('fetchUser - получены данные:', userData)
-      user.value = userData
-    } catch (error) {
-      console.error('fetchUser - ошибка:', error)
+      user.value = await api.get<AuthUser>('/api/auth/me')
+    } catch {
       setToken(null)
       user.value = null
     }
