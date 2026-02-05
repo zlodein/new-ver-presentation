@@ -322,7 +322,7 @@ import { useAuth } from '@/composables/useAuth'
 import { ApiError } from '@/api/client'
 
 const router = useRouter()
-const { register, hasApi } = useAuth()
+const { register, hasApi, fetchUser } = useAuth()
 const name = ref('')
 const last_name = ref('')
 const email = ref('')
@@ -358,6 +358,8 @@ const handleSubmit = async () => {
       name: name.value.trim() || undefined,
       last_name: last_name.value.trim() || undefined,
     })
+    // Загрузить полные данные пользователя после регистрации
+    await fetchUser()
     router.push('/dashboard')
   } catch (e) {
     if (e instanceof ApiError) {

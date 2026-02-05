@@ -83,12 +83,19 @@ const displayName = computed(() => {
 
 const shortName = computed(() => {
   if (!currentUser.value) return ''
-  return currentUser.value.name || currentUser.value.firstName || currentUser.value.email.split('@')[0] || ''
+  // Используем name (имя), а не last_name (фамилия)
+  const name = currentUser.value.name || currentUser.value.firstName || ''
+  if (name) return name
+  // Если имени нет, используем часть email
+  return currentUser.value.email?.split('@')[0] || 'Пользователь'
 })
 
 const userImage = computed(() => {
   if (!currentUser.value) return '/images/user/owner.jpg'
-  return currentUser.value.user_img || '/images/user/owner.jpg'
+  // Используем user_img из базы, если есть, иначе заглушку
+  const img = currentUser.value.user_img
+  if (img && img.trim()) return img
+  return '/images/user/owner.jpg'
 })
 
 const toggleDropdown = () => {

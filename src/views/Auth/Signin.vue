@@ -285,7 +285,7 @@ import { useAuth } from '@/composables/useAuth'
 import { ApiError } from '@/api/client'
 
 const router = useRouter()
-const { login, hasApi } = useAuth()
+const { login, hasApi, fetchUser } = useAuth()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -310,6 +310,8 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     await login(email.value.trim(), password.value)
+    // Загрузить полные данные пользователя после логина
+    await fetchUser()
     router.push('/dashboard')
   } catch (e) {
     if (e instanceof ApiError) {
