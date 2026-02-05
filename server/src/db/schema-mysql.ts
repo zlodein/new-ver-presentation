@@ -19,6 +19,8 @@ export const users = mysqlTable('users', {
   password: varchar('password', { length: 255 }).notNull(),
   name: varchar('name', { length: 100 }).notNull().default(''),
   last_name: varchar('last_name', { length: 100 }),
+  middle_name: varchar('middle_name', { length: 255 }),
+  user_img: varchar('user_img', { length: 255 }),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

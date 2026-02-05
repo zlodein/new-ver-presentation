@@ -192,15 +192,20 @@ export async function authRoutes(app: FastifyInstance) {
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
           where: eq(mysqlSchema.users.id, userId),
-          columns: { id: true, email: true, name: true, last_name: true, created_at: true },
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, created_at: true },
         })
         if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
         return reply.send({
           id: String(user.id),
           email: user.email,
+          name: user.name,
+          last_name: user.last_name,
+          middle_name: user.middle_name,
+          user_img: user.user_img,
+          createdAt: user.created_at,
+          // Для обратной совместимости
           firstName: user.name,
           lastName: user.last_name,
-          createdAt: user.created_at,
         })
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
