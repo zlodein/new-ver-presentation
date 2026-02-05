@@ -105,19 +105,24 @@ info "Создание systemd сервиса для backend..."
 cat > /etc/systemd/system/presentation-backend.service << EOF
 [Unit]
 Description=Presentation Backend Service
-After=network.target postgresql.service
+After=network-online.target postgresql.service
+Wants=postgresql.service
 
 [Service]
 Type=simple
 User=$SITE_USER
 WorkingDirectory=$DEPLOY_DIR/server
+# Загрузка .env (минус = не падать, если файла нет)
+EnvironmentFile=-$DEPLOY_DIR/server/.env
 Environment=NODE_ENV=production
 Environment=PORT=3001
-ExecStart=/usr/bin/node dist/index.js
+ExecStart=/usr/bin/node index.js
 Restart=always
 RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
+StartLimitIntervalSec=60
+StartLimitBurst=5
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=presentation-backend
 
 [Install]

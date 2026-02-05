@@ -2,7 +2,9 @@
 
 ## Проблема
 
-Backend не запускается с ошибкой `exit-code 1`. Нужно проверить логи и исправить проблему.
+Backend не запускается с ошибкой `exit-code 1` или после перезагрузки сервера сервис в панели FastPanel показывается как остановленный.
+
+**Почему так:** если процесс падает с кодом 1, systemd перезапускает его (Restart=always), но сервис остаётся в состоянии «failed» / «activating (auto-restart)». В панели это выглядит как «остановлен». Нужно устранить причину падения (чаще всего — отсутствие или ошибка в `.env`, недоступность БД).
 
 ## Диагностика
 
@@ -45,7 +47,7 @@ ls -la /var/www/e_presentati_usr/data/www/e-presentation.ru/server/dist/
 cd /var/www/e_presentati_usr/data/www/e-presentation.ru/server
 su - e_presentati_usr
 export $(cat .env | grep -v '^#' | xargs)
-node dist/index.js
+node index.js
 ```
 
 Это покажет реальную ошибку.
@@ -132,29 +134,35 @@ chmod 600 /var/www/e_presentati_usr/data/www/e-presentation.ru/server/.env
 nano /etc/systemd/system/presentation-backend.service
 ```
 
-Проверьте, что конфигурация правильная:
+Проверьте, что конфигурация правильная (путь к проекту может отличаться на вашем сервере — замените на свой):
 
 ```ini
 [Unit]
 Description=Presentation Backend Service
-After=network.target postgresql.service
+After=network-online.target postgresql.service
+Wants=postgresql.service
 
 [Service]
 Type=simple
 User=e_presentati_usr
 WorkingDirectory=/var/www/e_presentati_usr/data/www/e-presentation.ru/server
+EnvironmentFile=-/var/www/e_presentati_usr/data/www/e-presentation.ru/server/.env
 Environment=NODE_ENV=production
 Environment=PORT=3001
-ExecStart=/usr/bin/node dist/index.js
+ExecStart=/usr/bin/node index.js
 Restart=always
 RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
+StartLimitIntervalSec=60
+StartLimitBurst=5
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=presentation-backend
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+**Важно:** если путь к проекту на сервере другой (например, другой домен/сайт в FastPanel), отредактируйте `WorkingDirectory` и `EnvironmentFile` на свой каталог.
 
 После изменений:
 
