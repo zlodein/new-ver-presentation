@@ -11,7 +11,9 @@
 import 'dotenv/config'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
-import { db, schema, isSqlite, useFileStore } from './index.js'
+import { db, schema, isSqlite, useFileStore, useMysql } from './index.js'
+import * as pgSchema from './schema.js'
+import * as mysqlSchema from './schema-mysql.js'
 import { fileStore } from './file-store.js'
 
 const SALT_ROUNDS = 10
@@ -46,29 +48,50 @@ async function seed() {
     process.exit(0)
     return
   }
-  const existing = await db!.query.users.findFirst({
-    where: eq(schema!.users.email, normalizedEmail),
+  if (useMysql) {
+    const existing = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+      where: eq(mysqlSchema.users.email, normalizedEmail),
+      columns: { id: true, email: true },
+    })
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
+    if (existing) {
+      await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+        .update(mysqlSchema.users)
+        .set({ password: passwordHash, name: firstName ?? '', last_name: lastName, updated_at: new Date() })
+        .where(eq(mysqlSchema.users.id, existing.id))
+      console.log('Пользователь обновлён:', existing.email)
+    } else {
+      await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+        .insert(mysqlSchema.users)
+        .values({ email: normalizedEmail, password: passwordHash, name: firstName ?? '', last_name: lastName })
+      console.log('Пользователь создан:', normalizedEmail)
+    }
+    process.exit(0)
+    return
+  }
+  const existing = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+    where: eq(pgSchema.users.email, normalizedEmail),
     columns: { id: true, email: true },
   })
   if (existing) {
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
     const updatedAt = isSqlite ? new Date().toISOString() : new Date()
-    await db!
-      .update(schema!.users)
+    await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+      .update(pgSchema.users)
       .set({ passwordHash, firstName, lastName, updatedAt } as Record<string, unknown>)
-      .where(eq(schema!.users.id, existing.id))
+      .where(eq(pgSchema.users.id, existing.id))
     console.log('Пользователь обновлён:', existing.email)
   } else {
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
-    const [user] = await db!
-      .insert(schema!.users)
+    const [user] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+      .insert(pgSchema.users)
       .values({
         email: normalizedEmail,
         passwordHash,
         firstName,
         lastName,
       })
-      .returning({ id: schema!.users.id, email: schema!.users.email })
+      .returning({ id: pgSchema.users.id, email: pgSchema.users.email })
     console.log('Пользователь создан:', user?.email)
   }
   process.exit(0)

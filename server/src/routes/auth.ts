@@ -2,7 +2,9 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { eq, and, gt } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
-import { db, schema, isSqlite, useFileStore } from '../db/index.js'
+import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
+import * as pgSchema from '../db/schema.js'
+import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
 
 const SALT_ROUNDS = 10
@@ -36,22 +38,46 @@ export async function authRoutes(app: FastifyInstance) {
           token,
         })
       }
-      const existing = await db!.query.users.findFirst({
-        where: eq(schema!.users.email, normalizedEmail),
-      })
+      let existing: { id: unknown } | undefined
+      if (useMysql) {
+        existing = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          where: eq(mysqlSchema.users.email, normalizedEmail),
+          columns: { id: true },
+        })
+      } else {
+        existing = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+          where: eq(pgSchema.users.email, normalizedEmail),
+          columns: { id: true },
+        })
+      }
       if (existing) {
         return reply.status(409).send({ error: 'Пользователь с таким email уже зарегистрирован' })
       }
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
-      const [user] = await db!
-        .insert(schema!.users)
+      if (useMysql) {
+        const inserted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.users).values({
+          email: normalizedEmail,
+          password: passwordHash,
+          name: firstName?.trim() || '',
+          last_name: lastName?.trim() || null,
+        }).$returningId()
+        const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
+        if (newId == null) return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
+        const token = await reply.jwtSign({ sub: String(newId), email: normalizedEmail }, { expiresIn: '7d' })
+        return reply.send({
+          user: { id: String(newId), email: normalizedEmail, firstName: firstName?.trim() || null, lastName: lastName?.trim() || null },
+          token,
+        })
+      }
+      const [user] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .insert(pgSchema.users)
         .values({
           email: normalizedEmail,
           passwordHash,
           firstName: firstName?.trim() || null,
           lastName: lastName?.trim() || null,
         })
-        .returning({ id: schema!.users.id, email: schema!.users.email, firstName: schema!.users.firstName, lastName: schema!.users.lastName })
+        .returning({ id: pgSchema.users.id, email: pgSchema.users.email, firstName: pgSchema.users.firstName, lastName: pgSchema.users.lastName })
       if (!user) {
         return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
       }
@@ -86,8 +112,22 @@ export async function authRoutes(app: FastifyInstance) {
           token,
         })
       }
-      const user = await db!.query.users.findFirst({
-        where: eq(schema!.users.email, normalizedEmail),
+      if (useMysql) {
+        const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          where: eq(mysqlSchema.users.email, normalizedEmail),
+          columns: { id: true, email: true, name: true, last_name: true, password: true },
+        })
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+          return reply.status(401).send({ error: 'Неверный email или пароль' })
+        }
+        const token = await reply.jwtSign({ sub: String(user.id), email: user.email }, { expiresIn: '7d' })
+        return reply.send({
+          user: { id: String(user.id), email: user.email, firstName: user.name, lastName: user.last_name },
+          token,
+        })
+      }
+      const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+        where: eq(pgSchema.users.email, normalizedEmail),
         columns: { id: true, email: true, firstName: true, lastName: true, passwordHash: true },
       })
       if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
@@ -112,8 +152,24 @@ export async function authRoutes(app: FastifyInstance) {
         if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
         return reply.send({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, createdAt: user.createdAt })
       }
-      const user = await db!.query.users.findFirst({
-        where: eq(schema!.users.id, payload.sub),
+      if (useMysql) {
+        const userId = Number(payload.sub)
+        if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
+        const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          where: eq(mysqlSchema.users.id, userId),
+          columns: { id: true, email: true, name: true, last_name: true, created_at: true },
+        })
+        if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
+        return reply.send({
+          id: String(user.id),
+          email: user.email,
+          firstName: user.name,
+          lastName: user.last_name,
+          createdAt: user.created_at,
+        })
+      }
+      const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+        where: eq(pgSchema.users.id, payload.sub),
         columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true },
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
@@ -147,8 +203,8 @@ export async function authRoutes(app: FastifyInstance) {
         }
         return reply.send({ message: 'Если такой email зарегистрирован, на него придёт ссылка для сброса пароля.' })
       }
-      const user = await db!.query.users.findFirst({
-        where: eq(schema!.users.email, normalizedEmail),
+      const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+        where: eq(pgSchema.users.email, normalizedEmail),
         columns: { id: true },
       })
       if (!user) {
@@ -156,11 +212,19 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const token = crypto.randomBytes(32).toString('hex')
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
-      await db!.insert(schema!.passwordResetTokens).values({
-        userId: user.id,
-        token,
-        expiresAt,
-      })
+      if (useMysql) {
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.passwordResetTokens).values({
+          user_id: Number(user.id),
+          token,
+          expires_at: expiresAt,
+        })
+      } else {
+        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).insert(pgSchema.passwordResetTokens).values({
+          userId: user.id,
+          token,
+          expiresAt,
+        })
+      }
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`
       if (process.env.NODE_ENV === 'development') {
         return reply.send({ message: 'Токен для сброса (только dev)', resetLink, token })
@@ -191,20 +255,37 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.send({ message: 'Пароль успешно изменён. Войдите с новым паролем.' })
       }
       const now = new Date()
-      const rows = await db!.query.passwordResetTokens.findMany({
-        where: and(
-          eq(schema!.passwordResetTokens.token, token.trim()),
-          gt(schema!.passwordResetTokens.expiresAt, now)
-        ),
-        columns: { id: true, userId: true },
-      })
-      const resetRow = rows[0]
-      if (!resetRow) {
-        return reply.status(400).send({ error: 'Токен недействителен или истёк. Запросите сброс пароля снова.' })
+      if (useMysql) {
+        const rows = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.passwordResetTokens.findMany({
+          where: and(
+            eq(mysqlSchema.passwordResetTokens.token, token.trim()),
+            gt(mysqlSchema.passwordResetTokens.expires_at, now)
+          ),
+          columns: { id: true, user_id: true },
+        })
+        const resetRow = rows[0]
+        if (!resetRow) {
+          return reply.status(400).send({ error: 'Токен недействителен или истёк. Запросите сброс пароля снова.' })
+        }
+        const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS)
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).update(mysqlSchema.users).set({ password: passwordHash, updated_at: now }).where(eq(mysqlSchema.users.id, resetRow.user_id))
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).delete(mysqlSchema.passwordResetTokens).where(eq(mysqlSchema.passwordResetTokens.id, resetRow.id))
+      } else {
+        const rows = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.passwordResetTokens.findMany({
+          where: and(
+            eq(pgSchema.passwordResetTokens.token, token.trim()),
+            gt(pgSchema.passwordResetTokens.expiresAt, now)
+          ),
+          columns: { id: true, userId: true },
+        })
+        const resetRow = rows[0]
+        if (!resetRow) {
+          return reply.status(400).send({ error: 'Токен недействителен или истёк. Запросите сброс пароля снова.' })
+        }
+        const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS)
+        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).update(pgSchema.users).set({ passwordHash, updatedAt: now }).where(eq(pgSchema.users.id, resetRow.userId))
+        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).delete(pgSchema.passwordResetTokens).where(eq(pgSchema.passwordResetTokens.id, resetRow.id))
       }
-      const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS)
-      await db!.update(schema!.users).set({ passwordHash, updatedAt: now }).where(eq(schema!.users.id, resetRow.userId))
-      await db!.delete(schema!.passwordResetTokens).where(eq(schema!.passwordResetTokens.id, resetRow.id))
       return reply.send({ message: 'Пароль успешно изменён. Войдите с новым паролем.' })
     } catch (err) {
       req.log.error(err)
