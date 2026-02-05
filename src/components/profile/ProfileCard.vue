@@ -3,12 +3,11 @@
     <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
-          <div
-            class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-brand-500 text-white font-semibold text-2xl"
-          >
-            <img v-if="userImage" :src="userImage" alt="user" class="w-full h-full object-cover" />
-            <span v-else>{{ userInitials }}</span>
-          </div>
+          <AvatarUpload
+            :initials="userInitials"
+            :current-image="userImage"
+            @uploaded="handleAvatarUploaded"
+          />
           <div class="order-3 xl:order-2">
             <h4
               class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left"
@@ -141,7 +140,9 @@
                     <input
                       v-model="formData.personal_phone"
                       type="tel"
-                      placeholder="Введите телефон"
+                      placeholder="+7 (000) 000-00-00"
+                      @input="handlePhoneInput"
+                      maxlength="18"
                       class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                     />
                   </div>
@@ -262,13 +263,16 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import Modal from './Modal.vue'
 import MessengerIcons from './MessengerIcons.vue'
+import AvatarUpload from './AvatarUpload.vue'
 import { useAuth } from '@/composables/useAuth'
 import { api, ApiError } from '@/api/client'
+import { usePhoneMask } from '@/composables/usePhoneMask'
 
 const { currentUser, fetchUser } = useAuth()
 const isProfileInfoModal = ref(false)
 const loading = ref(false)
 const error = ref('')
+const { formatPhone } = usePhoneMask()
 
 const formData = ref({
   name: '',
@@ -286,14 +290,26 @@ const formData = ref({
   },
 })
 
+const handlePhoneInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const formatted = formatPhone(input.value)
+  formData.value.personal_phone = formatted
+  input.value = formatted
+}
+
+const handleAvatarUploaded = async (url: string) => {
+  await fetchUser()
+}
+
 // Заполнить форму данными пользователя при открытии модального окна
 watch(isProfileInfoModal, (isOpen) => {
   if (isOpen && currentUser.value) {
+    const phone = currentUser.value.personal_phone || ''
     formData.value = {
       name: currentUser.value.name || '',
       last_name: currentUser.value.last_name || '',
       email: currentUser.value.email || '',
-      personal_phone: currentUser.value.personal_phone || '',
+      personal_phone: phone ? formatPhone(phone) : '',
       position: currentUser.value.position || '',
       messengers: {
         whatsapp: currentUser.value.messengers?.whatsapp || '',
@@ -333,7 +349,14 @@ const userInitials = computed(() => {
 const userImage = computed(() => {
   if (!currentUser.value) return null
   const img = currentUser.value.user_img
-  if (img && img.trim()) return img
+  if (img && img.trim()) {
+    // Если путь начинается с /uploads, использовать как есть
+    if (img.startsWith('/uploads/')) {
+      return img
+    }
+    // Иначе добавить префикс
+    return img.startsWith('/') ? img : `/${img}`
+  }
   return null
 })
 
@@ -349,11 +372,13 @@ const saveProfile = async () => {
       }
     })
 
+    // Очистить телефон от форматирования для сохранения
+    const cleanPhone = formData.value.personal_phone.replace(/\D/g, '')
     await api.put('/api/auth/profile', {
       name: formData.value.name.trim() || undefined,
       last_name: formData.value.last_name.trim() || undefined,
       email: formData.value.email.trim() || undefined,
-      personal_phone: formData.value.personal_phone.trim() || undefined,
+      personal_phone: cleanPhone || undefined,
       position: formData.value.position.trim() || undefined,
       messengers: Object.keys(messengers).length > 0 ? messengers : undefined,
     })

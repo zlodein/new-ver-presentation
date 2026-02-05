@@ -155,7 +155,9 @@
                     <input
                       v-model="formData.personal_phone"
                       type="tel"
-                      placeholder="Введите телефон"
+                      placeholder="+7 (000) 000-00-00"
+                      @input="handlePhoneInput"
+                      maxlength="18"
                       class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                     />
                   </div>
@@ -204,6 +206,7 @@ import { ref, onMounted, watch } from 'vue'
 import Modal from './Modal.vue'
 import { useAuth } from '@/composables/useAuth'
 import { api, ApiError } from '@/api/client'
+import { usePhoneMask } from '@/composables/usePhoneMask'
 
 const { currentUser, fetchUser } = useAuth()
 const isProfileInfoModal = ref(false)
@@ -221,16 +224,26 @@ const formData = ref({
 // Заполнить форму данными пользователя при открытии модального окна
 watch(isProfileInfoModal, (isOpen) => {
   if (isOpen && currentUser.value) {
+    const phone = currentUser.value.personal_phone || ''
     formData.value = {
       name: currentUser.value.name || '',
       last_name: currentUser.value.last_name || '',
       email: currentUser.value.email || '',
-      personal_phone: currentUser.value.personal_phone || '',
+      personal_phone: phone ? formatPhone(phone) : '',
       position: currentUser.value.position || '',
     }
     error.value = ''
   }
 })
+
+const { formatPhone } = usePhoneMask()
+
+const handlePhoneInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const formatted = formatPhone(input.value)
+  formData.value.personal_phone = formatted
+  input.value = formatted
+}
 
 const saveProfile = async (e: Event) => {
   e.preventDefault()
@@ -240,11 +253,13 @@ const saveProfile = async (e: Event) => {
   loading.value = true
   try {
     console.log('Сохранение профиля:', formData.value)
+    // Очистить телефон от форматирования для сохранения
+    const cleanPhone = formData.value.personal_phone.replace(/\D/g, '')
     const response = await api.put('/api/auth/profile', {
       name: formData.value.name.trim() || undefined,
       last_name: formData.value.last_name.trim() || undefined,
       email: formData.value.email.trim() || undefined,
-      personal_phone: formData.value.personal_phone.trim() || undefined,
+      personal_phone: cleanPhone || undefined,
       position: formData.value.position.trim() || undefined,
     })
     console.log('Профиль сохранен:', response)

@@ -1,9 +1,17 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import fjwt from '@fastify/jwt'
+import multipart from '@fastify/multipart'
+import staticFiles from '@fastify/static'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { authRoutes } from './routes/auth.js'
 import { presentationRoutes } from './routes/presentations.js'
 import { editorApiRoutes } from './routes/editor-api.js'
+import { uploadRoutes } from './routes/upload.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 export async function buildApp() {
   const app = Fastify({ logger: true })
@@ -19,6 +27,17 @@ export async function buildApp() {
   })
 
   await app.register(fjwt, { secret })
+  await app.register(multipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    },
+  })
+
+  // Статические файлы для аватаров
+  await app.register(staticFiles, {
+    root: path.join(__dirname, '../uploads'),
+    prefix: '/uploads/',
+  })
 
   app.decorate('authenticate', async function (req: { jwtVerify: () => Promise<unknown> }, reply: { status: (code: number) => { send: (payload: unknown) => void } }) {
     try {
@@ -31,6 +50,7 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: '/' })
   await app.register(presentationRoutes, { prefix: '/' })
   await app.register(editorApiRoutes, { prefix: '/api' })
+  await app.register(uploadRoutes, { prefix: '/' })
 
   return app
 }
