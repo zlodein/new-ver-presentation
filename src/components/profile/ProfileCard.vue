@@ -258,7 +258,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import Modal from './Modal.vue'
 import MessengerIcons from './MessengerIcons.vue'
@@ -342,7 +342,7 @@ const saveProfile = async () => {
   loading.value = true
   try {
     // Очистить пустые значения мессенджеров
-    const messengers = {} as Record<string, string>
+    const messengers: { [key: string]: string } = {}
     Object.entries(formData.value.messengers).forEach(([key, value]) => {
       if (value && value.trim()) {
         messengers[key] = value.trim()
