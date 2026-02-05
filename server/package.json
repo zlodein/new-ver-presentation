@@ -13,6 +13,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
+    "db:check": "node check-db-connection.js",
     "deploy:build": "npm run build",
     "deploy:migrate": "npm run db:migrate"
   },
