@@ -115,7 +115,10 @@
               class="presentation-swiper h-full"
             >
               <SwiperSlide v-for="(slide, index) in visibleSlides" :key="slide.id">
-                <div class="flex h-full w-full flex-col overflow-hidden bg-white dark:bg-gray-900">
+                <div
+                  class="flex h-full w-full flex-col bg-white dark:bg-gray-900"
+                  :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
+                >
                   <!-- 1. Обложка -->
                   <div
                     v-if="slide.type === 'cover'"
@@ -309,10 +312,10 @@
                     </button>
                   </div>
 
-                  <!-- 4. Местоположение -->
+                  <!-- 4. Местоположение (overflow-visible чтобы выпадающий список подсказок не обрезался) -->
                   <div
                     v-else-if="slide.type === 'location'"
-                    class="flex h-full flex-col overflow-auto p-4 md:p-6"
+                    class="flex h-full flex-col overflow-visible p-4 md:p-6"
                   >
                     <input
                       v-model="slide.data.heading"
@@ -334,7 +337,7 @@
                       />
                       <ul
                         v-if="addressSuggestionsFor(slide).length > 0"
-                        class="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                        class="absolute left-0 right-0 top-full z-[100] mt-1 max-h-48 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
                       >
                         <li
                           v-for="(s, i) in addressSuggestionsFor(slide)"
@@ -889,6 +892,8 @@ function showAddressSuggestions(slide: SlideItem) {
   if ((addressSuggestionsBySlideId.value[slide.id] ?? []).length > 0) {
     addressSuggestionsVisibleBySlideId.value[slide.id] = true
   }
+  const address = String(slide.data?.address ?? '').trim()
+  if (address.length >= 2) onLocationAddressInput(slide, address)
 }
 
 function hideAddressSuggestionsDelay(slide: SlideItem) {
