@@ -5,7 +5,7 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
+        <img :src="userImage" alt="User" />
       </span>
 
       <span class="block mr-1 font-medium text-theme-sm">{{ shortName || 'Пользователь' }}</span>
@@ -76,14 +76,19 @@ const menuItems = [
 
 const displayName = computed(() => {
   if (!currentUser.value) return ''
-  const firstName = currentUser.value.firstName || ''
-  const lastName = currentUser.value.lastName || ''
-  return `${firstName} ${lastName}`.trim() || currentUser.value.email
+  const name = currentUser.value.name || currentUser.value.firstName || ''
+  const last_name = currentUser.value.last_name || currentUser.value.lastName || ''
+  return `${name} ${last_name}`.trim() || currentUser.value.email
 })
 
 const shortName = computed(() => {
   if (!currentUser.value) return ''
-  return currentUser.value.firstName || currentUser.value.email.split('@')[0] || ''
+  return currentUser.value.name || currentUser.value.firstName || currentUser.value.email.split('@')[0] || ''
+})
+
+const userImage = computed(() => {
+  if (!currentUser.value) return '/images/user/owner.jpg'
+  return currentUser.value.user_img || '/images/user/owner.jpg'
 })
 
 const toggleDropdown = () => {

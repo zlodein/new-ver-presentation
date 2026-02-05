@@ -22,10 +22,13 @@ function getDbErr(): string {
 
 export async function authRoutes(app: FastifyInstance) {
   app.post<{
-    Body: { email: string; password: string; firstName?: string; lastName?: string }
-  }>('/api/auth/register', async (req: FastifyRequest<{ Body: { email: string; password: string; firstName?: string; lastName?: string } }>, reply: FastifyReply) => {
+    Body: { email: string; password: string; name?: string; last_name?: string; middle_name?: string; user_img?: string }
+  }>('/api/auth/register', async (req: FastifyRequest<{ Body: { email: string; password: string; name?: string; last_name?: string; middle_name?: string; user_img?: string } }>, reply: FastifyReply) => {
     try {
-      const { email, password, firstName, lastName } = req.body
+      const { email, password, name, last_name, middle_name, user_img } = req.body
+      // Для обратной совместимости
+      const firstName = name || (req.body as any).firstName
+      const lastName = last_name || (req.body as any).lastName
       if (!email?.trim() || !password) {
         return reply.status(400).send({ error: 'Email и пароль обязательны' })
       }
@@ -68,14 +71,26 @@ export async function authRoutes(app: FastifyInstance) {
         const inserted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.users).values({
           email: normalizedEmail,
           password: passwordHash,
-          name: firstName?.trim() || '',
-          last_name: lastName?.trim() || null,
+          name: name?.trim() || firstName?.trim() || '',
+          last_name: last_name?.trim() || lastName?.trim() || null,
+          middle_name: middle_name?.trim() || null,
+          user_img: user_img?.trim() || null,
         }).$returningId()
         const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
         if (newId == null) return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
         const token = await reply.jwtSign({ sub: String(newId), email: normalizedEmail }, { expiresIn: '7d' })
         return reply.send({
-          user: { id: String(newId), email: normalizedEmail, firstName: firstName?.trim() || null, lastName: lastName?.trim() || null },
+          user: { 
+            id: String(newId), 
+            email: normalizedEmail, 
+            name: name?.trim() || firstName?.trim() || null,
+            last_name: last_name?.trim() || lastName?.trim() || null,
+            middle_name: middle_name?.trim() || null,
+            user_img: user_img?.trim() || null,
+            // Для обратной совместимости
+            firstName: name?.trim() || firstName?.trim() || null,
+            lastName: last_name?.trim() || lastName?.trim() || null,
+          },
           token,
         })
       }
@@ -125,14 +140,24 @@ export async function authRoutes(app: FastifyInstance) {
       if (useMysql) {
         const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
           where: eq(mysqlSchema.users.email, normalizedEmail),
-          columns: { id: true, email: true, name: true, last_name: true, password: true },
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, password: true },
         })
         if (!user || !(await bcrypt.compare(password, user.password))) {
           return reply.status(401).send({ error: 'Неверный email или пароль' })
         }
         const token = await reply.jwtSign({ sub: String(user.id), email: user.email }, { expiresIn: '7d' })
         return reply.send({
-          user: { id: String(user.id), email: user.email, firstName: user.name, lastName: user.last_name },
+          user: { 
+            id: String(user.id), 
+            email: user.email, 
+            name: user.name,
+            last_name: user.last_name,
+            middle_name: user.middle_name,
+            user_img: user.user_img,
+            // Для обратной совместимости
+            firstName: user.name, 
+            lastName: user.last_name 
+          },
           token,
         })
       }

@@ -116,7 +116,7 @@
                         Имя<span class="text-error-500">*</span>
                       </label>
                       <input
-                        v-model="firstName"
+                        v-model="name"
                         type="text"
                         id="fname"
                         name="fname"
@@ -133,7 +133,7 @@
                         Фамилия<span class="text-error-500">*</span>
                       </label>
                       <input
-                        v-model="lastName"
+                        v-model="last_name"
                         type="text"
                         id="lname"
                         name="lname"
@@ -323,8 +323,8 @@ import { ApiError } from '@/api/client'
 
 const router = useRouter()
 const { register, hasApi } = useAuth()
-const firstName = ref('')
-const lastName = ref('')
+const name = ref('')
+const last_name = ref('')
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -355,8 +355,8 @@ const handleSubmit = async () => {
     await register({
       email: email.value.trim(),
       password: password.value,
-      firstName: firstName.value.trim() || undefined,
-      lastName: lastName.value.trim() || undefined,
+      name: name.value.trim() || undefined,
+      last_name: last_name.value.trim() || undefined,
     })
     router.push('/dashboard')
   } catch (e) {

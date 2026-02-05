@@ -29,8 +29,10 @@ export function useAuth() {
   async function register(data: {
     email: string
     password: string
-    firstName?: string
-    lastName?: string
+    name?: string
+    last_name?: string
+    middle_name?: string
+    user_img?: string
   }) {
     const res = await api.post<AuthResponse>('/api/auth/register', data)
     setToken(res.token)

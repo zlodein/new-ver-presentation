@@ -69,9 +69,14 @@ export const api = {
 export interface AuthUser {
   id: string
   email: string
+  name?: string | null
+  last_name?: string | null
+  middle_name?: string | null
+  user_img?: string | null
+  createdAt?: string
+  // Для обратной совместимости
   firstName?: string | null
   lastName?: string | null
-  createdAt?: string
 }
 
 export interface AuthResponse {
