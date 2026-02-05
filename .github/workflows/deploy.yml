@@ -34,6 +34,9 @@ jobs:
 
       - name: Build frontend
         run: npm run build:prod
+        env:
+          # Пустой VITE_API_URL — на сайте запросы пойдут на относительный /api (ваш домен), а не на localhost
+          VITE_API_URL: ''
 
       - name: Setup Node.js for backend
         uses: actions/setup-node@v4
