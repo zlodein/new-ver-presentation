@@ -1,11 +1,12 @@
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { buildApp } from './app.js'
 
-// Загружаем .env из папки server/, а не из cwd (важно для PM2 и запуска из другой директории)
+// Загружаем .env из папки server/ (и при index.js в server/, и при dist/index.js в server/dist/)
 const __dirname = dirname(fileURLToPath(import.meta.url))
-dotenv.config({ path: join(__dirname, '..', '.env') })
+const serverDir = basename(__dirname) === 'dist' ? join(__dirname, '..') : __dirname
+dotenv.config({ path: join(serverDir, '.env') })
 
 const PORT = Number(process.env.PORT) || 3001
 

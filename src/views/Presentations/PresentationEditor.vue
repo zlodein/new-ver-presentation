@@ -901,8 +901,18 @@ function onLocationAddressInput(slide: SlideItem, value: string) {
   const id = slide.id
   addressSuggestionsFetchTimer = setTimeout(() => {
     fetch(`${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`)
-      .then((r) => r.json())
-      .then((data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>; error?: string }) => {
+      .then(async (r) => {
+        const text = await r.text()
+        let data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>; error?: string }
+        try {
+          data = JSON.parse(text)
+        } catch {
+          if (!r.ok) {
+            alert(r.status === 502 ? 'Сервис подсказок временно недоступен (502). Проверьте, что бэкенд запущен на сервере.' : `Ошибка сервера: ${r.status}`)
+          }
+          addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: [] }
+          return
+        }
         if (data.error) {
           alert(data.error)
         }
@@ -968,7 +978,14 @@ async function findNearestMetro(slide: SlideItem) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lat, lng }),
     })
-    const data = await res.json()
+    const text = await res.text()
+    let data: { stations?: unknown[]; error?: string }
+    try {
+      data = JSON.parse(text)
+    } catch {
+      alert(res.status === 502 ? 'Сервис поиска метро временно недоступен (502). Проверьте, что бэкенд запущен на сервере.' : `Ошибка сервера: ${res.status}`)
+      return
+    }
     if (data.error) {
       alert(data.error)
       return
@@ -999,7 +1016,14 @@ async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infra
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, prompt, object_title: objectTitle }),
     })
-    const data = await res.json()
+    const text = await res.text()
+    let data: { text?: string; error?: string }
+    try {
+      data = JSON.parse(text)
+    } catch {
+      alert(res.status === 502 ? 'Сервис генерации текста временно недоступен (502). Проверьте, что бэкенд запущен на сервере.' : `Ошибка сервера: ${res.status}`)
+      return
+    }
     if (data.text) {
       if (type === 'description') {
         slide.data.text = data.text

@@ -37,24 +37,31 @@ chown -R e_presentati_usr:e_presentati_usr /var/www/e_presentati_usr/data/www/e-
 chmod 600 /var/www/e_presentati_usr/data/www/e-presentation.ru/server/.env
 ```
 
-### 4. Проверить наличие index.js (собранный backend)
+### 4. Проверить наличие собранного backend
 
-На сервере после деплоя файлы лежат в корне `server/`, а не в `server/dist/`:
+Должна быть папка `server/dist/` с файлом `index.js` (сборка: `cd server && npm run build`):
 
 ```bash
-ls -la /var/www/e_presentati_usr/data/www/e-presentation.ru/server/index.js
+ls -la /var/www/e_presentati_usr/data/www/e-presentation.ru/server/dist/index.js
 ```
 
-### 5. Попробовать запустить вручную
+### 5. Попробовать запустить вручную (увидеть реальную ошибку)
+
+Запустите бэкенд из папки `server` — так вы увидите текст ошибки в консоли:
 
 ```bash
 cd /var/www/e_presentati_usr/data/www/e-presentation.ru/server
 su - e_presentati_usr
-export $(cat .env | grep -v '^#' | xargs)
+node dist/index.js
+```
+
+Если `dist/index.js` нет, попробуйте:
+
+```bash
 node index.js
 ```
 
-Это покажет реальную ошибку.
+Если при этом появляется ошибка (например, про JWT_SECRET, базу данных или модуль) — исправьте конфиг или .env и перезапустите сервис.
 
 ## Частые проблемы и решения
 
@@ -153,7 +160,7 @@ WorkingDirectory=/var/www/e_presentati_usr/data/www/e-presentation.ru/server
 EnvironmentFile=-/var/www/e_presentati_usr/data/www/e-presentation.ru/server/.env
 Environment=NODE_ENV=production
 Environment=PORT=3001
-ExecStart=/usr/bin/node index.js
+ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=10
 StartLimitIntervalSec=60
@@ -185,10 +192,11 @@ systemctl status presentation-backend
    sudo systemctl enable presentation-backend
    ```
 
-2. **Проверить, что unit запускает правильный файл** (не `dist/index.js`, а `index.js`):
+2. **Проверить, что unit запускает правильный файл** (`dist/index.js` после сборки):
    ```bash
    grep ExecStart /etc/systemd/system/presentation-backend.service
-   # Должно быть: ExecStart=/usr/bin/node index.js
+   # Должно быть: ExecStart=/usr/bin/node dist/index.js
+   # И в server/ должна быть папка dist/ с index.js (npm run build в server/)
    ```
 
 3. **Проверить после перезагрузки:**
