@@ -199,8 +199,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue'
 import Modal from './Modal.vue'
 import { useAuth } from '@/composables/useAuth'
 import { api, ApiError } from '@/api/client'
@@ -232,23 +232,29 @@ watch(isProfileInfoModal, (isOpen) => {
   }
 })
 
-const saveProfile = async () => {
+const saveProfile = async (e: Event) => {
+  e.preventDefault()
+  if (loading.value) return // Предотвратить повторные вызовы
+  
   error.value = ''
   loading.value = true
   try {
-    const updatedUser = await api.put<typeof currentUser.value>('/api/auth/profile', {
+    console.log('Сохранение профиля:', formData.value)
+    const response = await api.put('/api/auth/profile', {
       name: formData.value.name.trim() || undefined,
       last_name: formData.value.last_name.trim() || undefined,
       email: formData.value.email.trim() || undefined,
       personal_phone: formData.value.personal_phone.trim() || undefined,
       position: formData.value.position.trim() || undefined,
     })
+    console.log('Профиль сохранен:', response)
     // Обновить данные пользователя
     await fetchUser()
     isProfileInfoModal.value = false
-  } catch (e) {
-    if (e instanceof ApiError) {
-      error.value = e.message || 'Ошибка сохранения'
+  } catch (err) {
+    console.error('Ошибка сохранения профиля:', err)
+    if (err instanceof ApiError) {
+      error.value = err.message || 'Ошибка сохранения'
     } else {
       error.value = 'Ошибка соединения с сервером'
     }
