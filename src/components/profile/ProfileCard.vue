@@ -342,7 +342,7 @@ const saveProfile = async () => {
   loading.value = true
   try {
     // Очистить пустые значения мессенджеров
-    const messengers: Record<string, string> = {}
+    const messengers = {} as Record<string, string>
     Object.entries(formData.value.messengers).forEach(([key, value]) => {
       if (value && value.trim()) {
         messengers[key] = value.trim()
