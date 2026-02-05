@@ -5,7 +5,7 @@
       :href="messengers.whatsapp"
       target="_blank"
       rel="noopener"
-      class="social-button"
+      class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300"
       title="WhatsApp"
     >
       <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -17,7 +17,7 @@
       :href="messengers.telegram"
       target="_blank"
       rel="noopener"
-      class="social-button"
+      class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300"
       title="Telegram"
     >
       <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -29,7 +29,7 @@
       :href="messengers.viber"
       target="_blank"
       rel="noopener"
-      class="social-button"
+      class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300"
       title="Viber"
     >
       <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -41,7 +41,7 @@
       :href="messengers.instagram"
       target="_blank"
       rel="noopener"
-      class="social-button"
+      class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300"
       title="Instagram"
     >
       <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -53,7 +53,7 @@
       :href="messengers.twitter"
       target="_blank"
       rel="noopener"
-      class="social-button"
+      class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300"
       title="Twitter"
     >
       <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -65,7 +65,7 @@
       :href="messengers.x"
       target="_blank"
       rel="noopener"
-      class="social-button"
+      class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300"
       title="X"
     >
       <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -81,8 +81,3 @@ defineProps<{
 }>()
 </script>
 
-<style scoped>
-.social-button {
-  @apply flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300;
-}
-</style>
