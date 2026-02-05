@@ -8,7 +8,7 @@
         <img src="/images/user/owner.jpg" alt="User" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">Musharof </span>
+      <span class="block mr-1 font-medium text-theme-sm">{{ shortName || 'Пользователь' }}</span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -20,10 +20,10 @@
     >
       <div>
         <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          Musharof Chowdhury
+          {{ displayName || 'Пользователь' }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          randomuser@pimjo.com
+          {{ currentUser?.email || '' }}
         </span>
       </div>
 
@@ -59,9 +59,12 @@
 
 <script setup>
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
-import { RouterLink } from 'vue-router'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 
+const router = useRouter()
+const { currentUser, fetchUser, logout } = useAuth()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
@@ -70,6 +73,18 @@ const menuItems = [
   { href: '/chat', icon: SettingsIcon, text: 'Настройки аккаунта' },
   { href: '/dashboard/profile', icon: InfoCircleIcon, text: 'Поддержка' },
 ]
+
+const displayName = computed(() => {
+  if (!currentUser.value) return ''
+  const firstName = currentUser.value.firstName || ''
+  const lastName = currentUser.value.lastName || ''
+  return `${firstName} ${lastName}`.trim() || currentUser.value.email
+})
+
+const shortName = computed(() => {
+  if (!currentUser.value) return ''
+  return currentUser.value.firstName || currentUser.value.email.split('@')[0] || ''
+})
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value
@@ -80,8 +95,8 @@ const closeDropdown = () => {
 }
 
 const signOut = () => {
-  // Implement sign out logic here
-  console.log('Signing out...')
+  logout()
+  router.push('/signin')
   closeDropdown()
 }
 
@@ -93,6 +108,7 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  fetchUser()
 })
 
 onUnmounted(() => {
