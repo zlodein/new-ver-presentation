@@ -175,6 +175,21 @@ const router = createRouter({
   ],
 })
 
+// Обработка 404 при загрузке чанков (после деплоя старые URL чанков перестают работать)
+router.onError((err) => {
+  const msg = err?.message || ''
+  if (
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Loading chunk') ||
+    msg.includes('Loading CSS chunk')
+  ) {
+    window.location.reload()
+  } else {
+    throw err
+  }
+})
+
 export default router
 
 router.beforeEach((to, from, next) => {
