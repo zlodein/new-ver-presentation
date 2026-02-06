@@ -24,6 +24,12 @@ export const users = mysqlTable('users', {
   personal_phone: varchar('personal_phone', { length: 20 }),
   position: varchar('position', { length: 255 }),
   messengers: longtext('messengers'), // JSON строка
+  company_name: varchar('company_name', { length: 255 }),
+  work_position: varchar('work_position', { length: 255 }),
+  company_logo: varchar('company_logo', { length: 255 }),
+  work_email: varchar('work_email', { length: 255 }),
+  work_phone: varchar('work_phone', { length: 20 }),
+  work_website: varchar('work_website', { length: 512 }),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

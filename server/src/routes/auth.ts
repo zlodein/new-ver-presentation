@@ -197,7 +197,7 @@ export async function authRoutes(app: FastifyInstance) {
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
           where: eq(mysqlSchema.users.id, userId),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true },
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true, created_at: true },
         })
         if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
         
@@ -213,6 +213,12 @@ export async function authRoutes(app: FastifyInstance) {
           personal_phone: user.personal_phone,
           position: user.position,
           messengers: messengersData,
+          company_name: user.company_name ?? undefined,
+          work_position: user.work_position ?? undefined,
+          company_logo: user.company_logo ?? undefined,
+          work_email: user.work_email ?? undefined,
+          work_phone: user.work_phone ?? undefined,
+          work_website: user.work_website ?? undefined,
           createdAt: user.created_at,
           // Для обратной совместимости
           firstName: user.name,
@@ -348,11 +354,11 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Обновление профиля пользователя
   app.put<{
-    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string> }
-  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string> } }>, reply: FastifyReply) => {
+    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string }
+  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string } }>, reply: FastifyReply) => {
     try {
       const payload = req.user as { sub: string; email: string }
-      const { name, last_name, email, personal_phone, position, messengers } = req.body
+      const { name, last_name, email, personal_phone, position, messengers, company_name, work_position, company_logo, work_email, work_phone, work_website } = req.body
 
       if (useFileStore) {
         const user = fileStore.findUserById(payload.sub)
@@ -381,6 +387,12 @@ export async function authRoutes(app: FastifyInstance) {
         if (personal_phone !== undefined) updateData.personal_phone = personal_phone.trim() || null
         if (position !== undefined) updateData.position = position.trim() || null
         if (messengers !== undefined) updateData.messengers = JSON.stringify(messengers)
+        if (company_name !== undefined) updateData.company_name = company_name.trim() || null
+        if (work_position !== undefined) updateData.work_position = work_position.trim() || null
+        if (company_logo !== undefined) updateData.company_logo = company_logo.trim() || null
+        if (work_email !== undefined) updateData.work_email = work_email.trim() || null
+        if (work_phone !== undefined) updateData.work_phone = work_phone.trim() || null
+        if (work_website !== undefined) updateData.work_website = work_website.trim() || null
         updateData.updated_at = new Date()
 
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
@@ -391,7 +403,7 @@ export async function authRoutes(app: FastifyInstance) {
         // Получить обновленные данные
         const updatedUser = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
           where: eq(mysqlSchema.users.id, userId),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true },
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true, created_at: true },
         })
         if (!updatedUser) return reply.status(401).send({ error: 'Пользователь не найден' })
 
@@ -407,6 +419,12 @@ export async function authRoutes(app: FastifyInstance) {
           personal_phone: updatedUser.personal_phone,
           position: updatedUser.position,
           messengers: messengersData,
+          company_name: updatedUser.company_name ?? undefined,
+          work_position: updatedUser.work_position ?? undefined,
+          company_logo: updatedUser.company_logo ?? undefined,
+          work_email: updatedUser.work_email ?? undefined,
+          work_phone: updatedUser.work_phone ?? undefined,
+          work_website: updatedUser.work_website ?? undefined,
           createdAt: updatedUser.created_at,
           // Для обратной совместимости
           firstName: updatedUser.name,
