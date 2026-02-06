@@ -359,10 +359,17 @@ async function confirmDelete(presentation: Presentation) {
     return
   }
   if (hasApi() && getToken()) {
+    const id = presentation?.id != null ? String(presentation.id) : ''
+    if (!id) {
+      error.value = 'Не удалось определить id презентации'
+      return
+    }
     try {
-      await api.delete(`/api/presentations/${presentation.id}`)
-      presentations.value = presentations.value.filter((p) => p.id !== presentation.id)
-    } catch {
+      await api.delete(`/api/presentations/${id}`)
+      presentations.value = presentations.value.filter((p) => p.id !== id)
+      error.value = ''
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Не удалось удалить презентацию. Если в консоли есть «Tracking Prevention» — разрешите доступ к сайту в настройках браузера или войдите снова.'
       loadPresentations()
     }
   } else {

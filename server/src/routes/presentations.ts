@@ -9,12 +9,12 @@ import { fileStore } from '../db/file-store.js'
 function toIsoDate(d: Date | string): string {
   return typeof d === 'string' ? d : d.toISOString()
 }
-/** Для MySQL: id может прийти как "1" или "1:1" (артефакт отображения) — берём число до двоеточия */
+/** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия при наличии). */
 function parseMysqlId(id: string): number | null {
   const s = String(id).trim()
   const numPart = s.includes(':') ? s.split(':')[0]?.trim() ?? s : s
-  const num = Number(numPart)
-  return Number.isNaN(num) || num < 1 || !Number.isInteger(num) ? null : num
+  const num = Math.floor(Number(numPart))
+  return (Number.isNaN(num) || num < 1) ? null : num
 }
 function normContent(c: unknown): { slides: unknown[] } {
   if (typeof c === 'string') {
