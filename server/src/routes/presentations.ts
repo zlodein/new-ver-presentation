@@ -9,12 +9,26 @@ import { fileStore } from '../db/file-store.js'
 function toIsoDate(d: Date | string): string {
   return typeof d === 'string' ? d : d.toISOString()
 }
-/** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия при наличии). */
+/** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия или первая последовательность цифр). */
 function parseMysqlId(id: string): number | null {
+  if (id == null || typeof id !== 'string') return null
   const s = String(id).trim()
   const numPart = s.includes(':') ? s.split(':')[0]?.trim() ?? s : s
-  const num = Math.floor(Number(numPart))
-  return (Number.isNaN(num) || num < 1) ? null : num
+  let num = Math.floor(Number(numPart))
+  if (Number.isNaN(num) || num < 1) {
+    const digits = /^\d+/.exec(numPart) ?? /\d+/.exec(s)
+    num = digits ? Math.floor(Number(digits[0])) : 0
+  }
+  return num >= 1 ? num : null
+}
+
+/** Извлекает id презентации из path (на случай, если прокси не передаёт :id в params). */
+function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>): string {
+  const fromParams = req.params?.id
+  if (fromParams != null && String(fromParams).trim() !== '') return String(fromParams).trim()
+  const path = (req as { url?: string }).url ?? (req as { raw?: { url?: string } }).raw?.url ?? ''
+  const match = /\/api\/presentations\/([^/?#]+)/.exec(path)
+  return match ? decodeURIComponent(match[1]) : ''
 }
 function normContent(c: unknown): { slides: unknown[] } {
   if (typeof c === 'string') {
@@ -360,21 +374,21 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
   )
 
-  app.delete<{ Params: { id: string } }>(
+  app.delete<{ Params: { id?: string } }>(
     '/api/presentations/:id',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
-      let id = req.params.id
+      let id = getIdFromDeleteRequest(req)
       try {
-        if (typeof id === 'string' && id.includes('%')) id = decodeURIComponent(id)
+        if (id.includes('%')) id = decodeURIComponent(id)
       } catch {
         // оставляем id как есть при ошибке декодирования
       }
-      if (id == null || String(id).trim() === '') {
+      if (!id) {
         return reply.status(400).send({ error: 'Не указан id презентации' })
       }
-      const idNum = useMysql ? parseMysqlId(String(id)) : null
+      const idNum = useMysql ? parseMysqlId(id) : null
       if (useMysql && idNum === null) {
         return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       }
