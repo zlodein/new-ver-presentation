@@ -683,6 +683,15 @@
             >
               Сохранить
             </button>
+            <button
+              v-if="presentationMeta.status !== 'published'"
+              type="button"
+              class="rounded-lg border border-green-600 bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+              @click="publishPresentation"
+            >
+              Опубликовать
+            </button>
+            <span v-if="autoSaveStatus" class="text-xs text-gray-500">{{ autoSaveStatus }}</span>
           </div>
         </div>
       </main>
@@ -691,7 +700,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import type { Swiper as SwiperType } from 'swiper'
@@ -793,6 +802,12 @@ const presentationMeta = ref<{
   publicUrl: '',
   publicHash: '',
 })
+
+/** Статус автосохранения */
+const autoSaveStatus = ref('')
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+const AUTO_SAVE_INTERVAL_MS = 30000
+const initialLoadDone = ref(false)
 
 /** Слайды, отображаемые в Swiper (без скрытых) */
 const visibleSlides = computed(() => slides.value.filter((s) => !s.hidden))
@@ -1420,6 +1435,31 @@ async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index
 
 const presentationId = computed(() => route.params.id as string)
 
+watch(slides, () => {
+  if (initialLoadDone.value) scheduleAutoSave()
+}, { deep: true })
+
+function backupToLocalStorage() {
+  try {
+    const title = (slides.value[0]?.type === 'cover' && slides.value[0]?.data?.title)
+      ? String(slides.value[0].data.title).trim() || 'Без названия'
+      : 'Без названия'
+    localStorage.setItem(`presentation-${presentationId.value}`, JSON.stringify({ slides: slides.value }))
+    const listRaw = localStorage.getItem('presentations-list')
+    if (listRaw) {
+      const list = JSON.parse(listRaw)
+      const item = list.find((p: { id: string }) => p.id === presentationId.value)
+      if (item) {
+        item.title = title
+        item.updatedAt = new Date().toISOString()
+        localStorage.setItem('presentations-list', JSON.stringify(list))
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 onMounted(async () => {
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
@@ -1451,6 +1491,13 @@ onMounted(async () => {
   } else {
     loadFromLocalStorage()
   }
+  nextTick(() => { initialLoadDone.value = true })
+  window.addEventListener('beforeunload', backupToLocalStorage)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', backupToLocalStorage)
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
 })
 
 function loadFromLocalStorage() {
@@ -1471,35 +1518,58 @@ function loadFromLocalStorage() {
   }
 }
 
-async function saveToStorage() {
+async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
   const cover = slides.value.find((s) => s.type === 'cover')
   const title = (cover?.type === 'cover' && cover.data?.title)
     ? String(cover.data.title).trim() || 'Без названия'
     : 'Без названия'
   const coverImage = (cover?.type === 'cover' && cover.data?.coverImageUrl) ? String(cover.data.coverImageUrl) : undefined
   const content = { slides: slides.value }
+  const status = options?.status
+  const skipRedirect = options?.skipRedirect ?? false
 
   if (hasApi() && getToken()) {
     try {
-      const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${presentationId.value}`, {
-        title,
-        coverImage,
-        content,
-      })
+      const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string } = { title, coverImage, content }
+      if (status !== undefined) body.status = status
+      const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${presentationId.value}`, body)
       if (data?.status != null) presentationMeta.value.status = data.status
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
       if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
-      router.push('/dashboard/presentations')
+      if (!skipRedirect) router.push('/dashboard/presentations')
+      return true
     } catch {
-      saveToLocalStorage()
+      if (!skipRedirect) saveToLocalStorage()
+      return false
     }
-    return
   }
-  saveToLocalStorage()
+  saveToLocalStorage(skipRedirect)
+  return true
 }
 
-function saveToLocalStorage() {
+async function saveToStorage() {
+  await doSave()
+}
+
+async function publishPresentation() {
+  autoSaveStatus.value = 'Публикация...'
+  const ok = await doSave({ status: 'published', skipRedirect: true })
+  autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
+  if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+}
+
+function scheduleAutoSave() {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  autoSaveTimer = setTimeout(async () => {
+    autoSaveStatus.value = 'Сохранение...'
+    const ok = await doSave({ skipRedirect: true })
+    autoSaveStatus.value = ok ? 'Сохранено' : ''
+    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+  }, AUTO_SAVE_INTERVAL_MS)
+}
+
+function saveToLocalStorage(skipRedirect = false) {
   const title = (slides.value[0]?.type === 'cover' && slides.value[0]?.data?.title)
     ? String(slides.value[0].data.title).trim() || 'Без названия'
     : 'Без названия'
@@ -1517,7 +1587,7 @@ function saveToLocalStorage() {
       localStorage.setItem('presentations-list', JSON.stringify(list))
     }
   }
-  router.push('/dashboard/presentations')
+  if (!skipRedirect) router.push('/dashboard/presentations')
 }
 
 /** Вставка текста без форматирования (очистка от стилей слайда) */
