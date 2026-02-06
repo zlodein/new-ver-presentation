@@ -300,6 +300,7 @@ interface Presentation {
   title: string
   coverImage?: string
   updatedAt: string
+  status?: string
 }
 
 const presentations = ref<Presentation[]>([])
