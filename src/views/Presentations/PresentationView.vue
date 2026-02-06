@@ -28,6 +28,9 @@
                       {{ formatPrice(Number(slide.data?.price_value) || 0) }} {{ currencySymbol(slide.data?.currency) }}
                       <span v-if="slide.data?.deal_type === 'Аренда'" class="text-sm font-normal">/ месяц</span>
                     </p>
+                    <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                      <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -75,6 +78,7 @@
                   <div class="booklet-map__top-square" />
                   <div class="booklet-map__bottom-square" />
                   <div class="booklet-map__info">
+                    <p v-if="slide.data?.location_name" class="font-medium">{{ slide.data.location_name }}</p>
                     <p class="font-medium">{{ slide.data?.address ?? slide.data?.location_address }}</p>
                     <div v-if="(slide.data?.metro_stations as Array<unknown>)?.length" class="mt-2 text-sm text-gray-600">
                       <p class="font-medium text-gray-500">Ближайшие станции метро</p>
@@ -93,8 +97,9 @@
               <div class="booklet-img__top-square" />
               <div class="booklet-img__bottom-square" />
               <div class="booklet-img__wrap">
-                <div v-if="slide.data?.imageUrl" class="booklet-img__img">
-                  <img :src="String(slide.data.imageUrl)" alt="">
+                <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2">{{ slide.data?.heading ?? slide.data?.title }}</h2>
+                <div v-if="slide.data?.imageUrl ?? slide.data?.image" class="booklet-img__img">
+                  <img :src="String(slide.data?.imageUrl ?? slide.data?.image)" alt="">
                 </div>
               </div>
             </div>
@@ -103,6 +108,7 @@
               <div class="booklet-galery__top-square" />
               <div class="booklet-galery__bottom-square" />
               <div class="booklet-galery__wrap">
+                <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
                 <div v-for="(url, i) in viewSlideImages(slide, 3)" :key="i" class="booklet-galery__img">
                   <img v-if="url" :src="url" alt="">
                 </div>
@@ -141,6 +147,7 @@
               <div class="booklet-grid__top-square" />
               <div class="booklet-grid__bottom-square" />
               <div class="booklet-grid__wrap">
+                <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
                 <div v-for="(url, i) in viewSlideImages(slide, 4)" :key="i" class="booklet-grid__img">
                   <img v-if="url" :src="url" alt="">
                 </div>
@@ -151,10 +158,12 @@
               <div class="booklet-contacts__wrap">
                 <div class="booklet-contacts__block booklet-contacts__content">
                   <h2 class="mb-2 text-base font-semibold uppercase">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'КОНТАКТЫ' }}</h2>
-                  <p>{{ slide.data?.contact_name ?? slide.data?.phone }}</p>
-                  <p>{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
-                  <p>{{ slide.data?.email }}</p>
-                  <p>{{ slide.data?.address ?? slide.data?.contact_address }}</p>
+                  <p v-if="slide.data?.contact_name">{{ slide.data.contact_name }}</p>
+                  <p v-if="slide.data?.phone ?? slide.data?.contact_phone">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
+                  <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
+                  <p v-if="slide.data?.contact_role">{{ slide.data.contact_role }}</p>
+                  <p v-if="slide.data?.contact_messengers">{{ slide.data.contact_messengers }}</p>
+                  <p v-if="slide.data?.address ?? slide.data?.contact_address">{{ slide.data?.address ?? slide.data?.contact_address }}</p>
                 </div>
                 <div class="booklet-contacts__images-wrap">
                   <div class="booklet-contacts__top-square" />
@@ -204,37 +213,52 @@ interface ViewSlideItem {
 const route = useRoute()
 const loading = ref(true)
 const error = ref('')
-const presentation = ref<{ id: string; title: string; content: { slides: ViewSlideItem[] } } | null>(null)
+const presentation = ref<{ id: string; title: string; coverImage?: string; content: { slides: ViewSlideItem[] } } | null>(null)
 
-/** Нормализуем слайды: поддерживаем формат редактора { type, data }, плоский PHP { type, title, ... }, и определяем "заполненность" */
-function normalizeSlideData(raw: Record<string, unknown>): Record<string, unknown> {
+/** Нормализуем слайды: сохраняем все поля, добавляем алиасы для совместимости редактора и PHP */
+function normalizeSlideData(raw: Record<string, unknown>, type: string, topCoverImage?: string): Record<string, unknown> {
   const d = (raw.data as Record<string, unknown>) ?? raw
-  const flat = d as Record<string, unknown>
-  return {
-    ...flat,
-    coverImageUrl: flat.coverImageUrl ?? flat.background_image,
-    title: flat.title ?? flat.heading,
-    heading: flat.heading ?? flat.title,
-    text: flat.text ?? flat.content,
-    content: flat.content ?? flat.text,
-    address: flat.address ?? flat.location_address,
-    lat: flat.lat ?? flat.location_lat,
-    lng: flat.lng ?? flat.location_lng,
-    imageUrl: flat.imageUrl ?? flat.image,
-    layoutImageUrl: flat.layoutImageUrl ?? flat.image,
-    charImageUrl: flat.charImageUrl ?? flat.image,
-    contactsImageUrl: flat.contactsImageUrl ?? (Array.isArray(flat.images) ? (flat.images as unknown[])[0] : undefined),
-    images: flat.images ?? [],
+  const flat = { ...(d as Record<string, unknown>) }
+  const out: Record<string, unknown> = { ...flat }
+  if (out.coverImageUrl == null && flat.background_image != null) out.coverImageUrl = flat.background_image
+  if (out.coverImageUrl == null && out.background_image == null && type === 'cover' && topCoverImage) out.coverImageUrl = topCoverImage
+  if (out.background_image == null && flat.coverImageUrl != null) out.background_image = flat.coverImageUrl
+  if (out.title == null && flat.heading != null) out.title = flat.heading
+  if (out.heading == null && flat.title != null) out.heading = flat.title
+  if (out.text == null && flat.content != null) out.text = flat.content
+  if (out.content == null && flat.text != null) out.content = flat.text
+  if (out.address == null && flat.location_address != null) out.address = flat.location_address
+  if (out.location_address == null && flat.address != null) out.location_address = flat.address
+  if (out.lat == null && flat.location_lat != null) out.lat = flat.location_lat
+  if (out.lng == null && flat.location_lng != null) out.lng = flat.location_lng
+  if (out.imageUrl == null && flat.image != null) out.imageUrl = flat.image
+  if (out.image == null && flat.imageUrl != null) out.image = flat.imageUrl
+  if (out.layoutImageUrl == null && flat.image != null && type === 'layout') out.layoutImageUrl = flat.image
+  if (out.charImageUrl == null && flat.image != null && type === 'characteristics') out.charImageUrl = flat.image
+  const contactImg = flat.contactsImageUrl ?? (Array.isArray(flat.images) ? (flat.images as unknown[])[0] : undefined)
+  if (out.contactsImageUrl == null && contactImg != null) out.contactsImageUrl = contactImg
+  const imgs = Array.isArray(flat.images) ? flat.images : []
+  if (imgs.length === 0 && (flat.contactsImageUrl ?? flat.image) != null && type === 'contacts') {
+    out.images = [flat.contactsImageUrl ?? flat.image]
+  } else if (out.images == null) {
+    out.images = imgs
   }
+  if (out.phone == null && flat.contact_phone != null) out.phone = flat.contact_phone
+  if (out.contact_phone == null && flat.phone != null) out.contact_phone = flat.phone
+  if (out.email == null && flat.contact_email != null) out.email = flat.contact_email
+  if (out.contact_email == null && flat.email != null) out.contact_email = flat.email
+  if (out.contact_name == null && flat.contact_title != null) out.contact_name = flat.contact_title
+  return out
 }
 
 const visibleSlides = computed<ViewSlideItem[]>(() => {
   const slides = presentation.value?.content?.slides
+  const topCoverImage = presentation.value?.coverImage
   if (!Array.isArray(slides)) return []
   return slides
     .map((s: Record<string, unknown>) => {
       const type = String(s.type ?? '')
-      const data = normalizeSlideData(s)
+      const data = normalizeSlideData(s, type, topCoverImage)
       const hidden = Boolean(s.hidden ?? (s.data as Record<string, unknown>)?.hidden)
       return { type, data, hidden } as ViewSlideItem
     })
@@ -249,6 +273,34 @@ function formatPrice(num: number): string {
 function currencySymbol(code: unknown): string {
   const map: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€', CNY: '¥', KZT: '₸' }
   return map[String(code || 'RUB')] ?? '₽'
+}
+
+const EXCHANGE_RATES: Record<string, number> = {
+  RUB: 1,
+  USD: 0.011,
+  EUR: 0.01,
+  CNY: 0.078,
+  KZT: 4.9,
+}
+
+function coverConvertedPrices(slide: ViewSlideItem): string[] {
+  const price = Number(slide.data?.price_value) || 0
+  const baseCurrency = String(slide.data?.currency || 'RUB')
+  const baseRate = EXCHANGE_RATES[baseCurrency] ?? 1
+  if (!price || baseRate <= 0) return []
+  const CURRENCIES = [
+    { code: 'RUB', symbol: '₽' },
+    { code: 'USD', symbol: '$' },
+    { code: 'EUR', symbol: '€' },
+    { code: 'CNY', symbol: '¥' },
+    { code: 'KZT', symbol: '₸' },
+  ]
+  return CURRENCIES.filter((c) => c.code !== baseCurrency).map((c) => {
+    const rate = EXCHANGE_RATES[c.code] ?? 1
+    const priceInRUB = price / baseRate
+    const converted = Math.round(priceInRUB * rate)
+    return `${c.symbol} ${formatPrice(converted)}`
+  })
 }
 
 /** Обложка: редактор хранит coverImageUrl, PHP — background_image */
