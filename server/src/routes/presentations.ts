@@ -360,6 +360,15 @@ export async function presentationRoutes(app: FastifyInstance) {
     async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       const { id } = req.params
+      if (id == null || String(id).trim() === '') {
+        return reply.status(400).send({ error: 'Не указан id презентации' })
+      }
+      if (useMysql) {
+        const idNum = Number(id)
+        if (Number.isNaN(idNum) || idNum < 1 || !Number.isInteger(idNum)) {
+          return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
+        }
+      }
       if (useFileStore) {
         const ok = fileStore.deletePresentation(id, userId!)
         if (!ok) return reply.status(404).send({ error: 'Презентация не найдена' })
@@ -368,11 +377,12 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const idNum = Number(id)
         const userIdNum = Number(userId)
-        if (Number.isNaN(idNum) || Number.isNaN(userIdNum)) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const deleted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .delete(mysqlSchema.presentations)
           .where(and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)))
-        const affected = (deleted as unknown as { affectedRows?: number })?.affectedRows ?? 0
+        const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
+        const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
         if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
         return reply.status(204).send()
       }
