@@ -80,7 +80,7 @@
                     <div v-if="(slide.data?.metro_stations as Array<unknown>)?.length" class="mt-2 text-sm text-gray-600">
                       <p class="font-medium text-gray-500">Ближайшие станции метро</p>
                       <ul class="mt-1 space-y-0.5">
-                        <li v-for="(st, idx) in (slide.data.metro_stations as Array<{ name?: string; walk_time_text?: string }>)" :key="idx">
+                        <li v-for="(st, idx) in (slide.data?.metro_stations as Array<{ name?: string; walk_time_text?: string }>)" :key="idx">
                           {{ st.name }}{{ st.walk_time_text ? ` — ${st.walk_time_text}` : '' }}
                         </li>
                       </ul>
