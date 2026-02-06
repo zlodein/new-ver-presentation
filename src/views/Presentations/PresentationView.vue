@@ -83,15 +83,21 @@ import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import { api, hasApi, getToken } from '@/api/client'
 
+interface ViewSlideItem {
+  type: string
+  data?: Record<string, unknown>
+  hidden?: boolean
+}
+
 const route = useRoute()
 const loading = ref(true)
 const error = ref('')
-const presentation = ref<{ id: string; title: string; content: { slides: unknown[] } } | null>(null)
+const presentation = ref<{ id: string; title: string; content: { slides: ViewSlideItem[] } } | null>(null)
 
-const visibleSlides = computed(() => {
+const visibleSlides = computed<ViewSlideItem[]>(() => {
   const slides = presentation.value?.content?.slides
   if (!Array.isArray(slides)) return []
-  return slides.filter((s: { hidden?: boolean }) => !s.hidden)
+  return slides.filter((s: ViewSlideItem) => !s.hidden)
 })
 
 function formatPrice(num: number): string {
@@ -109,10 +115,10 @@ onMounted(async () => {
   const id = route.params.id as string
   try {
     if (hash) {
-      const data = await api.get<{ id: string; title: string; content: { slides: unknown[] } }>(`/api/presentations/public/${hash}`)
+      const data = await api.get<{ id: string; title: string; content: { slides: ViewSlideItem[] } }>(`/api/presentations/public/${hash}`)
       presentation.value = data
     } else if (id && hasApi() && getToken()) {
-      const data = await api.get<{ id: string; title: string; content: { slides: unknown[] } }>(`/api/presentations/${id}`)
+      const data = await api.get<{ id: string; title: string; content: { slides: ViewSlideItem[] } }>(`/api/presentations/${id}`)
       presentation.value = data
     } else {
       error.value = 'Презентация не найдена'
