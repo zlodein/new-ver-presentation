@@ -86,6 +86,15 @@ export async function presentationRoutes(app: FastifyInstance) {
     async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       const { id } = req.params
+      if (id == null || String(id).trim() === '') {
+        return reply.status(400).send({ error: 'Не указан id презентации' })
+      }
+      if (useMysql) {
+        const idNum = Number(id)
+        if (Number.isNaN(idNum) || idNum < 1 || !Number.isInteger(idNum)) {
+          return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
+        }
+      }
       if (useFileStore) {
         const row = fileStore.getPresentationById(id, userId!)
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
