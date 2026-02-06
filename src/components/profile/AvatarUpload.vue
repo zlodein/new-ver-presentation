@@ -192,7 +192,7 @@ const cropAndUpload = async () => {
       return
     }
 
-    canvas.toBlob(async (blob) => {
+    canvas.toBlob(async (blob: Blob | null) => {
       if (!blob) {
         uploading.value = false
         return
