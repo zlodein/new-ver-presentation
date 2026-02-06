@@ -40,7 +40,7 @@ export const presentations = mysqlTable('presentations', {
   id: int('id', { unsigned: true }).primaryKey().autoincrement(),
   user_id: int('user_id', { unsigned: true }).notNull(),
   title: varchar('title', { length: 255 }).notNull().default('Новая презентация'),
-  cover_image: varchar('cover_image', { length: 255 }),
+  cover_image: longtext('cover_image'), // base64 или URL; varchar(255) обрезает base64
   slides_data: longtext('slides_data'),
   status: varchar('status', { length: 20 }).notNull().default('draft'), // draft | published
   public_hash: varchar('public_hash', { length: 32 }),

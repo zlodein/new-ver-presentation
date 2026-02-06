@@ -9,6 +9,13 @@ import { fileStore } from '../db/file-store.js'
 function toIsoDate(d: Date | string): string {
   return typeof d === 'string' ? d : d.toISOString()
 }
+/** Для MySQL: id может прийти как "1" или "1:1" (артефакт отображения) — берём число до двоеточия */
+function parseMysqlId(id: string): number | null {
+  const s = String(id).trim()
+  const numPart = s.includes(':') ? s.split(':')[0]?.trim() ?? s : s
+  const num = Number(numPart)
+  return Number.isNaN(num) || num < 1 || !Number.isInteger(num) ? null : num
+}
 function normContent(c: unknown): { slides: unknown[] } {
   if (typeof c === 'string') {
     try {
@@ -89,11 +96,9 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (id == null || String(id).trim() === '') {
         return reply.status(400).send({ error: 'Не указан id презентации' })
       }
-      if (useMysql) {
-        const idNum = Number(id)
-        if (Number.isNaN(idNum) || idNum < 1 || !Number.isInteger(idNum)) {
-          return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
-        }
+      const idNum = useMysql ? parseMysqlId(id) : null
+      if (useMysql && idNum === null) {
+        return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       }
       if (useFileStore) {
         const row = fileStore.getPresentationById(id, userId!)
@@ -107,11 +112,10 @@ export async function presentationRoutes(app: FastifyInstance) {
         })
       }
       if (useMysql) {
-        const idNum = Number(id)
         const userIdNum = Number(userId)
-        if (Number.isNaN(idNum) || Number.isNaN(userIdNum)) return reply.status(404).send({ error: 'Презентация не найдена' })
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
         const row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
-          where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
+          where: and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)),
         })
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
         const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null }
@@ -234,9 +238,10 @@ export async function presentationRoutes(app: FastifyInstance) {
         })
       }
       if (useMysql) {
-        const idNum = Number(id)
+        const mysqlId = parseMysqlId(id)
+        if (mysqlId === null) return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
         const userIdNum = Number(userId)
-        if (Number.isNaN(idNum) || Number.isNaN(userIdNum)) return reply.status(404).send({ error: 'Презентация не найдена' })
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
         const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string; status?: string } = { updated_at: new Date() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
         if (coverImage !== undefined) updates.cover_image = coverImage || null
@@ -245,9 +250,9 @@ export async function presentationRoutes(app: FastifyInstance) {
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .update(mysqlSchema.presentations)
           .set(updates)
-          .where(and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)))
+          .where(and(eq(mysqlSchema.presentations.id, mysqlId), eq(mysqlSchema.presentations.user_id, userIdNum)))
         const [updated] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
-          where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
+          where: and(eq(mysqlSchema.presentations.id, mysqlId), eq(mysqlSchema.presentations.user_id, userIdNum)),
         })
         if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
         const u = updated as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null }
@@ -299,9 +304,10 @@ export async function presentationRoutes(app: FastifyInstance) {
       const { id } = req.params
       const isPublic = Boolean(req.body?.isPublic)
       if (!useMysql) return reply.status(501).send({ error: 'Поделиться доступно только при работе с БД' })
-      const idNum = Number(id)
+      const idNum = parseMysqlId(id)
+      if (idNum === null) return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       const userIdNum = Number(userId)
-      if (Number.isNaN(idNum) || Number.isNaN(userIdNum)) return reply.status(404).send({ error: 'Презентация не найдена' })
+      if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
       const baseUrl = (process.env.PUBLIC_APP_URL || `${req.protocol}://${req.hostname}`).replace(/\/$/, '')
       const updates: { updated_at: Date; is_public: number; public_hash?: string | null; public_url?: string | null } = {
         updated_at: new Date(),
@@ -363,11 +369,9 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (id == null || String(id).trim() === '') {
         return reply.status(400).send({ error: 'Не указан id презентации' })
       }
-      if (useMysql) {
-        const idNum = Number(id)
-        if (Number.isNaN(idNum) || idNum < 1 || !Number.isInteger(idNum)) {
-          return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
-        }
+      const idNum = useMysql ? parseMysqlId(id) : null
+      if (useMysql && idNum === null) {
+        return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       }
       if (useFileStore) {
         const ok = fileStore.deletePresentation(id, userId!)
@@ -375,12 +379,11 @@ export async function presentationRoutes(app: FastifyInstance) {
         return reply.status(204).send()
       }
       if (useMysql) {
-        const idNum = Number(id)
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
         const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .delete(mysqlSchema.presentations)
-          .where(and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)))
+          .where(and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)))
         const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
         const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
         if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
