@@ -3,6 +3,15 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:gap-6">
       <!-- Панель слайдов (с названиями, удаление/дублирование/перетаскивание) -->
       <aside class="flex w-full shrink-0 flex-col gap-4 lg:w-56 xl:w-64">
+        <!-- Публичная ссылка активна (при включённом «Поделиться») -->
+        <div
+          v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
+          class="cursor-pointer rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-200"
+          title="Нажмите, чтобы скопировать ссылку"
+          @click="copyPublicLink"
+        >
+          Публичная ссылка активна
+        </div>
         <!-- Список слайдов (на мобиле прокручивается только этот блок) -->
         <div class="flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-hidden pb-2 lg:overflow-visible lg:pb-0">
           <p class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -105,7 +114,10 @@
 
       <!-- Область превью слайдов (Swiper) -->
       <main class="min-w-0 flex-1">
-        <div class="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50 p-4 lg:p-6">
+        <div
+          class="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50 p-4 lg:p-6"
+          @paste.capture="onPasteStripFormat"
+        >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент -->
           <div class="presentation-slider-wrap booklet-view mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900">
             <Swiper
@@ -452,6 +464,8 @@
                         class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
                       <div class="booklet-char__img relative">
+                        <div class="booklet-char__top-square" />
+                        <div class="booklet-char__bottom-square" />
                         <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
@@ -463,8 +477,6 @@
                         <img v-if="slide.data?.charImageUrl" :src="String(slide.data.charImageUrl)" alt="">
                       </div>
                       <div class="booklet-char__content">
-                        <div class="booklet-char__top-square" />
-                        <div class="booklet-char__bottom-square" />
                         <div class="booklet-char__table">
                           <div
                             v-for="(item, i) in charItems(slide)"
@@ -574,8 +586,6 @@
                     v-else-if="slide.type === 'contacts'"
                     class="booklet-content booklet-contacts"
                   >
-                    <div class="booklet-contacts__top-square" />
-                    <div class="booklet-contacts__bottom-square" />
                     <div class="booklet-contacts__wrap">
                       <div class="booklet-contacts__block booklet-contacts__content">
                         <input
@@ -603,7 +613,10 @@
                           class="w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                         />
                       </div>
-                      <div class="booklet-contacts-grid">
+                      <div class="booklet-contacts__images-wrap relative">
+                        <div class="booklet-contacts__top-square" />
+                        <div class="booklet-contacts__bottom-square" />
+                        <div class="booklet-contacts-grid">
                         <div class="booklet-contacts__block booklet-contacts__img relative">
                           <label class="booklet-upload-btn cursor-pointer">
                             <input
@@ -616,6 +629,7 @@
                           <img v-if="slide.data?.contactsImageUrl" :src="String(slide.data.contactsImageUrl)" alt="">
                         </div>
                         <div class="booklet-contacts__block booklet-contacts__img relative bg-gray-100" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -630,7 +644,7 @@
             </Swiper>
           </div>
 
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="mt-4 flex flex-wrap items-center gap-[30px]">
             <button
               type="button"
               class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -647,6 +661,20 @@
               @click="nextSlide"
             >
               Далее
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="openViewPage"
+            >
+              Просмотр
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="toggleShare"
+            >
+              {{ presentationMeta.isPublic ? 'Скрыть ссылку' : 'Поделиться' }}
             </button>
             <button
               type="button"
@@ -752,6 +780,19 @@ interface SlideItem {
 const slides = ref<SlideItem[]>([...defaultSlides])
 const swiperInstance = ref<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
+
+/** Мета презентации: статус, публичная ссылка (только владелец) */
+const presentationMeta = ref<{
+  status: string
+  isPublic: boolean
+  publicUrl: string
+  publicHash: string
+}>({
+  status: 'draft',
+  isPublic: false,
+  publicUrl: '',
+  publicHash: '',
+})
 
 /** Слайды, отображаемые в Swiper (без скрытых) */
 const visibleSlides = computed(() => slides.value.filter((s) => !s.hidden))
@@ -1036,7 +1077,7 @@ async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infra
 
 const swiperOptions = {
   spaceBetween: 0,
-  allowTouchMove: true,
+  allowTouchMove: false,
   initialSlide: 0,
 }
 
@@ -1387,7 +1428,7 @@ onMounted(async () => {
   const id = presentationId.value
   if (hasApi() && getToken()) {
     try {
-      const data = await api.get<PresentationFull>(`/api/presentations/${id}`)
+      const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
       if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
         slides.value = (data.content.slides as SlideItem[]).map((s) => ({
           ...s,
@@ -1395,6 +1436,10 @@ onMounted(async () => {
           hidden: s.hidden ?? false,
         }))
       }
+      if (data?.status != null) presentationMeta.value.status = data.status
+      if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
+      if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
+      if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
     } catch {
       loadFromLocalStorage()
     }
@@ -1422,18 +1467,24 @@ function loadFromLocalStorage() {
 }
 
 async function saveToStorage() {
-  const cover = slides.value[0]
+  const cover = slides.value.find((s) => s.type === 'cover')
   const title = (cover?.type === 'cover' && cover.data?.title)
     ? String(cover.data.title).trim() || 'Без названия'
     : 'Без названия'
+  const coverImage = (cover?.type === 'cover' && cover.data?.coverImageUrl) ? String(cover.data.coverImageUrl) : undefined
   const content = { slides: slides.value }
 
   if (hasApi() && getToken()) {
     try {
-      await api.put(`/api/presentations/${presentationId.value}`, {
+      const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${presentationId.value}`, {
         title,
+        coverImage,
         content,
       })
+      if (data?.status != null) presentationMeta.value.status = data.status
+      if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
+      if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
+      if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
       router.push('/dashboard/presentations')
     } catch {
       saveToLocalStorage()
@@ -1462,6 +1513,61 @@ function saveToLocalStorage() {
     }
   }
   router.push('/dashboard/presentations')
+}
+
+/** Вставка текста без форматирования (очистка от стилей слайда) */
+function onPasteStripFormat(e: ClipboardEvent) {
+  const target = e.target as HTMLInputElement | HTMLTextAreaElement
+  if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA')) return
+  const text = e.clipboardData?.getData('text/plain') ?? ''
+  if (!text) return
+  e.preventDefault()
+  const start = target.selectionStart ?? 0
+  const end = target.selectionEnd ?? 0
+  const value = target.value ?? ''
+  const newValue = value.slice(0, start) + text + value.slice(end)
+  target.value = newValue
+  const pos = start + text.length
+  target.setSelectionRange(pos, pos)
+}
+
+/** Открыть страницу просмотра (владелец: по id; или публичная по hash) */
+function openViewPage() {
+  if (presentationMeta.value.isPublic && presentationMeta.value.publicHash) {
+    window.open(`/view/${presentationMeta.value.publicHash}`, '_blank')
+  } else {
+    window.open(`/dashboard/presentations/${presentationId.value}/view`, '_blank')
+  }
+}
+
+/** Включить/выключить публичную ссылку */
+async function toggleShare() {
+  if (!hasApi() || !getToken()) return
+  const id = presentationId.value
+  const newPublic = !presentationMeta.value.isPublic
+  try {
+    const data = await api.put<{ isPublic: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}/share`, { isPublic: newPublic })
+    presentationMeta.value.isPublic = data.isPublic
+    if (data.publicUrl) presentationMeta.value.publicUrl = data.publicUrl
+    if (data.publicHash) presentationMeta.value.publicHash = data.publicHash
+    if (!newPublic) presentationMeta.value.publicUrl = ''
+    if (!newPublic) presentationMeta.value.publicHash = ''
+  } catch (err) {
+    console.error(err)
+    alert('Не удалось изменить настройки доступа')
+  }
+}
+
+/** Скопировать публичную ссылку в буфер */
+async function copyPublicLink() {
+  const url = presentationMeta.value.publicUrl
+  if (!url) return
+  try {
+    await navigator.clipboard.writeText(url)
+    alert('Ссылка скопирована')
+  } catch {
+    alert('Не удалось скопировать ссылку')
+  }
 }
 </script>
 

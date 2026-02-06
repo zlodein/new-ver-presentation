@@ -42,11 +42,16 @@ export const presentations = mysqlTable('presentations', {
   title: varchar('title', { length: 255 }).notNull().default('Новая презентация'),
   cover_image: varchar('cover_image', { length: 255 }),
   slides_data: longtext('slides_data'),
+  status: varchar('status', { length: 20 }).notNull().default('draft'), // draft | published
+  public_hash: varchar('public_hash', { length: 32 }),
+  is_public: int('is_public', { unsigned: true }).notNull().default(0),
+  public_url: varchar('public_url', { length: 255 }),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   userIdx: index('presentations_user_id_idx').on(table.user_id),
   updatedIdx: index('presentations_updated_at_idx').on(table.updated_at),
+  publicHashIdx: uniqueIndex('idx_public_hash').on(table.public_hash),
 }))
 
 export const passwordResetTokens = mysqlTable('password_reset_tokens', {

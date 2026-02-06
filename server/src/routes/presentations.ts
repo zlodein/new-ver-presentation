@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { eq, and, desc } from 'drizzle-orm'
 import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
@@ -94,13 +95,17 @@ export async function presentationRoutes(app: FastifyInstance) {
           where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
         })
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date }
+        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null }
         return reply.send({
           id: String(r.id),
           title: r.title,
           coverImage: r.cover_image ?? undefined,
           content: normContent(r.slides_data),
           updatedAt: toIsoDate(r.updated_at),
+          status: r.status ?? 'draft',
+          publicHash: r.public_hash ?? undefined,
+          isPublic: Boolean(r.is_public),
+          publicUrl: r.public_url ?? undefined,
         })
       }
       const row = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findFirst({
@@ -213,10 +218,11 @@ export async function presentationRoutes(app: FastifyInstance) {
         const idNum = Number(id)
         const userIdNum = Number(userId)
         if (Number.isNaN(idNum) || Number.isNaN(userIdNum)) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string } = { updated_at: new Date() }
+        const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string; status?: string } = { updated_at: new Date() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
         if (coverImage !== undefined) updates.cover_image = coverImage || null
         if (content !== undefined) updates.slides_data = JSON.stringify(content)
+        if ((req.body as { status?: string }).status !== undefined) updates.status = (req.body as { status: string }).status
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .update(mysqlSchema.presentations)
           .set(updates)
@@ -225,13 +231,17 @@ export async function presentationRoutes(app: FastifyInstance) {
           where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
         })
         if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const u = updated as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date }
+        const u = updated as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null }
         return reply.send({
           id: String(u.id),
           title: u.title,
           coverImage: u.cover_image ?? undefined,
           content: normContent(u.slides_data),
           updatedAt: toIsoDate(u.updated_at),
+          status: u.status ?? 'draft',
+          publicHash: u.public_hash ?? undefined,
+          isPublic: Boolean(u.is_public),
+          publicUrl: u.public_url ?? undefined,
         })
       }
       const updates: {
@@ -257,6 +267,70 @@ export async function presentationRoutes(app: FastifyInstance) {
         coverImage: updated.coverImage ?? undefined,
         content: normContent(updated.content),
         updatedAt: toIsoDate(updated.updatedAt as Date | string),
+      })
+    }
+  )
+
+  /** Включить/выключить публичную ссылку (только владелец) */
+  app.put<{ Params: { id: string }; Body: { isPublic: boolean } }>(
+    '/api/presentations/:id/share',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id: string }; Body: { isPublic: boolean } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      const { id } = req.params
+      const isPublic = Boolean(req.body?.isPublic)
+      if (!useMysql) return reply.status(501).send({ error: 'Поделиться доступно только при работе с БД' })
+      const idNum = Number(id)
+      const userIdNum = Number(userId)
+      if (Number.isNaN(idNum) || Number.isNaN(userIdNum)) return reply.status(404).send({ error: 'Презентация не найдена' })
+      const baseUrl = (process.env.PUBLIC_APP_URL || `${req.protocol}://${req.hostname}`).replace(/\/$/, '')
+      const updates: { updated_at: Date; is_public: number; public_hash?: string | null; public_url?: string | null } = {
+        updated_at: new Date(),
+        is_public: isPublic ? 1 : 0,
+      }
+      if (!isPublic) {
+        updates.public_hash = null
+        updates.public_url = null
+      } else {
+        const hash = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('')
+        updates.public_hash = hash
+        updates.public_url = `${baseUrl}/view/${hash}`
+      }
+      await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+        .update(mysqlSchema.presentations)
+        .set(updates)
+        .where(and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)))
+      const [updated] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
+        where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
+      })
+      if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
+      const u = updated as { public_hash?: string | null; is_public?: number; public_url?: string | null }
+      return reply.send({
+        isPublic: Boolean(u.is_public),
+        publicHash: u.public_hash ?? undefined,
+        publicUrl: u.public_url ?? undefined,
+      })
+    }
+  )
+
+  /** Публичный просмотр по хешу (без авторизации) */
+  app.get<{ Params: { hash: string } }>(
+    '/api/presentations/public/:hash',
+    async (req: FastifyRequest<{ Params: { hash: string } }>, reply: FastifyReply) => {
+      const { hash } = req.params
+      if (!useMysql) return reply.status(404).send({ error: 'Презентация не найдена' })
+      const row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
+        where: and(eq(mysqlSchema.presentations.public_hash, hash), eq(mysqlSchema.presentations.is_public, 1)),
+      })
+      if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+      const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
+      return reply.send({
+        id: String(r.id),
+        title: r.title,
+        coverImage: r.cover_image ?? undefined,
+        content: normContent(r.slides_data),
       })
     }
   )

@@ -48,6 +48,22 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/presentations/:id/view',
+      name: 'PresentationViewOwner',
+      component: () => import('../views/Presentations/PresentationView.vue'),
+      meta: {
+        title: 'Просмотр презентации',
+      },
+    },
+    {
+      path: '/view/:hash',
+      name: 'PresentationViewPublic',
+      component: () => import('../views/Presentations/PresentationView.vue'),
+      meta: {
+        title: 'Презентация',
+      },
+    },
+    {
       path: '/dashboard/calendar',
       name: 'Calendar',
       component: () => import('../views/Others/Calendar.vue'),
