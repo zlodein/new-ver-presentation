@@ -37,12 +37,12 @@ export async function presentationRoutes(app: FastifyInstance) {
     if (useFileStore) {
       const list = fileStore.getPresentationsByUserId(userId)
       return reply.send(
-        list.map((p: { id: string; title: string; coverImage?: string; updatedAt: Date; status?: string }) => ({
+        list.map((p) => ({
           id: p.id,
           title: p.title,
           coverImage: p.coverImage ?? undefined,
-          updatedAt: toIsoDate(p.updatedAt),
-          status: p.status ?? 'draft',
+          updatedAt: toIsoDate(p.updatedAt as string | Date),
+          status: (p as { status?: string }).status ?? 'draft',
         }))
       )
     }
