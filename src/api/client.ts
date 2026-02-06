@@ -106,6 +106,7 @@ export interface PresentationListItem {
   title: string
   coverImage?: string
   updatedAt: string
+  status?: string
 }
 
 export interface PresentationFull {

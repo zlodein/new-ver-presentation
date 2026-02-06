@@ -48,9 +48,18 @@
               </span>
             </div>
             <div class="flex flex-1 flex-col p-4">
-              <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
-                {{ presentation.title || 'Без названия' }}
-              </h3>
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
+                  {{ presentation.title || 'Без названия' }}
+                </h3>
+                <span
+                  v-if="presentation.status"
+                  class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="presentation.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+                >
+                  {{ presentation.status === 'published' ? 'Опубликовано' : 'Черновик' }}
+                </span>
+              </div>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Обновлено {{ formatDate(presentation.updatedAt) }}
               </p>

@@ -1436,6 +1436,11 @@ onMounted(async () => {
           hidden: s.hidden ?? false,
         }))
       }
+      const coverSlide = slides.value.find((s) => s.type === 'cover')
+      if (coverSlide && data?.coverImage) {
+        if (!coverSlide.data) coverSlide.data = {}
+        coverSlide.data.coverImageUrl = data.coverImage
+      }
       if (data?.status != null) presentationMeta.value.status = data.status
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl

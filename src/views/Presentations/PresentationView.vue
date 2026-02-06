@@ -18,7 +18,7 @@
             <div v-if="slide.type === 'cover'" class="booklet-content booklet-main">
               <div class="booklet-main__wrap">
                 <div class="booklet-main__img">
-                  <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
+                  <img v-if="coverImageUrl(slide)" :src="coverImageUrl(slide)!" alt="">
                 </div>
                 <div class="booklet-main__content">
                   <div class="booklet-main__top" v-html="(slide.data?.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ').toString().replace(/\n/g, '<br>')" />
@@ -34,8 +34,8 @@
               </div>
             </div>
             <!-- Остальные типы слайдов — заголовок + контент (упрощённо) -->
-            <div v-else class="booklet-content booklet-info p-6">
-              <h2 class="booklet-info__title mb-4">{{ slide.data?.heading || slide.type }}</h2>
+            <div v-else class="booklet-content booklet-info p-6 overflow-auto">
+              <h2 class="booklet-info__title mb-4">{{ slide.data?.heading ?? slide.data?.title ?? slide.type }}</h2>
               <div v-if="slide.data?.text" class="booklet-info__text" v-html="String(slide.data.text).replace(/\n/g, '<br>')" />
               <div v-else-if="slide.data?.content" class="booklet-info__text" v-html="String(slide.data.content).replace(/\n/g, '<br>')" />
               <div v-else-if="slide.type === 'characteristics' && Array.isArray(slide.data?.items)" class="space-y-2">
@@ -94,10 +94,17 @@ const loading = ref(true)
 const error = ref('')
 const presentation = ref<{ id: string; title: string; content: { slides: ViewSlideItem[] } } | null>(null)
 
+/** Нормализуем слайды: поддерживаем и формат редактора { type, data }, и плоский из PHP { type, title, ... } */
 const visibleSlides = computed<ViewSlideItem[]>(() => {
   const slides = presentation.value?.content?.slides
   if (!Array.isArray(slides)) return []
-  return slides.filter((s: ViewSlideItem) => !s.hidden)
+  return slides
+    .map((s: Record<string, unknown>) => ({
+      type: String(s.type ?? ''),
+      data: (s.data as Record<string, unknown>) ?? s,
+      hidden: Boolean(s.hidden),
+    }))
+    .filter((s) => !s.hidden)
 })
 
 function formatPrice(num: number): string {
@@ -108,6 +115,12 @@ function formatPrice(num: number): string {
 function currencySymbol(code: unknown): string {
   const map: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€', CNY: '¥', KZT: '₸' }
   return map[String(code || 'RUB')] ?? '₽'
+}
+
+/** Обложка: редактор хранит coverImageUrl, PHP — background_image */
+function coverImageUrl(slide: ViewSlideItem): string | undefined {
+  const url = slide.data?.coverImageUrl ?? slide.data?.background_image
+  return url ? String(url) : undefined
 }
 
 onMounted(async () => {

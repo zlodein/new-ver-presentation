@@ -32,6 +32,7 @@ export const presentations = pgTable(
     userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     title: varchar('title', { length: 500 }).notNull().default('Без названия'),
     coverImage: text('cover_image'),
+    status: varchar('status', { length: 20 }).notNull().default('draft'),
     content: jsonb('content').$type<{ slides: unknown[] }>().notNull().default({ slides: [] }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

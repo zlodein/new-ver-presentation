@@ -12,13 +12,20 @@ function toIsoDate(d: Date | string): string {
 function normContent(c: unknown): { slides: unknown[] } {
   if (typeof c === 'string') {
     try {
-      const parsed = JSON.parse(c) as { slides?: unknown[] }
-      return { slides: Array.isArray(parsed?.slides) ? parsed.slides : [] }
+      const parsed = JSON.parse(c) as { slides?: unknown[] } | unknown[]
+      const slides = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray((parsed as { slides?: unknown[] })?.slides)
+          ? (parsed as { slides: unknown[] }).slides
+          : []
+      return { slides }
     } catch {
       return { slides: [] }
     }
   }
-  return (c as { slides: unknown[] }) ?? { slides: [] }
+  const obj = c as { slides?: unknown[] } | undefined
+  if (Array.isArray(obj)) return { slides: obj }
+  return { slides: Array.isArray(obj?.slides) ? obj.slides : [] }
 }
 
 export async function presentationRoutes(app: FastifyInstance) {
@@ -30,11 +37,12 @@ export async function presentationRoutes(app: FastifyInstance) {
     if (useFileStore) {
       const list = fileStore.getPresentationsByUserId(userId)
       return reply.send(
-        list.map((p) => ({
+        list.map((p: { id: string; title: string; coverImage?: string; updatedAt: Date; status?: string }) => ({
           id: p.id,
           title: p.title,
           coverImage: p.coverImage ?? undefined,
           updatedAt: toIsoDate(p.updatedAt),
+          status: p.status ?? 'draft',
         }))
       )
     }
@@ -43,29 +51,31 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
       const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
         where: eq(mysqlSchema.presentations.user_id, userIdNum),
-        columns: { id: true, title: true, cover_image: true, updated_at: true },
+        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true },
         orderBy: [desc(mysqlSchema.presentations.updated_at)],
       })
       return reply.send(
-        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date }) => ({
+        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null }) => ({
           id: String(p.id),
           title: p.title,
           coverImage: p.cover_image ?? undefined,
           updatedAt: toIsoDate(p.updated_at),
+          status: p.status ?? 'draft',
         }))
       )
     }
     const list = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findMany({
       where: eq(pgSchema.presentations.userId, userId),
-      columns: { id: true, title: true, coverImage: true, updatedAt: true },
+      columns: { id: true, title: true, coverImage: true, updatedAt: true, status: true },
       orderBy: [desc(pgSchema.presentations.updatedAt)],
     })
     return reply.send(
-      list.map((p: { id: string; title: string; coverImage: string | null; updatedAt: Date | string }) => ({
+      list.map((p: { id: string; title: string; coverImage: string | null; updatedAt: Date | string; status?: string | null }) => ({
         id: p.id,
         title: p.title,
         coverImage: p.coverImage ?? undefined,
         updatedAt: toIsoDate(p.updatedAt),
+        status: p.status ?? 'draft',
       }))
     )
   })
