@@ -83,6 +83,7 @@ import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
 import Modal from './Modal.vue'
+import { getToken } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
@@ -205,7 +206,7 @@ const cropAndUpload = async () => {
         const response = await fetch('/api/upload/avatar', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${getToken() ?? ''}`,
           },
           body: formData,
         })
