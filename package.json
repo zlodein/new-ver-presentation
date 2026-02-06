@@ -25,6 +25,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/leaflet": "^1.9.21",
     "apexcharts": "^4.4.0",
+    "cropperjs": "^2.1.0",
     "dropzone": "^6.0.0-beta.2",
     "flatpickr": "^4.6.13",
     "jsvectormap": "^1.6.0",

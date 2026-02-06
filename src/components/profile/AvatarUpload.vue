@@ -46,19 +46,14 @@
               Переместите и измените размер области обрезки
             </p>
           </div>
-          <div class="mb-6">
-            <div class="relative w-full" style="max-height: 500px;">
-              <div class="relative w-full flex items-center justify-center" style="min-height: 300px;">
-              <img
-                ref="cropImage"
-                :src="cropImageSrc"
-                alt="Crop"
-                class="max-w-full max-h-[500px] mx-auto"
-                style="max-width: 100%; height: auto;"
-                @load="initCropper"
-              />
-            </div>
-            </div>
+          <div class="mb-6 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800" style="height: 400px;">
+            <img
+              ref="cropImage"
+              :src="cropImageSrc"
+              alt="Crop"
+              style="display: block; max-width: 100%; max-height: 400px;"
+              @load="initCropper"
+            />
           </div>
           <div class="flex items-center gap-3 justify-end">
             <button
@@ -84,10 +79,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+import Cropper from 'cropperjs'
+import 'cropperjs/dist/cropper.css'
 import Modal from './Modal.vue'
 import { useAuth } from '@/composables/useAuth'
-import { api } from '@/api/client'
 
 const props = defineProps<{
   initials?: string
@@ -155,40 +151,47 @@ const handleFileSelect = (event: Event) => {
 }
 
 const initCropper = () => {
-  if (!cropImage.value) return
+  if (!cropImage.value || !cropImageSrc.value) return
 
-  // Простая обрезка через canvas (можно заменить на библиотеку cropperjs)
-  // Для простоты используем встроенный API браузера
-  // В продакшене лучше использовать vue-cropperjs или cropperjs
+  nextTick(() => {
+    if (cropperInstance) {
+      cropperInstance.destroy()
+      cropperInstance = null
+    }
+
+    cropperInstance = new Cropper(cropImage.value!, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.8,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+    })
+  })
 }
 
 const cropAndUpload = async () => {
-  if (!cropImageSrc.value) return
+  if (!cropperInstance) return
 
   uploading.value = true
   try {
-    // Создать canvas для обрезки (простая реализация - обрезка до квадрата)
-    const img = new Image()
-    img.src = cropImageSrc.value
-    
-    await new Promise((resolve) => {
-      img.onload = resolve
+    const canvas = cropperInstance.getCroppedCanvas({
+      width: 400,
+      height: 400,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
     })
 
-    const canvas = document.createElement('canvas')
-    const size = Math.min(img.width, img.height)
-    canvas.width = size
-    canvas.height = size
-    
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Не удалось создать контекст canvas')
+    if (!canvas) {
+      uploading.value = false
+      return
+    }
 
-    // Обрезать до квадрата по центру
-    const x = (img.width - size) / 2
-    const y = (img.height - size) / 2
-    ctx.drawImage(img, x, y, size, size, 0, 0, size, size)
-
-    // Конвертировать в blob
     canvas.toBlob(async (blob) => {
       if (!blob) {
         uploading.value = false
@@ -232,6 +235,10 @@ const cropAndUpload = async () => {
 }
 
 const closeCropModal = () => {
+  if (cropperInstance) {
+    cropperInstance.destroy()
+    cropperInstance = null
+  }
   showCropModal.value = false
   cropImageSrc.value = ''
   if (fileInput.value) {
@@ -247,10 +254,6 @@ watch(() => props.currentImage, (newValue) => {
     localPreview.value = null
   }
 }, { immediate: true })
-
-onMounted(() => {
-  // Инициализация выполнена через computed
-})
 
 onBeforeUnmount(() => {
   if (cropperInstance) {
