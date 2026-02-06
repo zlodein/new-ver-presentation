@@ -20,6 +20,12 @@ function getDbErr(): string {
   return 'Ошибка сервера. В server/.env задайте DATABASE_URL: для MySQL — mysql://user:pass@host:3306/e_presentati (таблицы — server/sql/). Точная причина — в логах бэкенда.'
 }
 
+/** Признак ошибки "колонка не существует" в MySQL */
+function isUnknownColumnError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err)
+  return /Unknown column|doesn't exist/i.test(msg)
+}
+
 export async function authRoutes(app: FastifyInstance) {
   app.post<{
     Body: { email: string; password: string; name?: string; last_name?: string; middle_name?: string; user_img?: string }
@@ -195,13 +201,26 @@ export async function authRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
-        const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
-          where: eq(mysqlSchema.users.id, userId),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true, created_at: true },
-        })
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
+        const workColumns = { company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
+        let user: Record<string, unknown> | null = null
+        try {
+          user = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userId),
+            columns: { ...baseColumns, ...workColumns },
+          }) as Record<string, unknown> | null
+        } catch (err) {
+          if (isUnknownColumnError(err)) {
+            user = await mysqlDb.query.users.findFirst({
+              where: eq(mysqlSchema.users.id, userId),
+              columns: baseColumns,
+            }) as Record<string, unknown> | null
+          } else throw err
+        }
         if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
         
-        const messengersData = user.messengers ? (typeof user.messengers === 'string' ? JSON.parse(user.messengers) : user.messengers) : null
+        const messengersData = user.messengers ? (typeof user.messengers === 'string' ? JSON.parse(user.messengers as string) : user.messengers) : null
 
         return reply.send({
           id: String(user.id),
@@ -220,7 +239,6 @@ export async function authRoutes(app: FastifyInstance) {
           work_phone: user.work_phone ?? undefined,
           work_website: user.work_website ?? undefined,
           createdAt: user.created_at,
-          // Для обратной совместимости
           firstName: user.name,
           lastName: user.last_name,
         })
@@ -370,14 +388,14 @@ export async function authRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
-        
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+
         const updateData: Record<string, unknown> = {}
         if (name !== undefined) updateData.name = name.trim()
         if (last_name !== undefined) updateData.last_name = last_name.trim() || null
         if (email !== undefined) {
           const normalizedEmail = email.trim().toLowerCase()
-          // Проверка, что email не занят другим пользователем
-          const existing = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          const existing = await mysqlDb.query.users.findFirst({
             where: and(eq(mysqlSchema.users.email, normalizedEmail), ne(mysqlSchema.users.id, userId)),
             columns: { id: true },
           })
@@ -395,19 +413,41 @@ export async function authRoutes(app: FastifyInstance) {
         if (work_website !== undefined) updateData.work_website = work_website.trim() || null
         updateData.updated_at = new Date()
 
-        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-          .update(mysqlSchema.users)
-          .set(updateData)
-          .where(eq(mysqlSchema.users.id, userId))
+        try {
+          await mysqlDb.update(mysqlSchema.users).set(updateData).where(eq(mysqlSchema.users.id, userId))
+        } catch (err) {
+          if (isUnknownColumnError(err)) {
+            const updateDataBase: Record<string, unknown> = {}
+            if (name !== undefined) updateDataBase.name = name.trim()
+            if (last_name !== undefined) updateDataBase.last_name = last_name.trim() || null
+            if (email !== undefined) updateDataBase.email = (email as string).trim().toLowerCase()
+            if (personal_phone !== undefined) updateDataBase.personal_phone = personal_phone.trim() || null
+            if (position !== undefined) updateDataBase.position = position.trim() || null
+            if (messengers !== undefined) updateDataBase.messengers = JSON.stringify(messengers)
+            updateDataBase.updated_at = new Date()
+            await mysqlDb.update(mysqlSchema.users).set(updateDataBase).where(eq(mysqlSchema.users.id, userId))
+          } else throw err
+        }
 
-        // Получить обновленные данные
-        const updatedUser = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
-          where: eq(mysqlSchema.users.id, userId),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true, created_at: true },
-        })
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
+        const workColumns = { company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
+        let updatedUser: Record<string, unknown> | null = null
+        try {
+          updatedUser = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userId),
+            columns: { ...baseColumns, ...workColumns },
+          }) as Record<string, unknown> | null
+        } catch (err) {
+          if (isUnknownColumnError(err)) {
+            updatedUser = await mysqlDb.query.users.findFirst({
+              where: eq(mysqlSchema.users.id, userId),
+              columns: baseColumns,
+            }) as Record<string, unknown> | null
+          } else throw err
+        }
         if (!updatedUser) return reply.status(401).send({ error: 'Пользователь не найден' })
 
-        const messengersData = updatedUser.messengers ? (typeof updatedUser.messengers === 'string' ? JSON.parse(updatedUser.messengers) : updatedUser.messengers) : null
+        const messengersData = updatedUser.messengers ? (typeof updatedUser.messengers === 'string' ? JSON.parse(updatedUser.messengers as string) : updatedUser.messengers) : null
 
         return reply.send({
           id: String(updatedUser.id),
@@ -426,7 +466,6 @@ export async function authRoutes(app: FastifyInstance) {
           work_phone: updatedUser.work_phone ?? undefined,
           work_website: updatedUser.work_website ?? undefined,
           createdAt: updatedUser.created_at,
-          // Для обратной совместимости
           firstName: updatedUser.name,
           lastName: updatedUser.last_name,
         })
