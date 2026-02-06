@@ -107,7 +107,7 @@
       <main class="min-w-0 flex-1">
         <div class="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50 p-4 lg:p-6">
           <!-- Высота слайдера ограничена, на мобиле больше места под контент -->
-          <div class="presentation-slider-wrap mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900">
+          <div class="presentation-slider-wrap booklet-view mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900">
             <Swiper
               v-bind="swiperOptions"
               @swiper="onSwiper"
@@ -116,513 +116,514 @@
             >
               <SwiperSlide v-for="(slide, index) in visibleSlides" :key="slide.id">
                 <div
-                  class="flex h-full w-full flex-col bg-white dark:bg-gray-900"
+                  class="booklet-page h-full w-full"
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
                 >
-                  <!-- 1. Обложка -->
-                  <div
-                    v-if="slide.type === 'cover'"
-                    class="flex h-full flex-col justify-between bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white md:p-8"
-                    :style="slide.data?.coverImageUrl ? { backgroundImage: `url(${slide.data.coverImageUrl})`, backgroundSize: 'cover' } : {}"
-                  >
-                    <div class="flex flex-1 flex-col justify-between">
-                      <label class="mt-2 flex cursor-pointer items-center gap-2 text-sm opacity-90">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          class="hidden"
-                          @change="onSingleImageUpload(slide, $event, 'coverImageUrl')"
-                        />
-                        <span class="rounded bg-white/20 px-2 py-1">Загрузить фон</span>
-                      </label>
-                      <div>
-                        <input
-                          v-model="slide.data.title"
-                          type="text"
-                          placeholder="Название презентации"
-                          class="w-full bg-transparent text-2xl font-bold placeholder-white/70 focus:outline-none md:text-3xl lg:text-4xl"
-                        />
-                        <input
-                          v-model="slide.data.subtitle"
-                          type="text"
-                          placeholder="Подзаголовок"
-                          class="mt-2 w-full bg-transparent text-base opacity-90 placeholder-white/70 focus:outline-none md:text-lg"
-                        />
-                      </div>
-                      <div class="mt-4 flex flex-wrap items-end gap-4">
-                        <!-- Тип сделки — селект как в Form Elements -->
-                        <div class="min-w-[140px]">
-                          <label class="mb-1.5 block text-sm font-medium text-white/90">
-                            Тип сделки
-                          </label>
-                          <div class="relative z-20 bg-transparent">
-                            <select
-                              v-model="slide.data.deal_type"
-                              class="h-11 w-full min-w-[140px] appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                            >
-                              <option value="Аренда" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">Аренда</option>
-                              <option value="Продажа" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">Продажа</option>
-                            </select>
-                            <span class="pointer-events-none absolute right-4 top-1/2 z-30 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                              <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                              </svg>
-                            </span>
-                          </div>
-                        </div>
-                        <!-- Цена и валюта — инпут + селект как в Form Elements -->
-                        <div class="min-w-0 flex-1 sm:min-w-[200px]">
-                          <label class="mb-1.5 block text-sm font-medium text-white/90">
-                            Цена
-                          </label>
-                          <div class="flex gap-2">
+                  <div class="booklet-page__inner">
+                    <!-- 1. Обложка (как на presentation-realty.ru/view) -->
+                    <div
+                      v-if="slide.type === 'cover'"
+                      class="booklet-content booklet-main"
+                    >
+                      <div class="booklet-main__wrap">
+                        <div class="booklet-main__img">
+                          <label class="booklet-upload-btn cursor-pointer">
                             <input
-                              :value="coverPriceValue(slide)"
-                              type="text"
-                              :placeholder="coverPricePlaceholder(slide)"
-                              class="h-11 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                              @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
+                              type="file"
+                              accept="image/*"
+                              class="hidden"
+                              @change="onSingleImageUpload(slide, $event, 'coverImageUrl')"
                             />
-                            <div class="relative z-20 w-20 shrink-0 bg-transparent sm:w-24">
-                              <select
-                                :value="slide.data.currency"
-                                class="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-9 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                                @change="onCoverCurrencyChange(slide, $event)"
-                              >
-                                <option v-for="c in CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
-                              </select>
-                              <span class="pointer-events-none absolute right-2 top-1/2 z-30 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                                <svg class="stroke-current" width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                              </span>
+                          </label>
+                          <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
+                        </div>
+                        <div class="booklet-main__content">
+                          <div class="booklet-main__top">
+                            <input
+                              v-model="slide.data.title"
+                              type="text"
+                              placeholder="ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ"
+                              class="w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                            />
+                          </div>
+                          <div class="booklet-main__center">
+                            <input
+                              v-model="slide.data.subtitle"
+                              type="text"
+                              placeholder="АБСОЛЮТНО НОВЫЙ ТАУНХАУС НА ПЕРВОЙ ЛИНИИ"
+                              class="w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                            />
+                          </div>
+                          <div class="booklet-main__bottom">
+                            <div class="flex flex-wrap items-end gap-4">
+                              <div class="min-w-[140px]">
+                                <label class="mb-1 block text-xs font-medium text-gray-600">Тип сделки</label>
+                                <select
+                                  v-model="slide.data.deal_type"
+                                  class="h-10 w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                                >
+                                  <option value="Аренда">Аренда</option>
+                                  <option value="Продажа">Продажа</option>
+                                </select>
+                              </div>
+                              <div class="min-w-0 flex-1 sm:min-w-[180px]">
+                                <label class="mb-1 block text-xs font-medium text-gray-600">Цена</label>
+                                <div class="flex gap-2">
+                                  <input
+                                    :value="coverPriceValue(slide)"
+                                    type="text"
+                                    :placeholder="coverPricePlaceholder(slide)"
+                                    class="h-10 flex-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                                    @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
+                                  />
+                                  <select
+                                    :value="slide.data.currency"
+                                    class="h-10 w-16 shrink-0 rounded border border-gray-300 bg-white px-2 py-2 text-sm text-gray-800 focus:border-brand-500 focus:outline-none"
+                                    @change="onCoverCurrencyChange(slide, $event)"
+                                  >
+                                    <option v-for="c in CURRENCIES" :key="c.code" :value="c.code">{{ c.symbol }}</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <label class="flex cursor-pointer items-center gap-2 pb-1 text-sm text-gray-600">
+                                <input
+                                  v-model="slide.data.show_all_currencies"
+                                  type="checkbox"
+                                  class="h-4 w-4 rounded border-gray-300"
+                                />
+                                <span>Показывать все валюты</span>
+                              </label>
+                            </div>
+                            <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                              <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                             </div>
                           </div>
                         </div>
-                        <label class="flex cursor-pointer items-center gap-2 pb-2 text-sm text-white/90">
-                          <input
-                            v-model="slide.data.show_all_currencies"
-                            type="checkbox"
-                            class="h-4 w-4 rounded border-gray-400 bg-white/20 focus:ring-2 focus:ring-brand-500/30"
-                          />
-                          <span>Показывать все валюты</span>
-                        </label>
-                      </div>
-                      <div v-if="slide.data?.show_all_currencies" class="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 rounded-lg bg-white/10 px-3 py-2 text-sm opacity-95">
-                        <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                       </div>
                     </div>
-                  </div>
 
-                  <!-- 2. Описание -->
+                  <!-- 2. Описание (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'description'"
-                    class="flex h-full flex-col justify-center p-6 md:p-8"
+                    class="booklet-content booklet-info"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Заголовок (Описание)"
-                      class="mb-3 w-full border-0 border-b border-transparent bg-transparent text-xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600 md:text-2xl"
-                    />
-                    <div class="relative">
-                      <textarea
-                        :value="String(slide.data?.text ?? '')"
-                        placeholder="Текст описания..."
-                        rows="4"
-                        class="w-full resize-none border border-gray-200 rounded-lg bg-transparent p-3 text-gray-600 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:text-gray-300"
-                        @input="(slide.data as Record<string, string>).text = ($event.target as HTMLTextAreaElement).value"
-                      />
-                      <button
-                        type="button"
-                        class="mt-2 flex items-center gap-2 rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-sm text-brand-700 hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-300 dark:hover:bg-brand-900"
-                        :disabled="generateTextLoading === slide.id"
-                        @click="generateTextWithAI(slide, 'description')"
-                      >
-                        <span v-if="generateTextLoading === slide.id" class="animate-pulse">Генерация...</span>
-                        <span v-else>Сгенерировать текст (GigaChat)</span>
-                      </button>
+                    <div class="booklet-info__top-square" />
+                    <div class="booklet-info__bottom-square" />
+                    <div class="booklet-info__wrap">
+                      <div class="booklet-info__block booklet-info__content">
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="ОПИСАНИЕ"
+                          class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                        />
+                        <div class="booklet-info__text">
+                          <textarea
+                            :value="String(slide.data?.text ?? '')"
+                            placeholder="Подробно опишите объект..."
+                            rows="4"
+                            class="w-full resize-none border-0 bg-transparent p-0 text-inherit focus:outline-none focus:ring-0"
+                            @input="(slide.data as Record<string, string>).text = ($event.target as HTMLTextAreaElement).value"
+                          />
+                          <button
+                            type="button"
+                            class="mt-2 inline-flex items-center gap-2 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                            :disabled="generateTextLoading === slide.id"
+                            @click="generateTextWithAI(slide, 'description')"
+                          >
+                            <span v-if="generateTextLoading === slide.id" class="animate-pulse">Генерация...</span>
+                            <span v-else>Сгенерировать текст (GigaChat)</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="booklet-info__grid">
+                        <div
+                          v-for="(img, i) in descriptionImages(slide)"
+                          :key="i"
+                          class="booklet-info__block booklet-info__img relative"
+                        >
+                          <label class="booklet-upload-btn cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              class="hidden"
+                              @change="onDescriptionImageUpload(slide, $event, i)"
+                            />
+                          </label>
+                          <img v-if="img" :src="img" alt="">
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- 3. Инфраструктура -->
+                  <!-- 3. Инфраструктура (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'infrastructure'"
-                    class="flex h-full flex-col overflow-auto p-4 md:p-6"
+                    class="booklet-content booklet-stroen"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Инфраструктура"
-                      class="mb-3 w-full border-0 border-b border-transparent bg-transparent text-xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600 md:text-2xl"
-                    />
-                    <div class="mb-3">
-                      <textarea
-                        :value="String(slide.data?.content ?? '')"
-                        placeholder="Текст об инфраструктуре (опционально). Можно сгенерировать по кнопке ниже."
-                        rows="2"
-                        class="w-full resize-none rounded-lg border border-gray-200 bg-transparent p-2 text-sm text-gray-600 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:text-gray-300"
-                        @input="(slide.data as Record<string, string>).content = ($event.target as HTMLTextAreaElement).value"
-                      />
-                    </div>
-                    <ul class="space-y-2 flex-1 min-h-0 overflow-auto">
-                      <li
-                        v-for="(item, i) in infraItems(slide)"
-                        :key="i"
-                        class="flex items-center gap-2"
-                      >
-                        <span class="h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+                    <div class="booklet-stroen__top-square" />
+                    <div class="booklet-stroen__bottom-square" />
+                    <div class="booklet-stroen__wrap">
+                      <div class="booklet-stroen__block booklet-stroen__content">
                         <input
-                          v-model="(slide.data.items as string[])[i]"
+                          v-model="slide.data.heading"
                           type="text"
-                          placeholder="Пункт списка"
-                          class="min-w-0 flex-1 bg-transparent text-gray-600 focus:outline-none dark:text-gray-300 text-sm md:text-base"
+                          placeholder="ИНФРАСТРУКТУРА"
+                          class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <button
-                          v-if="infraItems(slide).length > 1"
-                          type="button"
-                          class="shrink-0 rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-600 dark:hover:text-red-400"
-                          title="Удалить пункт"
-                          @click="removeInfraItem(slide, i)"
+                        <div class="booklet-stroen__text">
+                          <textarea
+                            :value="String(slide.data?.content ?? '')"
+                            placeholder="Текст об инфраструктуре..."
+                            rows="2"
+                            class="w-full resize-none border-0 bg-transparent p-0 text-inherit focus:outline-none focus:ring-0"
+                            @input="(slide.data as Record<string, string>).content = ($event.target as HTMLTextAreaElement).value"
+                          />
+                          <button
+                            type="button"
+                            class="mt-1 inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50"
+                            :disabled="generateTextLoading === slide.id"
+                            @click="generateTextWithAI(slide, 'infrastructure')"
+                          >
+                            <span v-if="generateTextLoading === slide.id" class="animate-pulse">Генерация...</span>
+                            <span v-else>Сгенерировать (GigaChat)</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="booklet-stroen__grid">
+                        <div
+                          v-for="(img, i) in infrastructureImages(slide)"
+                          :key="i"
+                          class="booklet-stroen__block booklet-stroen__img relative"
                         >
-                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </li>
-                    </ul>
-                    <button
-                      type="button"
-                      class="mt-2 flex items-center gap-2 rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-sm text-brand-700 hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-300 dark:hover:bg-brand-900"
-                      :disabled="generateTextLoading === slide.id"
-                      @click="generateTextWithAI(slide, 'infrastructure')"
-                    >
-                      <span v-if="generateTextLoading === slide.id" class="animate-pulse">Генерация...</span>
-                      <span v-else>Сгенерировать текст (GigaChat)</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-600 hover:border-brand-400 hover:text-brand-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500"
-                      @click="addInfraItem(slide)"
-                    >
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                      </svg>
-                      Добавить пункт
-                    </button>
+                          <label class="booklet-upload-btn cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              class="hidden"
+                              @change="onInfrastructureImageUpload(slide, $event, i)"
+                            />
+                          </label>
+                          <img v-if="img" :src="img" alt="">
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <!-- 4. Местоположение (overflow-visible чтобы выпадающий список подсказок не обрезался) -->
+                  <!-- 4. Местоположение (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'location'"
-                    class="flex h-full flex-col overflow-visible p-4 md:p-6"
+                    class="booklet-content booklet-map overflow-visible"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Местоположение"
-                      class="mb-3 w-full border-0 border-b border-transparent bg-transparent text-xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600 md:text-2xl"
-                    />
-                    <div class="relative mb-3">
+                    <div class="booklet-map__wrap">
                       <input
-                        :value="String(slide.data?.address ?? '')"
+                        v-model="slide.data.heading"
                         type="text"
-                        placeholder="Введите адрес для подсказок и отображения на карте"
-                        class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-gray-600 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:text-gray-300"
-                        autocomplete="off"
-                        @input="(slide.data as Record<string, string>).address = ($event.target as HTMLInputElement).value; onLocationAddressInput(slide, ($event.target as HTMLInputElement).value)"
-                        @focus="showAddressSuggestions(slide)"
-                        @blur="onLocationAddressBlur(slide)"
-                        @keydown.enter.prevent="geocodeAddress(slide)"
+                        placeholder="МЕСТОПОЛОЖЕНИЕ"
+                        class="booklet-map__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
-                      <ul
-                        v-if="addressSuggestionsFor(slide).length > 0"
-                        class="absolute left-0 right-0 top-full z-[100] mt-1 max-h-48 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
-                      >
-                        <li
-                          v-for="(s, i) in addressSuggestionsFor(slide)"
-                          :key="i"
-                          class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                          @mousedown.prevent="selectAddressSuggestion(slide, s)"
-                        >
-                          {{ s.display_name || s.address || s }}
-                        </li>
-                      </ul>
-                    </div>
-                    <LocationMap
-                      :key="slide.id"
-                      :lat="Number(slide.data?.lat)"
-                      :lng="Number(slide.data?.lng)"
-                    />
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                        :disabled="locationMetroLoading(slide)"
-                        @click="findNearestMetro(slide)"
-                      >
-                        {{ locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}
-                      </button>
-                      <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <input v-model="slide.data.show_metro" type="checkbox" class="rounded" />
-                        Показывать метро в презентации
-                      </label>
-                    </div>
-                    <div
-                      v-if="(slide.data?.metro_stations as Array<unknown>)?.length"
-                      class="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800"
-                    >
-                      <p class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Ближайшие станции метро</p>
-                      <ul class="space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
-                        <li
-                          v-for="(station, idx) in (slide.data.metro_stations as Array<{ name?: string; walk_time_text?: string; distance_text?: string }>)"
-                          :key="idx"
-                        >
-                          <strong>{{ station.name }}</strong>
-                          <span v-if="station.walk_time_text" class="text-gray-500"> — {{ station.walk_time_text }}</span>
-                          <span v-if="station.distance_text" class="text-gray-500">, {{ station.distance_text }}</span>
-                        </li>
-                      </ul>
+                      <div class="booklet-map__img">
+                        <LocationMap
+                          :key="slide.id"
+                          :lat="Number(slide.data?.lat)"
+                          :lng="Number(slide.data?.lng)"
+                        />
+                      </div>
+                      <div class="booklet-map__content">
+                        <div class="booklet-map__top-square" />
+                        <div class="booklet-map__bottom-square" />
+                        <div class="booklet-map__info relative">
+                          <div class="relative mb-2">
+                            <input
+                              v-model="slide.data.address"
+                              type="text"
+                              placeholder="ЖК «Успешная продажа»"
+                              class="w-full rounded border border-gray-200 bg-white px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                              @input="(slide.data as Record<string, string>).address = ($event.target as HTMLInputElement).value; onLocationAddressInput(slide, ($event.target as HTMLInputElement).value)"
+                              @focus="showAddressSuggestions(slide)"
+                              @blur="onLocationAddressBlur(slide)"
+                              @keydown.enter.prevent="geocodeAddress(slide)"
+                            />
+                            <ul
+                              v-if="addressSuggestionsFor(slide).length > 0"
+                              class="absolute left-0 right-0 top-full z-[100] mt-1 max-h-40 overflow-auto rounded border border-gray-200 bg-white py-1 shadow-lg"
+                            >
+                            <li
+                              v-for="(s, i) in addressSuggestionsFor(slide)"
+                              :key="i"
+                              class="cursor-pointer px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                              @mousedown.prevent="selectAddressSuggestion(slide, s)"
+                            >
+                              {{ s.display_name || s.address || s }}
+                            </li>
+                            </ul>
+                          </div>
+                          <button
+                            type="button"
+                            class="mb-2 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                            :disabled="locationMetroLoading(slide)"
+                            @click="findNearestMetro(slide)"
+                          >
+                            {{ locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}
+                          </button>
+                          <label class="flex cursor-pointer items-center gap-1.5 text-xs text-gray-600">
+                            <input v-model="slide.data.show_metro" type="checkbox" class="rounded" />
+                            Показывать метро в презентации
+                          </label>
+                          <div
+                            v-if="(slide.data?.metro_stations as Array<unknown>)?.length"
+                            class="mt-2 rounded border border-gray-200 bg-gray-50 p-2"
+                          >
+                            <p class="mb-1 text-xs font-medium text-gray-500">Ближайшие станции метро</p>
+                            <ul class="space-y-1 text-xs text-gray-700">
+                              <li
+                                v-for="(station, idx) in (slide.data.metro_stations as Array<{ name?: string; walk_time_text?: string; distance_text?: string }>)"
+                                :key="idx"
+                              >
+                                <strong>{{ station.name }}</strong>
+                                <span v-if="station.walk_time_text" class="text-gray-500"> — {{ station.walk_time_text }}</span>
+                                <span v-if="station.distance_text" class="text-gray-500">, {{ station.distance_text }}</span>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- 5. Изображение -->
+                  <!-- 5. Изображение (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'image'"
-                    class="flex h-full flex-col p-4"
+                    class="booklet-content booklet-img"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Заголовок (необязательно)"
-                      class="mb-2 w-full bg-transparent text-lg font-semibold text-gray-800 focus:outline-none dark:text-white/90 md:text-xl"
-                    />
-                    <div class="relative min-h-[120px] flex-1 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
-                      <img
-                        v-if="slide.data?.imageUrl"
-                        :src="String(slide.data.imageUrl)"
-                        alt=""
-                        class="h-full w-full object-cover"
-                      />
-                      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-gray-500 text-sm">
-                        <label class="cursor-pointer rounded border border-gray-300 bg-white px-3 py-1.5 dark:border-gray-600 dark:bg-gray-800">
+                    <div class="booklet-img__top-square" />
+                    <div class="booklet-img__bottom-square" />
+                    <div class="booklet-img__wrap">
+                      <div class="booklet-img__img">
+                        <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
                             accept="image/*"
                             class="hidden"
                             @change="onSingleImageUpload(slide, $event, 'imageUrl')"
                           />
-                          Загрузить изображение
                         </label>
-                        <span>или URL:</span>
+                        <img v-if="slide.data?.imageUrl" :src="String(slide.data.imageUrl)" alt="">
                       </div>
                     </div>
-                    <input
-                      v-model="slide.data.imageUrl"
-                      type="text"
-                      placeholder="URL изображения"
-                      class="mt-2 w-full rounded border border-gray-200 px-3 py-1.5 text-sm dark:border-gray-700"
-                    />
                   </div>
 
-                  <!-- 6. Галерея -->
+                  <!-- 6. Галерея 3 фото (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'gallery'"
-                    class="flex h-full flex-col p-4 md:p-6"
+                    class="booklet-content booklet-galery"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Галерея"
-                      class="mb-3 w-full border-0 border-b border-transparent bg-transparent text-xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600 md:text-2xl"
-                    />
-                    <div class="grid flex-1 grid-cols-2 gap-2 min-h-0">
+                    <div class="booklet-galery__top-square" />
+                    <div class="booklet-galery__bottom-square" />
+                    <div class="booklet-galery__wrap">
                       <div
-                        v-for="(img, i) in galleryImages(slide)"
+                        v-for="(img, i) in galleryImages3(slide)"
                         :key="i"
-                        class="relative min-h-[60px] rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden"
+                        class="booklet-galery__img relative"
                       >
-                        <img
-                          v-if="img"
-                          :src="img"
-                          alt=""
-                          class="h-full w-full object-cover"
-                        />
-                        <label v-else class="flex h-full w-full cursor-pointer items-center justify-center text-gray-500 text-xs">
+                        <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
                             accept="image/*"
                             class="hidden"
                             @change="onGalleryImageUpload(slide, $event, i)"
                           />
-                          + Фото
                         </label>
+                        <img v-if="img" :src="img" alt="">
                       </div>
                     </div>
                   </div>
 
-                  <!-- 7. Характеристики -->
+                  <!-- 7. Характеристики (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'characteristics'"
-                    class="flex h-full flex-col overflow-auto p-4 md:p-6"
+                    class="booklet-content booklet-char"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Характеристики"
-                      class="mb-4 w-full border-0 border-b border-transparent bg-transparent text-xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600 md:text-2xl"
-                    />
-                    <div class="grid flex-1 grid-cols-2 gap-3 min-h-0 overflow-auto content-start">
-                      <div
-                        v-for="(item, i) in (charItems(slide))"
-                        :key="i"
-                        class="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-800"
-                      >
-                        <div class="min-w-0 flex-1">
+                    <div class="booklet-char__wrap">
+                      <input
+                        v-model="slide.data.heading"
+                        type="text"
+                        placeholder="ХАРАКТЕРИСТИКИ"
+                        class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                      />
+                      <div class="booklet-char__img relative">
+                        <label class="booklet-upload-btn cursor-pointer">
                           <input
-                            v-model="item.label"
-                            type="text"
-                            class="mb-1 w-full bg-transparent text-xs text-gray-500 focus:outline-none dark:text-gray-400"
-                            placeholder="Метка"
+                            type="file"
+                            accept="image/*"
+                            class="hidden"
+                            @change="onSingleImageUpload(slide, $event, 'charImageUrl')"
                           />
-                          <input
-                            v-model="item.value"
-                            type="text"
-                            class="w-full bg-transparent text-sm font-medium text-gray-800 focus:outline-none dark:text-white/90"
-                            placeholder="Значение"
-                          />
+                        </label>
+                        <img v-if="slide.data?.charImageUrl" :src="String(slide.data.charImageUrl)" alt="">
+                      </div>
+                      <div class="booklet-char__content">
+                        <div class="booklet-char__top-square" />
+                        <div class="booklet-char__bottom-square" />
+                        <div class="booklet-char__table">
+                          <div
+                            v-for="(item, i) in charItems(slide)"
+                            :key="i"
+                            class="booklet-char__row"
+                          >
+                            <div class="booklet-char__item">
+                              <input
+                                v-model="item.label"
+                                type="text"
+                                placeholder="Метка"
+                                class="w-full border-0 bg-transparent p-0 text-sm focus:outline-none focus:ring-0"
+                              />
+                            </div>
+                            <div class="booklet-char__item">
+                              <input
+                                v-model="item.value"
+                                type="text"
+                                placeholder="Значение"
+                                class="w-full border-0 bg-transparent p-0 text-sm focus:outline-none focus:ring-0"
+                              />
+                            </div>
+                            <button
+                              v-if="charItems(slide).length > 1"
+                              type="button"
+                              class="remove-row shrink-0 rounded p-1 text-gray-400 hover:text-red-600"
+                              title="Удалить"
+                              @click="removeCharacteristicItem(slide, i)"
+                            >
+                              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                          <button
+                            v-if="charItems(slide).length < 12"
+                            type="button"
+                            class="add-row mt-2 flex w-full items-center justify-center gap-1 rounded border border-dashed border-gray-300 py-1.5 text-xs text-gray-600 hover:border-brand-500 hover:text-brand-600"
+                            @click="addCharacteristicItem(slide)"
+                          >
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Добавить характеристику
+                          </button>
                         </div>
-                        <button
-                          v-if="charItems(slide).length > 1"
-                          type="button"
-                          class="shrink-0 rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-600 dark:hover:text-red-400"
-                          title="Удалить"
-                          @click="removeCharacteristicItem(slide, i)"
-                        >
-                          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
                       </div>
                     </div>
-                    <button
-                      v-if="charItems(slide).length < 12"
-                      type="button"
-                      class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-600 hover:border-brand-400 hover:text-brand-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500"
-                      @click="addCharacteristicItem(slide)"
-                    >
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                      </svg>
-                      Добавить характеристику
-                    </button>
-                    <p v-else class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                      Максимум 12 характеристик
-                    </p>
                   </div>
 
-                  <!-- 8. Планировка -->
+                  <!-- 8. Планировка (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'layout'"
-                    class="flex h-full flex-col p-4 md:p-6"
+                    class="booklet-content booklet-layout"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Планировка"
-                      class="mb-3 w-full border-0 border-b border-transparent bg-transparent text-xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600 md:text-2xl"
-                    />
-                    <div class="relative min-h-[100px] flex-1 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                      <img
-                        v-if="slide.data?.layoutImageUrl"
-                        :src="String(slide.data.layoutImageUrl)"
-                        alt=""
-                        class="h-full w-full object-contain"
-                      />
-                      <label v-else class="flex h-full w-full cursor-pointer items-center justify-center text-gray-500 text-sm">
+                    <div class="booklet-layout__wrap">
+                      <div class="booklet-layout__title-wrapper">
                         <input
-                          type="file"
-                          accept="image/*"
-                          class="hidden"
-                          @change="onSingleImageUpload(slide, $event, 'layoutImageUrl')"
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="ПЛАНИРОВКА"
+                          class="booklet-layout__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        Загрузить план этажа
-                      </label>
+                      </div>
+                      <div class="booklet-layout__img relative">
+                        <label class="booklet-upload-btn cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            class="hidden"
+                            @change="onSingleImageUpload(slide, $event, 'layoutImageUrl')"
+                          />
+                        </label>
+                        <img v-if="slide.data?.layoutImageUrl" :src="String(slide.data.layoutImageUrl)" alt="">
+                      </div>
                     </div>
                   </div>
 
-                  <!-- 9. Сетка с изображениями -->
+                  <!-- 9. Сетка 4 фото (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'grid'"
-                    class="flex h-full flex-col p-4 md:p-6"
+                    class="booklet-content booklet-grid"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Сетка"
-                      class="mb-3 w-full border-0 border-b border-transparent bg-transparent text-xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600 md:text-2xl"
-                    />
-                    <div class="grid flex-1 grid-cols-3 gap-2 min-h-0">
+                    <div class="booklet-grid__top-square" />
+                    <div class="booklet-grid__bottom-square" />
+                    <div class="booklet-grid__wrap">
                       <div
-                        v-for="(img, i) in gridImages(slide)"
+                        v-for="(img, i) in gridImages4(slide)"
                         :key="i"
-                        class="relative min-h-[50px] rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden"
+                        class="booklet-grid__img relative"
                       >
-                        <img
-                          v-if="img"
-                          :src="img"
-                          alt=""
-                          class="h-full w-full object-cover"
-                        />
-                        <label v-else class="flex h-full w-full cursor-pointer items-center justify-center text-gray-500 text-xs">
+                        <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
                             accept="image/*"
                             class="hidden"
                             @change="onGridImageUpload(slide, $event, i)"
                           />
-                          +
                         </label>
+                        <img v-if="img" :src="img" alt="">
                       </div>
                     </div>
                   </div>
 
-                  <!-- 10. Контакты -->
+                  <!-- 10. Контакты (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'contacts'"
-                    class="flex h-full flex-col justify-center p-8"
+                    class="booklet-content booklet-contacts"
                   >
-                    <input
-                      v-model="slide.data.heading"
-                      type="text"
-                      placeholder="Контакты"
-                      class="mb-6 w-full border-0 border-b border-transparent bg-transparent text-2xl font-semibold text-gray-800 focus:border-gray-300 focus:outline-none dark:text-white/90 dark:focus:border-gray-600"
-                    />
-                    <div class="space-y-3 text-gray-600 dark:text-gray-300">
-                      <input
-                        v-model="slide.data.phone"
-                        type="text"
-                        placeholder="Телефон"
-                        class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 focus:border-brand-300 focus:outline-none dark:border-gray-700"
-                      />
-                      <input
-                        v-model="slide.data.email"
-                        type="text"
-                        placeholder="Email"
-                        class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 focus:border-brand-300 focus:outline-none dark:border-gray-700"
-                      />
-                      <input
-                        v-model="slide.data.address"
-                        type="text"
-                        placeholder="Адрес"
-                        class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 focus:border-brand-300 focus:outline-none dark:border-gray-700"
-                      />
+                    <div class="booklet-contacts__top-square" />
+                    <div class="booklet-contacts__bottom-square" />
+                    <div class="booklet-contacts__wrap">
+                      <div class="booklet-contacts__block booklet-contacts__content">
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="КОНТАКТЫ"
+                          class="mb-2 w-full border-0 bg-transparent p-0 text-base font-semibold uppercase focus:outline-none focus:ring-0"
+                        />
+                        <input
+                          v-model="slide.data.phone"
+                          type="text"
+                          placeholder="Телефон"
+                          class="mb-1 w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        />
+                        <input
+                          v-model="slide.data.email"
+                          type="text"
+                          placeholder="Email"
+                          class="mb-1 w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        />
+                        <input
+                          v-model="slide.data.address"
+                          type="text"
+                          placeholder="Адрес"
+                          class="w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        />
+                      </div>
+                      <div class="booklet-contacts-grid">
+                        <div class="booklet-contacts__block booklet-contacts__img relative">
+                          <label class="booklet-upload-btn cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              class="hidden"
+                              @change="onSingleImageUpload(slide, $event, 'contactsImageUrl')"
+                            />
+                          </label>
+                          <img v-if="slide.data?.contactsImageUrl" :src="String(slide.data.contactsImageUrl)" alt="">
+                        </div>
+                        <div class="booklet-contacts__block booklet-contacts__img relative bg-gray-100" />
+                      </div>
                     </div>
                   </div>
 
                   <!-- Fallback -->
                   <div v-else class="flex h-full items-center justify-center p-8 text-gray-500">
                     Слайд: {{ slide.type }}
+                  </div>
                   </div>
                 </div>
               </SwiperSlide>
@@ -668,6 +669,7 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import type { Swiper as SwiperType } from 'swiper'
 import draggable from 'vuedraggable'
 import 'swiper/css'
+import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import { api, hasApi, getToken } from '@/api/client'
@@ -1307,12 +1309,72 @@ function galleryImages(slide: SlideItem): string[] {
   return out.slice(0, 4)
 }
 
+function galleryImages3(slide: SlideItem): string[] {
+  const arr = slide.data?.images
+  if (!Array.isArray(arr)) return ['', '', '']
+  const out = [...arr]
+  while (out.length < 3) out.push('')
+  return out.slice(0, 3)
+}
+
 function gridImages(slide: SlideItem): string[] {
   const arr = slide.data?.images
   if (!Array.isArray(arr)) return ['', '', '', '', '', '']
   const out = [...arr]
   while (out.length < 6) out.push('')
   return out.slice(0, 6)
+}
+
+function gridImages4(slide: SlideItem): string[] {
+  const arr = slide.data?.images
+  if (!Array.isArray(arr)) return ['', '', '', '']
+  const out = [...arr]
+  while (out.length < 4) out.push('')
+  return out.slice(0, 4)
+}
+
+function descriptionImages(slide: SlideItem): string[] {
+  const arr = slide.data?.images
+  if (!Array.isArray(arr)) return ['', '']
+  const out = [...arr]
+  while (out.length < 2) out.push('')
+  return out.slice(0, 2)
+}
+
+async function onDescriptionImageUpload(slide: SlideItem, event: Event, index: number) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!Array.isArray(slide.data.images)) slide.data.images = []
+  const arr = slide.data.images as string[]
+  while (arr.length <= index) arr.push('')
+  try {
+    arr[index] = await readFileAsDataUrl(file)
+  } finally {
+    input.value = ''
+  }
+}
+
+function infrastructureImages(slide: SlideItem): string[] {
+  const arr = slide.data?.images
+  if (!Array.isArray(arr)) return ['', '']
+  const out = [...arr]
+  while (out.length < 2) out.push('')
+  return out.slice(0, 2)
+}
+
+async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index: number) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!Array.isArray(slide.data.images)) slide.data.images = []
+  const arr = slide.data.images as string[]
+  while (arr.length <= index) arr.push('')
+  try {
+    arr[index] = await readFileAsDataUrl(file)
+  } finally {
+    input.value = ''
+  }
 }
 
 const presentationId = computed(() => route.params.id as string)
