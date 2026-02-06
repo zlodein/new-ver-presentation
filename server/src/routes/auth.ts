@@ -72,25 +72,25 @@ export async function authRoutes(app: FastifyInstance) {
       scope: cfg.scope,
     })
     const authUrl = `${cfg.authUrl}?${params.toString()}`
-    return reply.redirect(302, authUrl)
+    return reply.redirect(authUrl, 302)
   })
 
   // ——— OAuth: callback от провайдера, обмен code на токен, создание/поиск пользователя, редирект на фронт с JWT ———
   app.get<{ Querystring: { provider?: string; code?: string; error?: string } }>('/api/auth/oauth/callback', async (req: FastifyRequest<{ Querystring: { provider?: string; code?: string; error?: string } }>, reply: FastifyReply) => {
     const { provider: rawProvider, code, error: oauthError } = req.query
     if (oauthError) {
-      return reply.redirect(302, `${FRONTEND_URL}/signin?error=oauth_cancelled`)
+      return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_cancelled`, 302)
     }
     const provider = rawProvider as OAuthProvider
     if (provider !== 'yandex' && provider !== 'vk') {
-      return reply.redirect(302, `${FRONTEND_URL}/signin?error=unknown_provider`)
+      return reply.redirect(`${FRONTEND_URL}/signin?error=unknown_provider`, 302)
     }
     if (!code) {
-      return reply.redirect(302, `${FRONTEND_URL}/signin?error=missing_code`)
+      return reply.redirect(`${FRONTEND_URL}/signin?error=missing_code`, 302)
     }
     const cfg = oauthConfig[provider]
     if (!cfg.clientId || !cfg.clientSecret) {
-      return reply.redirect(302, `${FRONTEND_URL}/signin?error=oauth_not_configured`)
+      return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_not_configured`, 302)
     }
     const redirectUri = `${SITE_URL}/api/auth/oauth/callback?provider=${provider}`
 
@@ -114,25 +114,27 @@ export async function authRoutes(app: FastifyInstance) {
       if (!tokenRes.ok) {
         const errText = await tokenRes.text()
         req.log.warn({ provider, status: tokenRes.status, body: errText }, 'OAuth token exchange failed')
-        return reply.redirect(302, `${FRONTEND_URL}/signin?error=token_exchange_failed`)
+        return reply.redirect(`${FRONTEND_URL}/signin?error=token_exchange_failed`, 302)
       }
       const tokenData = (await tokenRes.json()) as { access_token?: string }
-      accessToken = tokenData.access_token
-      if (!accessToken) {
-        return reply.redirect(302, `${FRONTEND_URL}/signin?error=no_access_token`)
+      const rawToken = tokenData.access_token
+      if (!rawToken) {
+        return reply.redirect(`${FRONTEND_URL}/signin?error=no_access_token`, 302)
       }
+      accessToken = rawToken
 
       const userRes = await fetch(cfg.userInfoUrl, {
         headers: { Authorization: provider === 'yandex' ? `Oauth ${accessToken}` : `Bearer ${accessToken}` },
       })
       if (!userRes.ok) {
         req.log.warn({ provider, status: userRes.status }, 'OAuth user info failed')
-        return reply.redirect(302, `${FRONTEND_URL}/signin?error=user_info_failed`)
+        return reply.redirect(`${FRONTEND_URL}/signin?error=user_info_failed`, 302)
       }
       const userData = (await userRes.json()) as Record<string, unknown>
 
       if (provider === 'yandex') {
-        email = (userData.default_email as string) || (userData.emails?.[0] as string) || ''
+        const emails = userData.emails as string[] | undefined
+        email = (userData.default_email as string) || (emails?.[0]) || ''
         const firstName = userData.real_name as string | undefined
         if (firstName) {
           const parts = firstName.trim().split(/\s+/)
@@ -151,11 +153,11 @@ export async function authRoutes(app: FastifyInstance) {
       }
 
       if (!email) {
-        return reply.redirect(302, `${FRONTEND_URL}/signin?error=email_required`)
+        return reply.redirect(`${FRONTEND_URL}/signin?error=email_required`, 302)
       }
     } catch (err) {
       req.log.error(err)
-      return reply.redirect(302, `${FRONTEND_URL}/signin?error=oauth_failed`)
+      return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_failed`, 302)
     }
 
     const normalizedEmail = email.trim().toLowerCase()
@@ -187,9 +189,10 @@ export async function authRoutes(app: FastifyInstance) {
           name: name || '',
           last_name: lastName,
         }).$returningId()
-        const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
+        const insertedArr = inserted as { id: number }[] | { id: number }
+        const newId = Array.isArray(insertedArr) ? insertedArr[0]?.id : insertedArr?.id
         if (newId == null) {
-          return reply.redirect(302, `${FRONTEND_URL}/signin?error=create_user_failed`)
+          return reply.redirect(`${FRONTEND_URL}/signin?error=create_user_failed`, 302)
         }
         userId = String(newId)
       } else {
@@ -210,18 +213,18 @@ export async function authRoutes(app: FastifyInstance) {
           lastName: lastName,
         }).returning({ id: pgSchema.users.id })
         if (!inserted) {
-          return reply.redirect(302, `${FRONTEND_URL}/signin?error=create_user_failed`)
+          return reply.redirect(`${FRONTEND_URL}/signin?error=create_user_failed`, 302)
         }
         userId = inserted.id
       } else {
         userId = user.id
       }
     } else {
-      return reply.redirect(302, `${FRONTEND_URL}/signin?error=no_database`)
+      return reply.redirect(`${FRONTEND_URL}/signin?error=no_database`, 302)
     }
 
     const token = await reply.jwtSign({ sub: userId, email: normalizedEmail }, { expiresIn: '7d' })
-    return reply.redirect(302, `${FRONTEND_URL}/signin?token=${encodeURIComponent(token)}`)
+    return reply.redirect(`${FRONTEND_URL}/signin?token=${encodeURIComponent(token)}`, 302)
   })
 
   app.post<{
