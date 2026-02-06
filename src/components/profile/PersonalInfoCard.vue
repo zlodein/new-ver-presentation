@@ -139,11 +139,12 @@
                       Email
                     </label>
                     <input
-                      v-model="formData.email"
+                      :value="currentUser?.email"
                       type="email"
-                      placeholder="Введите email"
-                      class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                      readonly
+                      class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                     />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Email нельзя изменить</p>
                   </div>
 
                   <div class="col-span-2 lg:col-span-1">
@@ -175,6 +176,41 @@
                       class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                     />
                   </div>
+
+                  <!-- Смена пароля — только для пользователей, зарегистрированных по email -->
+                  <template v-if="canChangePassword">
+                    <div class="col-span-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <h5 class="mb-4 text-base font-medium text-gray-800 dark:text-white/90">
+                        Смена пароля
+                      </h5>
+                      <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                        <div class="col-span-2 lg:col-span-1">
+                          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                            Текущий пароль
+                          </label>
+                          <input
+                            v-model="formData.current_password"
+                            type="password"
+                            placeholder="Введите текущий пароль"
+                            autocomplete="current-password"
+                            class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                          />
+                        </div>
+                        <div class="col-span-2 lg:col-span-1">
+                          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                            Новый пароль
+                          </label>
+                          <input
+                            v-model="formData.new_password"
+                            type="password"
+                            placeholder="Введите новый пароль"
+                            autocomplete="new-password"
+                            class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -202,7 +238,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import Modal from './Modal.vue'
 import { useAuth } from '@/composables/useAuth'
 import { api, ApiError } from '@/api/client'
@@ -216,9 +252,18 @@ const error = ref('')
 const formData = ref({
   name: '',
   last_name: '',
-  email: '',
   personal_phone: '',
   position: '',
+  current_password: '',
+  new_password: '',
+})
+
+// Показывать блок смены пароля только если пользователь зарегистрирован по email (не через соц. сети)
+const socialProviders = ['google', 'yandex', 'vk', 'facebook', 'apple']
+const canChangePassword = computed(() => {
+  const provider = currentUser.value?.auth_provider
+  if (!provider) return true // нет провайдера — считаем email-регистрацию
+  return !socialProviders.includes(provider.toLowerCase())
 })
 
 // Заполнить форму данными пользователя при открытии модального окна
@@ -228,9 +273,10 @@ watch(isProfileInfoModal, (isOpen) => {
     formData.value = {
       name: currentUser.value.name || '',
       last_name: currentUser.value.last_name || '',
-      email: currentUser.value.email || '',
       personal_phone: phone ? formatPhone(phone) : '',
       position: currentUser.value.position || '',
+      current_password: '',
+      new_password: '',
     }
     error.value = ''
   }
@@ -255,15 +301,19 @@ const saveProfile = async (e: Event) => {
     console.log('Сохранение профиля:', formData.value)
     // Очистить телефон от форматирования для сохранения
     const cleanPhone = formData.value.personal_phone.replace(/\D/g, '')
-    const response = await api.put('/api/auth/profile', {
+    await api.put('/api/auth/profile', {
       name: formData.value.name.trim() || undefined,
       last_name: formData.value.last_name.trim() || undefined,
-      email: formData.value.email.trim() || undefined,
       personal_phone: cleanPhone || undefined,
       position: formData.value.position.trim() || undefined,
     })
-    console.log('Профиль сохранен:', response)
-    // Обновить данные пользователя
+    // Смена пароля (если заполнены оба поля)
+    if (formData.value.current_password && formData.value.new_password) {
+      await api.put('/api/auth/password', {
+        current_password: formData.value.current_password,
+        new_password: formData.value.new_password,
+      })
+    }
     await fetchUser()
     isProfileInfoModal.value = false
   } catch (err) {

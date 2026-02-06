@@ -11,6 +11,8 @@ const __dirname = path.dirname(__filename)
 
 // Путь к папке с аватарами (относительно корня проекта)
 const AVATARS_DIR = path.join(__dirname, '../../uploads/avatars')
+// Путь к папке с логотипами компаний
+const COMPANY_LOGO_DIR = path.join(__dirname, '../../uploads/company-logo')
 
 // Создать папку для аватаров, если её нет
 async function ensureAvatarsDir() {
@@ -21,9 +23,21 @@ async function ensureAvatarsDir() {
   }
 }
 
-// Инициализировать папку при загрузке модуля (не блокируем запуск сервера)
+// Создать папку для логотипов компаний, если её нет
+async function ensureCompanyLogoDir() {
+  try {
+    await fs.access(COMPANY_LOGO_DIR)
+  } catch {
+    await fs.mkdir(COMPANY_LOGO_DIR, { recursive: true })
+  }
+}
+
+// Инициализировать папки при загрузке модуля (не блокируем запуск сервера)
 ensureAvatarsDir().catch((err) => {
   console.error('[upload] Ошибка создания папки для аватаров:', err)
+})
+ensureCompanyLogoDir().catch((err) => {
+  console.error('[upload] Ошибка создания папки для логотипов компаний:', err)
 })
 
 export async function uploadRoutes(app: FastifyInstance) {
@@ -88,6 +102,63 @@ export async function uploadRoutes(app: FastifyInstance) {
           success: true,
           url: dbPath,
           message: 'Аватар успешно загружен',
+        })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({
+          error: err instanceof Error ? err.message : 'Ошибка загрузки файла',
+        })
+      }
+    }
+  )
+
+  // Загрузка логотипа компании
+  app.post<{ Body: { file: any } }>(
+    '/api/upload/company-logo',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const payload = req.user as { sub: string }
+        const userId = Number(payload.sub)
+        if (Number.isNaN(userId)) {
+          return reply.status(401).send({ error: 'Не авторизован' })
+        }
+
+        const data = await req.file()
+        if (!data) {
+          return reply.status(400).send({ error: 'Файл не загружен' })
+        }
+
+        if (!data.mimetype.startsWith('image/')) {
+          return reply.status(400).send({ error: 'Файл должен быть изображением' })
+        }
+
+        const maxSize = 5 * 1024 * 1024
+        const buffer = await data.toBuffer()
+        if (buffer.length > maxSize) {
+          return reply.status(400).send({ error: 'Размер файла не должен превышать 5MB' })
+        }
+
+        await ensureCompanyLogoDir()
+
+        const ext = path.extname(data.filename || '.jpg')
+        const filename = `${userId}_${Date.now()}${ext}`
+        const filepath = path.join(COMPANY_LOGO_DIR, filename)
+
+        await sharp(buffer)
+          .resize(400, 400, {
+            fit: 'contain',
+            position: 'center',
+          })
+          .jpeg({ quality: 90 })
+          .toFile(filepath)
+
+        const dbPath = `/uploads/company-logo/${filename}`
+
+        return reply.send({
+          success: true,
+          url: dbPath,
+          message: 'Логотип компании успешно загружен',
         })
       } catch (err) {
         req.log.error(err)

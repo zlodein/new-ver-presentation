@@ -80,6 +80,15 @@ export interface AuthUser {
   // Для обратной совместимости
   firstName?: string | null
   lastName?: string | null
+  // Регистрация: 'email' | 'google' | 'yandex' и т.д. — для отображения смены пароля
+  auth_provider?: string | null
+  // Работа
+  company_name?: string | null
+  work_position?: string | null
+  company_logo?: string | null
+  work_email?: string | null
+  work_phone?: string | null
+  work_website?: string | null
 }
 
 export interface AuthResponse {

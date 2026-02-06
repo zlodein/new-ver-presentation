@@ -3,37 +3,57 @@
     <div class="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Адрес</h4>
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Работа</h4>
 
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Страна</p>
-              <p class="text-sm font-medium text-gray-800 dark:text-white/90">United States</p>
-            </div>
-
-            <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Город / Регион</p>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Место работы</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-                Phoenix, United States
+                {{ currentUser?.company_name || '—' }}
               </p>
             </div>
 
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Почтовый индекс
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Должность</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ currentUser?.work_position || '—' }}
               </p>
-              <p class="text-sm font-medium text-gray-800 dark:text-white/90">ERT 2489</p>
+            </div>
+
+            <div v-if="currentUser?.company_logo" class="flex items-center gap-2">
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Лого компании</p>
+              <img
+                :src="companyLogoUrl"
+                alt="Лого компании"
+                class="h-12 w-auto object-contain rounded"
+              />
             </div>
 
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">TAX ID</p>
-              <p class="text-sm font-medium text-gray-800 dark:text-white/90">AS4568384</p>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Рабочая почта</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ currentUser?.work_email || '—' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Рабочий телефон</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ currentUser?.work_phone || '—' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Сайт компании</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ currentUser?.work_website || '—' }}
+              </p>
             </div>
           </div>
         </div>
 
         <button
-          @click="isProfileAddressModal = true"
+          @click="isProfileWorkModal = true"
           class="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
         >
           <svg
@@ -55,14 +75,13 @@
         </button>
       </div>
     </div>
-    <Modal v-if="isProfileAddressModal" @close="isProfileAddressModal = false">
+    <Modal v-if="isProfileWorkModal" @close="isProfileWorkModal = false">
       <template #body>
         <div
           class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11"
         >
-          <!-- close btn -->
           <button
-            @click="isProfileAddressModal = false"
+            @click="isProfileWorkModal = false"
             class="transition-color absolute right-5 top-5 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-700 dark:bg-white/[0.05] dark:text-gray-400 dark:hover:bg-white/[0.07] dark:hover:text-gray-300"
           >
             <svg
@@ -83,74 +102,127 @@
           </button>
           <div class="px-2 pr-14">
             <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Edit Address
+              Редактирование данных о работе
             </h4>
             <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Update your details to keep your profile up-to-date.
+              Обновите рабочие данные для актуальности профиля.
             </p>
           </div>
-          <form class="flex flex-col">
+          <form @submit.prevent="saveWork" class="flex flex-col">
+            <div v-if="error" class="mb-4 mx-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+              {{ error }}
+            </div>
             <div class="px-2 overflow-y-auto custom-scrollbar">
               <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                <div>
+                <div class="col-span-2 lg:col-span-1">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Country
+                    Место работы
                   </label>
                   <input
+                    v-model="formData.company_name"
                     type="text"
-                    value="United States"
+                    placeholder="Название компании"
                     class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                   />
                 </div>
 
-                <div>
+                <div class="col-span-2 lg:col-span-1">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    City/State
+                    Должность
                   </label>
                   <input
+                    v-model="formData.work_position"
                     type="text"
-                    value="Poenix, Arizona, United States"
+                    placeholder="Должность"
+                    class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Пока не привязано к справочнику в базе</p>
+                </div>
+
+                <div class="col-span-2">
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    Лого компании
+                  </label>
+                  <div class="flex items-center gap-4">
+                    <div
+                      v-if="workFormLogoPreview"
+                      class="h-16 w-16 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0"
+                    >
+                      <img :src="workFormLogoPreview" alt="Лого" class="h-full w-full object-contain" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <input
+                        ref="logoInputRef"
+                        type="file"
+                        accept="image/*"
+                        class="hidden"
+                        @change="onLogoFileChange"
+                      />
+                      <button
+                        type="button"
+                        @click="logoInputRef?.click()"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        {{ workFormLogoPreview ? 'Заменить' : 'Выбрать файл' }}
+                      </button>
+                      <span v-if="logoFile" class="text-xs text-gray-500 dark:text-gray-400">{{ logoFile.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-span-2 lg:col-span-1">
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    Рабочая почта
+                  </label>
+                  <input
+                    v-model="formData.work_email"
+                    type="email"
+                    placeholder="work@company.com"
                     class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                   />
                 </div>
 
-                <div>
+                <div class="col-span-2 lg:col-span-1">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Postal Code
+                    Рабочий телефон
                   </label>
                   <input
-                    type="text"
-                    value="ERT 2489"
+                    v-model="formData.work_phone"
+                    type="tel"
+                    placeholder="+7 (000) 000-00-00"
+                    @input="handleWorkPhoneInput"
+                    maxlength="18"
                     class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                   />
                 </div>
 
-                <div>
+                <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    TAX ID
+                    Сайт компании
                   </label>
                   <input
-                    type="text"
-                    value="AS4568384"
+                    v-model="formData.work_website"
+                    type="url"
+                    placeholder="https://company.com"
                     class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                   />
                 </div>
               </div>
             </div>
-            <div class="flex items-center gap-3 mt-6 lg:justify-end">
+            <div class="flex items-center gap-3 mt-6 px-2 lg:justify-end">
               <button
-                @click="isProfileAddressModal = false"
+                @click="isProfileWorkModal = false"
                 type="button"
                 class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
               >
-                Close
+                Закрыть
               </button>
               <button
-                @click="saveProfile"
-                type="button"
-                class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
+                type="submit"
+                :disabled="loading"
+                class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 sm:w-auto"
               >
-                Save Changes
+                {{ loading ? 'Сохранение...' : 'Сохранить изменения' }}
               </button>
             </div>
           </form>
@@ -160,17 +232,123 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
 import Modal from './Modal.vue'
+import { useAuth } from '@/composables/useAuth'
+import { api, ApiError } from '@/api/client'
+import { usePhoneMask } from '@/composables/usePhoneMask'
+import { getToken } from '@/api/client'
 
-const isProfileAddressModal = ref(false)
+const { currentUser, fetchUser } = useAuth()
+const isProfileWorkModal = ref(false)
+const loading = ref(false)
+const error = ref('')
+const logoInputRef = ref<HTMLInputElement | null>(null)
+const logoFile = ref<File | null>(null)
+const workFormLogoPreview = ref<string | null>(null)
 
-const saveProfile = () => {
-  // Implement save profile logic here
-  console.log('Profile saved')
-  isProfileInfoModal.value = false
+const formData = ref({
+  company_name: '',
+  work_position: '',
+  company_logo: '' as string | null,
+  work_email: '',
+  work_phone: '',
+  work_website: '',
+})
+
+const companyLogoUrl = computed(() => {
+  const url = currentUser.value?.company_logo
+  if (!url) return ''
+  return url.startsWith('/') ? url : `/${url}`
+})
+
+const { formatPhone } = usePhoneMask()
+
+watch(isProfileWorkModal, (isOpen) => {
+  if (isOpen && currentUser.value) {
+    const phone = currentUser.value.work_phone || ''
+    formData.value = {
+      company_name: currentUser.value.company_name || '',
+      work_position: currentUser.value.work_position || '',
+      company_logo: currentUser.value.company_logo || null,
+      work_email: currentUser.value.work_email || '',
+      work_phone: phone ? formatPhone(phone) : '',
+      work_website: currentUser.value.work_website || '',
+    }
+    logoFile.value = null
+    workFormLogoPreview.value = currentUser.value.company_logo
+      ? (currentUser.value.company_logo.startsWith('/') ? currentUser.value.company_logo : `/${currentUser.value.company_logo}`)
+      : null
+    error.value = ''
+  }
+})
+
+function onLogoFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file || !file.type.startsWith('image/')) return
+  logoFile.value = file
+  const reader = new FileReader()
+  reader.onload = () => {
+    workFormLogoPreview.value = reader.result as string
+  }
+  reader.readAsDataURL(file)
 }
-</script>
 
-<style></style>
+function handleWorkPhoneInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  const formatted = formatPhone(input.value)
+  formData.value.work_phone = formatted
+  input.value = formatted
+}
+
+async function saveWork() {
+  if (loading.value) return
+  error.value = ''
+  loading.value = true
+  try {
+    let companyLogoUrlToSave: string | undefined = formData.value.company_logo || undefined
+    if (logoFile.value) {
+      const fd = new FormData()
+      fd.append('file', logoFile.value, logoFile.value.name)
+      const base = (import.meta as ImportMeta & { env: { VITE_API_URL?: string } }).env?.VITE_API_URL?.replace(/\/$/, '') ?? ''
+      const res = await fetch(`${base}/api/upload/company-logo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken() ?? ''}` },
+        body: fd,
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Ошибка загрузки логотипа')
+      }
+      const data = await res.json()
+      companyLogoUrlToSave = data.url
+    }
+    const cleanPhone = formData.value.work_phone.replace(/\D/g, '')
+    await api.put('/api/auth/profile', {
+      company_name: formData.value.company_name.trim() || undefined,
+      work_position: formData.value.work_position.trim() || undefined,
+      company_logo: companyLogoUrlToSave,
+      work_email: formData.value.work_email.trim() || undefined,
+      work_phone: cleanPhone || undefined,
+      work_website: formData.value.work_website.trim() || undefined,
+    })
+    await fetchUser()
+    isProfileWorkModal.value = false
+  } catch (err) {
+    console.error('Ошибка сохранения данных о работе:', err)
+    if (err instanceof ApiError) {
+      error.value = err.message || 'Ошибка сохранения'
+    } else {
+      error.value = err instanceof Error ? err.message : 'Ошибка соединения с сервером'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchUser()
+})
+</script>
