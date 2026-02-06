@@ -365,11 +365,16 @@ export async function presentationRoutes(app: FastifyInstance) {
     { preHandler: [app.authenticate] },
     async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
-      const { id } = req.params
+      let id = req.params.id
+      try {
+        if (typeof id === 'string' && id.includes('%')) id = decodeURIComponent(id)
+      } catch {
+        // оставляем id как есть при ошибке декодирования
+      }
       if (id == null || String(id).trim() === '') {
         return reply.status(400).send({ error: 'Не указан id презентации' })
       }
-      const idNum = useMysql ? parseMysqlId(id) : null
+      const idNum = useMysql ? parseMysqlId(String(id)) : null
       if (useMysql && idNum === null) {
         return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       }
