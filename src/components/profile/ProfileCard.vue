@@ -40,7 +40,7 @@
               fill=""
             />
           </svg>
-          Edit
+          Редактировать
         </button>
       </div>
     </div>
