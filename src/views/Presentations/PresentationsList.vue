@@ -316,12 +316,23 @@ function formatDate(dateStr: string): string {
   })
 }
 
+/** Оставляем только id презентации: при формате "1:1" (id:user_id) берём часть до двоеточия. */
+function normalizePresentationId(id: string | number | undefined): string {
+  if (id == null) return ''
+  const s = String(id).trim()
+  const part = s.includes(':') ? s.split(':')[0].trim() : s
+  return part
+}
+
 async function loadFromApi() {
   loading.value = true
   error.value = ''
   try {
     const list = await api.get<PresentationListItem[]>('/api/presentations')
-    presentations.value = list
+    presentations.value = list.map((p) => ({
+      ...p,
+      id: normalizePresentationId(p.id) || String(p.id ?? ''),
+    }))
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Не удалось загрузить список'
     presentations.value = []
@@ -335,7 +346,8 @@ function loadFromLocalStorage() {
     const raw = localStorage.getItem('presentations-list')
     if (raw) {
       const list: Presentation[] = JSON.parse(raw)
-      presentations.value = list.sort(
+      const normalized = list.map((p) => ({ ...p, id: normalizePresentationId(p.id) || String(p.id ?? '') }))
+      presentations.value = normalized.sort(
         (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
     } else {
@@ -359,16 +371,14 @@ async function confirmDelete(presentation: Presentation) {
     return
   }
   if (hasApi() && getToken()) {
-    const rawId = presentation?.id != null ? String(presentation.id).trim() : ''
-    // API ожидает числовой id; при формате "1:1" (артефакт) берём часть до двоеточия, чтобы URL не содержал ":" и не ломался из‑за кодирования
-    const id = rawId.includes(':') ? rawId.split(':')[0].trim() : rawId
+    const id = normalizePresentationId(presentation?.id)
     if (!id) {
       error.value = 'Не удалось определить id презентации'
       return
     }
     try {
       await api.delete(`/api/presentations/${id}`)
-      presentations.value = presentations.value.filter((p) => p.id !== presentation.id)
+      presentations.value = presentations.value.filter((p) => p.id !== id)
       error.value = ''
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Не удалось удалить презентацию. Если в консоли есть «Tracking Prevention» — разрешите доступ к сайту в настройках браузера или войдите снова.'
