@@ -6,14 +6,13 @@
     <div v-else-if="error" class="flex min-h-screen items-center justify-center p-4">
       <p class="text-red-600">{{ error }}</p>
     </div>
-    <div v-else class="presentation-slider-wrap booklet-view mx-auto w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900">
-      <Swiper
-        :space-between="0"
-        :allow-touch-move="true"
-        class="presentation-swiper h-full"
+    <div v-else class="presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-4xl rounded-xl bg-white shadow-lg dark:bg-gray-900">
+      <div
+        v-for="(slide, index) in visibleSlides"
+        :key="index"
+        class="booklet-page booklet-page--stacked"
       >
-        <SwiperSlide v-for="(slide, index) in visibleSlides" :key="index" class="booklet-page h-full w-full overflow-hidden">
-          <div class="booklet-page__inner">
+        <div class="booklet-page__inner">
             <!-- Обложка -->
             <div v-if="slide.type === 'cover'" class="booklet-content booklet-main">
               <div class="booklet-main__wrap">
@@ -184,8 +183,7 @@
               </div>
             </div>
           </div>
-        </SwiperSlide>
-      </Swiper>
+        </div>
     </div>
   </div>
 </template>
@@ -193,8 +191,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Swiper, SwiperSlide } from 'swiper/vue'
-import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import { api, hasApi, getToken } from '@/api/client'
@@ -298,15 +294,25 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.presentation-slider-wrap {
-  aspect-ratio: 4 / 3;
-  max-height: min(90vh, 720px);
-  width: 100%;
+.presentation-view-wrap.presentation-slider-wrap {
+  aspect-ratio: unset;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
-.presentation-swiper {
-  height: 100%;
+.booklet-page--stacked {
+  min-height: min(70vh, 560px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
-.presentation-swiper :deep(.swiper-slide) {
-  height: 100%;
+.booklet-page--stacked .booklet-page__inner {
+  height: auto;
+  min-height: min(68vh, 520px);
+  max-height: none;
+}
+.booklet-page--stacked .booklet-content {
+  min-height: min(60vh, 480px);
+}
+.booklet-page--stacked:last-child {
+  border-bottom: none;
 }
 </style>
