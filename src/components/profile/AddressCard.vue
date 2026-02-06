@@ -1,106 +1,77 @@
 <template>
   <div>
     <div class="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-        <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
-          <!-- Блок логотипа компании (редактируемый, по аналогии с профилем) -->
-          <div class="relative">
-            <div
-              class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-brand-500 text-white font-semibold text-2xl cursor-pointer group relative"
-              @click="companyLogoInputRef?.click()"
-            >
-              <img
-                v-if="companyLogoDisplayUrl"
-                :src="companyLogoDisplayUrl"
-                alt="Лого компании"
-                class="w-full h-full object-cover"
-              />
-              <span v-else class="select-none text-sm">Лого</span>
-              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-            </div>
-            <input
-              ref="companyLogoInputRef"
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="onCompanyLogoFileChange"
-            />
-          </div>
-          <div class="order-3 xl:order-2">
-            <h4 class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
-              {{ currentUser?.company_name || 'Название компании' }}
-            </h4>
-            <div class="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
-              <p v-if="currentUser?.work_website" class="text-sm text-gray-500 dark:text-gray-400">{{ currentUser.work_website }}</p>
-              <p v-else class="text-sm text-gray-500 dark:text-gray-400">Сайт компании</p>
-            </div>
-          </div>
-        </div>
+      <!-- Если блок о компании не заполнен — только кнопка -->
+      <div v-if="!hasWorkData" class="flex justify-center">
         <button
+          type="button"
           @click="isProfileWorkModal = true"
-          class="edit-button flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+          class="flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         >
-          <svg
-            class="fill-current"
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-              fill=""
-            />
+          <svg class="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M9.75 4.5C9.75 4.08579 9.41421 3.75 9 3.75C8.58579 3.75 8.25 4.08579 8.25 4.5V8.25H4.5C4.08579 8.25 3.75 8.58579 3.75 9C3.75 9.41421 4.08579 9.75 4.5 9.75H8.25V13.5C8.25 13.9142 8.58579 14.25 9 14.25C9.41421 14.25 9.75 13.9142 9.75 13.5V9.75H13.5C13.9142 9.75 14.25 9.41421 14.25 9C14.25 8.58579 13.9142 8.25 13.5 8.25H9.75V4.5Z" fill="currentColor" />
           </svg>
-          Редактировать
+          Добавить место работы
         </button>
       </div>
-      <div v-if="error && !isProfileWorkModal" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
-        {{ error }}
-      </div>
-      <!-- Сетка полей: место работы, должность, контакты -->
-      <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
-          <div>
-            <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Место работы</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-              {{ currentUser?.company_name || '—' }}
-            </p>
+
+      <!-- Заполненный блок: заголовок + лого/название + кнопка + сетка полей -->
+      <template v-else>
+        <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Место работы</h4>
+        <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
+            <CompanyLogoUpload
+              :current-image="currentUser?.company_logo"
+              @uploaded="fetchUser"
+            />
+            <div class="order-3 xl:order-2">
+              <h4 class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
+                {{ currentUser?.company_name || 'Название компании' }}
+              </h4>
+              <div class="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
+                <p v-if="currentUser?.work_website" class="text-sm text-gray-500 dark:text-gray-400">{{ currentUser.work_website }}</p>
+                <p v-else class="text-sm text-gray-500 dark:text-gray-400">Сайт компании</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Должность</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-              {{ currentUser?.work_position || '—' }}
-            </p>
-          </div>
-          <div>
-            <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Рабочая почта</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-              {{ currentUser?.work_email || '—' }}
-            </p>
-          </div>
-          <div>
-            <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Рабочий телефон</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-              {{ currentUser?.work_phone || '—' }}
-            </p>
-          </div>
-          <div>
-            <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Сайт компании</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-              {{ currentUser?.work_website || '—' }}
-            </p>
+          <button
+            @click="isProfileWorkModal = true"
+            class="edit-button flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+          >
+            <svg class="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z" fill="" />
+            </svg>
+            Редактировать
+          </button>
+        </div>
+        <div v-if="error && !isProfileWorkModal" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+          {{ error }}
+        </div>
+        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Место работы</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.company_name || '—' }}</p>
+            </div>
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Должность</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.work_position || '—' }}</p>
+            </div>
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Рабочая почта</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.work_email || '—' }}</p>
+            </div>
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Рабочий телефон</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ displayWorkPhone || '—' }}</p>
+            </div>
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Сайт компании</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.work_website || '—' }}</p>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
     <Modal v-if="isProfileWorkModal" @close="isProfileWorkModal = false">
       <template #body>
@@ -231,10 +202,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import Modal from './Modal.vue'
+import CompanyLogoUpload from './CompanyLogoUpload.vue'
 import { useAuth } from '@/composables/useAuth'
 import { api, ApiError } from '@/api/client'
 import { usePhoneMask } from '@/composables/usePhoneMask'
-import { getToken } from '@/api/client'
 
 const { currentUser, fetchUser } = useAuth()
 const isProfileWorkModal = ref(false)
@@ -249,52 +220,25 @@ const formData = ref({
   work_website: '',
 })
 
-const companyLogoUrl = computed(() => {
-  const url = currentUser.value?.company_logo
-  if (!url) return ''
-  return url.startsWith('/') ? url : `/${url}`
+const { formatPhone } = usePhoneMask()
+
+const hasWorkData = computed(() => {
+  const u = currentUser.value
+  return !!(
+    (u?.company_name && u.company_name.trim()) ||
+    (u?.work_position && u.work_position.trim()) ||
+    (u?.company_logo && u.company_logo.trim()) ||
+    (u?.work_email && u.work_email.trim()) ||
+    (u?.work_phone && u.work_phone.trim()) ||
+    (u?.work_website && u.work_website.trim())
+  )
 })
 
-const companyLogoInputRef = ref<HTMLInputElement | null>(null)
-const companyLogoUploading = ref(false)
-const companyLogoDisplayUrl = computed(() => companyLogoUrl.value || '')
-
-async function onCompanyLogoFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file || !file.type.startsWith('image/')) return
-  if (file.size > 5 * 1024 * 1024) {
-    error.value = 'Размер файла не должен превышать 5MB'
-    return
-  }
-  companyLogoUploading.value = true
-  error.value = ''
-  try {
-    const fd = new FormData()
-    fd.append('file', file, file.name)
-    const base = (import.meta as ImportMeta & { env: { VITE_API_URL?: string } }).env?.VITE_API_URL?.replace(/\/$/, '') ?? ''
-    const res = await fetch(`${base}/api/upload/company-logo`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${getToken() ?? ''}` },
-      body: fd,
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || 'Ошибка загрузки логотипа')
-    }
-    const data = await res.json()
-    await api.put('/api/auth/profile', { company_logo: data.url })
-    await fetchUser()
-  } catch (err) {
-    console.error('Ошибка загрузки логотипа:', err)
-    error.value = err instanceof Error ? err.message : 'Ошибка загрузки'
-  } finally {
-    companyLogoUploading.value = false
-    input.value = ''
-  }
-}
-
-const { formatPhone } = usePhoneMask()
+const displayWorkPhone = computed(() => {
+  const raw = currentUser.value?.work_phone
+  if (!raw || !String(raw).trim()) return ''
+  return formatPhone(String(raw))
+})
 
 watch(isProfileWorkModal, (isOpen) => {
   if (isOpen && currentUser.value) {
