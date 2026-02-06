@@ -13,6 +13,18 @@
         </svg>
       </div>
     </div>
+    <button
+      v-if="preview"
+      type="button"
+      @click.stop="removeAvatar"
+      :disabled="deleting"
+      class="absolute -top-0.5 -right-0.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600 disabled:opacity-60 dark:bg-red-600 dark:hover:bg-red-700"
+      aria-label="Удалить аватар"
+    >
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+    </button>
     <input
       ref="fileInput"
       type="file"
@@ -83,7 +95,7 @@ import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
 import Modal from './Modal.vue'
-import { getToken } from '@/api/client'
+import { getToken, api } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
@@ -101,6 +113,7 @@ const cropImage = ref<HTMLImageElement | null>(null)
 const showCropModal = ref(false)
 const cropImageSrc = ref('')
 const uploading = ref(false)
+const deleting = ref(false)
 const localPreview = ref<string | null>(null)
 let cropperInstance: any = null
 
@@ -124,6 +137,22 @@ const initials = computed(() => props.initials || 'П')
 
 const openFileDialog = () => {
   fileInput.value?.click()
+}
+
+async function removeAvatar() {
+  if (deleting.value) return
+  if (!confirm('Удалить аватар?')) return
+  deleting.value = true
+  try {
+    await api.delete('/api/upload/avatar')
+    localPreview.value = null
+    await fetchUser()
+  } catch (err) {
+    console.error('Ошибка удаления аватара:', err)
+    alert(err instanceof Error ? err.message : 'Ошибка удаления аватара')
+  } finally {
+    deleting.value = false
+  }
 }
 
 const handleFileSelect = (event: Event) => {
