@@ -374,6 +374,45 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
   )
 
+  /** Удаление по id из тела запроса (как при создании — тот же канал, без проблем с URL/параметрами). */
+  app.post<{ Body: { id?: string } }>(
+    '/api/presentations/delete',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Body: { id?: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      let id = req.body?.id != null ? String(req.body.id).trim() : ''
+      if (!id) {
+        return reply.status(400).send({ error: 'Не указан id презентации' })
+      }
+      const idNum = useMysql ? parseMysqlId(id) : null
+      if (useMysql && idNum === null) {
+        return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
+      }
+      if (useFileStore) {
+        const ok = fileStore.deletePresentation(id, userId!)
+        if (!ok) return reply.status(404).send({ error: 'Презентация не найдена' })
+        return reply.status(204).send()
+      }
+      if (useMysql) {
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .delete(mysqlSchema.presentations)
+          .where(and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)))
+        const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
+        const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
+        if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+        return reply.status(204).send()
+      }
+      const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .delete(pgSchema.presentations)
+        .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
+        .returning({ id: pgSchema.presentations.id })
+      if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+      return reply.status(204).send()
+    }
+  )
+
   app.delete<{ Params: { id?: string } }>(
     '/api/presentations/:id',
     { preHandler: [app.authenticate] },

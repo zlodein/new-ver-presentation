@@ -371,14 +371,14 @@ async function confirmDelete(presentation: Presentation) {
     return
   }
   if (hasApi() && getToken()) {
-    const id = normalizePresentationId(presentation?.id)
+    const id = presentation?.id != null ? String(presentation.id) : ''
     if (!id) {
       error.value = 'Не удалось определить id презентации'
       return
     }
     try {
-      await api.delete(`/api/presentations/${id}`)
-      presentations.value = presentations.value.filter((p) => p.id !== id)
+      await api.post('/api/presentations/delete', { id })
+      presentations.value = presentations.value.filter((p) => p.id !== presentation.id)
       error.value = ''
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Не удалось удалить презентацию. Если в консоли есть «Tracking Prevention» — разрешите доступ к сайту в настройках браузера или войдите снова.'
