@@ -185,6 +185,7 @@ const router = createRouter({
         title: 'Восстановление пароля',
       },
     },
+    // Все неизвестные пути — страница 404 (тот же компонент, что и /dashboard/error-404)
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
@@ -221,7 +222,7 @@ router.beforeEach((to, from, next) => {
     return
   }
   document.title = to.meta.title
-    ? `${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
-    : 'TailAdmin - Vue.js Tailwind CSS Dashboard Template'
+    ? `${to.meta.title} | E-Presentation`
+    : 'E-Presentation'
   next()
 })
