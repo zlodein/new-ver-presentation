@@ -166,37 +166,6 @@
                   <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Пока не привязано к справочнику в базе</p>
                 </div>
 
-                <div class="col-span-2">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Лого компании
-                  </label>
-                  <div class="flex items-center gap-4">
-                    <div
-                      v-if="workFormLogoPreview"
-                      class="h-16 w-16 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0"
-                    >
-                      <img :src="workFormLogoPreview" alt="Лого" class="h-full w-full object-contain" />
-                    </div>
-                    <div class="flex flex-col gap-1">
-                      <input
-                        ref="logoInputRef"
-                        type="file"
-                        accept="image/*"
-                        class="hidden"
-                        @change="onLogoFileChange"
-                      />
-                      <button
-                        type="button"
-                        @click="logoInputRef?.click()"
-                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                      >
-                        {{ workFormLogoPreview ? 'Заменить' : 'Выбрать файл' }}
-                      </button>
-                      <span v-if="logoFile" class="text-xs text-gray-500 dark:text-gray-400">{{ logoFile.name }}</span>
-                    </div>
-                  </div>
-                </div>
-
                 <div class="col-span-2 lg:col-span-1">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                     Рабочая почта
@@ -271,14 +240,10 @@ const { currentUser, fetchUser } = useAuth()
 const isProfileWorkModal = ref(false)
 const loading = ref(false)
 const error = ref('')
-const logoInputRef = ref<HTMLInputElement | null>(null)
-const logoFile = ref<File | null>(null)
-const workFormLogoPreview = ref<string | null>(null)
 
 const formData = ref({
   company_name: '',
   work_position: '',
-  company_logo: '' as string | null,
   work_email: '',
   work_phone: '',
   work_website: '',
@@ -337,30 +302,13 @@ watch(isProfileWorkModal, (isOpen) => {
     formData.value = {
       company_name: currentUser.value.company_name || '',
       work_position: currentUser.value.work_position || '',
-      company_logo: currentUser.value.company_logo || null,
       work_email: currentUser.value.work_email || '',
       work_phone: phone ? formatPhone(phone) : '',
       work_website: currentUser.value.work_website || '',
     }
-    logoFile.value = null
-    workFormLogoPreview.value = currentUser.value.company_logo
-      ? (currentUser.value.company_logo.startsWith('/') ? currentUser.value.company_logo : `/${currentUser.value.company_logo}`)
-      : null
     error.value = ''
   }
 })
-
-function onLogoFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file || !file.type.startsWith('image/')) return
-  logoFile.value = file
-  const reader = new FileReader()
-  reader.onload = () => {
-    workFormLogoPreview.value = reader.result as string
-  }
-  reader.readAsDataURL(file)
-}
 
 function handleWorkPhoneInput(event: Event) {
   const input = event.target as HTMLInputElement
@@ -374,31 +322,13 @@ async function saveWork() {
   error.value = ''
   loading.value = true
   try {
-    let companyLogoUrlToSave: string | undefined = formData.value.company_logo || undefined
-    if (logoFile.value) {
-      const fd = new FormData()
-      fd.append('file', logoFile.value, logoFile.value.name)
-      const base = (import.meta as ImportMeta & { env: { VITE_API_URL?: string } }).env?.VITE_API_URL?.replace(/\/$/, '') ?? ''
-      const res = await fetch(`${base}/api/upload/company-logo`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() ?? ''}` },
-        body: fd,
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Ошибка загрузки логотипа')
-      }
-      const data = await res.json()
-      companyLogoUrlToSave = data.url
-    }
     const cleanPhone = formData.value.work_phone.replace(/\D/g, '')
     await api.put('/api/auth/profile', {
-      company_name: formData.value.company_name.trim() || undefined,
-      work_position: formData.value.work_position.trim() || undefined,
-      company_logo: companyLogoUrlToSave,
-      work_email: formData.value.work_email.trim() || undefined,
-      work_phone: cleanPhone || undefined,
-      work_website: formData.value.work_website.trim() || undefined,
+      company_name: formData.value.company_name.trim(),
+      work_position: formData.value.work_position.trim(),
+      work_email: formData.value.work_email.trim(),
+      work_phone: cleanPhone,
+      work_website: formData.value.work_website.trim(),
     })
     await fetchUser()
     isProfileWorkModal.value = false
