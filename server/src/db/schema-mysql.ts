@@ -24,7 +24,7 @@ export const users = mysqlTable('users', {
   personal_phone: varchar('personal_phone', { length: 20 }),
   position: varchar('position', { length: 255 }),
   messengers: longtext('messengers'), // JSON строка
-  company_name: varchar('company_name', { length: 255 }),
+  workplace: varchar('workplace', { length: 255 }), // в БД: workplace; в API отдаём как company_name
   work_position: varchar('work_position', { length: 255 }),
   company_logo: varchar('company_logo', { length: 255 }),
   work_email: varchar('work_email', { length: 255 }),

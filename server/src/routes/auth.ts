@@ -203,7 +203,7 @@ export async function authRoutes(app: FastifyInstance) {
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
-        const workColumns = { company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
+        const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
         try {
           user = await mysqlDb.query.users.findFirst({
@@ -232,7 +232,7 @@ export async function authRoutes(app: FastifyInstance) {
           personal_phone: user.personal_phone,
           position: user.position,
           messengers: messengersData,
-          company_name: user.company_name ?? undefined,
+          company_name: user.workplace ?? undefined,
           work_position: user.work_position ?? undefined,
           company_logo: user.company_logo ?? undefined,
           work_email: user.work_email ?? undefined,
@@ -405,12 +405,12 @@ export async function authRoutes(app: FastifyInstance) {
         if (personal_phone !== undefined) updateData.personal_phone = personal_phone.trim() || null
         if (position !== undefined) updateData.position = position.trim() || null
         if (messengers !== undefined) updateData.messengers = JSON.stringify(messengers)
-        if (company_name !== undefined) updateData.company_name = company_name.trim() || null
-        if (work_position !== undefined) updateData.work_position = work_position.trim() || null
-        if (company_logo !== undefined) updateData.company_logo = company_logo.trim() || null
-        if (work_email !== undefined) updateData.work_email = work_email.trim() || null
-        if (work_phone !== undefined) updateData.work_phone = work_phone.trim() || null
-        if (work_website !== undefined) updateData.work_website = work_website.trim() || null
+        if (company_name !== undefined) updateData.workplace = (typeof company_name === 'string' ? company_name.trim() : company_name) || null
+        if (work_position !== undefined) updateData.work_position = (typeof work_position === 'string' ? work_position.trim() : work_position) || null
+        if (company_logo !== undefined) updateData.company_logo = (typeof company_logo === 'string' ? company_logo.trim() : company_logo) || null
+        if (work_email !== undefined) updateData.work_email = (typeof work_email === 'string' ? work_email.trim() : work_email) || null
+        if (work_phone !== undefined) updateData.work_phone = (typeof work_phone === 'string' ? work_phone.trim() : work_phone) || null
+        if (work_website !== undefined) updateData.work_website = (typeof work_website === 'string' ? work_website.trim() : work_website) || null
         updateData.updated_at = new Date()
 
         try {
@@ -430,7 +430,7 @@ export async function authRoutes(app: FastifyInstance) {
         }
 
         const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
-        const workColumns = { company_name: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
+        const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let updatedUser: Record<string, unknown> | null = null
         try {
           updatedUser = await mysqlDb.query.users.findFirst({
@@ -459,7 +459,7 @@ export async function authRoutes(app: FastifyInstance) {
           personal_phone: updatedUser.personal_phone,
           position: updatedUser.position,
           messengers: messengersData,
-          company_name: updatedUser.company_name ?? undefined,
+          company_name: updatedUser.workplace ?? undefined,
           work_position: updatedUser.work_position ?? undefined,
           company_logo: updatedUser.company_logo ?? undefined,
           work_email: updatedUser.work_email ?? undefined,
