@@ -9,11 +9,14 @@ export function useAuth() {
   const currentUser = computed(() => user.value)
 
   async function fetchUser() {
-    if (!token.value || !hasApi()) return
+    const currentToken = getToken()
+    if (!currentToken || !hasApi()) return
     try {
       user.value = await api.get<AuthUser>('/api/auth/me')
+      token.value = currentToken
     } catch {
       setToken(null)
+      token.value = null
       user.value = null
     }
   }

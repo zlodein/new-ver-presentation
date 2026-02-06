@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { getToken } from '@/api/client'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -213,6 +214,12 @@ router.onError((err) => {
 export default router
 
 router.beforeEach((to, from, next) => {
+  const requiresAuth = to.path.startsWith('/dashboard') || to.path === '/administration'
+  const token = getToken()
+  if (requiresAuth && !token) {
+    next({ path: '/signin', query: { redirect: to.fullPath } })
+    return
+  }
   document.title = to.meta.title
     ? `${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
     : 'TailAdmin - Vue.js Tailwind CSS Dashboard Template'

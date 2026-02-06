@@ -7,7 +7,7 @@
         <div class="flex flex-col flex-1 w-full lg:w-1/2">
           <div class="w-full max-w-md pt-10 mx-auto">
             <router-link
-              to="/dashboard"
+              to="/"
               class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             >
               <svg
@@ -26,7 +26,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              Назад в панель
+              На главную
             </router-link>
           </div>
           <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
@@ -43,53 +43,27 @@
               </div>
               <div>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
-                  <button
+                  <a
+                    :href="oauthUrl('yandex')"
                     class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
                   >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z"
-                        fill="#4285F4"
-                      />
-                      <path
-                        d="M10.1788 18.75C12.5895 18.75 14.6133 17.9722 16.0915 16.6305L13.274 14.4916C12.5201 15.0068 11.5081 15.3666 10.1788 15.3666C7.81773 15.3666 5.81379 13.8402 5.09944 11.7305L4.99473 11.7392L2.23868 13.8295L2.20264 13.9277C3.67087 16.786 6.68674 18.75 10.1788 18.75Z"
-                        fill="#34A853"
-                      />
-                      <path
-                        d="M5.10014 11.7305C4.91165 11.186 4.80257 10.6027 4.80257 9.99992C4.80257 9.3971 4.91165 8.81379 5.09022 8.26935L5.08523 8.1534L2.29464 6.02954L2.20333 6.0721C1.5982 7.25823 1.25098 8.5902 1.25098 9.99992C1.25098 11.4096 1.5982 12.7415 2.20333 13.9277L5.10014 11.7305Z"
-                        fill="#FBBC05"
-                      />
-                      <path
-                        d="M10.1789 4.63331C11.8554 4.63331 12.9864 5.34303 13.6312 5.93612L16.1511 3.525C14.6035 2.11528 12.5895 1.25 10.1789 1.25C6.68676 1.25 3.67088 3.21387 2.20264 6.07218L5.08953 8.26943C5.81381 6.15972 7.81776 4.63331 10.1789 4.63331Z"
-                        fill="#EB4335"
-                      />
+                    <!-- Иконка Яндекса (официальные цвета) -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M2.04 12c0-5.523 4.476-10 10-10 5.522 0 10 4.477 10 10s-4.478 10-10 10c-5.524 0-10-4.477-10-10z" fill="#FC3F1D"/>
+                      <path d="M12 6.36v4.32l3.24-4.32H12zM6.36 12v5.64h2.28V12H6.36zm5.64 0v5.64h5.64v-2.28h-3.36V12H12z" fill="#fff"/>
                     </svg>
-                    Войти через Google
-                  </button>
-                  <button
+                    Войти через Яндекс
+                  </a>
+                  <a
+                    :href="oauthUrl('vk')"
                     class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
                   >
-                    <svg
-                      width="21"
-                      class="fill-current"
-                      height="20"
-                      viewBox="0 0 21 20"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z"
-                      />
+                    <!-- Иконка ВКонтакте (логотип VK, синий #07F) -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M12.8 15.2h1.2s.36-.04.54-.28c.18-.24.18-.54.18-.54s-.02-1.35.64-1.54c.66-.2 1.5 1.26 2.35 1.8.66.46 1.14.36 1.14.36l2.2-.03s1.12-.07.58-.94c-.28-.44-1.32-1.94-1.32-1.94s-.76-1.1.42-2.92c.9-1.38 1.26-2.16 1.15-2.5-.12-.34-.82-.25-.82-.25l-2.4.02s-.18-.02-.3.08c-.12.1-.18.22-.18.22s-.32.96-.74 2.1c-.9 2.4-1.26 2.52-1.42 2.4-.34-.26-.25-1.03-.25-1.58 0-1.65.25-2.33-.49-2.51-.24-.06-.42-.1-1.03-.12-.9-.01-1.62.003-2.04.19-.28.14-.48.42-.35.44.16.02.52.1.72.35.26.33.24 1.04.24 1.04s.14 1.95-.3 2.19c-.3.16-.72-.18-1.6-1.75-.46-.82-.8-1.72-.8-1.72s-.06-.16-.15-.25c-.12-.1-.34-.14-.34-.14l-2.28.01s-.34 0-.46.15c-.12.15-.01.4-.01.4s.78 3.6 1.68 4.9c.9 1.28 1.58 1.9 2.76 1.9h.66s.28-.02.38-.1c.1-.08.1-.2.1-.2s-.02-1.1.48-1.58c.5-.48 1.34-.48 1.34-.48h1.14s.28 0 .38.1c.1.1.1.28 0 .38l-.48.76s-.28.48-.28.66c0 .18.1.36.28.46.2.2.48.28.76.46.48.22.96.46 1.34.76.48.38.76.76.96.88.2.18.38.18.38.18h2.4s.48 0 .58-.18c.1-.18.1-.38 0-.48-.18-.28-.66-.76-1.14-1.24-.3-.28-.48-.46-.48-.46s0-.1.1-.18c.1-.08.2-.1.2-.1h1.72s.48 0 .58-.1c.1-.1.2-.18.2-.18V12s-2.1-2.88-2.88-3.84c-.76-.96-1.62-1.34-1.62-1.34s-.1 0-.18.08c-.08.08 0 .18 0 .28.1.46.36 1.32.36 1.32s.1.18 0 .28c-.1.1-.18.18-.18.18l-.28.1s-1.44.86-2.02 1.24c-.28.2-.48.28-.48.28s-.1.08 0 .18c.1.1.28.18.48.28.36.18.86.36 1.14.46.1.08.28.08.28.08h.46z" fill="#07F"/>
                     </svg>
-
-                    Войти через X
-                  </button>
+                    Войти через ВКонтакте
+                  </a>
                 </div>
                 <div class="relative py-3 sm:py-5">
                   <div class="absolute inset-0 flex items-center">
@@ -277,14 +251,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import { useAuth } from '@/composables/useAuth'
-import { ApiError } from '@/api/client'
+import { ApiError, getApiBase, setToken } from '@/api/client'
 
 const router = useRouter()
+const route = useRoute()
 const { login, hasApi, fetchUser } = useAuth()
 const email = ref('')
 const password = ref('')
@@ -292,6 +267,45 @@ const showPassword = ref(false)
 const keepLoggedIn = ref(false)
 const error = ref('')
 const loading = ref(false)
+
+/** URL для редиректа на OAuth провайдера (Яндекс или VK). */
+function oauthUrl(provider: 'yandex' | 'vk'): string {
+  const base = getApiBase()
+  const path = `/api/auth/oauth/${provider}`
+  return base ? `${base.replace(/\/$/, '')}${path}` : path
+}
+
+const oauthErrorMessages: Record<string, string> = {
+  oauth_cancelled: 'Вход через соцсеть отменён.',
+  oauth_not_configured: 'OAuth не настроен на сервере.',
+  unknown_provider: 'Неизвестный провайдер входа.',
+  missing_code: 'Ошибка авторизации: отсутствует код.',
+  token_exchange_failed: 'Не удалось получить токен. Попробуйте снова.',
+  no_access_token: 'Не получен токен доступа.',
+  user_info_failed: 'Не удалось загрузить данные профиля.',
+  email_required: 'Предоставьте доступ к email в настройках аккаунта.',
+  oauth_failed: 'Ошибка входа через соцсеть. Попробуйте снова.',
+  create_user_failed: 'Ошибка создания учётной записи.',
+  no_database: 'Сервер не настроен для входа.',
+}
+
+onMounted(async () => {
+  const errorFromQuery = route.query.error as string | undefined
+  if (errorFromQuery) {
+    error.value = oauthErrorMessages[errorFromQuery] || 'Ошибка входа. Попробуйте снова.'
+  }
+  const tokenFromQuery = route.query.token as string | undefined
+  if (tokenFromQuery) {
+    setToken(tokenFromQuery)
+    try {
+      await fetchUser()
+      const redirect = (route.query.redirect as string) || '/dashboard'
+      router.replace(redirect)
+    } catch {
+      error.value = 'Не удалось войти по ссылке. Попробуйте снова.'
+    }
+  }
+})
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -310,9 +324,9 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     await login(email.value.trim(), password.value)
-    // Загрузить полные данные пользователя после логина
     await fetchUser()
-    router.push('/dashboard')
+    const redirect = (route.query.redirect as string) || '/dashboard'
+    router.push(redirect)
   } catch (e) {
     if (e instanceof ApiError) {
       error.value = e.message || 'Ошибка входа'

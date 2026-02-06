@@ -17,6 +17,11 @@ export function hasApi(): boolean {
   return API_BASE.length > 0 || IS_PROD
 }
 
+/** Базовый URL API (для OAuth-редиректов и т.п.). В проде без VITE_API_URL — пустая строка (тот же домен). */
+export function getApiBase(): string {
+  return API_BASE
+}
+
 async function request<T>(
   path: string,
   options: Omit<RequestInit, 'body'> & { method?: string; body?: unknown } = {}

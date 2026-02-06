@@ -26,7 +26,204 @@ function isUnknownColumnError(err: unknown): boolean {
   return /Unknown column|doesn't exist/i.test(msg)
 }
 
+/** Базовый URL бэкенда (для redirect_uri OAuth). Например https://api.example.com или http://localhost:3001 */
+const SITE_URL = (process.env.SITE_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3001}`).replace(/\/$/, '')
+/** URL фронтенда (редирект после успешного OAuth). Например https://example.com или http://localhost:5173 */
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
+
+const oauthConfig = {
+  yandex: {
+    clientId: process.env.OAUTH_YANDEX_CLIENT_ID,
+    clientSecret: process.env.OAUTH_YANDEX_CLIENT_SECRET,
+    authUrl: 'https://oauth.yandex.ru/authorize',
+    tokenUrl: 'https://oauth.yandex.ru/token',
+    userInfoUrl: 'https://login.yandex.ru/info',
+    scope: 'login:email login:info login:avatar',
+  },
+  vk: {
+    clientId: process.env.OAUTH_VK_CLIENT_ID,
+    clientSecret: process.env.OAUTH_VK_CLIENT_SECRET,
+    authUrl: 'https://id.vk.ru/authorize',
+    tokenUrl: 'https://id.vk.ru/oauth2/token',
+    userInfoUrl: 'https://id.vk.ru/oauth2/user_info',
+    scope: 'vkid.personal_info email',
+  },
+} as const
+
+type OAuthProvider = keyof typeof oauthConfig
+
 export async function authRoutes(app: FastifyInstance) {
+  // ——— OAuth: редирект на провайдера ———
+  app.get<{ Params: { provider: string } }>('/api/auth/oauth/:provider', async (req: FastifyRequest<{ Params: { provider: string } }>, reply: FastifyReply) => {
+    const provider = req.params.provider as OAuthProvider
+    if (provider !== 'yandex' && provider !== 'vk') {
+      return reply.status(400).send({ error: 'Неизвестный OAuth провайдер' })
+    }
+    const cfg = oauthConfig[provider]
+    if (!cfg.clientId) {
+      req.log.warn({ provider }, 'OAuth: не заданы client_id')
+      return reply.status(502).redirect(`${FRONTEND_URL}/signin?error=oauth_not_configured`)
+    }
+    const redirectUri = `${SITE_URL}/api/auth/oauth/callback?provider=${provider}`
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: cfg.clientId,
+      redirect_uri: redirectUri,
+      scope: cfg.scope,
+    })
+    const authUrl = `${cfg.authUrl}?${params.toString()}`
+    return reply.redirect(302, authUrl)
+  })
+
+  // ——— OAuth: callback от провайдера, обмен code на токен, создание/поиск пользователя, редирект на фронт с JWT ———
+  app.get<{ Querystring: { provider?: string; code?: string; error?: string } }>('/api/auth/oauth/callback', async (req: FastifyRequest<{ Querystring: { provider?: string; code?: string; error?: string } }>, reply: FastifyReply) => {
+    const { provider: rawProvider, code, error: oauthError } = req.query
+    if (oauthError) {
+      return reply.redirect(302, `${FRONTEND_URL}/signin?error=oauth_cancelled`)
+    }
+    const provider = rawProvider as OAuthProvider
+    if (provider !== 'yandex' && provider !== 'vk') {
+      return reply.redirect(302, `${FRONTEND_URL}/signin?error=unknown_provider`)
+    }
+    if (!code) {
+      return reply.redirect(302, `${FRONTEND_URL}/signin?error=missing_code`)
+    }
+    const cfg = oauthConfig[provider]
+    if (!cfg.clientId || !cfg.clientSecret) {
+      return reply.redirect(302, `${FRONTEND_URL}/signin?error=oauth_not_configured`)
+    }
+    const redirectUri = `${SITE_URL}/api/auth/oauth/callback?provider=${provider}`
+
+    let accessToken: string
+    let email: string
+    let name: string | null = null
+    let lastName: string | null = null
+
+    try {
+      const tokenRes = await fetch(cfg.tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          client_id: cfg.clientId,
+          client_secret: cfg.clientSecret,
+          redirect_uri: redirectUri,
+        }).toString(),
+      })
+      if (!tokenRes.ok) {
+        const errText = await tokenRes.text()
+        req.log.warn({ provider, status: tokenRes.status, body: errText }, 'OAuth token exchange failed')
+        return reply.redirect(302, `${FRONTEND_URL}/signin?error=token_exchange_failed`)
+      }
+      const tokenData = (await tokenRes.json()) as { access_token?: string }
+      accessToken = tokenData.access_token
+      if (!accessToken) {
+        return reply.redirect(302, `${FRONTEND_URL}/signin?error=no_access_token`)
+      }
+
+      const userRes = await fetch(cfg.userInfoUrl, {
+        headers: { Authorization: provider === 'yandex' ? `Oauth ${accessToken}` : `Bearer ${accessToken}` },
+      })
+      if (!userRes.ok) {
+        req.log.warn({ provider, status: userRes.status }, 'OAuth user info failed')
+        return reply.redirect(302, `${FRONTEND_URL}/signin?error=user_info_failed`)
+      }
+      const userData = (await userRes.json()) as Record<string, unknown>
+
+      if (provider === 'yandex') {
+        email = (userData.default_email as string) || (userData.emails?.[0] as string) || ''
+        const firstName = userData.real_name as string | undefined
+        if (firstName) {
+          const parts = firstName.trim().split(/\s+/)
+          name = parts[0] ?? null
+          lastName = parts.length > 1 ? parts.slice(1).join(' ') : null
+        }
+      } else {
+        email = (userData.email as string) || (userData.phone as string) || ''
+        if (!email && (userData.user_id as string)) {
+          email = `vk_${userData.user_id}@vk.placeholder`
+        }
+        const firstName = userData.first_name as string | undefined
+        const ln = userData.last_name as string | undefined
+        name = firstName ?? null
+        lastName = ln ?? null
+      }
+
+      if (!email) {
+        return reply.redirect(302, `${FRONTEND_URL}/signin?error=email_required`)
+      }
+    } catch (err) {
+      req.log.error(err)
+      return reply.redirect(302, `${FRONTEND_URL}/signin?error=oauth_failed`)
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    let userId: string
+
+    if (useFileStore) {
+      let user = fileStore.findUserByEmail(normalizedEmail)
+      if (!user) {
+        const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), SALT_ROUNDS)
+        user = fileStore.createUser({
+          email: normalizedEmail,
+          passwordHash,
+          firstName: name || undefined,
+          lastName: lastName || undefined,
+        })
+      }
+      userId = user.id
+    } else if (useMysql && db) {
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      let user = await mysqlDb.query.users.findFirst({
+        where: eq(mysqlSchema.users.email, normalizedEmail),
+        columns: { id: true },
+      })
+      if (!user) {
+        const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), SALT_ROUNDS)
+        const inserted = await mysqlDb.insert(mysqlSchema.users).values({
+          email: normalizedEmail,
+          password: passwordHash,
+          name: name || '',
+          last_name: lastName,
+        }).$returningId()
+        const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
+        if (newId == null) {
+          return reply.redirect(302, `${FRONTEND_URL}/signin?error=create_user_failed`)
+        }
+        userId = String(newId)
+      } else {
+        userId = String(user.id)
+      }
+    } else if (db) {
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      let user = await pgDb.query.users.findFirst({
+        where: eq(pgSchema.users.email, normalizedEmail),
+        columns: { id: true },
+      })
+      if (!user) {
+        const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), SALT_ROUNDS)
+        const [inserted] = await pgDb.insert(pgSchema.users).values({
+          email: normalizedEmail,
+          passwordHash,
+          firstName: name,
+          lastName: lastName,
+        }).returning({ id: pgSchema.users.id })
+        if (!inserted) {
+          return reply.redirect(302, `${FRONTEND_URL}/signin?error=create_user_failed`)
+        }
+        userId = inserted.id
+      } else {
+        userId = user.id
+      }
+    } else {
+      return reply.redirect(302, `${FRONTEND_URL}/signin?error=no_database`)
+    }
+
+    const token = await reply.jwtSign({ sub: userId, email: normalizedEmail }, { expiresIn: '7d' })
+    return reply.redirect(302, `${FRONTEND_URL}/signin?token=${encodeURIComponent(token)}`)
+  })
+
   app.post<{
     Body: { email: string; password: string; name?: string; last_name?: string; middle_name?: string; user_img?: string }
   }>('/api/auth/register', async (req: FastifyRequest<{ Body: { email: string; password: string; name?: string; last_name?: string; middle_name?: string; user_img?: string } }>, reply: FastifyReply) => {
