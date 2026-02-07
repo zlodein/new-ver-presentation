@@ -94,14 +94,19 @@ export async function notificationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const [notificationId] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
-          user_id: userIdNum,
-          title,
-          message,
-          type,
-        }).$returningId()
+        const inserted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .insert(mysqlSchema.notifications)
+          .values({
+            user_id: userIdNum,
+            title,
+            message,
+            type,
+          })
+          .$returningId()
+        const notificationId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
+        if (notificationId == null) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
         const created = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
-          where: eq(mysqlSchema.notifications.id, Number(notificationId)),
+          where: eq(mysqlSchema.notifications.id, notificationId),
         })
         if (!created) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
         return reply.status(201).send({

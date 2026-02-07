@@ -379,16 +379,7 @@ const handleAddOrUpdateEvent = async () => {
         color: eventLevel.value || 'Primary',
       })
       
-      // Создаем уведомление о новом событии
-      try {
-        await api.post('/api/notifications', {
-          title: 'Новое событие в календаре',
-          message: `Событие "${eventTitle.value}" добавлено в календарь`,
-          type: 'calendar',
-        })
-      } catch (err) {
-        console.error('Ошибка создания уведомления:', err)
-      }
+      // Уведомление создается на сервере при создании события
     }
     
     await loadEvents()

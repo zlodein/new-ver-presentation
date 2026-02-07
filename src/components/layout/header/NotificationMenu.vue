@@ -41,6 +41,7 @@
 
         <div class="flex items-center gap-2">
           <button 
+            v-if="notifications.length > 0"
             @click="handleClearAll" 
             class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             title="Очистить все уведомления"
