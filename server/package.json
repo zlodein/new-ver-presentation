@@ -15,7 +15,8 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:check": "node check-db-connection.js",
     "deploy:build": "npm run build",
-    "deploy:migrate": "npm run db:migrate"
+    "deploy:migrate": "npm run db:migrate",
+    "install:chrome": "puppeteer browsers install chrome"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
