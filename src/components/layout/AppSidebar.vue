@@ -245,7 +245,7 @@ const menuGroups = [
       {
         icon: GridIcon,
         name: "Панель управления",
-        subItems: [{ name: "Электронная коммерция", path: "/dashboard", pro: false }],
+        path: "/dashboard",
       },
       {
         icon: DocsIcon,

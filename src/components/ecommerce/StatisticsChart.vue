@@ -6,35 +6,29 @@
       <div class="w-full">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Статистика</h3>
         <p class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-          Цель, которую вы задали на месяц
+          Статистика просмотров презентаций
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 flex-wrap">
         <div class="relative">
-          <div
-            class="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900"
+          <select
+            v-model="selectedPresentationId"
+            @change="loadStatistics"
+            class="h-10 px-3 rounded-lg border border-gray-200 bg-white text-theme-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:focus:border-brand-800"
           >
-            <button
-              v-for="option in options"
-              :key="option.value"
-              @click="selected = option.value"
-              :class="[
-                selected === option.value
-                  ? 'shadow-theme-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800'
-                  : 'text-gray-500 dark:text-gray-400',
-                'px-3 py-2 font-medium rounded-md text-theme-sm hover:text-gray-900 hover:shadow-theme-xs dark:hover:bg-gray-800 dark:hover:text-white',
-              ]"
-            >
-              {{ option.label }}
-            </button>
-          </div>
+            <option value="">Выберите презентацию</option>
+            <option v-for="pres in presentations" :key="pres.id" :value="pres.id">
+              {{ pres.title }}
+            </option>
+          </select>
         </div>
 
         <div class="relative">
           <flat-pickr
             v-model="date"
             :config="flatpickrConfig"
+            @on-change="onDateChange"
             class="pl-3 sm:pl-9 dark:bg-dark-900 h-10 w-10 sm:w-40 rounded-lg border border-gray-200 bg-white text-transparent sm:text-theme-sm sm:text-gray-800 shadow-theme-xs placeholder:text-transparent sm:placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-transparent sm:dark:text-gray-400 dark:placeholder:text-transparent sm:dark:placeholder:text-gray-400 dark:focus:border-brand-800"
             placeholder="Выберите дату"
           />
@@ -60,130 +54,206 @@
         </div>
       </div>
     </div>
-    <div class="max-w-full overflow-x-auto custom-scrollbar">
+    <div v-if="loading" class="flex items-center justify-center h-[310px]">
+      <span class="text-gray-500">Загрузка...</span>
+    </div>
+    <div v-else-if="selectedPresentationId && totalViews !== null" class="mb-4">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        Всего просмотров: <span class="font-semibold text-gray-800 dark:text-white">{{ totalViews }}</span>
+      </p>
+    </div>
+    <div v-if="selectedPresentationId" class="max-w-full overflow-x-auto custom-scrollbar">
       <div id="chartThree" class="-ml-4 min-w-[1000px] xl:min-w-full pl-2">
         <VueApexCharts type="area" height="310" :options="chartOptions" :series="series" />
       </div>
+    </div>
+    <div v-else class="flex items-center justify-center h-[310px] text-gray-500 dark:text-gray-400">
+      Выберите презентацию для просмотра статистики
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import flatPickr from 'vue-flatpickr-component'
-
-const options = [
-  { value: 'optionOne', label: 'Месяц' },
-  { value: 'optionTwo', label: 'Квартал' },
-  { value: 'optionThree', label: 'Год' },
-]
-
-const selected = ref('optionOne')
-const date = ref('')
-
-const flatpickrConfig = {
-  mode: 'range',
-  dateFormat: 'M j',
-  defaultDate: [new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()],
-}
 import VueApexCharts from 'vue3-apexcharts'
+import { api, hasApi, getToken } from '@/api/client'
+import { Russian } from 'flatpickr/dist/l10n/ru.js'
 
-const series = ref([
-  {
-    name: 'Sales',
-    data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
-  },
-  {
-    name: 'Revenue',
-    data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
-  },
-])
+const presentations = ref<Array<{ id: string; title: string }>>([])
+const selectedPresentationId = ref('')
+const date = ref('')
+const loading = ref(false)
+const totalViews = ref<number | null>(null)
+const viewsByDate = ref<Record<string, number>>({})
 
-const chartOptions = ref({
-  legend: {
-    show: false,
-    position: 'top',
-    horizontalAlign: 'left',
-  },
-  colors: ['#465FFF', '#9CB9FF'],
-  chart: {
-    fontFamily: 'Outfit, sans-serif',
-    type: 'area',
-    toolbar: {
+const flatpickrConfig = computed(() => ({
+  mode: 'range',
+  dateFormat: 'd.m.Y',
+  locale: Russian,
+  defaultDate: [new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), new Date()],
+}))
+
+const series = computed(() => {
+  if (!selectedPresentationId.value || Object.keys(viewsByDate.value).length === 0) {
+    return [{
+      name: 'Просмотры',
+      data: [],
+    }]
+  }
+  
+  // Сортируем даты
+  const sortedDates = Object.keys(viewsByDate.value).sort()
+  const data = sortedDates.map(date => viewsByDate.value[date])
+  
+  return [{
+    name: 'Просмотры',
+    data,
+  }]
+})
+
+const chartOptions = computed(() => {
+  const categories = Object.keys(viewsByDate.value).sort()
+  const formattedCategories = categories.map(date => {
+    const d = new Date(date)
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+  })
+  
+  return {
+    legend: {
       show: false,
+      position: 'top',
+      horizontalAlign: 'left',
     },
-  },
-  fill: {
-    gradient: {
-      enabled: true,
-      opacityFrom: 0.55,
-      opacityTo: 0,
-    },
-  },
-  stroke: {
-    curve: 'straight',
-    width: [2, 2],
-  },
-  markers: {
-    size: 0,
-  },
-  labels: {
-    show: false,
-    position: 'top',
-  },
-  grid: {
-    xaxis: {
-      lines: {
+    colors: ['#465FFF'],
+    chart: {
+      fontFamily: 'Outfit, sans-serif',
+      type: 'area',
+      toolbar: {
         show: false,
       },
     },
-    yaxis: {
-      lines: {
-        show: true,
+    fill: {
+      gradient: {
+        enabled: true,
+        opacityFrom: 0.55,
+        opacityTo: 0,
       },
     },
-  },
-  dataLabels: {
-    enabled: false,
-  },
-  tooltip: {
-    x: {
-      format: 'dd MMM yyyy',
+    stroke: {
+      curve: 'smooth',
+      width: 2,
     },
-  },
-  xaxis: {
-    type: 'category',
-    categories: [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ],
-    axisBorder: {
+    markers: {
+      size: 0,
+    },
+    labels: {
       show: false,
+      position: 'top',
     },
-    axisTicks: {
-      show: false,
+    grid: {
+      xaxis: {
+        lines: {
+          show: false,
+        },
+      },
+      yaxis: {
+        lines: {
+          show: true,
+        },
+      },
     },
-    tooltip: {
+    dataLabels: {
       enabled: false,
     },
-  },
-  yaxis: {
-    title: {
-      style: {
-        fontSize: '0px',
+    tooltip: {
+      x: {
+        format: 'dd MMM yyyy',
+      },
+      y: {
+        formatter: (val: number) => `${val} просмотров`,
       },
     },
-  },
+    xaxis: {
+      type: 'category',
+      categories: formattedCategories,
+      axisBorder: {
+        show: false,
+      },
+      axisTicks: {
+        show: false,
+      },
+      tooltip: {
+        enabled: false,
+      },
+    },
+    yaxis: {
+      title: {
+        text: 'Просмотры',
+        style: {
+          fontSize: '12px',
+        },
+      },
+    },
+  }
+})
+
+async function loadPresentations() {
+  if (!hasApi() || !getToken()) return
+  try {
+    const data = await api.get<Array<{ id: string; title: string }>>('/api/presentations')
+    presentations.value = data
+  } catch (err) {
+    console.error('Ошибка загрузки презентаций:', err)
+  }
+}
+
+async function loadStatistics() {
+  if (!selectedPresentationId.value || !hasApi() || !getToken()) {
+    totalViews.value = null
+    viewsByDate.value = {}
+    return
+  }
+  
+  loading.value = true
+  try {
+    const dateRange = Array.isArray(date.value) ? date.value : (date.value ? [date.value] : [])
+    const startDate = dateRange[0] ? new Date(dateRange[0]).toISOString().split('T')[0] : undefined
+    const endDate = dateRange[1] ? new Date(dateRange[1]).toISOString().split('T')[0] : undefined
+    
+    const params = new URLSearchParams()
+    if (startDate) params.append('startDate', startDate)
+    if (endDate) params.append('endDate', endDate)
+    
+    const data = await api.get<{
+      totalViews: number
+      viewsByDate: Record<string, number>
+      views: Array<{ id: number; viewedAt: string; ipAddress?: string }>
+    }>(`/api/presentations/${selectedPresentationId.value}/views?${params.toString()}`)
+    
+    totalViews.value = data.totalViews
+    viewsByDate.value = data.viewsByDate
+  } catch (err) {
+    console.error('Ошибка загрузки статистики:', err)
+    totalViews.value = 0
+    viewsByDate.value = {}
+  } finally {
+    loading.value = false
+  }
+}
+
+function onDateChange(selectedDates: Date[]) {
+  if (selectedDates.length === 2) {
+    loadStatistics()
+  }
+}
+
+watch(selectedPresentationId, () => {
+  loadStatistics()
+})
+
+onMounted(() => {
+  loadPresentations()
 })
 </script>
 

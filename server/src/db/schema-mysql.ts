@@ -65,8 +65,21 @@ export const passwordResetTokens = mysqlTable('password_reset_tokens', {
   expiresIdx: index('password_reset_tokens_expires_at_idx').on(table.expires_at),
 }))
 
+export const presentationViews = mysqlTable('presentation_views', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  presentation_id: int('presentation_id', { unsigned: true }).notNull(),
+  viewed_at: timestamp('viewed_at').defaultNow().notNull(),
+  ip_address: varchar('ip_address', { length: 45 }),
+  user_agent: varchar('user_agent', { length: 512 }),
+}, (table) => ({
+  presentationIdx: index('presentation_views_presentation_id_idx').on(table.presentation_id),
+  viewedAtIdx: index('presentation_views_viewed_at_idx').on(table.viewed_at),
+}))
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
 export type NewPresentationMySQL = typeof presentations.$inferInsert
 export type PasswordResetTokenMySQL = typeof passwordResetTokens.$inferSelect
+export type PresentationViewMySQL = typeof presentationViews.$inferSelect
+export type NewPresentationViewMySQL = typeof presentationViews.$inferInsert

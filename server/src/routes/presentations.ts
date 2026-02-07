@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, gte, lte } from 'drizzle-orm'
 import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -367,6 +367,23 @@ export async function presentationRoutes(app: FastifyInstance) {
       })
       if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
       const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
+      
+      // Записываем просмотр
+      try {
+        const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || null
+        const userAgent = req.headers['user-agent'] || null
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .insert(mysqlSchema.presentationViews)
+          .values({
+            presentation_id: r.id,
+            ip_address: ipAddress ? String(ipAddress).split(',')[0].trim() : null,
+            user_agent: userAgent ? String(userAgent).substring(0, 512) : null,
+          })
+      } catch (err) {
+        // Игнорируем ошибки записи просмотров, чтобы не блокировать просмотр презентации
+        req.log.warn(err, 'Ошибка при записи просмотра')
+      }
+      
       return reply.send({
         id: String(r.id),
         title: r.title,
@@ -529,6 +546,63 @@ export async function presentationRoutes(app: FastifyInstance) {
         req.log.error(error, 'Ошибка при генерации PDF')
         return reply.status(500).send({ error: 'Ошибка при генерации PDF: ' + (error instanceof Error ? error.message : 'Неизвестная ошибка') })
       }
+    }
+  )
+
+  /** Статистика просмотров презентации */
+  app.get<{ Params: { id: string }; Querystring: { startDate?: string; endDate?: string } }>(
+    '/api/presentations/:id/views',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id: string }; Querystring: { startDate?: string; endDate?: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      const { id } = req.params
+      const { startDate, endDate } = req.query
+      if (!useMysql) return reply.status(501).send({ error: 'Статистика доступна только при работе с БД' })
+      const idNum = parseMysqlId(id)
+      if (idNum === null) return reply.status(400).send({ error: 'Неверный формат id презентации' })
+      const userIdNum = Number(userId)
+      if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+      
+      // Проверяем, что презентация принадлежит пользователю
+      const presentation = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
+        where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
+      })
+      if (!presentation) return reply.status(404).send({ error: 'Презентация не найдена' })
+      
+      // Получаем просмотры
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const conditions = [eq(mysqlSchema.presentationViews.presentation_id, idNum)]
+      
+      if (startDate) {
+        conditions.push(gte(mysqlSchema.presentationViews.viewed_at, new Date(startDate)))
+      }
+      if (endDate) {
+        const endDateObj = new Date(endDate)
+        endDateObj.setHours(23, 59, 59, 999)
+        conditions.push(lte(mysqlSchema.presentationViews.viewed_at, endDateObj))
+      }
+      
+      const views = await mysqlDb.query.presentationViews.findMany({
+        where: and(...conditions),
+        orderBy: [desc(mysqlSchema.presentationViews.viewed_at)],
+      })
+      
+      // Группируем по датам для графика
+      const viewsByDate: Record<string, number> = {}
+      views.forEach((view) => {
+        const date = new Date(view.viewed_at).toISOString().split('T')[0]
+        viewsByDate[date] = (viewsByDate[date] || 0) + 1
+      })
+      
+      return reply.send({
+        totalViews: views.length,
+        viewsByDate,
+        views: views.map((v) => ({
+          id: v.id,
+          viewedAt: toIsoDate(v.viewed_at),
+          ipAddress: v.ip_address ?? undefined,
+        })),
+      })
     }
   )
 }
