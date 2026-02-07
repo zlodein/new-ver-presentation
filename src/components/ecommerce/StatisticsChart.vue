@@ -73,7 +73,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import flatPickr from 'vue-flatpickr-component'
 import VueApexCharts from 'vue3-apexcharts'
