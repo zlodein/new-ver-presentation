@@ -37,8 +37,26 @@ export async function notificationRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        // MySQL не поддерживается для уведомлений в этой версии
-        return reply.send([])
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const whereConditions: any[] = [eq(mysqlSchema.notifications.user_id, userIdNum)]
+        if (read !== undefined) {
+          whereConditions.push(eq(mysqlSchema.notifications.read, read === 'true' ? 'true' : 'false'))
+        }
+        const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findMany({
+          where: and(...whereConditions),
+          orderBy: [desc(mysqlSchema.notifications.created_at)],
+        })
+        return reply.send(
+          list.map((n: { id: number; title: string; message: string | null; type: string; read: string; created_at: Date }) => ({
+            id: String(n.id),
+            title: n.title,
+            message: n.message ?? undefined,
+            type: n.type,
+            read: n.read === 'true' || n.read === true,
+            createdAt: toIsoDate(n.created_at),
+          }))
+        )
       }
 
       // PostgreSQL
@@ -96,7 +114,26 @@ export async function notificationRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        return reply.status(501).send({ error: 'MySQL не поддерживается для уведомлений' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const [notificationId] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
+          user_id: userIdNum,
+          title,
+          message,
+          type,
+        }).$returningId()
+        const created = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
+          where: eq(mysqlSchema.notifications.id, Number(notificationId)),
+        })
+        if (!created) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
+        return reply.status(201).send({
+          id: String(created.id),
+          title: created.title,
+          message: created.message ?? undefined,
+          type: created.type,
+          read: created.read === 'true' || created.read === true,
+          createdAt: toIsoDate(created.created_at),
+        })
       }
 
       // PostgreSQL
@@ -143,7 +180,28 @@ export async function notificationRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        return reply.status(501).send({ error: 'MySQL не поддерживается для уведомлений' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const notificationIdNum = Number(id)
+        if (Number.isNaN(notificationIdNum)) return reply.status(400).send({ error: 'Неверный ID уведомления' })
+        
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .update(mysqlSchema.notifications)
+          .set({ read: 'true' })
+          .where(and(eq(mysqlSchema.notifications.id, notificationIdNum), eq(mysqlSchema.notifications.user_id, userIdNum)))
+
+        const notification = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
+          where: eq(mysqlSchema.notifications.id, notificationIdNum),
+        })
+        if (!notification) return reply.status(404).send({ error: 'Уведомление не найдено' })
+        return reply.send({
+          id: String(notification.id),
+          title: notification.title,
+          message: notification.message ?? undefined,
+          type: notification.type,
+          read: notification.read === 'true' || notification.read === true,
+          createdAt: toIsoDate(notification.created_at),
+        })
       }
 
       // PostgreSQL
@@ -184,7 +242,26 @@ export async function notificationRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        return reply.status(501).send({ error: 'MySQL не поддерживается для уведомлений' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const [notificationId] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
+          user_id: userIdNum,
+          title,
+          message,
+          type,
+        }).$returningId()
+        const created = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
+          where: eq(mysqlSchema.notifications.id, Number(notificationId)),
+        })
+        if (!created) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
+        return reply.status(201).send({
+          id: String(created.id),
+          title: created.title,
+          message: created.message ?? undefined,
+          type: created.type,
+          read: created.read === 'true' || created.read === true,
+          createdAt: toIsoDate(created.created_at),
+        })
       }
 
       // PostgreSQL
@@ -214,7 +291,26 @@ export async function notificationRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        return reply.status(501).send({ error: 'MySQL не поддерживается для уведомлений' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const [notificationId] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
+          user_id: userIdNum,
+          title,
+          message,
+          type,
+        }).$returningId()
+        const created = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
+          where: eq(mysqlSchema.notifications.id, Number(notificationId)),
+        })
+        if (!created) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
+        return reply.status(201).send({
+          id: String(created.id),
+          title: created.title,
+          message: created.message ?? undefined,
+          type: created.type,
+          read: created.read === 'true' || created.read === true,
+          createdAt: toIsoDate(created.created_at),
+        })
       }
 
       // PostgreSQL

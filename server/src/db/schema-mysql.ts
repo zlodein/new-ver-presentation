@@ -76,6 +76,35 @@ export const presentationViews = mysqlTable('presentation_views', {
   viewedAtIdx: index('presentation_views_viewed_at_idx').on(table.viewed_at),
 }))
 
+export const calendarEvents = mysqlTable('calendar_events', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  user_id: int('user_id', { unsigned: true }).notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  start: datetime('start').notNull(),
+  end: datetime('end'),
+  all_day: varchar('all_day', { length: 10 }).notNull().default('false'), // 'true' или 'false'
+  color: varchar('color', { length: 50 }).notNull().default('Primary'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('calendar_events_user_id_idx').on(table.user_id),
+  startIdx: index('calendar_events_start_idx').on(table.start),
+}))
+
+export const notifications = mysqlTable('notifications', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  user_id: int('user_id', { unsigned: true }).notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  message: longtext('message'),
+  type: varchar('type', { length: 50 }).notNull().default('info'), // 'info', 'success', 'warning', 'error', 'calendar'
+  read: varchar('read', { length: 10 }).notNull().default('false'), // 'true' или 'false'
+  created_at: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('notifications_user_id_idx').on(table.user_id),
+  readIdx: index('notifications_read_idx').on(table.read),
+  createdAtIdx: index('notifications_created_at_idx').on(table.created_at),
+}))
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
@@ -83,3 +112,7 @@ export type NewPresentationMySQL = typeof presentations.$inferInsert
 export type PasswordResetTokenMySQL = typeof passwordResetTokens.$inferSelect
 export type PresentationViewMySQL = typeof presentationViews.$inferSelect
 export type NewPresentationViewMySQL = typeof presentationViews.$inferInsert
+export type CalendarEventMySQL = typeof calendarEvents.$inferSelect
+export type NewCalendarEventMySQL = typeof calendarEvents.$inferInsert
+export type NotificationMySQL = typeof notifications.$inferSelect
+export type NewNotificationMySQL = typeof notifications.$inferInsert

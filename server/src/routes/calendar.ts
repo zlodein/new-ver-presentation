@@ -32,8 +32,22 @@ export async function calendarRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        // MySQL не поддерживается для календаря в этой версии
-        return reply.send([])
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.calendarEvents.findMany({
+          where: eq(mysqlSchema.calendarEvents.user_id, userIdNum),
+          orderBy: [desc(mysqlSchema.calendarEvents.start)],
+        })
+        return reply.send(
+          list.map((e: { id: number; title: string; start: Date; end: Date | null; all_day: string; color: string }) => ({
+            id: String(e.id),
+            title: e.title,
+            start: toIsoDate(e.start),
+            end: e.end ? toIsoDate(e.end) : undefined,
+            allDay: e.all_day === 'true' || e.all_day === true,
+            extendedProps: { calendar: e.color },
+          }))
+        )
       }
 
       // PostgreSQL
@@ -88,7 +102,28 @@ export async function calendarRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        return reply.status(501).send({ error: 'MySQL не поддерживается для календаря' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const [event] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.calendarEvents).values({
+          user_id: userIdNum,
+          title,
+          start: new Date(start),
+          end: end ? new Date(end) : undefined,
+          all_day: allDay ? 'true' : 'false',
+          color,
+        }).$returningId()
+        const created = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.calendarEvents.findFirst({
+          where: eq(mysqlSchema.calendarEvents.id, Number(event)),
+        })
+        if (!created) return reply.status(500).send({ error: 'Ошибка создания события' })
+        return reply.status(201).send({
+          id: String(created.id),
+          title: created.title,
+          start: toIsoDate(created.start),
+          end: created.end ? toIsoDate(created.end) : undefined,
+          allDay: created.all_day === 'true' || created.all_day === true,
+          extendedProps: { calendar: created.color },
+        })
       }
 
       // PostgreSQL
@@ -144,7 +179,41 @@ export async function calendarRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        return reply.status(501).send({ error: 'MySQL не поддерживается для календаря' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const eventIdNum = Number(id)
+        if (Number.isNaN(eventIdNum)) return reply.status(400).send({ error: 'Неверный ID события' })
+        
+        const updateData: {
+          title?: string
+          start?: Date
+          end?: Date | null
+          all_day?: string
+          color?: string
+        } = {}
+        if (title) updateData.title = title
+        if (start) updateData.start = new Date(start)
+        if (end !== undefined) updateData.end = end ? new Date(end) : null
+        if (allDay !== undefined) updateData.all_day = allDay ? 'true' : 'false'
+        if (color) updateData.color = color
+
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .update(mysqlSchema.calendarEvents)
+          .set(updateData)
+          .where(and(eq(mysqlSchema.calendarEvents.id, eventIdNum), eq(mysqlSchema.calendarEvents.user_id, userIdNum)))
+
+        const updated = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.calendarEvents.findFirst({
+          where: eq(mysqlSchema.calendarEvents.id, eventIdNum),
+        })
+        if (!updated) return reply.status(404).send({ error: 'Событие не найдено' })
+        return reply.send({
+          id: String(updated.id),
+          title: updated.title,
+          start: toIsoDate(updated.start),
+          end: updated.end ? toIsoDate(updated.end) : undefined,
+          allDay: updated.all_day === 'true' || updated.all_day === true,
+          extendedProps: { calendar: updated.color },
+        })
       }
 
       // PostgreSQL
@@ -200,7 +269,16 @@ export async function calendarRoutes(app: FastifyInstance) {
       }
 
       if (useMysql) {
-        return reply.status(501).send({ error: 'MySQL не поддерживается для календаря' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const eventIdNum = Number(id)
+        if (Number.isNaN(eventIdNum)) return reply.status(400).send({ error: 'Неверный ID события' })
+        
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .delete(mysqlSchema.calendarEvents)
+          .where(and(eq(mysqlSchema.calendarEvents.id, eventIdNum), eq(mysqlSchema.calendarEvents.user_id, userIdNum)))
+
+        return reply.status(204).send()
       }
 
       // PostgreSQL
