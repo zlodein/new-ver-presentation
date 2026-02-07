@@ -98,7 +98,7 @@ import { Russian } from 'flatpickr/dist/l10n/ru.js'
 
 const presentations = ref<Array<{ id: string; title: string; isPublic?: boolean; publicUrl?: string }>>([])
 const selectedPresentationId = ref('')
-const date = ref('')
+const date = ref<Date[] | string | null>(null)
 const loading = ref(false)
 const totalViews = ref<number | null>(null)
 const viewsByDate = ref<Record<string, number>>({})
@@ -268,8 +268,11 @@ async function loadStatistics() {
       if (Array.isArray(date.value) && date.value.length === 2) {
         startDate = date.value[0] ? new Date(date.value[0]).toISOString().split('T')[0] : undefined
         endDate = date.value[1] ? new Date(date.value[1]).toISOString().split('T')[0] : undefined
-      } else if (date.value instanceof Date) {
-        startDate = date.value.toISOString().split('T')[0]
+      } else if (typeof date.value === 'string') {
+        const parsedDate = new Date(date.value)
+        if (!isNaN(parsedDate.getTime())) {
+          startDate = parsedDate.toISOString().split('T')[0]
+        }
       }
     }
     
@@ -297,19 +300,19 @@ async function loadStatistics() {
 function onDateChange(selectedDates: Date[], dateStr: string, instance: any) {
   if (selectedDates && selectedDates.length === 2) {
     // Обновляем значение даты
-    date.value = selectedDates
+    date.value = selectedDates as Date[]
     // Загружаем статистику только когда выбраны обе даты
     loadStatistics()
   } else if (selectedDates && selectedDates.length === 1) {
     // Если выбрана только одна дата, ждем выбора второй
-    date.value = selectedDates
+    date.value = selectedDates as Date[]
   }
 }
 
 function onDateClose(selectedDates: Date[], dateStr: string, instance: any) {
   // При закрытии календаря проверяем, есть ли выбранный диапазон
   if (selectedDates && selectedDates.length === 2) {
-    date.value = selectedDates
+    date.value = selectedDates as Date[]
     loadStatistics()
   }
 }
