@@ -306,8 +306,6 @@ async function loadStatistics() {
   }
 }
 
-let loadStatisticsTimeout: ReturnType<typeof setTimeout> | null = null
-
 function onDateChange(selectedDates: Date[], dateStr: string, instance: any) {
   if (!selectedDates || selectedDates.length === 0) {
     date.value = null
