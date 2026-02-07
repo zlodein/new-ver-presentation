@@ -170,7 +170,13 @@ const chartOptions = computed(() => {
       width: 2,
     },
     markers: {
-      size: 0,
+      size: 5,
+      strokeWidth: 2,
+      strokeColors: ['#465FFF'],
+      fillColors: ['#FFFFFF'],
+      hover: {
+        size: 7,
+      },
     },
     labels: {
       show: false,
