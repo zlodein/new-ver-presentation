@@ -16,12 +16,13 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {
       case 'cover': {
-        const coverImage = slide.data?.coverImageUrl || slide.data?.background_image || data.coverImage || ''
-        const title = slide.data?.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ'
-        const subtitle = slide.data?.subtitle || ''
-        const dealType = slide.data?.deal_type || 'Аренда'
-        const price = slide.data?.price_value || 0
-        const currency = slide.data?.currency || 'RUB'
+        const dataObj = slide.data || {}
+        const coverImage = String(dataObj.coverImageUrl || dataObj.background_image || data.coverImage || '')
+        const title = String(dataObj.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ')
+        const subtitle = String(dataObj.subtitle || '')
+        const dealType = String(dataObj.deal_type || 'Аренда')
+        const price = Number(dataObj.price_value || 0)
+        const currency = String(dataObj.currency || 'RUB')
         const currencySymbols: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€', CNY: '¥', KZT: '₸' }
         const symbol = currencySymbols[currency] || '₽'
         const formatPrice = (num: number) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
@@ -52,9 +53,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'description': {
-        const heading = slide.data?.heading || slide.data?.title || 'ОПИСАНИЕ'
-        const text = slide.data?.text || slide.data?.content || ''
-        const images = Array.isArray(slide.data?.images) ? (slide.data.images as string[]).slice(0, 2) : []
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || 'ОПИСАНИЕ')
+        const text = String(dataObj.text || dataObj.content || '')
+        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 2) : []
 
         return `
           <div class="booklet-page">
@@ -77,9 +79,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'infrastructure': {
-        const heading = slide.data?.heading || slide.data?.title || 'ИНФРАСТРУКТУРА'
-        const text = slide.data?.content || slide.data?.text || ''
-        const images = Array.isArray(slide.data?.images) ? (slide.data.images as string[]).slice(0, 2) : []
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || 'ИНФРАСТРУКТУРА')
+        const text = String(dataObj.content || dataObj.text || '')
+        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 2) : []
 
         return `
           <div class="booklet-page">
@@ -102,8 +105,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'image': {
-        const heading = slide.data?.heading || slide.data?.title || ''
-        const imageUrl = slide.data?.imageUrl || slide.data?.image || ''
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || '')
+        const imageUrl = String(dataObj.imageUrl || dataObj.image || '')
 
         return `
           <div class="booklet-page">
@@ -121,8 +125,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'gallery': {
-        const heading = slide.data?.heading || slide.data?.title || ''
-        const images = Array.isArray(slide.data?.images) ? (slide.data.images as string[]).slice(0, 3) : []
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || '')
+        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 3) : []
 
         return `
           <div class="booklet-page">
@@ -140,9 +145,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'characteristics': {
-        const heading = slide.data?.heading || slide.data?.title || 'ХАРАКТЕРИСТИКИ'
-        const imageUrl = slide.data?.charImageUrl || slide.data?.image || ''
-        const items = Array.isArray(slide.data?.items) ? (slide.data.items as Array<{ label?: string; value?: string }>) : []
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || 'ХАРАКТЕРИСТИКИ')
+        const imageUrl = String(dataObj.charImageUrl || dataObj.image || '')
+        const items = Array.isArray(dataObj.items) ? (dataObj.items as Array<{ label?: string; value?: string }>) : []
 
         return `
           <div class="booklet-page">
@@ -174,8 +180,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'layout': {
-        const heading = slide.data?.heading || slide.data?.title || 'ПЛАНИРОВКА'
-        const imageUrl = slide.data?.layoutImageUrl || slide.data?.image || ''
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || 'ПЛАНИРОВКА')
+        const imageUrl = String(dataObj.layoutImageUrl || dataObj.image || '')
 
         return `
           <div class="booklet-page">
@@ -191,8 +198,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'grid': {
-        const heading = slide.data?.heading || slide.data?.title || ''
-        const images = Array.isArray(slide.data?.images) ? (slide.data.images as string[]).slice(0, 4) : []
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || '')
+        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 4) : []
 
         return `
           <div class="booklet-page">
@@ -210,13 +218,14 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         `
       }
       case 'contacts': {
-        const heading = slide.data?.heading || slide.data?.contact_title || 'КОНТАКТЫ'
-        const contactName = slide.data?.contact_name || ''
-        const phone = slide.data?.phone || slide.data?.contact_phone || ''
-        const email = slide.data?.email || slide.data?.contact_email || ''
-        const role = slide.data?.contact_role || ''
-        const address = slide.data?.address || slide.data?.contact_address || ''
-        const images = Array.isArray(slide.data?.images) ? (slide.data.images as string[]).slice(0, 2) : []
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.contact_title || 'КОНТАКТЫ')
+        const contactName = String(dataObj.contact_name || '')
+        const phone = String(dataObj.phone || dataObj.contact_phone || '')
+        const email = String(dataObj.email || dataObj.contact_email || '')
+        const role = String(dataObj.contact_role || '')
+        const address = String(dataObj.address || dataObj.contact_address || '')
+        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 2) : []
 
         return `
           <div class="booklet-page">
@@ -244,18 +253,23 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
           </div>
         `
       }
-      default:
+      default: {
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || slide.type)
+        const text = dataObj.text ? String(dataObj.text) : ''
+        const content = dataObj.content ? String(dataObj.content) : ''
         return `
           <div class="booklet-page">
             <div class="booklet-page__inner">
               <div class="booklet-content booklet-info p-6">
-                <h2 class="booklet-info__title mb-4">${slide.data?.heading || slide.data?.title || slide.type}</h2>
-                ${slide.data?.text ? `<div class="booklet-info__text">${String(slide.data.text).replace(/\n/g, '<br>')}</div>` : ''}
-                ${slide.data?.content ? `<div class="booklet-info__text">${String(slide.data.content).replace(/\n/g, '<br>')}</div>` : ''}
+                <h2 class="booklet-info__title mb-4">${heading}</h2>
+                ${text ? `<div class="booklet-info__text">${text.replace(/\n/g, '<br>')}</div>` : ''}
+                ${content ? `<div class="booklet-info__text">${content.replace(/\n/g, '<br>')}</div>` : ''}
               </div>
             </div>
           </div>
         `
+      }
     }
   }).join('')
 

@@ -478,11 +478,12 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useFileStore) {
         const row = fileStore.getPresentationById(id, userId!)
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const normalized = normContent(row.content)
         presentationData = {
           id: row.id,
           title: row.title,
           coverImage: row.coverImage ?? undefined,
-          content: normContent(row.content),
+          content: { slides: normalized.slides as ViewSlideItem[] },
         }
       } else if (useMysql) {
         const userIdNum = Number(userId)
@@ -492,22 +493,24 @@ export async function presentationRoutes(app: FastifyInstance) {
         })
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
         const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
+        const normalized = normContent(r.slides_data)
         presentationData = {
           id: String(r.id),
           title: r.title,
           coverImage: r.cover_image ?? undefined,
-          content: normContent(r.slides_data),
+          content: { slides: normalized.slides as ViewSlideItem[] },
         }
       } else {
         const row = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findFirst({
           where: and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)),
         })
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const normalized = normContent(row.content)
         presentationData = {
           id: row.id,
           title: row.title,
           coverImage: row.coverImage ?? undefined,
-          content: normContent(row.content),
+          content: { slides: normalized.slides as ViewSlideItem[] },
         }
       }
 
