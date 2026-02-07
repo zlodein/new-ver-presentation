@@ -178,7 +178,7 @@ export async function calendarRoutes(app: FastifyInstance) {
           title: updated.title,
           start: toIsoDate(updated.start),
           end: updated.end ? toIsoDate(updated.end) : undefined,
-          allDay: updated.all_day === 'true' || updated.all_day === true,
+          allDay: updated.all_day === 'true',
           extendedProps: { calendar: updated.color },
         })
       }
