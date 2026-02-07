@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer'
+import { existsSync } from 'node:fs'
 import type { ViewSlideItem } from './types.js'
 
 interface PresentationData {
