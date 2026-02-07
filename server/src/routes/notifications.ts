@@ -9,6 +9,19 @@ function toIsoDate(d: Date | string): string {
   return typeof d === 'string' ? d : d.toISOString()
 }
 
+/** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия или первая последовательность цифр). */
+function parseMysqlId(id: string): number | null {
+  if (id == null || typeof id !== 'string') return null
+  const s = String(id).trim()
+  const numPart = s.includes(':') ? s.split(':')[0]?.trim() ?? s : s
+  let num = Math.floor(Number(numPart))
+  if (Number.isNaN(num) || num < 1) {
+    const digits = /^\d+/.exec(numPart) ?? /\d+/.exec(s)
+    num = digits ? Math.floor(Number(digits[0])) : 0
+  }
+  return num >= 1 ? num : null
+}
+
 export async function notificationRoutes(app: FastifyInstance) {
   const getUserId = (req: FastifyRequest) => (req.user as { sub: string })?.sub
 
@@ -158,8 +171,8 @@ export async function notificationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const notificationIdNum = Number(id)
-        if (Number.isNaN(notificationIdNum)) return reply.status(400).send({ error: 'Неверный ID уведомления' })
+        const notificationIdNum = parseMysqlId(id || '')
+        if (notificationIdNum === null) return reply.status(400).send({ error: 'Неверный ID уведомления' })
         
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .update(mysqlSchema.notifications)
@@ -221,8 +234,8 @@ export async function notificationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const notificationIdNum = Number(id)
-        if (Number.isNaN(notificationIdNum)) return reply.status(400).send({ error: 'Неверный ID уведомления' })
+        const notificationIdNum = parseMysqlId(id || '')
+        if (notificationIdNum === null) return reply.status(400).send({ error: 'Неверный ID уведомления' })
         
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .delete(mysqlSchema.notifications)
@@ -248,9 +261,48 @@ export async function notificationRoutes(app: FastifyInstance) {
   })
 
   // Очистить все уведомления
+  app.delete('/api/notifications/clear', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = getUserId(req)
+    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+
+    try {
+      if (useFileStore) {
+        // Файловое хранилище не поддерживает уведомления
+        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
+      }
+
+      if (useMysql) {
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .delete(mysqlSchema.notifications)
+          .where(eq(mysqlSchema.notifications.user_id, userIdNum))
+        return reply.status(204).send()
+      }
+
+      // PostgreSQL
+      await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .delete(pgSchema.notifications)
+        .where(eq(pgSchema.notifications.userId, userId))
+
+      return reply.status(204).send()
+    } catch (err) {
+      console.error('[notifications] Ошибка очистки уведомлений:', err)
+      return reply.status(500).send({ error: 'Ошибка сервера' })
+    }
+  })
+  
+  // Очистить все уведомления (старый маршрут для совместимости)
   app.delete('/api/notifications', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+
+    // Проверяем, что это не запрос с параметром id
+    const params = req.params as { id?: string }
+    if (params?.id) {
+      // Это запрос на удаление конкретного уведомления, но он должен обрабатываться другим маршрутом
+      return reply.status(400).send({ error: 'Используйте DELETE /api/notifications/:id для удаления конкретного уведомления' })
+    }
 
     try {
       if (useFileStore) {

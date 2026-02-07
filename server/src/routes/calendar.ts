@@ -9,6 +9,19 @@ function toIsoDate(d: Date | string): string {
   return typeof d === 'string' ? d : d.toISOString()
 }
 
+/** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия или первая последовательность цифр). */
+function parseMysqlId(id: string): number | null {
+  if (id == null || typeof id !== 'string') return null
+  const s = String(id).trim()
+  const numPart = s.includes(':') ? s.split(':')[0]?.trim() ?? s : s
+  let num = Math.floor(Number(numPart))
+  if (Number.isNaN(num) || num < 1) {
+    const digits = /^\d+/.exec(numPart) ?? /\d+/.exec(s)
+    num = digits ? Math.floor(Number(digits[0])) : 0
+  }
+  return num >= 1 ? num : null
+}
+
 export async function calendarRoutes(app: FastifyInstance) {
   const getUserId = (req: FastifyRequest) => (req.user as { sub: string })?.sub
 
@@ -250,8 +263,8 @@ export async function calendarRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const eventIdNum = Number(id)
-        if (Number.isNaN(eventIdNum)) return reply.status(400).send({ error: 'Неверный ID события' })
+        const eventIdNum = parseMysqlId(id || '')
+        if (eventIdNum === null) return reply.status(400).send({ error: 'Неверный ID события' })
         
         const updateData: {
           title?: string
@@ -341,8 +354,8 @@ export async function calendarRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const eventIdNum = Number(id)
-        if (Number.isNaN(eventIdNum)) return reply.status(400).send({ error: 'Неверный ID события' })
+        const eventIdNum = parseMysqlId(id || '')
+        if (eventIdNum === null) return reply.status(400).send({ error: 'Неверный ID события' })
         
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .delete(mysqlSchema.calendarEvents)
