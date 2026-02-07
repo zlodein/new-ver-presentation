@@ -10,15 +10,15 @@
         </p>
       </div>
 
-      <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
         <div class="relative">
           <select
             v-model="selectedPresentationId"
             @change="loadStatistics"
-            class="h-10 px-3 rounded-lg border border-gray-200 bg-white text-theme-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:focus:border-brand-800"
+            class="h-10 px-3 rounded-lg border border-gray-200 bg-white text-theme-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:focus:border-brand-800 min-w-[200px]"
           >
-            <option value="">Выберите презентацию</option>
-            <option v-for="pres in presentations" :key="pres.id" :value="pres.id">
+            <option value="">Презентации</option>
+            <option v-for="pres in publicPresentations" :key="pres.id" :value="pres.id">
               {{ pres.title }}
             </option>
           </select>
@@ -57,19 +57,31 @@
     <div v-if="loading" class="flex items-center justify-center h-[310px]">
       <span class="text-gray-500">Загрузка...</span>
     </div>
-    <div v-else-if="selectedPresentationId && totalViews !== null" class="mb-4">
-      <p class="text-sm text-gray-600 dark:text-gray-400">
-        Всего просмотров: <span class="font-semibold text-gray-800 dark:text-white">{{ totalViews }}</span>
-      </p>
-    </div>
-    <div v-if="selectedPresentationId" class="max-w-full overflow-x-auto custom-scrollbar">
-      <div id="chartThree" class="-ml-4 min-w-[1000px] xl:min-w-full pl-2">
-        <VueApexCharts type="area" height="310" :options="chartOptions" :series="series" />
+    <template v-else>
+      <div v-if="selectedPresentationId && totalViews !== null && totalViews > 0" class="mb-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Всего просмотров: <span class="font-semibold text-gray-800 dark:text-white">{{ totalViews }}</span>
+        </p>
       </div>
-    </div>
-    <div v-else class="flex items-center justify-center h-[310px] text-gray-500 dark:text-gray-400">
-      Выберите презентацию для просмотра статистики
-    </div>
+      <div v-if="selectedPresentationId && totalViews !== null && totalViews > 0" class="max-w-full overflow-x-auto custom-scrollbar">
+        <div id="chartThree" class="-ml-4 min-w-[1000px] xl:min-w-full pl-2">
+          <VueApexCharts type="area" height="310" :options="chartOptions" :series="series" />
+        </div>
+      </div>
+      <div v-else-if="selectedPresentationId && totalViews === 0" class="flex items-center justify-center h-[310px]">
+        <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
+          Статистика начнет собираться, после того как вы поделитесь презентацией
+        </p>
+      </div>
+      <div v-else-if="publicPresentations.length === 0" class="flex items-center justify-center h-[310px]">
+        <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
+          Статистика начнет собираться, после того как вы поделитесь презентацией
+        </p>
+      </div>
+      <div v-else class="flex items-center justify-center h-[310px] text-gray-500 dark:text-gray-400">
+        Выберите презентацию для просмотра статистики
+      </div>
+    </template>
   </div>
 </template>
 
@@ -80,12 +92,16 @@ import VueApexCharts from 'vue3-apexcharts'
 import { api, hasApi, getToken } from '@/api/client'
 import { Russian } from 'flatpickr/dist/l10n/ru.js'
 
-const presentations = ref<Array<{ id: string; title: string }>>([])
+const presentations = ref<Array<{ id: string; title: string; isPublic?: boolean; publicUrl?: string }>>([])
 const selectedPresentationId = ref('')
 const date = ref('')
 const loading = ref(false)
 const totalViews = ref<number | null>(null)
 const viewsByDate = ref<Record<string, number>>({})
+
+const publicPresentations = computed(() => {
+  return presentations.value.filter(p => p.isPublic && p.publicUrl)
+})
 
 const flatpickrConfig = computed(() => ({
   mode: 'range' as const,
@@ -201,8 +217,14 @@ const chartOptions = computed(() => {
 async function loadPresentations() {
   if (!hasApi() || !getToken()) return
   try {
-    const data = await api.get<Array<{ id: string; title: string }>>('/api/presentations')
+    const data = await api.get<Array<{ id: string; title: string; isPublic?: boolean; publicUrl?: string }>>('/api/presentations')
     presentations.value = data
+    // Автоматически выбираем первую публичную презентацию, если есть
+    const publicPres = data.find(p => p.isPublic && p.publicUrl)
+    if (publicPres && !selectedPresentationId.value) {
+      selectedPresentationId.value = publicPres.id
+      loadStatistics()
+    }
   } catch (err) {
     console.error('Ошибка загрузки презентаций:', err)
   }

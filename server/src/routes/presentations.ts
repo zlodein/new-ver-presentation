@@ -74,16 +74,18 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
       const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
         where: eq(mysqlSchema.presentations.user_id, userIdNum),
-        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true },
+        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true },
         orderBy: [desc(mysqlSchema.presentations.updated_at)],
       })
       return reply.send(
-        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null }) => ({
+        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null; is_public?: number | null; public_url?: string | null }) => ({
           id: String(p.id),
           title: p.title,
           coverImage: p.cover_image ?? undefined,
           updatedAt: toIsoDate(p.updated_at),
           status: p.status ?? 'draft',
+          isPublic: Boolean(p.is_public),
+          publicUrl: p.public_url ?? undefined,
         }))
       )
     }
