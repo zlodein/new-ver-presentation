@@ -22,6 +22,15 @@ function parseMysqlId(id: string): number | null {
   return num >= 1 ? num : null
 }
 
+/** Извлекает id уведомления из path (на случай, если прокси не передаёт :id в params). */
+function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>): string {
+  const fromParams = req.params?.id
+  if (fromParams != null && String(fromParams).trim() !== '') return String(fromParams).trim()
+  const path = (req as { url?: string }).url ?? (req as { raw?: { url?: string } }).raw?.url ?? ''
+  const match = /\/api\/notifications\/([^/?#]+)/.exec(path)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
 export async function notificationRoutes(app: FastifyInstance) {
   const getUserId = (req: FastifyRequest) => (req.user as { sub: string })?.sub
 
@@ -218,47 +227,58 @@ export async function notificationRoutes(app: FastifyInstance) {
   })
 
   // Удалить уведомление
-  app.delete('/api/notifications/:id', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = getUserId(req)
-    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+  app.delete<{ Params: { id?: string } }>(
+    '/api/notifications/:id',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
-    const params = req.params as { id?: string }
-    const { id } = params
-
-    try {
-      if (useFileStore) {
-        // Файловое хранилище не поддерживает уведомления
-        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
+      let id = getIdFromDeleteRequest(req)
+      try {
+        if (id.includes('%')) id = decodeURIComponent(id)
+      } catch {
+        // оставляем id как есть при ошибке декодирования
+      }
+      if (!id) {
+        return reply.status(400).send({ error: 'Не указан id уведомления' })
+      }
+      const idNum = useMysql ? parseMysqlId(id) : null
+      if (useMysql && idNum === null) {
+        return reply.status(400).send({ error: 'Неверный формат id уведомления (ожидается целое число)' })
       }
 
-      if (useMysql) {
-        const userIdNum = Number(userId)
-        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const notificationIdNum = parseMysqlId(id || '')
-        if (notificationIdNum === null) return reply.status(400).send({ error: 'Неверный ID уведомления' })
-        
-        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-          .delete(mysqlSchema.notifications)
-          .where(and(eq(mysqlSchema.notifications.id, notificationIdNum), eq(mysqlSchema.notifications.user_id, userIdNum)))
+      try {
+        if (useFileStore) {
+          // Файловое хранилище не поддерживает уведомления
+          return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
+        }
 
+        if (useMysql) {
+          const userIdNum = Number(userId)
+          if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+          const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            .delete(mysqlSchema.notifications)
+            .where(and(eq(mysqlSchema.notifications.id, idNum!), eq(mysqlSchema.notifications.user_id, userIdNum)))
+          const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
+          const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
+          if (affected === 0) return reply.status(404).send({ error: 'Уведомление не найдено' })
+          return reply.status(204).send()
+        }
+
+        // PostgreSQL
+        const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+          .delete(pgSchema.notifications)
+          .where(and(eq(pgSchema.notifications.id, id), eq(pgSchema.notifications.userId, userId)))
+          .returning({ id: pgSchema.notifications.id })
+        if (deleted.length === 0) return reply.status(404).send({ error: 'Уведомление не найдено' })
         return reply.status(204).send()
+      } catch (err) {
+        console.error('[notifications] Ошибка удаления уведомления:', err)
+        return reply.status(500).send({ error: 'Ошибка сервера' })
       }
-
-      // PostgreSQL
-      if (!id) return reply.status(400).send({ error: 'ID уведомления обязателен' })
-      const [deleted] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-        .delete(pgSchema.notifications)
-        .where(and(eq(pgSchema.notifications.id, id), eq(pgSchema.notifications.userId, userId)))
-        .returning()
-
-      if (!deleted) return reply.status(404).send({ error: 'Уведомление не найдено' })
-
-      return reply.status(204).send()
-    } catch (err) {
-      console.error('[notifications] Ошибка удаления уведомления:', err)
-      return reply.status(500).send({ error: 'Ошибка сервера' })
     }
-  })
+  )
 
   // Очистить все уведомления
   app.delete('/api/notifications/clear', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
