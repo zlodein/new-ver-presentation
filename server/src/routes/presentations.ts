@@ -5,6 +5,8 @@ import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
+import { generatePDF } from '../utils/pdf-generator.js'
+import type { ViewSlideItem } from '../utils/types.js'
 
 function toIsoDate(d: Date | string): string {
   return typeof d === 'string' ? d : d.toISOString()
@@ -453,6 +455,77 @@ export async function presentationRoutes(app: FastifyInstance) {
         .returning({ id: pgSchema.presentations.id })
       if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
       return reply.status(204).send()
+    }
+  )
+
+  /** Экспорт презентации в PDF */
+  app.get<{ Params: { id: string } }>(
+    '/api/presentations/:id/export-pdf',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      const { id } = req.params
+      if (id == null || String(id).trim() === '') {
+        return reply.status(400).send({ error: 'Не указан id презентации' })
+      }
+      const idNum = useMysql ? parseMysqlId(id) : null
+      if (useMysql && idNum === null) {
+        return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
+      }
+
+      let presentationData: { id: string; title: string; coverImage?: string; content: { slides: ViewSlideItem[] } } | null = null
+
+      if (useFileStore) {
+        const row = fileStore.getPresentationById(id, userId!)
+        if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+        presentationData = {
+          id: row.id,
+          title: row.title,
+          coverImage: row.coverImage ?? undefined,
+          content: normContent(row.content),
+        }
+      } else if (useMysql) {
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
+          where: and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)),
+        })
+        if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
+        presentationData = {
+          id: String(r.id),
+          title: r.title,
+          coverImage: r.cover_image ?? undefined,
+          content: normContent(r.slides_data),
+        }
+      } else {
+        const row = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findFirst({
+          where: and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)),
+        })
+        if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+        presentationData = {
+          id: row.id,
+          title: row.title,
+          coverImage: row.coverImage ?? undefined,
+          content: normContent(row.content),
+        }
+      }
+
+      if (!presentationData) {
+        return reply.status(404).send({ error: 'Презентация не найдена' })
+      }
+
+      try {
+        const baseUrl = (process.env.PUBLIC_APP_URL || `${req.protocol}://${req.hostname}`).replace(/\/$/, '')
+        const pdfBuffer = await generatePDF(presentationData, baseUrl)
+        
+        reply.type('application/pdf')
+        reply.header('Content-Disposition', `attachment; filename="${encodeURIComponent(presentationData.title || 'presentation')}.pdf"`)
+        return reply.send(pdfBuffer)
+      } catch (error) {
+        req.log.error(error, 'Ошибка при генерации PDF')
+        return reply.status(500).send({ error: 'Ошибка при генерации PDF: ' + (error instanceof Error ? error.message : 'Неизвестная ошибка') })
+      }
     }
   )
 }

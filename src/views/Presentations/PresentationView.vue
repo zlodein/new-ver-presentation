@@ -348,9 +348,7 @@ onMounted(async () => {
 <style scoped>
 .presentation-view-wrap.presentation-slider-wrap {
   aspect-ratio: unset;
-  max-height: 90vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
 }
 .booklet-page--stacked {
   min-height: min(70vh, 560px);

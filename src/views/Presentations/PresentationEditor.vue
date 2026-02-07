@@ -678,6 +678,14 @@
             </button>
             <button
               type="button"
+              class="rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              @click="exportToPDF"
+              title="Экспортировать презентацию в PDF"
+            >
+              Экспорт в PDF
+            </button>
+            <button
+              type="button"
               class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
               @click="saveToStorage"
             >
@@ -709,7 +717,7 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
-import { api, hasApi, getToken } from '@/api/client'
+import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
 
 const route = useRoute()
@@ -1642,6 +1650,62 @@ async function copyPublicLink() {
     alert('Ссылка скопирована')
   } catch {
     alert('Не удалось скопировать ссылку')
+  }
+}
+
+/** Экспорт презентации в PDF */
+async function exportToPDF() {
+  if (!hasApi() || !getToken()) {
+    alert('Необходима авторизация для экспорта в PDF')
+    return
+  }
+  
+  // Сначала сохраняем презентацию
+  autoSaveStatus.value = 'Сохранение перед экспортом...'
+  const saved = await doSave({ skipRedirect: true })
+  if (!saved) {
+    autoSaveStatus.value = 'Ошибка сохранения'
+    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    return
+  }
+  
+  autoSaveStatus.value = 'Генерация PDF...'
+  const id = presentationId.value
+  try {
+    const apiBase = getApiBase()
+    const apiUrl = apiBase || (window.location.origin + '/api')
+    const response = await fetch(`${apiUrl}/presentations/${id}/export-pdf`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+      },
+    })
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Ошибка при генерации PDF' }))
+      throw new Error(error.error || 'Ошибка при генерации PDF')
+    }
+    
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const title = (slides.value[0]?.type === 'cover' && slides.value[0]?.data?.title)
+      ? String(slides.value[0].data.title).trim() || 'presentation'
+      : 'presentation'
+    a.download = `${title}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    
+    autoSaveStatus.value = 'PDF экспортирован'
+    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+  } catch (err) {
+    console.error(err)
+    autoSaveStatus.value = 'Ошибка экспорта'
+    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    alert('Не удалось экспортировать презентацию в PDF: ' + (err instanceof Error ? err.message : 'Неизвестная ошибка'))
   }
 }
 </script>
