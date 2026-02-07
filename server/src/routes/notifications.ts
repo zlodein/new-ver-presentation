@@ -21,19 +21,8 @@ export async function notificationRoutes(app: FastifyInstance) {
 
     try {
       if (useFileStore) {
-        let notifications = fileStore.getNotificationsByUserId(userId)
-        if (read !== undefined) {
-          const readBool = read === 'true'
-          notifications = notifications.filter((n) => (n.read === 'true' || n.read === true) === readBool)
-        }
-        return reply.send(notifications.map((n) => ({
-          id: n.id,
-          title: n.title,
-          message: n.message,
-          type: n.type,
-          read: n.read === 'true' || n.read === true,
-          createdAt: toIsoDate(n.createdAt),
-        })))
+        // Файловое хранилище не поддерживает уведомления - возвращаем пустой массив
+        return reply.send([])
       }
 
       if (useMysql) {
@@ -53,7 +42,7 @@ export async function notificationRoutes(app: FastifyInstance) {
             title: n.title,
             message: n.message ?? undefined,
             type: n.type,
-            read: n.read === 'true' || n.read === true,
+            read: n.read === 'true',
             createdAt: toIsoDate(n.created_at),
           }))
         )
@@ -85,11 +74,12 @@ export async function notificationRoutes(app: FastifyInstance) {
   })
 
   // Создать уведомление
-  app.post('/api/notifications', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { title: string; message?: string; type?: string } }>, reply: FastifyReply) => {
+  app.post('/api/notifications', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
-    const { title, message, type = 'info' } = req.body
+    const body = req.body as { title?: string; message?: string; type?: string }
+    const { title, message, type = 'info' } = body
 
     if (!title) {
       return reply.status(400).send({ error: 'Название обязательно' })
@@ -97,20 +87,8 @@ export async function notificationRoutes(app: FastifyInstance) {
 
     try {
       if (useFileStore) {
-        const notification = fileStore.createNotification({
-          userId,
-          title,
-          message,
-          type,
-        })
-        return reply.status(201).send({
-          id: notification.id,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          read: notification.read === 'true' || notification.read === true,
-          createdAt: toIsoDate(notification.createdAt),
-        })
+        // Файловое хранилище не поддерживает уведомления
+        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
       }
 
       if (useMysql) {
@@ -131,7 +109,7 @@ export async function notificationRoutes(app: FastifyInstance) {
           title: created.title,
           message: created.message ?? undefined,
           type: created.type,
-          read: created.read === 'true' || created.read === true,
+          read: created.read === 'true',
           createdAt: toIsoDate(created.created_at),
         })
       }
@@ -149,7 +127,7 @@ export async function notificationRoutes(app: FastifyInstance) {
         title: notification.title,
         message: notification.message,
         type: notification.type,
-        read: notification.read === 'true' || notification.read === true,
+        read: notification.read === 'true',
         createdAt: toIsoDate(notification.createdAt),
       })
     } catch (err) {
@@ -159,7 +137,7 @@ export async function notificationRoutes(app: FastifyInstance) {
   })
 
   // Отметить уведомление как прочитанное
-  app.put('/api/notifications/:id/read', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  app.put('/api/notifications/:id/read', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
@@ -174,7 +152,7 @@ export async function notificationRoutes(app: FastifyInstance) {
           title: notification.title,
           message: notification.message,
           type: notification.type,
-          read: notification.read === 'true' || notification.read === true,
+          read: notification.read === 'true',
           createdAt: toIsoDate(notification.createdAt),
         })
       }
@@ -199,7 +177,7 @@ export async function notificationRoutes(app: FastifyInstance) {
           title: notification.title,
           message: notification.message ?? undefined,
           type: notification.type,
-          read: notification.read === 'true' || notification.read === true,
+          read: notification.read === 'true',
           createdAt: toIsoDate(notification.created_at),
         })
       }
@@ -218,7 +196,7 @@ export async function notificationRoutes(app: FastifyInstance) {
         title: notification.title,
         message: notification.message,
         type: notification.type,
-        read: notification.read === 'true' || notification.read === true,
+        read: notification.read === 'true',
         createdAt: toIsoDate(notification.createdAt),
       })
     } catch (err) {
@@ -228,17 +206,17 @@ export async function notificationRoutes(app: FastifyInstance) {
   })
 
   // Удалить уведомление
-  app.delete('/api/notifications/:id', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  app.delete('/api/notifications/:id', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
-    const { id } = req.params
+    const params = req.params as { id?: string }
+    const { id } = params
 
     try {
       if (useFileStore) {
-        const deleted = fileStore.deleteNotification(id, userId)
-        if (!deleted) return reply.status(404).send({ error: 'Уведомление не найдено' })
-        return reply.status(204).send()
+        // Файловое хранилище не поддерживает уведомления
+        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
       }
 
       if (useMysql) {
@@ -259,7 +237,7 @@ export async function notificationRoutes(app: FastifyInstance) {
           title: created.title,
           message: created.message ?? undefined,
           type: created.type,
-          read: created.read === 'true' || created.read === true,
+          read: created.read === 'true',
           createdAt: toIsoDate(created.created_at),
         })
       }
@@ -286,31 +264,17 @@ export async function notificationRoutes(app: FastifyInstance) {
 
     try {
       if (useFileStore) {
-        fileStore.clearNotifications(userId)
-        return reply.status(204).send()
+        // Файловое хранилище не поддерживает уведомления
+        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
       }
 
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const [notificationId] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
-          user_id: userIdNum,
-          title,
-          message,
-          type,
-        }).$returningId()
-        const created = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
-          where: eq(mysqlSchema.notifications.id, Number(notificationId)),
-        })
-        if (!created) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
-        return reply.status(201).send({
-          id: String(created.id),
-          title: created.title,
-          message: created.message ?? undefined,
-          type: created.type,
-          read: created.read === 'true' || created.read === true,
-          createdAt: toIsoDate(created.created_at),
-        })
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .delete(mysqlSchema.notifications)
+          .where(eq(mysqlSchema.notifications.user_id, userIdNum))
+        return reply.status(204).send()
       }
 
       // PostgreSQL
