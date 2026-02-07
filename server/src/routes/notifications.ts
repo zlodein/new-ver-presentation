@@ -176,6 +176,7 @@ export async function notificationRoutes(app: FastifyInstance) {
       }
 
       // PostgreSQL
+      if (!id) return reply.status(400).send({ error: 'ID уведомления обязателен' })
       const [notification] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
         .update(pgSchema.notifications)
         .set({ read: 'true' })

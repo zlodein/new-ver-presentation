@@ -53,7 +53,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         title: e.title,
         start: toIsoDate(e.start),
         end: e.end ? toIsoDate(e.end) : undefined,
-        allDay: e.allDay === 'true' || e.allDay === true,
+        allDay: e.allDay === 'true',
         extendedProps: { calendar: e.color },
       })))
     } catch (err) {
@@ -100,7 +100,7 @@ export async function calendarRoutes(app: FastifyInstance) {
           title: created.title,
           start: toIsoDate(created.start),
           end: created.end ? toIsoDate(created.end) : undefined,
-          allDay: created.all_day === 'true' || created.all_day === true,
+          allDay: created.all_day === 'true',
           extendedProps: { calendar: created.color },
         })
       }
@@ -120,7 +120,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         title: event.title,
         start: toIsoDate(event.start),
         end: event.end ? toIsoDate(event.end) : undefined,
-        allDay: event.allDay === 'true' || event.allDay === true,
+        allDay: event.allDay === 'true',
         extendedProps: { calendar: event.color },
       })
     } catch (err) {
@@ -199,6 +199,7 @@ export async function calendarRoutes(app: FastifyInstance) {
       if (color) updateData.color = color
       updateData.updatedAt = new Date()
 
+      if (!id) return reply.status(400).send({ error: 'ID события обязателен' })
       const [event] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
         .update(pgSchema.calendarEvents)
         .set(updateData)
@@ -212,7 +213,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         title: event.title,
         start: toIsoDate(event.start),
         end: event.end ? toIsoDate(event.end) : undefined,
-        allDay: event.allDay === 'true' || event.allDay === true,
+        allDay: event.allDay === 'true',
         extendedProps: { calendar: event.color },
       })
     } catch (err) {
@@ -249,6 +250,7 @@ export async function calendarRoutes(app: FastifyInstance) {
       }
 
       // PostgreSQL
+      if (!id) return reply.status(400).send({ error: 'ID события обязателен' })
       const [deleted] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
         .delete(pgSchema.calendarEvents)
         .where(and(eq(pgSchema.calendarEvents.id, id), eq(pgSchema.calendarEvents.userId, userId)))
