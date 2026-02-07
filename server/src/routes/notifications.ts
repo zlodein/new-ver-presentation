@@ -64,7 +64,7 @@ export async function notificationRoutes(app: FastifyInstance) {
         title: n.title,
         message: n.message,
         type: n.type,
-        read: n.read === 'true' || n.read === true,
+        read: n.read === 'true',
         createdAt: toIsoDate(n.createdAt),
       })))
     } catch (err) {
@@ -141,20 +141,13 @@ export async function notificationRoutes(app: FastifyInstance) {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
-    const { id } = req.params
+    const params = req.params as { id?: string }
+    const { id } = params
 
     try {
       if (useFileStore) {
-        const notification = fileStore.updateNotification(id, userId, { read: 'true' })
-        if (!notification) return reply.status(404).send({ error: 'Уведомление не найдено' })
-        return reply.send({
-          id: notification.id,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          read: notification.read === 'true',
-          createdAt: toIsoDate(notification.createdAt),
-        })
+        // Файловое хранилище не поддерживает уведомления
+        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
       }
 
       if (useMysql) {
@@ -222,27 +215,18 @@ export async function notificationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const [notificationId] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
-          user_id: userIdNum,
-          title,
-          message,
-          type,
-        }).$returningId()
-        const created = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
-          where: eq(mysqlSchema.notifications.id, Number(notificationId)),
-        })
-        if (!created) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
-        return reply.status(201).send({
-          id: String(created.id),
-          title: created.title,
-          message: created.message ?? undefined,
-          type: created.type,
-          read: created.read === 'true',
-          createdAt: toIsoDate(created.created_at),
-        })
+        const notificationIdNum = Number(id)
+        if (Number.isNaN(notificationIdNum)) return reply.status(400).send({ error: 'Неверный ID уведомления' })
+        
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .delete(mysqlSchema.notifications)
+          .where(and(eq(mysqlSchema.notifications.id, notificationIdNum), eq(mysqlSchema.notifications.user_id, userIdNum)))
+
+        return reply.status(204).send()
       }
 
       // PostgreSQL
+      if (!id) return reply.status(400).send({ error: 'ID уведомления обязателен' })
       const [deleted] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
         .delete(pgSchema.notifications)
         .where(and(eq(pgSchema.notifications.id, id), eq(pgSchema.notifications.userId, userId)))
