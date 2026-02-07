@@ -226,103 +226,10 @@ export async function notificationRoutes(app: FastifyInstance) {
     }
   })
 
-  // Удалить уведомление
-  app.delete<{ Params: { id?: string } }>(
-    '/api/notifications/:id',
-    { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
-      const userId = getUserId(req)
-      if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-
-      let id = getIdFromDeleteRequest(req)
-      try {
-        if (id.includes('%')) id = decodeURIComponent(id)
-      } catch {
-        // оставляем id как есть при ошибке декодирования
-      }
-      if (!id) {
-        return reply.status(400).send({ error: 'Не указан id уведомления' })
-      }
-      const idNum = useMysql ? parseMysqlId(id) : null
-      if (useMysql && idNum === null) {
-        return reply.status(400).send({ error: 'Неверный формат id уведомления (ожидается целое число)' })
-      }
-
-      try {
-        if (useFileStore) {
-          // Файловое хранилище не поддерживает уведомления
-          return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
-        }
-
-        if (useMysql) {
-          const userIdNum = Number(userId)
-          if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-          const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-            .delete(mysqlSchema.notifications)
-            .where(and(eq(mysqlSchema.notifications.id, idNum!), eq(mysqlSchema.notifications.user_id, userIdNum)))
-          const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
-          const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
-          if (affected === 0) return reply.status(404).send({ error: 'Уведомление не найдено' })
-          return reply.status(204).send()
-        }
-
-        // PostgreSQL
-        const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-          .delete(pgSchema.notifications)
-          .where(and(eq(pgSchema.notifications.id, id), eq(pgSchema.notifications.userId, userId)))
-          .returning({ id: pgSchema.notifications.id })
-        if (deleted.length === 0) return reply.status(404).send({ error: 'Уведомление не найдено' })
-        return reply.status(204).send()
-      } catch (err) {
-        console.error('[notifications] Ошибка удаления уведомления:', err)
-        return reply.status(500).send({ error: 'Ошибка сервера' })
-      }
-    }
-  )
-
-  // Очистить все уведомления
+  // Очистить все уведомления (должен быть ПЕРЕД /api/notifications/:id)
   app.delete('/api/notifications/clear', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-
-    try {
-      if (useFileStore) {
-        // Файловое хранилище не поддерживает уведомления
-        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
-      }
-
-      if (useMysql) {
-        const userIdNum = Number(userId)
-        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-          .delete(mysqlSchema.notifications)
-          .where(eq(mysqlSchema.notifications.user_id, userIdNum))
-        return reply.status(204).send()
-      }
-
-      // PostgreSQL
-      await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-        .delete(pgSchema.notifications)
-        .where(eq(pgSchema.notifications.userId, userId))
-
-      return reply.status(204).send()
-    } catch (err) {
-      console.error('[notifications] Ошибка очистки уведомлений:', err)
-      return reply.status(500).send({ error: 'Ошибка сервера' })
-    }
-  })
-  
-  // Очистить все уведомления (старый маршрут для совместимости)
-  app.delete('/api/notifications', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = getUserId(req)
-    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-
-    // Проверяем, что это не запрос с параметром id
-    const params = req.params as { id?: string }
-    if (params?.id) {
-      // Это запрос на удаление конкретного уведомления, но он должен обрабатываться другим маршрутом
-      return reply.status(400).send({ error: 'Используйте DELETE /api/notifications/:id для удаления конкретного уведомления' })
-    }
 
     try {
       if (useFileStore) {
