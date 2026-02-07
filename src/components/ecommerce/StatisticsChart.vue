@@ -29,9 +29,9 @@
 
         <div class="relative">
           <flat-pickr
-            v-model="date"
+            :model-value="date"
             :config="flatpickrConfig"
-            @on-change="onDateChange"
+            @update:model-value="onDateUpdate"
             @on-close="onDateClose"
             class="pl-3 sm:pl-9 dark:bg-dark-900 h-10 w-10 sm:w-56 rounded-lg border border-gray-200 bg-white text-transparent sm:text-theme-sm sm:text-gray-800 shadow-theme-xs placeholder:text-transparent sm:placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-transparent sm:dark:text-gray-400 dark:placeholder:text-transparent sm:dark:placeholder:text-gray-400 dark:focus:border-brand-800"
             placeholder="Выберите дату"
@@ -306,40 +306,38 @@ async function loadStatistics() {
   }
 }
 
-function onDateChange(selectedDates: Date[], dateStr: string, instance: any) {
-  if (!selectedDates || selectedDates.length === 0) {
+function onDateUpdate(value: Date[] | string | null) {
+  // Просто обновляем значение без загрузки статистики
+  // Статистика загрузится при закрытии календаря
+  if (value === null || (Array.isArray(value) && value.length === 0)) {
     date.value = null
-    return
-  }
-  
-  // Обновляем значение даты только если это массив
-  if (Array.isArray(selectedDates)) {
-    date.value = selectedDates as Date[]
-    
-    // Загружаем статистику только когда выбраны обе даты
-    if (selectedDates.length === 2) {
-      // Используем debounce чтобы избежать множественных вызовов при быстром выборе
-      if (loadStatisticsTimeout) {
-        clearTimeout(loadStatisticsTimeout)
-      }
-      loadStatisticsTimeout = setTimeout(() => {
-        loadStatistics()
-      }, 300)
-    }
+  } else if (Array.isArray(value)) {
+    date.value = value as Date[]
   }
 }
 
 function onDateClose(selectedDates: Date[], dateStr: string, instance: any) {
   // При закрытии календаря проверяем, есть ли выбранный диапазон
-  if (selectedDates && Array.isArray(selectedDates) && selectedDates.length === 2) {
-    date.value = selectedDates as Date[]
-    // Загружаем статистику при закрытии, если диапазон выбран
-    if (loadStatisticsTimeout) {
-      clearTimeout(loadStatisticsTimeout)
+  if (selectedDates && Array.isArray(selectedDates)) {
+    if (selectedDates.length === 2) {
+      date.value = selectedDates as Date[]
+      // Загружаем статистику при закрытии, если диапазон выбран
+      if (loadStatisticsTimeout) {
+        clearTimeout(loadStatisticsTimeout)
+      }
+      loadStatisticsTimeout = setTimeout(() => {
+        loadStatistics()
+      }, 100)
+    } else if (selectedDates.length === 0) {
+      date.value = null
+      // Загружаем статистику без фильтров, если диапазон сброшен
+      if (loadStatisticsTimeout) {
+        clearTimeout(loadStatisticsTimeout)
+      }
+      loadStatisticsTimeout = setTimeout(() => {
+        loadStatistics()
+      }, 100)
     }
-    loadStatisticsTimeout = setTimeout(() => {
-      loadStatistics()
-    }, 100)
   }
 }
 
