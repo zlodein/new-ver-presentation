@@ -88,7 +88,7 @@ const totalViews = ref<number | null>(null)
 const viewsByDate = ref<Record<string, number>>({})
 
 const flatpickrConfig = computed(() => ({
-  mode: 'range',
+  mode: 'range' as const,
   dateFormat: 'd.m.Y',
   locale: Russian,
   defaultDate: [new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), new Date()],
