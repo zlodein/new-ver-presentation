@@ -162,6 +162,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/notifications',
+      name: 'Notifications',
+      component: () => import('../views/Pages/NotificationsPage.vue'),
+      meta: {
+        title: 'Уведомления',
+      },
+    },
+    {
       path: '/dashboard/error-404',
       name: '404 Error',
       component: () => import('../views/Errors/FourZeroFour.vue'),

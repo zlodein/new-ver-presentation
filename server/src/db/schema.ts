@@ -55,8 +55,43 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   index('password_reset_tokens_expires_at_idx').on(table.expiresAt),
 ])
 
+// Календарные события
+export const calendarEvents = pgTable('calendar_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  start: timestamp('start', { withTimezone: true }).notNull(),
+  end: timestamp('end', { withTimezone: true }),
+  allDay: text('all_day').notNull().default('false'), // 'true' или 'false' как строка для совместимости
+  color: varchar('color', { length: 50 }).notNull().default('Primary'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('calendar_events_user_id_idx').on(table.userId),
+  index('calendar_events_start_idx').on(table.start),
+])
+
+// Уведомления
+export const notifications = pgTable('notifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  message: text('message'),
+  type: varchar('type', { length: 50 }).notNull().default('info'), // 'info', 'success', 'warning', 'error', 'calendar'
+  read: text('read').notNull().default('false'), // 'true' или 'false' как строка
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('notifications_user_id_idx').on(table.userId),
+  index('notifications_read_idx').on(table.read),
+  index('notifications_created_at_idx').on(table.createdAt),
+])
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Presentation = typeof presentations.$inferSelect
 export type NewPresentation = typeof presentations.$inferInsert
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect
+export type CalendarEvent = typeof calendarEvents.$inferSelect
+export type NewCalendarEvent = typeof calendarEvents.$inferInsert
+export type Notification = typeof notifications.$inferSelect
+export type NewNotification = typeof notifications.$inferInsert

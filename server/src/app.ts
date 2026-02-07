@@ -9,6 +9,8 @@ import { authRoutes } from './routes/auth.js'
 import { presentationRoutes } from './routes/presentations.js'
 import { editorApiRoutes } from './routes/editor-api.js'
 import { uploadRoutes } from './routes/upload.js'
+import { calendarRoutes } from './routes/calendar.js'
+import { notificationRoutes } from './routes/notifications.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -64,6 +66,8 @@ export async function buildApp() {
   await app.register(presentationRoutes, { prefix: '/' })
   await app.register(editorApiRoutes, { prefix: '/api' })
   await app.register(uploadRoutes, { prefix: '/' })
+  await app.register(calendarRoutes, { prefix: '/' })
+  await app.register(notificationRoutes, { prefix: '/' })
 
   return app
 }

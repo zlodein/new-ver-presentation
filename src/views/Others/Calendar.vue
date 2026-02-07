@@ -70,24 +70,38 @@
 
               <div class="mt-6">
                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Дата начала
+                  Дата и время начала
                 </label>
-                <input
-                  v-model="eventStartDate"
-                  type="date"
-                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                />
+                <div class="flex gap-2">
+                  <input
+                    v-model="eventStartDate"
+                    type="date"
+                    class="dark:bg-dark-900 h-11 flex-1 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                  <input
+                    v-model="eventStartTime"
+                    type="time"
+                    class="dark:bg-dark-900 h-11 w-32 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                </div>
               </div>
 
               <div class="mt-6">
                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Дата окончания
+                  Дата и время окончания
                 </label>
-                <input
-                  v-model="eventEndDate"
-                  type="date"
-                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                />
+                <div class="flex gap-2">
+                  <input
+                    v-model="eventEndDate"
+                    type="date"
+                    class="dark:bg-dark-900 h-11 flex-1 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                  <input
+                    v-model="eventEndTime"
+                    type="time"
+                    class="dark:bg-dark-900 h-11 w-32 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                </div>
               </div>
             </div>
 
@@ -101,9 +115,10 @@
 
               <button
                 @click="handleAddOrUpdateEvent"
-                class="btn btn-success btn-update-event flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
+                :disabled="loading"
+                class="btn btn-success btn-update-event flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto disabled:opacity-50"
               >
-                {{ selectedEvent ? 'Сохранить изменения' : 'Добавить событие' }}
+                {{ loading ? 'Сохранение...' : (selectedEvent ? 'Сохранить изменения' : 'Добавить событие') }}
               </button>
               <button
                 v-if="selectedEvent"
@@ -229,15 +244,20 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import Modal from '@/components/profile/Modal.vue'
+import { api } from '@/api/client'
+import ruLocale from '@fullcalendar/core/locales/ru'
 
 const calendarRef = ref(null)
 const isOpen = ref(false)
 const selectedEvent = ref(null)
 const eventTitle = ref('')
 const eventStartDate = ref('')
+const eventStartTime = ref('')
 const eventEndDate = ref('')
+const eventEndTime = ref('')
 const eventLevel = ref('')
 const events = ref([])
+const loading = ref(false)
 
 const calendarsEvents = reactive({
   Danger: 'danger',
@@ -246,28 +266,27 @@ const calendarsEvents = reactive({
   Warning: 'warning',
 })
 
+const loadEvents = async () => {
+  try {
+    loading.value = true
+    const data = await api.get('/api/calendar/events')
+    events.value = data.map((e: any) => ({
+      id: e.id,
+      title: e.title,
+      start: e.start,
+      end: e.end,
+      allDay: e.allDay,
+      extendedProps: e.extendedProps,
+    }))
+  } catch (err) {
+    console.error('Ошибка загрузки событий:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(() => {
-  events.value = [
-    {
-      id: '1',
-      title: 'Event Conf.',
-      start: new Date().toISOString().split('T')[0],
-      extendedProps: { calendar: 'Danger' },
-    },
-    {
-      id: '2',
-      title: 'Meeting',
-      start: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-      extendedProps: { calendar: 'Success' },
-    },
-    {
-      id: '3',
-      title: 'Workshop',
-      start: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-      end: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-      extendedProps: { calendar: 'Primary' },
-    },
-  ]
+  loadEvents()
 })
 
 const openModal = () => {
@@ -282,15 +301,22 @@ const closeModal = () => {
 const resetModalFields = () => {
   eventTitle.value = ''
   eventStartDate.value = ''
+  eventStartTime.value = ''
   eventEndDate.value = ''
+  eventEndTime.value = ''
   eventLevel.value = ''
   selectedEvent.value = null
 }
 
 const handleDateSelect = (selectInfo) => {
   resetModalFields()
-  eventStartDate.value = selectInfo.startStr
-  eventEndDate.value = selectInfo.endStr || selectInfo.startStr
+  const startDate = new Date(selectInfo.startStr)
+  const endDate = selectInfo.endStr ? new Date(selectInfo.endStr) : new Date(selectInfo.startStr)
+  
+  eventStartDate.value = startDate.toISOString().split('T')[0]
+  eventStartTime.value = startDate.toTimeString().slice(0, 5)
+  eventEndDate.value = endDate.toISOString().split('T')[0]
+  eventEndTime.value = endDate.toTimeString().slice(0, 5)
   openModal()
 }
 
@@ -298,44 +324,100 @@ const handleEventClick = (clickInfo) => {
   const event = clickInfo.event
   selectedEvent.value = event
   eventTitle.value = event.title
-  eventStartDate.value = event.start?.toISOString().split('T')[0] || ''
-  eventEndDate.value = event.end?.toISOString().split('T')[0] || ''
-  eventLevel.value = event.extendedProps.calendar
+  
+  const startDate = event.start ? new Date(event.start) : new Date()
+  eventStartDate.value = startDate.toISOString().split('T')[0]
+  eventStartTime.value = startDate.toTimeString().slice(0, 5)
+  
+  const endDate = event.end ? new Date(event.end) : new Date(startDate.getTime() + 3600000)
+  eventEndDate.value = endDate.toISOString().split('T')[0]
+  eventEndTime.value = endDate.toTimeString().slice(0, 5)
+  
+  eventLevel.value = event.extendedProps?.calendar || 'Primary'
   openModal()
 }
 
-const handleAddOrUpdateEvent = () => {
-  if (selectedEvent.value) {
-    // Update existing event
-    events.value = events.value.map((event) =>
-      event.id === selectedEvent.value.id
-        ? {
-            ...event,
-            title: eventTitle.value,
-            start: eventStartDate.value,
-            end: eventEndDate.value,
-            extendedProps: { calendar: eventLevel.value },
-          }
-        : event,
-    )
-  } else {
-    // Add new event
-    const newEvent = {
-      id: Date.now().toString(),
-      title: eventTitle.value,
-      start: eventStartDate.value,
-      end: eventEndDate.value,
-      allDay: true,
-      extendedProps: { calendar: eventLevel.value },
-    }
-    events.value.push(newEvent)
+const handleAddOrUpdateEvent = async () => {
+  if (!eventTitle.value || !eventStartDate.value) {
+    alert('Пожалуйста, заполните название и дату начала')
+    return
   }
-  closeModal()
-}
-const handleDeleteEvent = () => {
-  if (selectedEvent.value) {
-    events.value = events.value.filter((event) => event.id !== selectedEvent.value.id)
+
+  try {
+    loading.value = true
+    
+    // Формируем дату начала с временем
+    const startDateTime = eventStartTime.value 
+      ? `${eventStartDate.value}T${eventStartTime.value}:00`
+      : `${eventStartDate.value}T00:00:00`
+    
+    // Формируем дату окончания с временем
+    const endDateTime = eventEndDate.value && eventEndTime.value
+      ? `${eventEndDate.value}T${eventEndTime.value}:00`
+      : eventEndDate.value
+        ? `${eventEndDate.value}T23:59:59`
+        : undefined
+
+    const allDay = !eventStartTime.value && !eventEndTime.value
+
+    if (selectedEvent.value) {
+      // Update existing event
+      await api.put(`/api/calendar/events/${selectedEvent.value.id}`, {
+        title: eventTitle.value,
+        start: startDateTime,
+        end: endDateTime,
+        allDay,
+        color: eventLevel.value || 'Primary',
+      })
+    } else {
+      // Add new event
+      await api.post('/api/calendar/events', {
+        title: eventTitle.value,
+        start: startDateTime,
+        end: endDateTime,
+        allDay,
+        color: eventLevel.value || 'Primary',
+      })
+      
+      // Создаем уведомление о новом событии
+      try {
+        await api.post('/api/notifications', {
+          title: 'Новое событие в календаре',
+          message: `Событие "${eventTitle.value}" добавлено в календарь`,
+          type: 'calendar',
+        })
+      } catch (err) {
+        console.error('Ошибка создания уведомления:', err)
+      }
+    }
+    
+    await loadEvents()
     closeModal()
+  } catch (err: any) {
+    console.error('Ошибка сохранения события:', err)
+    alert(err?.payload?.error || 'Ошибка сохранения события')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleDeleteEvent = async () => {
+  if (!selectedEvent.value) return
+
+  if (!confirm('Вы уверены, что хотите удалить это событие?')) {
+    return
+  }
+
+  try {
+    loading.value = true
+    await api.delete(`/api/calendar/events/${selectedEvent.value.id}`)
+    await loadEvents()
+    closeModal()
+  } catch (err: any) {
+    console.error('Ошибка удаления события:', err)
+    alert(err?.payload?.error || 'Ошибка удаления события')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -354,12 +436,18 @@ const renderEventContent = (eventInfo) => {
 
 const calendarOptions = reactive({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  locale: 'ru',
+  locale: ruLocale,
   initialView: 'dayGridMonth',
   headerToolbar: {
     left: 'prev,next addEventButton',
     center: 'title',
     right: 'dayGridMonth,timeGridWeek,timeGridDay',
+  },
+  buttonText: {
+    today: 'Сегодня',
+    month: 'Месяц',
+    week: 'Неделя',
+    day: 'День',
   },
   events: events,
   selectable: true,

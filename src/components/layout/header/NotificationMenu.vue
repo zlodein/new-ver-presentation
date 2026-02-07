@@ -39,54 +39,86 @@
       >
         <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">Уведомления</h5>
 
-        <button @click="closeDropdown" class="text-gray-500 dark:text-gray-400">
-          <svg
-            class="fill-current"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+        <div class="flex items-center gap-2">
+          <button 
+            @click="handleClearAll" 
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            title="Очистить все уведомления"
           >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z"
-              fill=""
-            />
-          </svg>
-        </button>
+            <svg
+              class="fill-current"
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6V16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM6 6V16H14V6H6ZM8 8C8.55228 8 9 8.44772 9 9V13C9 13.5523 8.55228 14 8 14C7.44772 14 7 13.5523 7 13V9C7 8.44772 7.44772 8 8 8ZM12 8C12.5523 8 13 8.44772 13 9V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V9C11 8.44772 11.4477 8 12 8Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <button @click="closeDropdown" class="text-gray-500 dark:text-gray-400">
+            <svg
+              class="fill-current"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z"
+                fill=""
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-        <li v-for="notification in notifications" :key="notification.id" @click="handleItemClick">
+        <li v-if="notifications.length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
+          Нет уведомлений
+        </li>
+        <li v-for="notification in notifications" :key="notification.id" @click="handleItemClick(notification)">
           <a
-            class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
+            class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 cursor-pointer"
+            :class="{ 'bg-gray-50 dark:bg-white/5': !notification.read }"
             href="#"
           >
-            <span class="relative block w-full h-10 rounded-full z-1 max-w-10">
-              <img :src="notification.userImage" alt="User" class="overflow-hidden rounded-full" />
+            <span class="relative block w-full h-10 rounded-full z-1 max-w-10 flex-shrink-0">
+              <div 
+                :class="{
+                  'bg-brand-500': notification.type === 'calendar',
+                  'bg-success-500': notification.type === 'success',
+                  'bg-warning-500': notification.type === 'warning',
+                  'bg-error-500': notification.type === 'error',
+                  'bg-primary-500': notification.type === 'info',
+                }"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+              >
+                {{ notification.title.charAt(0).toUpperCase() }}
+              </div>
               <span
-                :class="notification.status === 'online' ? 'bg-success-500' : 'bg-error-500'"
-                class="absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"
+                v-if="!notification.read"
+                class="absolute top-0 right-0 z-10 h-2.5 w-2.5 rounded-full bg-orange-400 border-[1.5px] border-white dark:border-gray-900"
               ></span>
             </span>
 
-            <span class="block">
-              <span class="mb-1.5 block text-theme-sm text-gray-500 dark:text-gray-400">
-                <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.userName }}
-                </span>
-                {{ notification.action }}
-                <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.project }}
-                </span>
+            <span class="block flex-1">
+              <span class="mb-1.5 block text-theme-sm text-gray-800 dark:text-white/90 font-medium">
+                {{ notification.title }}
               </span>
-
+              <span v-if="notification.message" class="mb-1 block text-theme-xs text-gray-500 dark:text-gray-400">
+                {{ notification.message }}
+              </span>
               <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                <span>{{ notification.type }}</span>
-                <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-                <span>{{ notification.time }}</span>
+                <span>{{ formatTime(notification.createdAt) }}</span>
               </span>
             </span>
           </a>
@@ -94,9 +126,9 @@
       </ul>
 
       <router-link
-        to="#"
+        to="/dashboard/notifications"
         class="mt-3 flex justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-        @click="handleViewAllClick"
+        @click="closeDropdown"
       >
         Все уведомления
       </router-link>
@@ -106,99 +138,55 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { api } from '@/api/client'
 
+const router = useRouter()
 const dropdownOpen = ref(false)
-const notifying = ref(true)
+const notifying = ref(false)
 const dropdownRef = ref(null)
+const notifications = ref([])
+const loading = ref(false)
 
-const notifications = ref([
-  {
-    id: 1,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-02.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'online',
-  },
-  {
-    id: 2,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-03.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'offline',
-  },
-  {
-    id: 3,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-04.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'online',
-  },
-  {
-    id: 4,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-05.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'online',
-  },
-  {
-    id: 5,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-06.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'offline',
-  },
-  {
-    id: 6,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-07.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'online',
-  },
-  {
-    id: 7,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-08.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'online',
-  },
-  {
-    id: 7,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-09.jpg',
-    action: 'запрашивает разрешение на изменение',
-    project: 'Проект - Nganter App',
-    type: 'Проект',
-    time: '5 мин. назад',
-    status: 'online',
-  },
-  // Add more notifications here...
-])
+const unreadCount = computed(() => {
+  return notifications.value.filter((n) => !n.read).length
+})
 
-const toggleDropdown = () => {
+const formatTime = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'только что'
+  if (diffMins < 60) return `${diffMins} мин. назад`
+  if (diffHours < 24) return `${diffHours} ч. назад`
+  if (diffDays < 7) return `${diffDays} дн. назад`
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+const loadNotifications = async () => {
+  try {
+    loading.value = true
+    const data = await api.get('/api/notifications')
+    notifications.value = data
+    notifying.value = unreadCount.value > 0
+  } catch (err) {
+    console.error('Ошибка загрузки уведомлений:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const toggleDropdown = async () => {
   dropdownOpen.value = !dropdownOpen.value
+  if (dropdownOpen.value) {
+    await loadNotifications()
+  }
   notifying.value = false
 }
 
@@ -212,22 +200,40 @@ const handleClickOutside = (event) => {
   }
 }
 
-const handleItemClick = (event) => {
-  event.preventDefault()
-  // Handle the item click action here
-  console.log('Notification item clicked')
+const handleItemClick = async (notification) => {
+  if (!notification.read) {
+    try {
+      await api.put(`/api/notifications/${notification.id}/read`)
+      notification.read = true
+      notifying.value = unreadCount.value > 0
+    } catch (err) {
+      console.error('Ошибка отметки уведомления:', err)
+    }
+  }
   closeDropdown()
 }
 
-const handleViewAllClick = (event) => {
-  event.preventDefault()
-  // Handle the "View All Notification" action here
-  console.log('View All Notifications clicked')
-  closeDropdown()
+const handleClearAll = async () => {
+  if (!confirm('Вы уверены, что хотите очистить все уведомления?')) {
+    return
+  }
+
+  try {
+    await api.delete('/api/notifications')
+    notifications.value = []
+    notifying.value = false
+  } catch (err) {
+    console.error('Ошибка очистки уведомлений:', err)
+    alert('Ошибка очистки уведомлений')
+  }
 }
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  loadNotifications()
+  // Обновляем уведомления каждые 30 секунд
+  const interval = setInterval(loadNotifications, 30000)
+  onUnmounted(() => clearInterval(interval))
 })
 
 onUnmounted(() => {
