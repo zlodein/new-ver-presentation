@@ -270,7 +270,7 @@ const loadEvents = async () => {
   try {
     loading.value = true
     const data = await api.get('/api/calendar/events')
-    events.value = data.map((e: any) => ({
+    events.value = data.map((e) => ({
       id: e.id,
       title: e.title,
       start: e.start,
@@ -393,7 +393,7 @@ const handleAddOrUpdateEvent = async () => {
     
     await loadEvents()
     closeModal()
-  } catch (err: any) {
+  } catch (err) {
     console.error('Ошибка сохранения события:', err)
     alert(err?.payload?.error || 'Ошибка сохранения события')
   } finally {
@@ -413,7 +413,7 @@ const handleDeleteEvent = async () => {
     await api.delete(`/api/calendar/events/${selectedEvent.value.id}`)
     await loadEvents()
     closeModal()
-  } catch (err: any) {
+  } catch (err) {
     console.error('Ошибка удаления события:', err)
     alert(err?.payload?.error || 'Ошибка удаления события')
   } finally {
