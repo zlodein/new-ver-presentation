@@ -72,6 +72,11 @@
           <VueApexCharts type="area" height="310" :options="chartOptions" :series="series" />
         </div>
       </div>
+      <div v-else-if="selectedPresentationId && totalViews === 0 && date && Array.isArray(date) && date.length === 2" class="flex items-center justify-center h-[310px]">
+        <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
+          За выбранный период, данных нет
+        </p>
+      </div>
       <div v-else-if="selectedPresentationId && totalViews === 0" class="flex items-center justify-center h-[310px]">
         <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
           Статистика начнет собираться, после того как вы поделитесь презентацией
