@@ -32,7 +32,8 @@
             v-model="date"
             :config="flatpickrConfig"
             @on-change="onDateChange"
-            class="pl-3 sm:pl-9 dark:bg-dark-900 h-10 w-10 sm:w-40 rounded-lg border border-gray-200 bg-white text-transparent sm:text-theme-sm sm:text-gray-800 shadow-theme-xs placeholder:text-transparent sm:placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-transparent sm:dark:text-gray-400 dark:placeholder:text-transparent sm:dark:placeholder:text-gray-400 dark:focus:border-brand-800"
+            @on-close="onDateClose"
+            class="pl-3 sm:pl-9 dark:bg-dark-900 h-10 w-10 sm:w-56 rounded-lg border border-gray-200 bg-white text-transparent sm:text-theme-sm sm:text-gray-800 shadow-theme-xs placeholder:text-transparent sm:placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-transparent sm:dark:text-gray-400 dark:placeholder:text-transparent sm:dark:placeholder:text-gray-400 dark:focus:border-brand-800"
             placeholder="Выберите дату"
           />
           <span
@@ -112,12 +113,18 @@ const selectedPresentationTitle = computed(() => {
   return presentation?.title || ''
 })
 
-const flatpickrConfig = computed(() => ({
-  mode: 'range' as const,
-  dateFormat: 'd.m.Y',
-  locale: Russian,
-  defaultDate: [new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), new Date()],
-}))
+const flatpickrConfig = computed(() => {
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  return {
+    mode: 'range' as const,
+    dateFormat: 'd.m.Y',
+    locale: Russian,
+    defaultDate: [thirtyDaysAgo, now],
+    defaultMonth: now.getMonth(),
+    defaultYear: now.getFullYear(),
+  }
+})
 
 const series = computed(() => {
   if (!selectedPresentationId.value || Object.keys(viewsByDate.value).length === 0) {
@@ -254,9 +261,17 @@ async function loadStatistics() {
   
   loading.value = true
   try {
-    const dateRange = Array.isArray(date.value) ? date.value : (date.value ? [date.value] : [])
-    const startDate = dateRange[0] ? new Date(dateRange[0]).toISOString().split('T')[0] : undefined
-    const endDate = dateRange[1] ? new Date(dateRange[1]).toISOString().split('T')[0] : undefined
+    let startDate: string | undefined = undefined
+    let endDate: string | undefined = undefined
+    
+    if (date.value) {
+      if (Array.isArray(date.value) && date.value.length === 2) {
+        startDate = date.value[0] ? new Date(date.value[0]).toISOString().split('T')[0] : undefined
+        endDate = date.value[1] ? new Date(date.value[1]).toISOString().split('T')[0] : undefined
+      } else if (date.value instanceof Date) {
+        startDate = date.value.toISOString().split('T')[0]
+      }
+    }
     
     const params = new URLSearchParams()
     if (startDate) params.append('startDate', startDate)
@@ -279,8 +294,22 @@ async function loadStatistics() {
   }
 }
 
-function onDateChange(selectedDates: Date[]) {
-  if (selectedDates.length === 2) {
+function onDateChange(selectedDates: Date[], dateStr: string, instance: any) {
+  if (selectedDates && selectedDates.length === 2) {
+    // Обновляем значение даты
+    date.value = selectedDates
+    // Загружаем статистику только когда выбраны обе даты
+    loadStatistics()
+  } else if (selectedDates && selectedDates.length === 1) {
+    // Если выбрана только одна дата, ждем выбора второй
+    date.value = selectedDates
+  }
+}
+
+function onDateClose(selectedDates: Date[], dateStr: string, instance: any) {
+  // При закрытии календаря проверяем, есть ли выбранный диапазон
+  if (selectedDates && selectedDates.length === 2) {
+    date.value = selectedDates
     loadStatistics()
   }
 }
