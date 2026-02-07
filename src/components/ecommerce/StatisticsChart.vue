@@ -252,11 +252,19 @@ async function loadPresentations() {
   }
 }
 
+let loadStatisticsTimeout: ReturnType<typeof setTimeout> | null = null
+
 async function loadStatistics() {
   if (!selectedPresentationId.value || !hasApi() || !getToken()) {
     totalViews.value = null
     viewsByDate.value = {}
     return
+  }
+  
+  // Отменяем предыдущий запрос, если он еще не выполнен
+  if (loadStatisticsTimeout) {
+    clearTimeout(loadStatisticsTimeout)
+    loadStatisticsTimeout = null
   }
   
   loading.value = true
@@ -294,26 +302,46 @@ async function loadStatistics() {
     viewsByDate.value = {}
   } finally {
     loading.value = false
+    loadStatisticsTimeout = null
   }
 }
 
+let loadStatisticsTimeout: ReturnType<typeof setTimeout> | null = null
+
 function onDateChange(selectedDates: Date[], dateStr: string, instance: any) {
-  if (selectedDates && selectedDates.length === 2) {
-    // Обновляем значение даты
+  if (!selectedDates || selectedDates.length === 0) {
+    date.value = null
+    return
+  }
+  
+  // Обновляем значение даты только если это массив
+  if (Array.isArray(selectedDates)) {
     date.value = selectedDates as Date[]
+    
     // Загружаем статистику только когда выбраны обе даты
-    loadStatistics()
-  } else if (selectedDates && selectedDates.length === 1) {
-    // Если выбрана только одна дата, ждем выбора второй
-    date.value = selectedDates as Date[]
+    if (selectedDates.length === 2) {
+      // Используем debounce чтобы избежать множественных вызовов при быстром выборе
+      if (loadStatisticsTimeout) {
+        clearTimeout(loadStatisticsTimeout)
+      }
+      loadStatisticsTimeout = setTimeout(() => {
+        loadStatistics()
+      }, 300)
+    }
   }
 }
 
 function onDateClose(selectedDates: Date[], dateStr: string, instance: any) {
   // При закрытии календаря проверяем, есть ли выбранный диапазон
-  if (selectedDates && selectedDates.length === 2) {
+  if (selectedDates && Array.isArray(selectedDates) && selectedDates.length === 2) {
     date.value = selectedDates as Date[]
-    loadStatistics()
+    // Загружаем статистику при закрытии, если диапазон выбран
+    if (loadStatisticsTimeout) {
+      clearTimeout(loadStatisticsTimeout)
+    }
+    loadStatisticsTimeout = setTimeout(() => {
+      loadStatistics()
+    }, 100)
   }
 }
 
