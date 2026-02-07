@@ -5,7 +5,10 @@
     <div class="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
       <div class="w-full">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Статистика</h3>
-        <p class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
+        <p v-if="selectedPresentationTitle" class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ selectedPresentationTitle }}
+        </p>
+        <p v-else class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
           Статистика просмотров презентаций
         </p>
       </div>
@@ -101,6 +104,12 @@ const viewsByDate = ref<Record<string, number>>({})
 
 const publicPresentations = computed(() => {
   return presentations.value.filter(p => p.isPublic && p.publicUrl)
+})
+
+const selectedPresentationTitle = computed(() => {
+  if (!selectedPresentationId.value) return ''
+  const presentation = presentations.value.find(p => p.id === selectedPresentationId.value)
+  return presentation?.title || ''
 })
 
 const flatpickrConfig = computed(() => ({
