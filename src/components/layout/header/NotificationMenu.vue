@@ -170,12 +170,13 @@ const formatTime = (dateString) => {
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
   const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const atTime = ` в ${timeStr}`
 
-  if (diffMins < 1) return `только что, ${timeStr}`
-  if (diffMins < 60) return `${diffMins} мин. назад, ${timeStr}`
-  if (diffHours < 24) return `${diffHours} ч. назад, ${timeStr}`
-  if (diffDays < 7) return `${diffDays} дн. назад, ${timeStr}`
-  return `${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}, ${timeStr}`
+  if (diffMins < 1) return `только что${atTime}`
+  if (diffMins < 60) return `${diffMins} мин. назад${atTime}`
+  if (diffHours < 24) return `${diffHours} ч. назад${atTime}`
+  if (diffDays < 7) return `${diffDays} дн. назад${atTime}`
+  return `${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}${atTime}`
 }
 
 const loadNotifications = async () => {
