@@ -63,7 +63,7 @@
 
         <div v-else class="space-y-3">
           <div
-            v-for="notification in notificationsWithTime"
+            v-for="notification in notifications"
             :key="notification.id"
             role="button"
             tabindex="0"
@@ -93,9 +93,6 @@
                   </h4>
                   <p v-if="notification.message" class="mt-1 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
                     {{ notification.message }}
-                  </p>
-                  <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    {{ notification.formattedTime }}
                   </p>
                 </div>
 
@@ -133,7 +130,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -143,8 +140,6 @@ const router = useRouter()
 const currentPageTitle = ref('Уведомления')
 const notifications = ref([])
 const loading = ref(false)
-// Текущее время — обновляется раз в минуту, чтобы подпись «только что» / «N мин. назад» менялась
-const now = ref(new Date())
 
 function navigateFromNotification(notification) {
   const sourceId = notification.sourceId ?? notification.source_id
@@ -170,43 +165,6 @@ const handleNotificationClick = async (notification) => {
   }
   navigateFromNotification(notification)
 }
-
-function formatTime(dateString, nowVal) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  const diffMs = nowVal - date
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const timeStr = date.toLocaleTimeString('ru-RU', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: tz,
-  })
-  const atTime = ` в ${timeStr}`
-
-  if (diffMins < 1) return `только что${atTime}`
-  if (diffMins < 60) return `${diffMins} мин. назад${atTime}`
-  if (diffHours < 24) return `${diffHours} ч. назад${atTime}`
-  if (diffDays < 7) return `${diffDays} дн. назад${atTime}`
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: tz,
-  })
-}
-
-const notificationsWithTime = computed(() => {
-  const nowVal = now.value
-  return notifications.value.map((n) => ({
-    ...n,
-    formattedTime: formatTime(n.createdAt, nowVal),
-  }))
-})
 
 const loadNotifications = async () => {
   try {
@@ -247,7 +205,5 @@ const handleClearAll = async () => {
 
 onMounted(() => {
   loadNotifications()
-  const timeTick = setInterval(() => { now.value = new Date() }, 30000)
-  onUnmounted(() => clearInterval(timeTick))
 })
 </script>

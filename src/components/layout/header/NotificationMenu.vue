@@ -87,7 +87,7 @@
         <li v-if="notifications.length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
           Нет уведомлений
         </li>
-        <li v-for="notification in displayedWithTime" :key="notification.id" @click="handleItemClick(notification)">
+        <li v-for="notification in displayedNotifications" :key="notification.id" @click="handleItemClick(notification)">
           <a
             class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 cursor-pointer"
             :class="{ 'bg-gray-50 dark:bg-white/5': !notification.read }"
@@ -120,9 +120,6 @@
               </span>
               <span v-if="notification.message" class="mb-1 block text-theme-xs text-gray-500 dark:text-gray-400 whitespace-pre-line">
                 {{ notification.message }}
-              </span>
-              <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                <span>{{ notification.formattedTime }}</span>
               </span>
             </span>
           </a>
@@ -158,40 +155,7 @@ const unreadCount = computed(() => {
 
 const notifying = computed(() => unreadCount.value > 0)
 
-// Текущее время — обновляется каждые 30 с, чтобы подпись «только что» / «N мин. назад» менялась
-const now = ref(new Date())
-
-// В виджете показываем не более 5 последних уведомлений с уже подставленным временем (computed от now для реактивного обновления)
 const displayedNotifications = computed(() => notifications.value.slice(0, 5))
-
-function formatTime(dateString, nowVal) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  const diffMs = nowVal - date
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  const timeStr = date.toLocaleTimeString('ru-RU', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  })
-  const atTime = ` в ${timeStr}`
-
-  if (diffMins < 1) return `только что${atTime}`
-  if (diffMins < 60) return `${diffMins} мин. назад${atTime}`
-  if (diffHours < 24) return `${diffHours} ч. назад${atTime}`
-  if (diffDays < 7) return `${diffDays} дн. назад${atTime}`
-  return `${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}${atTime}`
-}
-
-const displayedWithTime = computed(() => {
-  const nowVal = now.value
-  return displayedNotifications.value.map((n) => ({
-    ...n,
-    formattedTime: formatTime(n.createdAt, nowVal),
-  }))
-})
 
 const loadNotifications = async () => {
   try {
@@ -271,10 +235,8 @@ onMounted(() => {
   document.addEventListener('visibilitychange', onVisibilityChange)
   loadNotifications()
   const interval = setInterval(loadNotifications, 30000)
-  const timeTick = setInterval(() => { now.value = new Date() }, 30000)
   onUnmounted(() => {
     clearInterval(interval)
-    clearInterval(timeTick)
     document.removeEventListener('visibilitychange', onVisibilityChange)
   })
 })
