@@ -158,14 +158,17 @@ const unreadCount = computed(() => {
 
 const notifying = computed(() => unreadCount.value > 0)
 
+// Текущее время — обновляется раз в минуту, чтобы подпись «только что» / «N мин. назад» менялась
+const now = ref(new Date())
+
 // В виджете показываем не более 5 последних уведомлений
 const displayedNotifications = computed(() => notifications.value.slice(0, 5))
 
 const formatTime = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now - date
+  const nowVal = now.value
+  const diffMs = nowVal - date
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
@@ -257,8 +260,10 @@ onMounted(() => {
   document.addEventListener('visibilitychange', onVisibilityChange)
   loadNotifications()
   const interval = setInterval(loadNotifications, 30000)
+  const timeTick = setInterval(() => { now.value = new Date() }, 30000)
   onUnmounted(() => {
     clearInterval(interval)
+    clearInterval(timeTick)
     document.removeEventListener('visibilitychange', onVisibilityChange)
   })
 })

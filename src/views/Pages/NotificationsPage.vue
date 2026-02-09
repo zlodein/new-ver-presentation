@@ -133,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -143,6 +143,8 @@ const router = useRouter()
 const currentPageTitle = ref('Уведомления')
 const notifications = ref([])
 const loading = ref(false)
+// Текущее время — обновляется раз в минуту, чтобы подпись «только что» / «N мин. назад» менялась
+const now = ref(new Date())
 
 function navigateFromNotification(notification) {
   const sourceId = notification.sourceId ?? notification.source_id
@@ -172,8 +174,8 @@ const handleNotificationClick = async (notification) => {
 const formatTime = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now - date
+  const nowVal = now.value
+  const diffMs = nowVal - date
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
@@ -232,5 +234,7 @@ const handleClearAll = async () => {
 
 onMounted(() => {
   loadNotifications()
+  const timeTick = setInterval(() => { now.value = new Date() }, 30000)
+  onUnmounted(() => clearInterval(timeTick))
 })
 </script>
