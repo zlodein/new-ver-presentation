@@ -729,30 +729,30 @@
     grid-template-columns: 1fr;
   }
 
-  /* Режим просмотра/публичной ссылки: без адаптации, как на ПК, в рамках экрана */
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-main__wrap {
+  /* Режим просмотра/публичной ссылки: без адаптации, как на ПК (те же классы на одном контейнере) */
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__wrap {
     flex-direction: row;
   }
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-main__img {
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__img {
     flex: 0 0 50%;
     min-height: 280px;
     padding: 40px 0 40px 40px;
   }
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-main__content {
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__content {
     padding: 40px 25px;
   }
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-img__wrap,
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-galery__wrap,
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-grid__wrap {
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-img__wrap,
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-galery__wrap,
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-grid__wrap {
     padding: 15px 15px 70px 70px;
   }
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-char__wrap {
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-char__wrap {
     grid-template-columns: 1fr 1fr;
   }
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-info__wrap,
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-stroen__wrap,
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-map__wrap,
-  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-contacts__wrap {
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-info__wrap,
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-stroen__wrap,
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-map__wrap,
+  .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-contacts__wrap {
     grid-template-columns: 1fr 1fr;
   }
 }
