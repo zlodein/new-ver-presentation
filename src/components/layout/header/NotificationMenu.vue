@@ -220,7 +220,7 @@ const handleClearAll = async () => {
   }
 
   try {
-    await api.delete('/api/notifications/clear')
+    await api.delete('/api/notifications')
     notifications.value = []
     notifying.value = false
   } catch (err) {

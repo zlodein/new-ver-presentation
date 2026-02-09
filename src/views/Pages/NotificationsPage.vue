@@ -191,7 +191,7 @@ const handleClearAll = async () => {
   }
 
   try {
-    await api.delete('/api/notifications/clear')
+    await api.delete('/api/notifications')
     notifications.value = []
   } catch (err) {
     console.error('Ошибка очистки уведомлений:', err)
