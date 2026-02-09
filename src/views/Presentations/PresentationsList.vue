@@ -140,11 +140,11 @@
             </button>
             <button
               type="button"
-              :disabled="!createTitle.trim()"
+              :disabled="!createTitle.trim() || creating"
               class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
               @click="submitCreate"
             >
-              Создать
+              {{ creating ? 'Создание...' : 'Создать' }}
             </button>
           </div>
           <button
@@ -179,6 +179,7 @@ const currentPageTitle = ref('Презентации')
 const showCreateModal = ref(false)
 const createTitle = ref('')
 const createDescription = ref('')
+const creating = ref(false)
 
 function genSlideId() {
   return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -259,11 +260,13 @@ function buildDefaultSlides(title: string, subtitle: string) {
 async function submitCreate() {
   const title = createTitle.value.trim()
   if (!title) return
+  if (creating.value) return
   const subtitle = createDescription.value
   const slides = buildDefaultSlides(title, subtitle)
   const content = { slides }
 
   if (hasApi() && getToken()) {
+    creating.value = true
     try {
       const created = await api.post<{ id: string }>('/api/presentations', {
         title,
@@ -276,6 +279,8 @@ async function submitCreate() {
       return
     } catch {
       error.value = 'Не удалось создать презентацию'
+    } finally {
+      creating.value = false
     }
   }
 

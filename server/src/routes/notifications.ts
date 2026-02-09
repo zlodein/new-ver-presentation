@@ -170,8 +170,14 @@ export async function notificationRoutes(app: FastifyInstance) {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
-    const params = req.params as { id?: string }
-    const { id } = params
+    let id = (req.params as { id?: string })?.id
+    if (id != null) id = String(id).trim()
+    if (!id) {
+      const path = (req as { url?: string }).url ?? (req as { raw?: { url?: string } }).raw?.url ?? ''
+      const match = /\/api\/notifications\/([^/?#]+)\/read/.exec(path)
+      if (match) id = decodeURIComponent(match[1]).trim()
+    }
+    if (!id) return reply.status(400).send({ error: 'ID уведомления обязателен' })
 
     try {
       if (useFileStore) {
@@ -182,7 +188,7 @@ export async function notificationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const notificationIdNum = parseMysqlId(id || '')
+        const notificationIdNum = parseMysqlId(id)
         if (notificationIdNum === null) return reply.status(400).send({ error: 'Неверный ID уведомления' })
         
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
@@ -205,7 +211,6 @@ export async function notificationRoutes(app: FastifyInstance) {
       }
 
       // PostgreSQL
-      if (!id) return reply.status(400).send({ error: 'ID уведомления обязателен' })
       const [notification] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
         .update(pgSchema.notifications)
         .set({ read: 'true' })

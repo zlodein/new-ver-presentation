@@ -333,6 +333,14 @@ onMounted(async () => {
 })
 
 const openModal = () => {
+  if (!selectedEvent.value) {
+    const now = new Date()
+    eventStartDate.value = now.toISOString().split('T')[0]
+    eventStartTime.value = now.toTimeString().slice(0, 5)
+    const end = new Date(now.getTime() + 3600000)
+    eventEndDate.value = end.toISOString().split('T')[0]
+    eventEndTime.value = end.toTimeString().slice(0, 5)
+  }
   isOpen.value = true
 }
 
@@ -352,15 +360,14 @@ const resetModalFields = () => {
   selectedEvent.value = null
 }
 
-const handleDateSelect = (selectInfo) => {
+const handleDateSelect = (_selectInfo) => {
   resetModalFields()
-  const startDate = new Date(selectInfo.startStr)
-  const endDate = selectInfo.endStr ? new Date(selectInfo.endStr) : new Date(selectInfo.startStr)
-  
-  eventStartDate.value = startDate.toISOString().split('T')[0]
-  eventStartTime.value = startDate.toTimeString().slice(0, 5)
-  eventEndDate.value = endDate.toISOString().split('T')[0]
-  eventEndTime.value = endDate.toTimeString().slice(0, 5)
+  const now = new Date()
+  eventStartDate.value = now.toISOString().split('T')[0]
+  eventStartTime.value = now.toTimeString().slice(0, 5)
+  const end = new Date(now.getTime() + 3600000)
+  eventEndDate.value = end.toISOString().split('T')[0]
+  eventEndTime.value = end.toTimeString().slice(0, 5)
   openModal()
 }
 

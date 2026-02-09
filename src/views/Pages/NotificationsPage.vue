@@ -157,9 +157,10 @@ function navigateFromNotification(notification) {
 }
 
 const handleNotificationClick = async (notification) => {
-  if (!notification.read) {
+  const id = notification?.id != null ? String(notification.id).trim() : ''
+  if (!notification.read && id) {
     try {
-      await api.put(`/api/notifications/${notification.id}/read`)
+      await api.put(`/api/notifications/${id}/read`)
       notification.read = true
     } catch (err) {
       console.error('Ошибка отметки уведомления:', err)
