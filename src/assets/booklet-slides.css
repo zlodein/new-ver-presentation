@@ -503,10 +503,10 @@
   display: block;
 }
 
-/* ---------- Местоположение: 50% карта слева, 50% справа поиск по адресу и поиск метро ---------- */
+/* ---------- Местоположение: 50% карта/адрес слева, 50% контент справа ---------- */
 .presentation-slider-wrap.booklet-view .booklet-map__wrap {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   gap: 1rem;
   width: 100%;
@@ -549,11 +549,21 @@
   min-height: 0;
 }
 
-/* Режим просмотра и публичная ссылка: адрес и метро справа от карты */
+/* Режим просмотра и публичная ссылка: карта и адрес/метро 50/50 в первой колонке */
 .presentation-view-fixed.booklet-view .booklet-map__left {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
+  min-width: 0;
+}
+
+.presentation-view-fixed.booklet-view .booklet-map__img,
+.presentation-view-fixed.booklet-view .booklet-map__info {
+  min-width: 0;
+}
+
+.presentation-view-fixed.booklet-view .booklet-map__content {
+  min-width: 0;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-map__content {

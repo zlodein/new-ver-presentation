@@ -382,9 +382,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-layout__wrap { display: flex; flex-direction: column; gap: 0; width: 100%; height: 100%; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: cover; }
-    .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
-    .presentation-slider-wrap.booklet-view .booklet-map__left { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; min-height: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
+    .presentation-slider-wrap.booklet-view .booklet-map__left { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; min-height: 0; min-width: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-map__img, .presentation-slider-wrap.booklet-view .booklet-map__info { min-width: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid { display: grid; gap: 8px; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid-img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid-img img { width: 100%; height: 100%; object-fit: cover; }
