@@ -177,7 +177,7 @@ const loadNotifications = async () => {
 
 const handleDelete = async (id) => {
   try {
-    await api.delete(`/api/notifications/${String(id)}`)
+    await api.post(`/api/notifications/${String(id)}/delete`)
     notifications.value = notifications.value.filter((n) => String(n.id) !== String(id))
   } catch (err) {
     console.error('Ошибка удаления уведомления:', err)
@@ -191,7 +191,7 @@ const handleClearAll = async () => {
   }
 
   try {
-    await api.delete('/api/notifications')
+    await api.post('/api/notifications/clear-all')
     notifications.value = []
   } catch (err) {
     console.error('Ошибка очистки уведомлений:', err)
