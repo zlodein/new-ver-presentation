@@ -123,8 +123,9 @@
         <div class="relative shrink-0">
           <button
             type="button"
-            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 !text-[10px]"
             @click="showAddSlideMenu = !showAddSlideMenu"
+            style="font-size: 10px;"
           >
             <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -1297,42 +1298,64 @@ function addSlide(type: string) {
   }
   slides.value.push(newSlide)
   const idx = slides.value.length - 1
+  
+  // Устанавливаем активный слайд
+  activeSlideIndex.value = idx
+  
+  // Прокручиваем список к новому слайду с задержкой для обновления DOM
   nextTick(() => {
     goToSlide(idx)
-    // Прокручиваем список к новому слайду
-    scrollToSlideInList(idx)
+    setTimeout(() => {
+      scrollToSlideInList(idx)
+    }, 100)
   })
 }
 
 // Прокрутка списка слайдов к указанному индексу
 function scrollToSlideInList(index: number) {
   if (!slidesContainerRef.value) return
+  
+  // Используем несколько nextTick для гарантии, что DOM обновлен
   nextTick(() => {
-    const container = slidesContainerRef.value
-    if (!container) return
-    
-    // Находим элемент слайда в DOM
-    const slideElements = container.querySelectorAll('[data-slide-index]')
-    const targetElement = Array.from(slideElements).find((el) => {
-      const slideIdx = parseInt(el.getAttribute('data-slide-index') || '-1')
-      return slideIdx === index
-    }) as HTMLElement | undefined
-    
-    if (targetElement) {
-      const containerRect = container.getBoundingClientRect()
-      const elementRect = targetElement.getBoundingClientRect()
-      const scrollLeft = container.scrollLeft
-      const elementLeft = elementRect.left - containerRect.left + scrollLeft
-      const elementRight = elementLeft + elementRect.width
-      const containerWidth = container.clientWidth
+    nextTick(() => {
+      const container = slidesContainerRef.value
+      if (!container) return
       
-      // Прокручиваем, если элемент не виден полностью
-      if (elementLeft < scrollLeft) {
-        container.scrollTo({ left: elementLeft - 10, behavior: 'smooth' })
-      } else if (elementRight > scrollLeft + containerWidth) {
-        container.scrollTo({ left: elementRight - containerWidth + 10, behavior: 'smooth' })
+      // Находим элемент слайда в DOM по data-slide-index
+      const slideElements = container.querySelectorAll('[data-slide-index]')
+      let targetElement: HTMLElement | undefined
+      
+      for (let i = 0; i < slideElements.length; i++) {
+        const el = slideElements[i] as HTMLElement
+        const slideIdx = parseInt(el.getAttribute('data-slide-index') || '-1')
+        if (slideIdx === index) {
+          targetElement = el
+          break
+        }
       }
-    }
+      
+      if (targetElement) {
+        // Используем scrollIntoView для более надежной прокрутки
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        })
+      } else {
+        // Fallback: прокручиваем вручную
+        const containerRect = container.getBoundingClientRect()
+        const scrollLeft = container.scrollLeft
+        const estimatedWidth = 150 // Примерная ширина одного слайда
+        const targetScrollLeft = index * estimatedWidth
+        
+        container.scrollTo({
+          left: Math.max(0, targetScrollLeft - containerRect.width / 2),
+          behavior: 'smooth'
+        })
+      }
+      
+      updateScrollButtons()
+    })
   })
 }
 
@@ -2184,5 +2207,29 @@ async function exportToPDF() {
       }
       .scrollbar-hide::-webkit-scrollbar {
         display: none;
+      }
+      
+      /* Принудительно устанавливаем размер шрифта для верхней панели слайдов */
+      .flex.items-center.gap-1\.5.rounded-lg button,
+      .flex.items-center.gap-1\.5.rounded-lg span,
+      .flex.items-center.gap-1\.5.rounded-lg [class*="text-"] {
+        font-size: 10px !important;
+        line-height: 1.2;
+      }
+      
+      /* Уменьшаем размеры элементов в панели слайдов */
+      .flex.items-center.gap-1\.5.rounded-lg {
+        font-size: 10px;
+      }
+      
+      /* Уменьшаем размеры кнопок в панели */
+      .flex.items-center.gap-1\.5.rounded-lg button[class*="text-"] {
+        font-size: 10px !important;
+      }
+      
+      /* Уменьшаем размеры текста в элементах слайдов */
+      [data-slide-index] button,
+      [data-slide-index] span {
+        font-size: 10px !important;
       }
 </style>

@@ -41,12 +41,21 @@ const SidebarSymbol = Symbol()
 
 export function useSidebarProvider() {
   const router = useRouter()
-  const isExpanded = ref(false)
+  // Загружаем состояние из localStorage или используем false по умолчанию
+  const savedState = typeof window !== 'undefined' ? localStorage.getItem('sidebar-expanded') : null
+  const isExpanded = ref(savedState === 'true' ? true : false)
   const isMobileOpen = ref(false)
   const isMobile = ref(false)
   const isHovered = ref(false)
   const activeItem = ref<string | null>(null)
   const openSubmenu = ref<string | null>(null)
+
+  // Сохраняем состояние в localStorage при изменении
+  watch(isExpanded, (newValue) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar-expanded', String(newValue))
+    }
+  })
 
   watch(
     () => router.currentRoute.value.path,
@@ -66,6 +75,14 @@ export function useSidebarProvider() {
 
   onMounted(() => {
     handleResize()
+    // Принудительно устанавливаем свернутое состояние при загрузке (только для десктопа)
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      // Игнорируем сохраненное состояние и всегда начинаем со свернутого
+      isExpanded.value = false
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebar-expanded', 'false')
+      }
+    }
     window.addEventListener('resize', handleResize)
   })
 
