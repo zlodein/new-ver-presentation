@@ -266,6 +266,28 @@ export async function notificationRoutes(app: FastifyInstance) {
     const idRaw = req.params?.id ?? getIdFromDeleteRequest(req)
     if (!idRaw || String(idRaw).trim() === '') return reply.status(400).send({ error: 'ID уведомления обязателен' })
 
+    // Если роутер сопоставил с :id путь "clear" — выполняем очистку всех (избегаем 400)
+    if (String(idRaw).trim().toLowerCase() === 'clear') {
+      try {
+        if (useFileStore) return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
+        if (useMysql) {
+          const userIdNum = Number(userId)
+          if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+          await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            .delete(mysqlSchema.notifications)
+            .where(eq(mysqlSchema.notifications.user_id, userIdNum))
+          return reply.status(204).send()
+        }
+        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+          .delete(pgSchema.notifications)
+          .where(eq(pgSchema.notifications.userId, userId))
+        return reply.status(204).send()
+      } catch (err) {
+        console.error('[notifications] Ошибка очистки уведомлений (через :id):', err)
+        return reply.status(500).send({ error: 'Ошибка сервера' })
+      }
+    }
+
     try {
       if (useFileStore) {
         return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
