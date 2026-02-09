@@ -63,7 +63,7 @@
 
         <div v-else class="space-y-3">
           <div
-            v-for="notification in notifications"
+            v-for="notification in notificationsWithTime"
             :key="notification.id"
             role="button"
             tabindex="0"
@@ -95,7 +95,7 @@
                     {{ notification.message }}
                   </p>
                   <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    {{ formatTime(notification.createdAt) }}
+                    {{ notification.formattedTime }}
                   </p>
                 </div>
 
@@ -133,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -171,29 +171,42 @@ const handleNotificationClick = async (notification) => {
   navigateFromNotification(notification)
 }
 
-const formatTime = (dateString) => {
+function formatTime(dateString, nowVal) {
   if (!dateString) return ''
   const date = new Date(dateString)
-  const nowVal = now.value
   const diffMs = nowVal - date
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
-  const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const timeStr = date.toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: tz,
+  })
   const atTime = ` в ${timeStr}`
 
   if (diffMins < 1) return `только что${atTime}`
   if (diffMins < 60) return `${diffMins} мин. назад${atTime}`
   if (diffHours < 24) return `${diffHours} ч. назад${atTime}`
   if (diffDays < 7) return `${diffDays} дн. назад${atTime}`
-  return date.toLocaleDateString('ru-RU', { 
-    day: 'numeric', 
-    month: 'long', 
+  return date.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: tz,
   })
 }
+
+const notificationsWithTime = computed(() => {
+  const nowVal = now.value
+  return notifications.value.map((n) => ({
+    ...n,
+    formattedTime: formatTime(n.createdAt, nowVal),
+  }))
+})
 
 const loadNotifications = async () => {
   try {
