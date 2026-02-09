@@ -401,7 +401,6 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__content { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-height: 0; overflow: auto; }
     .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info { min-height: 0; font-size: 0.9375rem; color: #444; overflow: auto; }
     @media print {
       .booklet-page { page-break-after: always; height: 100vh; min-height: 100vh; max-height: 100vh; }
       body { padding: 0; }
