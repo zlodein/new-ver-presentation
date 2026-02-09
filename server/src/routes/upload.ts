@@ -13,6 +13,8 @@ const __dirname = path.dirname(__filename)
 const AVATARS_DIR = path.join(__dirname, '../../uploads/avatars')
 // Путь к папке с логотипами компаний
 const COMPANY_LOGO_DIR = path.join(__dirname, '../../uploads/company-logo')
+// Папка для изображений презентаций (храним файлы, в БД только URL)
+const PRESENTATIONS_IMAGES_DIR = path.join(__dirname, '../../uploads/presentations')
 
 // Создать папку для аватаров, если её нет
 async function ensureAvatarsDir() {
@@ -32,12 +34,23 @@ async function ensureCompanyLogoDir() {
   }
 }
 
+async function ensurePresentationsImagesDir() {
+  try {
+    await fs.access(PRESENTATIONS_IMAGES_DIR)
+  } catch {
+    await fs.mkdir(PRESENTATIONS_IMAGES_DIR, { recursive: true })
+  }
+}
+
 // Инициализировать папки при загрузке модуля (не блокируем запуск сервера)
 ensureAvatarsDir().catch((err) => {
   console.error('[upload] Ошибка создания папки для аватаров:', err)
 })
 ensureCompanyLogoDir().catch((err) => {
   console.error('[upload] Ошибка создания папки для логотипов компаний:', err)
+})
+ensurePresentationsImagesDir().catch((err) => {
+  console.error('[upload] Ошибка создания папки для изображений презентаций:', err)
 })
 
 export async function uploadRoutes(app: FastifyInstance) {
@@ -164,6 +177,53 @@ export async function uploadRoutes(app: FastifyInstance) {
         req.log.error(err)
         return reply.status(500).send({
           error: err instanceof Error ? err.message : 'Ошибка загрузки файла',
+        })
+      }
+    }
+  )
+
+  // Загрузка изображения для презентации (в слайды) — сохраняем файл, возвращаем URL; в БД храним только URL
+  app.post(
+    '/api/upload/presentation-image',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Querystring: { presentationId?: string } }>, reply: FastifyReply) => {
+      try {
+        const data = await req.file()
+        if (!data) {
+          return reply.status(400).send({ error: 'Файл не загружен' })
+        }
+        if (!data.mimetype.startsWith('image/')) {
+          return reply.status(400).send({ error: 'Файл должен быть изображением' })
+        }
+        const maxSize = 8 * 1024 * 1024 // 8MB на изображение
+        const buffer = await data.toBuffer()
+        if (buffer.length > maxSize) {
+          return reply.status(400).send({ error: 'Размер файла не должен превышать 8MB' })
+        }
+
+        await ensurePresentationsImagesDir()
+
+        const presentationId = (req.query as { presentationId?: string })?.presentationId || 'temp'
+        const safeId = presentationId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
+        const dir = path.join(PRESENTATIONS_IMAGES_DIR, safeId)
+        await fs.mkdir(dir, { recursive: true })
+
+        const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}.jpg`
+        const filepath = path.join(dir, filename)
+
+        try {
+          await sharp(buffer).jpeg({ quality: 88 }).toFile(filepath)
+        } catch {
+          await fs.writeFile(filepath, buffer)
+        }
+
+        const dbPath = `/uploads/presentations/${safeId}/${filename}`
+
+        return reply.send({ success: true, url: dbPath })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({
+          error: err instanceof Error ? err.message : 'Ошибка загрузки изображения',
         })
       }
     }

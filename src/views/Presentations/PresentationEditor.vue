@@ -1321,6 +1321,27 @@ function readFileAsDataUrl(file: File): Promise<string> {
   })
 }
 
+/** Загрузить изображение на сервер; возвращает URL для сохранения в слайде (в БД хранится только URL) */
+async function uploadPresentationImage(file: File): Promise<string> {
+  const base = getApiBase()
+  const path = '/api/upload/presentation-image' + (presentationId.value ? `?presentationId=${encodeURIComponent(presentationId.value)}` : '')
+  const url = base ? `${base.replace(/\/$/, '')}${path}` : path
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: form,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  const data = (await res.json()) as { url?: string }
+  if (!data?.url) throw new Error('Нет URL в ответе')
+  return data.url
+}
+
 async function onSingleImageUpload(
   slide: SlideItem,
   event: Event,
@@ -1330,6 +1351,14 @@ async function onSingleImageUpload(
   const file = input.files?.[0]
   if (!file) return
   try {
+    if (hasApi() && getToken()) {
+      try {
+        slide.data[field] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
     const dataUrl = await readFileAsDataUrl(file)
     slide.data[field] = dataUrl
   } finally {
@@ -1345,6 +1374,14 @@ async function onGalleryImageUpload(slide: SlideItem, event: Event, index: numbe
   const arr = slide.data.images as string[]
   while (arr.length <= index) arr.push('')
   try {
+    if (hasApi() && getToken()) {
+      try {
+        arr[index] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
     arr[index] = await readFileAsDataUrl(file)
   } finally {
     input.value = ''
@@ -1359,6 +1396,14 @@ async function onGridImageUpload(slide: SlideItem, event: Event, index: number) 
   const arr = slide.data.images as string[]
   while (arr.length <= index) arr.push('')
   try {
+    if (hasApi() && getToken()) {
+      try {
+        arr[index] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
     arr[index] = await readFileAsDataUrl(file)
   } finally {
     input.value = ''
@@ -1413,6 +1458,14 @@ async function onDescriptionImageUpload(slide: SlideItem, event: Event, index: n
   const arr = slide.data.images as string[]
   while (arr.length <= index) arr.push('')
   try {
+    if (hasApi() && getToken()) {
+      try {
+        arr[index] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
     arr[index] = await readFileAsDataUrl(file)
   } finally {
     input.value = ''
@@ -1435,6 +1488,14 @@ async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index
   const arr = slide.data.images as string[]
   while (arr.length <= index) arr.push('')
   try {
+    if (hasApi() && getToken()) {
+      try {
+        arr[index] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
     arr[index] = await readFileAsDataUrl(file)
   } finally {
     input.value = ''
