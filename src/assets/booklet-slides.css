@@ -549,6 +549,13 @@
   min-height: 0;
 }
 
+/* Режим просмотра и публичная ссылка: адрес и метро справа от карты */
+.presentation-view-fixed.booklet-view .booklet-map__left {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-map__content {
   position: relative;
   display: flex;
@@ -564,6 +571,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.presentation-view-fixed.booklet-view .booklet-map__info {
+  flex: none;
+  min-height: 0;
+  overflow: auto;
 }
 
 /* ---------- Контакты: 50% слева список контактов + аватар/лого сверху, 50% справа изображение ---------- */

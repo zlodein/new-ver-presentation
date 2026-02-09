@@ -190,7 +190,6 @@ const SLIDE_TYPES = [
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
   { type: 'location', label: 'Местоположение' },
-  { type: 'image', label: 'Изображение' },
   { type: 'gallery', label: 'Галерея' },
   { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
@@ -221,8 +220,6 @@ function getDefaultDataForType(type: string, title: string, subtitle: string): R
         show_metro: true,
         metro_stations: [],
       }
-    case 'image':
-      return { heading: '', imageUrl: '' }
     case 'gallery':
       return { heading: 'Галерея', images: [] as string[] }
     case 'characteristics':

@@ -383,7 +383,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: cover; }
     .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
-    .presentation-slider-wrap.booklet-view .booklet-map__left { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-map__left { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid { display: grid; gap: 8px; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid-img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
@@ -400,7 +400,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__content { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-height: 0; overflow: auto; }
     .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info { flex-shrink: 0; font-size: 0.9375rem; color: #444; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info { min-height: 0; font-size: 0.9375rem; color: #444; overflow: auto; }
     @media print {
       .booklet-page { page-break-after: always; height: 100vh; min-height: 100vh; max-height: 100vh; }
       body { padding: 0; }
