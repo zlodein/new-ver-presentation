@@ -5,6 +5,7 @@ import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
+import { deletePresentationImagesFolder } from './upload.js'
 import { generatePDF } from '../utils/pdf-generator.js'
 import type { ViewSlideItem } from '../utils/types.js'
 
@@ -483,6 +484,7 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useFileStore) {
         const ok = fileStore.deletePresentation(id, userId!)
         if (!ok) return reply.status(404).send({ error: 'Презентация не найдена' })
+        await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
       if (useMysql) {
@@ -494,6 +496,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
         const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
         if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+        await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
       const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
@@ -501,6 +504,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
       if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+      await deletePresentationImagesFolder(id)
       return reply.status(204).send()
     }
   )
@@ -526,6 +530,7 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useFileStore) {
         const ok = fileStore.deletePresentation(id, userId!)
         if (!ok) return reply.status(404).send({ error: 'Презентация не найдена' })
+        await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
       if (useMysql) {
@@ -537,6 +542,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
         const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
         if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+        await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
       const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
@@ -544,6 +550,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
       if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+      await deletePresentationImagesFolder(id)
       return reply.status(204).send()
     }
   )

@@ -6,7 +6,7 @@
     <div v-else-if="error" class="flex min-h-screen items-center justify-center p-4">
       <p class="text-red-600">{{ error }}</p>
     </div>
-    <div v-else class="presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-4xl rounded-xl bg-white shadow-lg dark:bg-gray-900">
+    <div v-else class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-4xl rounded-xl bg-white shadow-lg dark:bg-gray-900">
       <div
         v-for="(slide, index) in visibleSlides"
         :key="index"
@@ -37,8 +37,6 @@
             </div>
             <!-- 2. Описание (с блоком текста и сеткой 2 фото) -->
             <div v-else-if="slide.type === 'description'" class="booklet-content booklet-info">
-              <div class="booklet-info__top-square" />
-              <div class="booklet-info__bottom-square" />
               <div class="booklet-info__wrap">
                 <div class="booklet-info__block booklet-info__content">
                   <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
@@ -53,8 +51,6 @@
             </div>
             <!-- 3. Инфраструктура -->
             <div v-else-if="slide.type === 'infrastructure'" class="booklet-content booklet-stroen">
-              <div class="booklet-stroen__top-square" />
-              <div class="booklet-stroen__bottom-square" />
               <div class="booklet-stroen__wrap">
                 <div class="booklet-stroen__block booklet-stroen__content">
                   <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
@@ -75,8 +71,6 @@
                   <LocationMap :lat="Number(slide.data?.lat)" :lng="Number(slide.data?.lng)" />
                 </div>
                 <div class="booklet-map__content">
-                  <div class="booklet-map__top-square" />
-                  <div class="booklet-map__bottom-square" />
                   <div class="booklet-map__info">
                     <p v-if="slide.data?.location_name" class="font-medium">{{ slide.data.location_name }}</p>
                     <p class="font-medium">{{ slide.data?.address ?? slide.data?.location_address }}</p>
@@ -94,8 +88,6 @@
             </div>
             <!-- 5. Изображение -->
             <div v-else-if="slide.type === 'image'" class="booklet-content booklet-img">
-              <div class="booklet-img__top-square" />
-              <div class="booklet-img__bottom-square" />
               <div class="booklet-img__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2">{{ slide.data?.heading ?? slide.data?.title }}</h2>
                 <div v-if="slide.data?.imageUrl ?? slide.data?.image" class="booklet-img__img">
@@ -105,8 +97,6 @@
             </div>
             <!-- 6. Галерея 3 фото -->
             <div v-else-if="slide.type === 'gallery'" class="booklet-content booklet-galery">
-              <div class="booklet-galery__top-square" />
-              <div class="booklet-galery__bottom-square" />
               <div class="booklet-galery__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
                 <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
@@ -121,8 +111,6 @@
               <div class="booklet-char__wrap">
                 <h2 class="booklet-char__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ХАРАКТЕРИСТИКИ' }}</h2>
                 <div v-if="slide.data?.charImageUrl || slide.data?.image" class="booklet-char__img">
-                  <div class="booklet-char__top-square" />
-                  <div class="booklet-char__bottom-square" />
                   <img :src="String(slide.data?.charImageUrl ?? slide.data?.image)" alt="">
                 </div>
                 <div class="booklet-char__content">
@@ -146,8 +134,6 @@
             </div>
             <!-- 9. Сетка 4 фото -->
             <div v-else-if="slide.type === 'grid'" class="booklet-content booklet-grid">
-              <div class="booklet-grid__top-square" />
-              <div class="booklet-grid__bottom-square" />
               <div class="booklet-grid__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
                 <div class="booklet-grid__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
@@ -170,8 +156,6 @@
                   <p v-if="slide.data?.address ?? slide.data?.contact_address">{{ slide.data?.address ?? slide.data?.contact_address }}</p>
                 </div>
                 <div class="booklet-contacts__images-wrap">
-                  <div class="booklet-contacts__top-square" />
-                  <div class="booklet-contacts__bottom-square" />
                     <div class="booklet-contacts-grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                       <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-contacts__block booklet-contacts__img">
                         <img v-if="url" :src="url" alt="">
@@ -371,14 +355,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Режим просмотра / публичная ссылка: строго горизонтальное А4 (297×210 мм) */
 .presentation-view-wrap.presentation-slider-wrap {
-  aspect-ratio: unset;
+  aspect-ratio: 297 / 210;
   overflow: visible;
-  max-width: 960px;
+  max-width: min(960px, 100%);
+  width: 100%;
 }
-/* Горизонтальный (альбомный) формат слайдов: ширина 100%, высота по соотношению 16:10 */
+/* Слайды в пропорции А4 альбом */
 .booklet-page--stacked {
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 297 / 210;
   width: 100%;
   min-height: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -393,5 +379,14 @@ onMounted(async () => {
 }
 .booklet-page--stacked:last-child {
   border-bottom: none;
+}
+/* Мобильная версия: тот же вид, что на ПК, помещённый в рамки экрана (скролл при необходимости) */
+.presentation-view-fixed {
+  max-width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.presentation-view-fixed .presentation-slider-wrap {
+  min-width: 320px;
 }
 </style>

@@ -158,27 +158,7 @@
   margin-top: 0.25rem;
 }
 
-/* ---------- Слайд с одним изображением (booklet-img): картинка по контенту, наполовину поверх квадратов ---------- */
-.presentation-slider-wrap.booklet-view .booklet-img__top-square,
-.presentation-slider-wrap.booklet-view .booklet-img__bottom-square {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  z-index: 1;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-img__top-square {
-  top: 20px;
-  left: 20px;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-img__bottom-square {
-  bottom: 20px;
-  right: 20px;
-}
-
+/* ---------- Слайд с одним изображением (booklet-img) ---------- */
 .presentation-slider-wrap.booklet-view .booklet-img__wrap {
   position: relative;
   width: 100%;
@@ -209,27 +189,7 @@
   object-fit: cover;
 }
 
-/* ---------- Галерея 3 фото: картинки по контенту, наполовину поверх квадратов ---------- */
-.presentation-slider-wrap.booklet-view .booklet-galery__top-square,
-.presentation-slider-wrap.booklet-view .booklet-galery__bottom-square {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  z-index: 1;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-galery__top-square {
-  top: 15px;
-  left: 15px;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-galery__bottom-square {
-  bottom: 15px;
-  right: 15px;
-}
-
+/* ---------- Галерея 3 фото ---------- */
 .presentation-slider-wrap.booklet-view .booklet-galery__wrap {
   display: flex;
   flex-direction: column;
@@ -299,7 +259,7 @@
   color: #1a1a1a;
 }
 
-/* Характеристики: декоративные квадраты под изображением слева — сверху и снизу справа, видны наполовину */
+/* Характеристики (booklet-char) */
 .presentation-slider-wrap.booklet-view .booklet-char__img {
   position: relative;
   min-height: 180px;
@@ -318,29 +278,6 @@
   z-index: 2;
   margin: -20px -20px -20px -20px;
   padding: 20px;
-}
-
-/* Квадраты под изображением слева: сверху и снизу справа, видны наполовину */
-.presentation-slider-wrap.booklet-view .booklet-char__img .booklet-char__top-square,
-.presentation-slider-wrap.booklet-view .booklet-char__img .booklet-char__bottom-square {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  z-index: 1;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-char__img .booklet-char__top-square {
-  top: 0;
-  left: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-char__img .booklet-char__bottom-square {
-  bottom: 0;
-  right: 0;
-  width: 50px;
-  height: 50px;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-char__content {
@@ -413,26 +350,6 @@
 }
 
 /* ---------- Сетка 4 фото (booklet-grid) ---------- */
-.presentation-slider-wrap.booklet-view .booklet-grid__top-square,
-.presentation-slider-wrap.booklet-view .booklet-grid__bottom-square {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  z-index: 2;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-grid__top-square {
-  top: 15px;
-  left: 15px;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-grid__bottom-square {
-  bottom: 15px;
-  right: 15px;
-}
-
 .presentation-slider-wrap.booklet-view .booklet-grid__wrap {
   display: flex;
   flex-direction: column;
@@ -452,11 +369,6 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-grid__top-square,
-.presentation-slider-wrap.booklet-view .booklet-grid__bottom-square {
-  z-index: 1;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-grid__img {
@@ -487,26 +399,6 @@
 }
 
 /* ---------- Описание (booklet-info) ---------- */
-.presentation-slider-wrap.booklet-view .booklet-info__top-square,
-.presentation-slider-wrap.booklet-view .booklet-info__bottom-square {
-  position: absolute;
-  width: 45px;
-  height: 45px;
-  z-index: 2;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-info__top-square {
-  top: 15px;
-  left: 15px;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-info__bottom-square {
-  bottom: 15px;
-  right: 15px;
-}
-
 .presentation-slider-wrap.booklet-view .booklet-info__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -587,26 +479,6 @@
 }
 
 /* ---------- Инфраструктура (booklet-stroen) ---------- */
-.presentation-slider-wrap.booklet-view .booklet-stroen__top-square,
-.presentation-slider-wrap.booklet-view .booklet-stroen__bottom-square {
-  position: absolute;
-  width: 45px;
-  height: 45px;
-  z-index: 2;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-stroen__top-square {
-  top: 15px;
-  left: 15px;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-stroen__bottom-square {
-  bottom: 15px;
-  right: 15px;
-}
-
 .presentation-slider-wrap.booklet-view .booklet-stroen__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -731,26 +603,6 @@
   gap: 0.75rem;
 }
 
-.presentation-slider-wrap.booklet-view .booklet-map__top-square,
-.presentation-slider-wrap.booklet-view .booklet-map__bottom-square {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  z-index: 2;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-map__top-square {
-  top: 0;
-  right: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-map__bottom-square {
-  bottom: 0;
-  left: 0;
-}
-
 .presentation-slider-wrap.booklet-view .booklet-map__info {
   flex: 1;
   font-size: 0.9375rem;
@@ -758,41 +610,8 @@
 }
 
 /* ---------- Контакты (booklet-contacts) ---------- */
-.presentation-slider-wrap.booklet-view .booklet-contacts__top-square,
-.presentation-slider-wrap.booklet-view .booklet-contacts__bottom-square {
-  position: absolute;
-  width: 45px;
-  height: 45px;
-  z-index: 2;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-/* Контакты: квадраты во второй половине (блок с изображениями), под изображениями */
 .presentation-slider-wrap.booklet-view .booklet-contacts__images-wrap {
   position: relative;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-contacts__images-wrap .booklet-contacts__top-square {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  width: 45px;
-  height: 45px;
-  z-index: 1;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-contacts__images-wrap .booklet-contacts__bottom-square {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
-  width: 45px;
-  height: 45px;
-  z-index: 1;
-  background-color: var(--theme-main-color);
-  border-radius: 0;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-contacts__images-wrap .booklet-contacts__block {
@@ -877,7 +696,7 @@
   border-radius: 50%;
 }
 
-/* Адаптивность */
+/* Адаптивность (не применяется в режиме просмотра/публичной ссылки — см. .presentation-view-fixed) */
 @media (max-width: 768px) {
   .presentation-slider-wrap.booklet-view .booklet-main__wrap {
     flex-direction: column;
@@ -908,5 +727,32 @@
   .presentation-slider-wrap.booklet-view .booklet-map__wrap,
   .presentation-slider-wrap.booklet-view .booklet-contacts__wrap {
     grid-template-columns: 1fr;
+  }
+
+  /* Режим просмотра/публичной ссылки: без адаптации, как на ПК, в рамках экрана */
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-main__wrap {
+    flex-direction: row;
+  }
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-main__img {
+    flex: 0 0 50%;
+    min-height: 280px;
+    padding: 40px 0 40px 40px;
+  }
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-main__content {
+    padding: 40px 25px;
+  }
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-img__wrap,
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-galery__wrap,
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-grid__wrap {
+    padding: 15px 15px 70px 70px;
+  }
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-char__wrap {
+    grid-template-columns: 1fr 1fr;
+  }
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-info__wrap,
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-stroen__wrap,
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-map__wrap,
+  .presentation-view-fixed .presentation-slider-wrap.booklet-view .booklet-contacts__wrap {
+    grid-template-columns: 1fr 1fr;
   }
 }

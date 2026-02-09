@@ -16,6 +16,18 @@ const COMPANY_LOGO_DIR = path.join(__dirname, '../../uploads/company-logo')
 // Папка для изображений презентаций (храним файлы, в БД только URL)
 const PRESENTATIONS_IMAGES_DIR = path.join(__dirname, '../../uploads/presentations')
 
+/** Удаляет папку с загруженными изображениями презентации (по id презентации). */
+export async function deletePresentationImagesFolder(presentationId: string): Promise<void> {
+  if (!presentationId || typeof presentationId !== 'string') return
+  const safeId = presentationId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
+  const dir = path.join(PRESENTATIONS_IMAGES_DIR, safeId)
+  try {
+    await fs.rm(dir, { recursive: true, force: true })
+  } catch {
+    // Папка может отсутствовать — игнорируем
+  }
+}
+
 // Создать папку для аватаров, если её нет
 async function ensureAvatarsDir() {
   try {

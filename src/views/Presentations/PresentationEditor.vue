@@ -219,8 +219,6 @@
                     v-else-if="slide.type === 'description'"
                     class="booklet-content booklet-info"
                   >
-                    <div class="booklet-info__top-square" />
-                    <div class="booklet-info__bottom-square" />
                     <div class="booklet-info__wrap">
                       <div class="booklet-info__block booklet-info__content">
                         <input
@@ -283,8 +281,6 @@
                     v-else-if="slide.type === 'infrastructure'"
                     class="booklet-content booklet-stroen"
                   >
-                    <div class="booklet-stroen__top-square" />
-                    <div class="booklet-stroen__bottom-square" />
                     <div class="booklet-stroen__wrap">
                       <div class="booklet-stroen__block booklet-stroen__content">
                         <input
@@ -362,8 +358,6 @@
                         />
                       </div>
                       <div class="booklet-map__content">
-                        <div class="booklet-map__top-square" />
-                        <div class="booklet-map__bottom-square" />
                         <div class="booklet-map__info relative">
                           <div class="relative mb-2">
                             <input
@@ -428,8 +422,6 @@
                     v-else-if="slide.type === 'image'"
                     class="booklet-content booklet-img"
                   >
-                    <div class="booklet-img__top-square" />
-                    <div class="booklet-img__bottom-square" />
                     <div class="booklet-img__wrap">
                       <div class="booklet-img__img">
                         <label class="booklet-upload-btn cursor-pointer">
@@ -450,8 +442,6 @@
                     v-else-if="slide.type === 'gallery'"
                     class="booklet-content booklet-galery"
                   >
-                    <div class="booklet-galery__top-square" />
-                    <div class="booklet-galery__bottom-square" />
                     <div class="booklet-galery__wrap">
                       <div class="flex items-center gap-2 px-2 py-1 col-span-full">
                         <span class="text-xs font-medium text-gray-500">Сетка:</span>
@@ -496,8 +486,6 @@
                         class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
                       <div class="booklet-char__img relative">
-                        <div class="booklet-char__top-square" />
-                        <div class="booklet-char__bottom-square" />
                         <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
@@ -592,8 +580,6 @@
                     v-else-if="slide.type === 'grid'"
                     class="booklet-content booklet-grid"
                   >
-                    <div class="booklet-grid__top-square" />
-                    <div class="booklet-grid__bottom-square" />
                     <div class="booklet-grid__wrap">
                       <div class="flex items-center gap-2 px-2 py-1">
                         <span class="text-xs font-medium text-gray-500">Сетка:</span>
@@ -668,8 +654,6 @@
                             <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                           </select>
                         </div>
-                        <div class="booklet-contacts__top-square" />
-                        <div class="booklet-contacts__bottom-square" />
                         <div class="booklet-contacts-grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                         <div
                           v-for="(url, i) in imageSlotsForSlide(slide)"
@@ -704,20 +688,28 @@
           <div class="mt-4 flex flex-wrap items-center gap-[30px]">
             <button
               type="button"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              class="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               @click="prevSlide"
+              title="Назад"
+              aria-label="Назад"
             >
-              Назад
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
             <span class="text-sm text-gray-500">
               {{ visibleSlideNumber }} / {{ visibleSlides.length }}
             </span>
             <button
               type="button"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              class="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               @click="nextSlide"
+              title="Далее"
+              aria-label="Далее"
             >
-              Далее
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
             </button>
             <button
               type="button"
