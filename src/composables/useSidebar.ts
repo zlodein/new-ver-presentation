@@ -41,7 +41,7 @@ const SidebarSymbol = Symbol()
 
 export function useSidebarProvider() {
   const router = useRouter()
-  const isExpanded = ref(true)
+  const isExpanded = ref(false)
   const isMobileOpen = ref(false)
   const isMobile = ref(false)
   const isHovered = ref(false)

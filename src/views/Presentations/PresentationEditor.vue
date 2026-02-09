@@ -12,16 +12,16 @@
       </div>
 
       <!-- Горизонтальная панель со слайдами -->
-      <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+      <div class="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white p-1.5 dark:border-gray-700 dark:bg-gray-800">
         <!-- Кнопка прокрутки влево -->
         <button
           type="button"
-          class="shrink-0 rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           :disabled="!canScrollLeft"
           @click="scrollSlidesLeft"
           title="Прокрутить влево"
         >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -34,12 +34,14 @@
               item-key="id"
               handle=".slide-drag-handle"
               @end="onDragEnd"
+              @move="onDragMove"
               class="flex gap-2"
             >
               <template #item="{ element: slide, index }">
                 <div
+                  :data-slide-index="index"
                   :class="[
-                    'flex items-center gap-1.5 rounded-lg border px-2 py-1.5 transition shrink-0',
+                    'flex items-center gap-1 rounded-lg border px-1.5 py-1 transition shrink-0',
                     activeSlideIndex === index
                       ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
                       : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
@@ -47,16 +49,16 @@
                   ]"
                 >
                   <span
-                    class="slide-drag-handle cursor-grab touch-none p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     title="Перетащить"
                   >
-                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                     </svg>
                   </span>
                   <button
                     type="button"
-                    class="min-w-0 truncate text-xs font-medium transition whitespace-nowrap"
+                    class="min-w-0 truncate text-[10px] font-medium transition whitespace-nowrap"
                     :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
                     @click="goToSlide(index)"
                   >
@@ -65,35 +67,35 @@
                   <div class="flex shrink-0 items-center gap-0.5">
                     <button
                       type="button"
-                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                       :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
                       @click.stop="toggleSlideVisibility(index)"
                     >
-                      <svg v-if="slide.hidden" class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg v-if="slide.hidden" class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262M4.031 11.117A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.05 10.05 0 01-1.563 3.029m5.858-.908a3 3 0 11-4.243-4.243M9.88 9.88a4.5 4.5 0 106.262-6.262" />
                       </svg>
-                      <svg v-else class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg v-else class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     </button>
                     <button
                       type="button"
-                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                       title="Дублировать"
                       @click.stop="duplicateSlide(index)"
                     >
-                      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                     </button>
                     <button
                       v-if="slides.length > 1"
                       type="button"
-                      class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                      class="rounded p-0.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
                       title="Удалить"
                       @click.stop="deleteSlide(index)"
                     >
-                      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
@@ -107,12 +109,12 @@
         <!-- Кнопка прокрутки вправо -->
         <button
           type="button"
-          class="shrink-0 rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           :disabled="!canScrollRight"
           @click="scrollSlidesRight"
           title="Прокрутить вправо"
         >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -121,14 +123,14 @@
         <div class="relative shrink-0">
           <button
             type="button"
-            class="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             @click="showAddSlideMenu = !showAddSlideMenu"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             <span>Добавить</span>
-            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -462,28 +464,7 @@
                     </div>
                   </div>
 
-                  <!-- 5. Изображение: 100% по ширине и высоте слайда -->
-                  <div
-                    v-else-if="slide.type === 'image'"
-                    class="booklet-content booklet-img"
-                  >
-                    <div class="booklet-img__wrap">
-                      <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2 flex-shrink-0">{{ slide.data?.heading ?? slide.data?.title }}</h2>
-                      <div class="booklet-img__img flex-1 min-h-0">
-                        <label class="booklet-upload-btn cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                            @change="onSingleImageUpload(slide, $event, 'imageUrl')"
-                          />
-                        </label>
-                        <img v-if="slide.data?.imageUrl" :src="String(slide.data.imageUrl)" alt="">
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 6. Галерея 3 фото (как на presentation-realty.ru/view) -->
+                  <!-- 5. Галерея 3 фото (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'gallery'"
                     class="booklet-content booklet-galery"
@@ -785,7 +766,6 @@ const SLIDE_TYPE_LABELS: Record<string, string> = {
   description: 'Описание',
   infrastructure: 'Инфраструктура',
   location: 'Местоположение',
-  image: 'Изображение',
   gallery: 'Галерея',
   characteristics: 'Характеристики',
   layout: 'Планировка',
@@ -836,7 +816,6 @@ const SLIDE_TYPE_OPTIONS = [
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
   { type: 'location', label: 'Местоположение' },
-  { type: 'image', label: 'Изображение' },
   { type: 'gallery', label: 'Галерея' },
   { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
@@ -848,7 +827,6 @@ const SLIDE_TYPES = [
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
   { type: 'location', label: 'Местоположение' },
-  { type: 'image', label: 'Изображение' },
   { type: 'gallery', label: 'Галерея' },
   { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
@@ -1293,8 +1271,6 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
         show_metro: true,
         metro_stations: [],
       }
-    case 'image':
-      return { heading: '', imageUrl: '' }
     case 'description':
       return { heading: 'ОПИСАНИЕ', text: '', imageGrid: '1x2', images: [] as string[] }
     case 'infrastructure':
@@ -1321,7 +1297,43 @@ function addSlide(type: string) {
   }
   slides.value.push(newSlide)
   const idx = slides.value.length - 1
-  nextTick(() => goToSlide(idx))
+  nextTick(() => {
+    goToSlide(idx)
+    // Прокручиваем список к новому слайду
+    scrollToSlideInList(idx)
+  })
+}
+
+// Прокрутка списка слайдов к указанному индексу
+function scrollToSlideInList(index: number) {
+  if (!slidesContainerRef.value) return
+  nextTick(() => {
+    const container = slidesContainerRef.value
+    if (!container) return
+    
+    // Находим элемент слайда в DOM
+    const slideElements = container.querySelectorAll('[data-slide-index]')
+    const targetElement = Array.from(slideElements).find((el) => {
+      const slideIdx = parseInt(el.getAttribute('data-slide-index') || '-1')
+      return slideIdx === index
+    }) as HTMLElement | undefined
+    
+    if (targetElement) {
+      const containerRect = container.getBoundingClientRect()
+      const elementRect = targetElement.getBoundingClientRect()
+      const scrollLeft = container.scrollLeft
+      const elementLeft = elementRect.left - containerRect.left + scrollLeft
+      const elementRight = elementLeft + elementRect.width
+      const containerWidth = container.clientWidth
+      
+      // Прокручиваем, если элемент не виден полностью
+      if (elementLeft < scrollLeft) {
+        container.scrollTo({ left: elementLeft - 10, behavior: 'smooth' })
+      } else if (elementRight > scrollLeft + containerWidth) {
+        container.scrollTo({ left: elementRight - containerWidth + 10, behavior: 'smooth' })
+      }
+    }
+  })
 }
 
 function duplicateSlide(index: number) {
@@ -1350,12 +1362,66 @@ function deleteSlide(index: number) {
 }
 
 function onDragEnd() {
+  // Очищаем интервал авто-прокрутки
+  if (dragScrollInterval) {
+    clearInterval(dragScrollInterval)
+    dragScrollInterval = null
+  }
+  
   const visibleIdx = swiperInstance.value?.activeIndex ?? 0
   const slide = visibleSlides.value[visibleIdx]
   if (slide) {
     const fullIdx = slides.value.findIndex((s) => s.id === slide.id)
-    if (fullIdx >= 0) activeSlideIndex.value = fullIdx
+    if (fullIdx >= 0) {
+      activeSlideIndex.value = fullIdx
+      // Прокручиваем к перетащенному слайду
+      nextTick(() => scrollToSlideInList(fullIdx))
+    }
   }
+  updateScrollButtons()
+}
+
+// Авто-прокрутка при перетаскивании слайда
+let dragScrollInterval: ReturnType<typeof setInterval> | null = null
+function onDragMove(event: { relatedContext: { index: number } }) {
+  if (!slidesContainerRef.value) return
+  
+  const container = slidesContainerRef.value
+  
+  // Очищаем предыдущий интервал
+  if (dragScrollInterval) {
+    clearInterval(dragScrollInterval)
+  }
+  
+  // Создаем интервал для авто-прокрутки
+  dragScrollInterval = setInterval(() => {
+    if (!container) {
+      if (dragScrollInterval) {
+        clearInterval(dragScrollInterval)
+        dragScrollInterval = null
+      }
+      return
+    }
+    
+    const containerRect = container.getBoundingClientRect()
+    const mouseX = (window as any).dragMouseX ?? containerRect.left + containerRect.width / 2
+    
+    const scrollZone = 80 // Зона прокрутки от краев
+    const scrollSpeed = 15
+    
+    if (mouseX < containerRect.left + scrollZone) {
+      // Прокрутка влево
+      container.scrollLeft = Math.max(0, container.scrollLeft - scrollSpeed)
+      updateScrollButtons()
+    } else if (mouseX > containerRect.right - scrollZone) {
+      // Прокрутка вправо
+      container.scrollLeft = Math.min(
+        container.scrollWidth - container.clientWidth,
+        container.scrollLeft + scrollSpeed
+      )
+      updateScrollButtons()
+    }
+  }, 16) // ~60fps
 }
 
 const MAX_CHARACTERISTICS = 12
@@ -1783,6 +1849,12 @@ onMounted(async () => {
     loadFromLocalStorage()
   }
   if (editorMounted) nextTick(() => { initialLoadDone.value = true })
+  
+  // Отслеживание позиции мыши при перетаскивании
+  document.addEventListener('mousemove', (e) => {
+    (window as any).dragMouseX = e.clientX
+  })
+  
   window.addEventListener('beforeunload', backupToLocalStorage)
 })
 
@@ -1998,10 +2070,10 @@ async function exportToPDF() {
 </script>
 
 <style>
-/* Слайдер: горизонтальный А4 (297×210) */
+/* Слайдер: горизонтальный А4 (297×210) - увеличенная высота */
 .presentation-slider-wrap {
   aspect-ratio: 297 / 210;
-  max-height: min(72vh, 640px);
+  max-height: min(80vh, 720px);
   width: 100%;
 }
 @media (max-width: 1023px) {
