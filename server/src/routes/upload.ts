@@ -186,7 +186,7 @@ export async function uploadRoutes(app: FastifyInstance) {
   app.post(
     '/api/upload/presentation-image',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Querystring: { presentationId?: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         const data = await req.file()
         if (!data) {
