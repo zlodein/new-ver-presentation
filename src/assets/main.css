@@ -618,12 +618,17 @@ span.flatpickr-weekday,
   @apply text-gray-400 dark:text-white/30;
 }
 .event-fc-color {
-  @apply rounded-lg py-2.5 pl-4 pr-3;
+  @apply rounded-lg py-2.5 pl-4 pr-3 max-w-full;
+}
+.event-fc-color .fc-event-title,
+.event-fc-color .fc-event-time {
+  @apply p-0 text-sm font-normal text-gray-700 dark:text-gray-300 truncate min-w-0;
 }
 .event-fc-color .fc-event-title {
-  @apply p-0 text-sm font-normal text-gray-700 truncate min-w-0 flex-1;
+  @apply flex-1;
 }
-.fc-event-title-truncate .fc-event-title {
+.fc-event-title-truncate .fc-event-title,
+.fc-event-title-truncate .fc-event-time {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -631,12 +636,20 @@ span.flatpickr-weekday,
 }
 .fc-event-title-truncate {
   min-width: 0;
+  overflow: hidden;
 }
 .fc-daygrid-event-harness {
   min-width: 0;
+  max-width: 100%;
 }
 .fc .fc-daygrid-event .fc-event-main {
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.fc .fc-daygrid-event .fc-event-main-frame {
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
 }
 .fc-daygrid-event-dot {

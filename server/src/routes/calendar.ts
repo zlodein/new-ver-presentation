@@ -352,53 +352,87 @@ export async function calendarRoutes(app: FastifyInstance) {
     }
   })
 
-  // Удалить событие
+  async function deleteCalendarEventById(
+    userId: string,
+    idRaw: string,
+    reply: FastifyReply
+  ): Promise<boolean> {
+    const id = String(idRaw ?? '').trim()
+    if (!id) {
+      reply.status(400).send({ error: 'Не указан id события' })
+      return false
+    }
+    if (useFileStore) {
+      reply.status(501).send({ error: 'Файловое хранилище не поддерживает календарь' })
+      return false
+    }
+    if (useMysql) {
+      const userIdNum = Number(userId)
+      if (Number.isNaN(userIdNum)) {
+        reply.status(401).send({ error: 'Не авторизован' })
+        return false
+      }
+      const idNum = parseMysqlId(id)
+      if (idNum === null) {
+        reply.status(400).send({ error: 'Неверный формат id события (ожидается целое число)' })
+        return false
+      }
+      const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+        .delete(mysqlSchema.calendarEvents)
+        .where(and(eq(mysqlSchema.calendarEvents.id, idNum), eq(mysqlSchema.calendarEvents.user_id, userIdNum)))
+      const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
+      const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
+      if (affected === 0) {
+        reply.status(404).send({ error: 'Событие не найдено' })
+        return false
+      }
+      reply.status(204).send()
+      return true
+    }
+    const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+      .delete(pgSchema.calendarEvents)
+      .where(and(eq(pgSchema.calendarEvents.id, id), eq(pgSchema.calendarEvents.userId, userId)))
+      .returning({ id: pgSchema.calendarEvents.id })
+    if (deleted.length === 0) {
+      reply.status(404).send({ error: 'Событие не найдено' })
+      return false
+    }
+    reply.status(204).send()
+    return true
+  }
+
+  // Удалить событие: GET (как у уведомлений — надёжно работает за прокси)
+  app.get<{ Params: { id?: string } }>(
+    '/api/calendar/events/actions/delete/:id',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+      const idRaw = req.params?.id ?? ''
+      try {
+        await deleteCalendarEventById(userId, idRaw, reply)
+      } catch (err) {
+        console.error('[calendar] Ошибка удаления события:', err)
+        return reply.status(500).send({ error: 'Ошибка сервера' })
+      }
+    }
+  )
+
+  // Удалить событие: DELETE (оставляем для совместимости)
   app.delete<{ Params: { id?: string } }>(
     '/api/calendar/events/:id',
     { preHandler: [app.authenticate] },
     async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-
       let id = getIdFromDeleteRequest(req)
       try {
         if (id.includes('%')) id = decodeURIComponent(id)
       } catch {
         // оставляем id как есть при ошибке декодирования
       }
-      if (!id) {
-        return reply.status(400).send({ error: 'Не указан id события' })
-      }
-      const idNum = useMysql ? parseMysqlId(id) : null
-      if (useMysql && idNum === null) {
-        return reply.status(400).send({ error: 'Неверный формат id события (ожидается целое число)' })
-      }
-
       try {
-        if (useFileStore) {
-          // Файловое хранилище не поддерживает календарь
-          return reply.status(501).send({ error: 'Файловое хранилище не поддерживает календарь' })
-        }
-
-        if (useMysql) {
-          const userIdNum = Number(userId)
-          if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-          const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-            .delete(mysqlSchema.calendarEvents)
-            .where(and(eq(mysqlSchema.calendarEvents.id, idNum!), eq(mysqlSchema.calendarEvents.user_id, userIdNum)))
-          const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
-          const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
-          if (affected === 0) return reply.status(404).send({ error: 'Событие не найдено' })
-          return reply.status(204).send()
-        }
-
-        // PostgreSQL
-        const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-          .delete(pgSchema.calendarEvents)
-          .where(and(eq(pgSchema.calendarEvents.id, id), eq(pgSchema.calendarEvents.userId, userId)))
-          .returning({ id: pgSchema.calendarEvents.id })
-        if (deleted.length === 0) return reply.status(404).send({ error: 'Событие не найдено' })
-        return reply.status(204).send()
+        await deleteCalendarEventById(userId, id, reply)
       } catch (err) {
         console.error('[calendar] Ошибка удаления события:', err)
         return reply.status(500).send({ error: 'Ошибка сервера' })

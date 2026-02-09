@@ -426,7 +426,7 @@ const handleDeleteEvent = async () => {
   const eventId = String(selectedEvent.value.id)
   try {
     loading.value = true
-    await api.delete(`/api/calendar/events/${eventId}`)
+    await api.get(`/api/calendar/events/actions/delete/${encodeURIComponent(eventId)}`)
     events.value = events.value.filter((e) => String(e.id) !== eventId)
     closeModal()
   } catch (err) {
@@ -437,9 +437,10 @@ const handleDeleteEvent = async () => {
   }
 }
 
-const truncateTitle = (title, maxLen = 28) => {
+const truncateTitle = (title, maxLen = 16) => {
   if (!title) return ''
-  return title.length <= maxLen ? title : title.slice(0, maxLen) + '…'
+  const t = String(title).trim()
+  return t.length <= maxLen ? t : t.slice(0, maxLen) + '…'
 }
 
 const renderEventContent = (eventInfo) => {
@@ -447,13 +448,14 @@ const renderEventContent = (eventInfo) => {
   const colorClass = `fc-bg-${String(cal).toLowerCase()}`
   const title = eventInfo.event.title || ''
   const shortTitle = truncateTitle(title)
-  const fullTitle = title.length > 28 ? title : ''
-  const titleAttr = fullTitle ? ` title="${fullTitle.replace(/"/g, '&quot;')}"` : ''
+  const fullTitle = title.length > 16 ? title : ''
+  const titleAttr = fullTitle ? ` title="${String(fullTitle).replace(/"/g, '&quot;')}"` : ''
+  const timeText = eventInfo.timeText || ''
   return {
     html: `
       <div class="event-fc-color fc-event-main fc-event-title-truncate flex ${colorClass} p-1 rounded-sm"${titleAttr}>
         <div class="fc-daygrid-event-dot"></div>
-        <div class="fc-event-time">${eventInfo.timeText}</div>
+        <div class="fc-event-time">${timeText}</div>
         <div class="fc-event-title">${shortTitle}</div>
       </div>
     `,
