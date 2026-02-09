@@ -59,13 +59,14 @@ export async function notificationRoutes(app: FastifyInstance) {
           orderBy: [desc(mysqlSchema.notifications.created_at)],
         })
         return reply.send(
-          list.map((n: { id: number; title: string; message: string | null; type: string; read: string; created_at: Date }) => ({
+          list.map((n: { id: number; title: string; message: string | null; type: string; read: string; created_at: Date; source_id?: string | null }) => ({
             id: String(n.id),
             title: n.title,
             message: n.message ?? undefined,
             type: n.type,
             read: n.read === 'true',
             createdAt: toIsoDate(n.created_at),
+            sourceId: n.source_id ?? undefined,
           }))
         )
       }
@@ -88,6 +89,7 @@ export async function notificationRoutes(app: FastifyInstance) {
         type: n.type,
         read: n.read === 'true',
         createdAt: toIsoDate(n.createdAt),
+        sourceId: n.sourceId ?? undefined,
       })))
     } catch (err) {
       console.error('[notifications] Ошибка получения уведомлений:', err)

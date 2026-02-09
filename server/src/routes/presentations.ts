@@ -202,10 +202,24 @@ export async function presentationRoutes(app: FastifyInstance) {
           .$returningId()
         const createdId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
         if (createdId == null) return reply.status(500).send({ error: 'Ошибка при создании презентации' })
+        const presentationTitle = title?.trim() || 'Без названия'
+        try {
+          await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            .insert(mysqlSchema.notifications)
+            .values({
+              user_id: userIdNum,
+              title: `Презентация «${presentationTitle}» создана`,
+              message: `Черновик презентации «${presentationTitle}» создан.`,
+              type: 'presentation',
+              source_id: String(createdId),
+            })
+        } catch (notifErr) {
+          console.error('[presentations] Ошибка создания уведомления:', notifErr)
+        }
         const now = new Date()
         return reply.status(201).send({
           id: String(createdId),
-          title: title?.trim() || 'Без названия',
+          title: presentationTitle,
           coverImage: coverImage ?? undefined,
           content: contentVal,
           updatedAt: toIsoDate(now),
@@ -220,6 +234,20 @@ export async function presentationRoutes(app: FastifyInstance) {
           content: contentVal,
         })
         .returning()
+      const presentationTitle = created.title
+      try {
+        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+          .insert(pgSchema.notifications)
+          .values({
+            userId,
+            title: `Презентация «${presentationTitle}» создана`,
+            message: `Черновик презентации «${presentationTitle}» создан.`,
+            type: 'presentation',
+            sourceId: created.id,
+          })
+      } catch (notifErr) {
+        console.error('[presentations] Ошибка создания уведомления:', notifErr)
+      }
       return reply.status(201).send({
         id: created.id,
         title: created.title,

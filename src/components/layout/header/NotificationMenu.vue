@@ -102,7 +102,7 @@
                   'bg-success-500': notification.type === 'success',
                   'bg-warning-500': notification.type === 'warning',
                   'bg-error-500': notification.type === 'error',
-                  'bg-primary-500': notification.type === 'info',
+                  'bg-primary-500': notification.type === 'info' || notification.type === 'presentation',
                 }"
                 class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
               >
@@ -148,7 +148,6 @@ import { api } from '@/api/client'
 
 const router = useRouter()
 const dropdownOpen = ref(false)
-const notifying = ref(false)
 const dropdownRef = ref(null)
 const notifications = ref([])
 const loading = ref(false)
@@ -156,6 +155,8 @@ const loading = ref(false)
 const unreadCount = computed(() => {
   return notifications.value.filter((n) => !n.read).length
 })
+
+const notifying = computed(() => unreadCount.value > 0)
 
 // В виджете показываем не более 5 последних уведомлений
 const displayedNotifications = computed(() => notifications.value.slice(0, 5))
@@ -181,7 +182,6 @@ const loadNotifications = async () => {
     loading.value = true
     const data = await api.get('/api/notifications')
     notifications.value = data
-    notifying.value = unreadCount.value > 0
   } catch (err) {
     console.error('Ошибка загрузки уведомлений:', err)
   } finally {
@@ -194,7 +194,6 @@ const toggleDropdown = async () => {
   if (dropdownOpen.value) {
     await loadNotifications()
   }
-  notifying.value = unreadCount.value > 0
 }
 
 const closeDropdown = () => {
@@ -212,12 +211,24 @@ const handleItemClick = async (notification) => {
     try {
       await api.put(`/api/notifications/${notification.id}/read`)
       notification.read = true
-      notifying.value = unreadCount.value > 0
     } catch (err) {
       console.error('Ошибка отметки уведомления:', err)
     }
   }
   closeDropdown()
+  navigateFromNotification(notification)
+}
+
+function navigateFromNotification(notification) {
+  const sourceId = notification.sourceId ?? notification.source_id
+  if (notification.type === 'calendar' && sourceId) {
+    router.push({ path: '/dashboard/calendar', query: { eventId: String(sourceId) } })
+    return
+  }
+  if (notification.type === 'presentation' && sourceId) {
+    router.push({ path: `/dashboard/presentations/${sourceId}/edit` })
+    return
+  }
 }
 
 const handleClearAll = async () => {
@@ -228,19 +239,25 @@ const handleClearAll = async () => {
   try {
     await api.get('/api/notifications/actions/clear-all')
     notifications.value = []
-    notifying.value = false
   } catch (err) {
     console.error('Ошибка очистки уведомлений:', err)
     alert('Ошибка очистки уведомлений')
   }
 }
 
+const onVisibilityChange = () => {
+  if (document.visibilityState === 'visible') loadNotifications()
+}
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('visibilitychange', onVisibilityChange)
   loadNotifications()
-  // Обновляем уведомления каждые 30 секунд
   const interval = setInterval(loadNotifications, 30000)
-  onUnmounted(() => clearInterval(interval))
+  onUnmounted(() => {
+    clearInterval(interval)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+  })
 })
 
 onUnmounted(() => {

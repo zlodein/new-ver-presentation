@@ -65,7 +65,11 @@
           <div
             v-for="notification in notifications"
             :key="notification.id"
-            class="flex gap-4 rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-white/5 transition-shadow"
+            role="button"
+            tabindex="0"
+            @click="handleNotificationClick(notification)"
+            @keydown.enter="handleNotificationClick(notification)"
+            class="flex gap-4 rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-white/5 transition-shadow cursor-pointer"
             :class="{ 'bg-gray-50 dark:bg-white/5': !notification.read }"
           >
             <div
@@ -74,7 +78,7 @@
                 'bg-success-500': notification.type === 'success',
                 'bg-warning-500': notification.type === 'warning',
                 'bg-error-500': notification.type === 'error',
-                'bg-primary-500': notification.type === 'info',
+                'bg-primary-500': notification.type === 'info' || notification.type === 'presentation',
               }"
               class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-white text-lg font-semibold"
             >
@@ -95,7 +99,7 @@
                   </p>
                 </div>
 
-                <div class="ml-4 flex items-center gap-2">
+                <div class="ml-4 flex items-center gap-2" @click.stop>
                   <span
                     v-if="!notification.read"
                     class="h-2 w-2 rounded-full bg-orange-400"
@@ -130,13 +134,39 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { api } from '@/api/client'
 
+const router = useRouter()
 const currentPageTitle = ref('Уведомления')
 const notifications = ref([])
 const loading = ref(false)
+
+function navigateFromNotification(notification) {
+  const sourceId = notification.sourceId ?? notification.source_id
+  if (notification.type === 'calendar' && sourceId) {
+    router.push({ path: '/dashboard/calendar', query: { eventId: String(sourceId) } })
+    return
+  }
+  if (notification.type === 'presentation' && sourceId) {
+    router.push({ path: `/dashboard/presentations/${sourceId}/edit` })
+    return
+  }
+}
+
+const handleNotificationClick = async (notification) => {
+  if (!notification.read) {
+    try {
+      await api.put(`/api/notifications/${notification.id}/read`)
+      notification.read = true
+    } catch (err) {
+      console.error('Ошибка отметки уведомления:', err)
+    }
+  }
+  navigateFromNotification(notification)
+}
 
 const formatTime = (dateString) => {
   if (!dateString) return ''

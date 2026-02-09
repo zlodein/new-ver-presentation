@@ -250,7 +250,8 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 
 const currentPageTitle = ref('Календарь')
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -259,6 +260,7 @@ import Modal from '@/components/profile/Modal.vue'
 import { api } from '@/api/client'
 import ruLocale from '@fullcalendar/core/locales/ru'
 
+const route = useRoute()
 const calendarRef = ref(null)
 const isOpen = ref(false)
 const selectedEvent = ref(null)
@@ -320,8 +322,14 @@ const loadEvents = async () => {
   }
 }
 
-onMounted(() => {
-  loadEvents()
+onMounted(async () => {
+  await loadEvents()
+  await nextTick()
+  const eventId = route.query.eventId
+  if (eventId && calendarRef.value?.getApi) {
+    const fcEvent = calendarRef.value.getApi().getEventById(String(eventId))
+    if (fcEvent) handleEventClick({ event: fcEvent })
+  }
 })
 
 const openModal = () => {
