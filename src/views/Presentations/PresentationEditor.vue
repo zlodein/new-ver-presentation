@@ -338,7 +338,7 @@
                     </div>
                   </div>
 
-                  <!-- 4. Местоположение: 50% карта слева, 50% изображения справа с выбором сетки -->
+                  <!-- 4. Местоположение: 50% карта слева, 50% справа поиск по адресу и поиск метро -->
                   <div
                     v-else-if="slide.type === 'location'"
                     class="booklet-content booklet-map overflow-visible"
@@ -358,8 +358,11 @@
                             :lng="Number(slide.data?.lng)"
                           />
                         </div>
+                      </div>
+                      <div class="booklet-map__content flex flex-col gap-2 min-h-0">
                         <div class="booklet-map__info relative flex-shrink-0">
                           <div class="relative mb-2">
+                            <label class="mb-1 block text-xs font-medium text-gray-600">Поиск по адресу</label>
                             <input
                               v-model="slide.data.address"
                               type="text"
@@ -386,7 +389,7 @@
                           </div>
                           <button
                             type="button"
-                            class="mb-2 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                            class="mb-2 w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
                             :disabled="locationMetroLoading(slide)"
                             @click="findNearestMetro(slide)"
                           >
@@ -411,35 +414,6 @@
                                 <span v-if="station.distance_text" class="text-gray-500">, {{ station.distance_text }}</span>
                               </li>
                             </ul>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="booklet-map__content flex flex-col min-h-0">
-                        <div class="flex flex-wrap items-center gap-2 mb-2 flex-shrink-0">
-                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
-                          <select
-                            :value="getImageGrid(slide)"
-                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
-                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                          >
-                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                          </select>
-                        </div>
-                        <div class="booklet-map__grid image-grid-bound flex-1 min-h-0" :data-image-grid="getImageGrid(slide)">
-                          <div
-                            v-for="(img, i) in locationImages(slide)"
-                            :key="i"
-                            class="booklet-map__grid-img relative"
-                          >
-                            <label class="booklet-upload-btn cursor-pointer">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                class="hidden"
-                                @change="onLocationImageUpload(slide, $event, i)"
-                              />
-                            </label>
-                            <img v-if="img" :src="img" alt="">
                           </div>
                         </div>
                       </div>
@@ -792,7 +766,6 @@ const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
   gallery: '3x1',
-  location: '1x2',
   contacts: '1x1',
 }
 
@@ -1273,8 +1246,6 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
         lng: 37.617698,
         show_metro: true,
         metro_stations: [],
-        imageGrid: '1x2',
-        images: [] as string[],
       }
     case 'image':
       return { heading: '', imageUrl: '' }
@@ -1948,5 +1919,93 @@ async function exportToPDF() {
 }
 .presentation-swiper .swiper-slide {
   height: 100%;
+}
+
+/* Оптимизация мобильного редактора */
+@media (max-width: 768px) {
+  /* Увеличиваем размеры кнопок загрузки изображений для удобства на мобильных */
+  .presentation-slider-wrap.booklet-view .booklet-upload-btn {
+    opacity: 0.3;
+    min-height: 60px;
+  }
+  
+  .presentation-slider-wrap.booklet-view .booklet-upload-btn::after {
+    width: 56px;
+    height: 56px;
+    background-size: 28px;
+  }
+  
+  /* Улучшаем видимость кнопок загрузки на мобильных */
+  .presentation-slider-wrap.booklet-view [class*='__img']:active .booklet-upload-btn,
+  .presentation-slider-wrap.booklet-view .booklet-main__img:active .booklet-upload-btn,
+  .presentation-slider-wrap.booklet-view .booklet-img__img:active .booklet-upload-btn,
+  .presentation-slider-wrap.booklet-view .booklet-galery__img:active .booklet-upload-btn {
+    opacity: 0.7;
+  }
+  
+  /* Увеличиваем размеры элементов управления в редакторе */
+  .presentation-slider-wrap.booklet-view input[type="text"],
+  .presentation-slider-wrap.booklet-view input[type="email"],
+  .presentation-slider-wrap.booklet-view textarea,
+  .presentation-slider-wrap.booklet-view select {
+    font-size: 16px; /* Предотвращает зум на iOS */
+    min-height: 44px; /* Минимальный размер для удобного нажатия */
+    padding: 10px 12px;
+  }
+  
+  /* Улучшаем кнопки в редакторе */
+  .presentation-slider-wrap.booklet-view button {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+  
+  /* Улучшаем панель слайдов на мобильных */
+  .presentation-slider-wrap.booklet-view ~ * aside {
+    max-height: 40vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Улучшаем элементы списка слайдов */
+  .presentation-slider-wrap.booklet-view ~ * .slide-drag-handle {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Улучшаем кнопки управления слайдами */
+  .presentation-slider-wrap.booklet-view ~ * button[title] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Улучшаем поля ввода в слайдах */
+  .presentation-slider-wrap.booklet-view .booklet-main__content input,
+  .presentation-slider-wrap.booklet-view .booklet-info__text textarea,
+  .presentation-slider-wrap.booklet-view .booklet-stroen__text textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  /* Улучшаем селекты сетки изображений */
+  .presentation-slider-wrap.booklet-view select {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+  
+  /* Улучшаем область загрузки изображений */
+  .presentation-slider-wrap.booklet-view [class*='__img'] {
+    min-height: 120px;
+  }
+  
+  /* Улучшаем кнопки в панели управления */
+  .presentation-slider-wrap.booklet-view ~ * .mt-4 button {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 15px;
+  }
 }
 </style>
