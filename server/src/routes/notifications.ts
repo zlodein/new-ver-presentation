@@ -226,7 +226,71 @@ export async function notificationRoutes(app: FastifyInstance) {
     }
   })
 
-  // —— POST (обход 400 от прокси на DELETE) ——
+  // —— GET actions (прокси возвращает 400 на POST/DELETE к /api/notifications/*) ——
+
+  // Очистить ВСЕ: GET /api/notifications/actions/clear-all
+  app.get('/api/notifications/actions/clear-all', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = getUserId(req)
+    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+
+    try {
+      if (useFileStore) return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
+      if (useMysql) {
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .delete(mysqlSchema.notifications)
+          .where(eq(mysqlSchema.notifications.user_id, userIdNum))
+        return reply.status(204).send()
+      }
+      await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .delete(pgSchema.notifications)
+        .where(eq(pgSchema.notifications.userId, userId))
+      return reply.status(204).send()
+    } catch (err) {
+      console.error('[notifications] Ошибка очистки уведомлений:', err)
+      return reply.status(500).send({ error: 'Ошибка сервера' })
+    }
+  })
+
+  // Удалить ОДНО: GET /api/notifications/actions/delete/:id
+  app.get<{ Params: { id?: string } }>('/api/notifications/actions/delete/:id', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
+    const userId = getUserId(req)
+    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+
+    const idRaw = req.params?.id ?? ''
+    if (!idRaw || String(idRaw).trim() === '') return reply.status(400).send({ error: 'ID уведомления обязателен' })
+
+    try {
+      if (useFileStore) return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
+      if (useMysql) {
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const notificationIdNum = parseMysqlId(idRaw)
+        if (notificationIdNum === null) return reply.status(400).send({ error: 'Неверный ID уведомления' })
+
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const result = await mysqlDb
+          .delete(mysqlSchema.notifications)
+          .where(and(eq(mysqlSchema.notifications.id, notificationIdNum), eq(mysqlSchema.notifications.user_id, userIdNum)))
+        const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
+        const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
+        if (affected === 0) return reply.status(404).send({ error: 'Уведомление не найдено' })
+        return reply.status(204).send()
+      }
+      const [deleted] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .delete(pgSchema.notifications)
+        .where(and(eq(pgSchema.notifications.id, idRaw.trim()), eq(pgSchema.notifications.userId, userId)))
+        .returning({ id: pgSchema.notifications.id })
+      if (!deleted) return reply.status(404).send({ error: 'Уведомление не найдено' })
+      return reply.status(204).send()
+    } catch (err) {
+      console.error('[notifications] Ошибка удаления уведомления:', err)
+      return reply.status(500).send({ error: 'Ошибка сервера' })
+    }
+  })
+
+  // —— POST (альтернатива, если GET не нужен) ——
 
   // Очистить ВСЕ уведомления: POST /api/notifications/clear-all
   app.post('/api/notifications/clear-all', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
