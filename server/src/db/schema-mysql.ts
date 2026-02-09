@@ -84,6 +84,7 @@ export const calendarEvents = mysqlTable('calendar_events', {
   end: datetime('end'),
   all_day: varchar('all_day', { length: 10 }).notNull().default('false'), // 'true' или 'false'
   color: varchar('color', { length: 50 }).notNull().default('Primary'),
+  notes: longtext('notes'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

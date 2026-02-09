@@ -81,13 +81,13 @@ export async function calendarRoutes(app: FastifyInstance) {
         }
 
         return reply.send(
-          list.map((e: { id: number; title: string; start: Date; end: Date | null; all_day: string; color: string }) => ({
+          list.map((e: { id: number; title: string; start: Date; end: Date | null; all_day: string; color: string; notes: string | null }) => ({
             id: String(e.id),
             title: e.title,
             start: toIsoDate(e.start),
             end: e.end ? toIsoDate(e.end) : undefined,
             allDay: e.all_day === 'true',
-            extendedProps: { calendar: e.color },
+            extendedProps: { calendar: e.color, notes: e.notes ?? '' },
           }))
         )
       }
@@ -132,7 +132,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         start: toIsoDate(e.start),
         end: e.end ? toIsoDate(e.end) : undefined,
         allDay: e.allDay === 'true',
-        extendedProps: { calendar: e.color },
+        extendedProps: { calendar: e.color, notes: (e as { notes?: string | null }).notes ?? '' },
       })))
     } catch (err) {
       console.error('[calendar] Ошибка получения событий:', err)
@@ -145,8 +145,8 @@ export async function calendarRoutes(app: FastifyInstance) {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
-    const body = req.body as { title?: string; start?: string; end?: string; allDay?: boolean; color?: string }
-    const { title, start, end, allDay = false, color = 'Primary' } = body
+    const body = req.body as { title?: string; start?: string; end?: string; allDay?: boolean; color?: string; notes?: string }
+    const { title, start, end, allDay = false, color = 'Primary', notes } = body
 
     if (!title || !start) {
       return reply.status(400).send({ error: 'Название и дата начала обязательны' })
@@ -170,6 +170,7 @@ export async function calendarRoutes(app: FastifyInstance) {
             end: end ? new Date(end) : undefined,
             all_day: allDay ? 'true' : 'false',
             color,
+            notes: notes ?? null,
           })
           .$returningId()
         const createdId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
@@ -204,7 +205,7 @@ export async function calendarRoutes(app: FastifyInstance) {
           start: toIsoDate(created.start),
           end: created.end ? toIsoDate(created.end) : undefined,
           allDay: created.all_day === 'true',
-          extendedProps: { calendar: created.color },
+          extendedProps: { calendar: created.color, notes: (created as { notes?: string | null }).notes ?? '' },
         })
       }
 
@@ -216,6 +217,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         end: end ? new Date(end) : undefined,
         allDay: allDay ? 'true' : 'false',
         color,
+        notes: notes ?? null,
       }).returning()
 
       const eventData = {
@@ -224,7 +226,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         start: toIsoDate(event.start),
         end: event.end ? toIsoDate(event.end) : undefined,
         allDay: event.allDay === 'true',
-        extendedProps: { calendar: event.color },
+        extendedProps: { calendar: event.color, notes: (event as { notes?: string | null }).notes ?? '' },
       }
 
       // Создаем уведомление о новом событии
@@ -259,9 +261,9 @@ export async function calendarRoutes(app: FastifyInstance) {
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
 
     const params = req.params as { id?: string }
-    const body = req.body as { title?: string; start?: string; end?: string; allDay?: boolean; color?: string }
+    const body = req.body as { title?: string; start?: string; end?: string; allDay?: boolean; color?: string; notes?: string }
     const { id } = params
-    const { title, start, end, allDay, color } = body
+    const { title, start, end, allDay, color, notes } = body
 
     try {
       if (useFileStore) {
@@ -281,12 +283,14 @@ export async function calendarRoutes(app: FastifyInstance) {
           end?: Date | null
           all_day?: string
           color?: string
+          notes?: string | null
         } = {}
         if (title) updateData.title = title
         if (start) updateData.start = new Date(start)
         if (end !== undefined) updateData.end = end ? new Date(end) : null
         if (allDay !== undefined) updateData.all_day = allDay ? 'true' : 'false'
         if (color) updateData.color = color
+        if (notes !== undefined) updateData.notes = notes || null
 
         await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
           .update(mysqlSchema.calendarEvents)
@@ -303,7 +307,7 @@ export async function calendarRoutes(app: FastifyInstance) {
           start: toIsoDate(updated.start),
           end: updated.end ? toIsoDate(updated.end) : undefined,
           allDay: updated.all_day === 'true',
-          extendedProps: { calendar: updated.color },
+          extendedProps: { calendar: updated.color, notes: (updated as { notes?: string | null }).notes ?? '' },
         })
       }
 
@@ -314,6 +318,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         end?: Date | null
         allDay?: string
         color?: string
+        notes?: string | null
         updatedAt?: Date
       } = {}
       if (title) updateData.title = title
@@ -321,6 +326,7 @@ export async function calendarRoutes(app: FastifyInstance) {
       if (end !== undefined) updateData.end = end ? new Date(end) : null
       if (allDay !== undefined) updateData.allDay = allDay ? 'true' : 'false'
       if (color) updateData.color = color
+      if (notes !== undefined) updateData.notes = notes || null
       updateData.updatedAt = new Date()
 
       if (!id) return reply.status(400).send({ error: 'ID события обязателен' })
@@ -338,7 +344,7 @@ export async function calendarRoutes(app: FastifyInstance) {
         start: toIsoDate(event.start),
         end: event.end ? toIsoDate(event.end) : undefined,
         allDay: event.allDay === 'true',
-        extendedProps: { calendar: event.color },
+        extendedProps: { calendar: event.color, notes: (event as { notes?: string | null }).notes ?? '' },
       })
     } catch (err) {
       console.error('[calendar] Ошибка обновления события:', err)

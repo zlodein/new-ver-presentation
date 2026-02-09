@@ -64,6 +64,7 @@ export const calendarEvents = pgTable('calendar_events', {
   end: timestamp('end', { withTimezone: true }),
   allDay: text('all_day').notNull().default('false'), // 'true' или 'false' как строка для совместимости
   color: varchar('color', { length: 50 }).notNull().default('Primary'),
+  notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [

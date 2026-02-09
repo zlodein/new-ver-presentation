@@ -9,7 +9,7 @@
       </div>
 
       <!-- Modal -->
-      <Modal v-if="isOpen" @close="closeModal = false">
+      <Modal v-if="isOpen" @close="closeModal">
         <template #body>
           <div
             class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11"
@@ -102,6 +102,18 @@
                     class="dark:bg-dark-900 h-11 w-32 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                   />
                 </div>
+              </div>
+
+              <div class="mt-6">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Заметки
+                </label>
+                <textarea
+                  v-model="eventNotes"
+                  rows="3"
+                  placeholder="Дополнительные заметки к событию..."
+                  class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                />
               </div>
             </div>
 
@@ -256,15 +268,19 @@ const eventStartTime = ref('')
 const eventEndDate = ref('')
 const eventEndTime = ref('')
 const eventLevel = ref('')
+const eventNotes = ref('')
 const events = ref([])
 const loading = ref(false)
 
+// Отображаемые названия цветов (как в Google Calendar)
 const calendarsEvents = reactive({
-  Danger: 'danger',
-  Success: 'success',
-  Primary: 'primary',
-  Warning: 'warning',
+  Красный: 'Danger',
+  Зеленый: 'Success',
+  Синий: 'Primary',
+  Оранжевый: 'Warning',
 })
+// Обратный маппинг: значение API -> метка для выбора в форме
+const colorValueToLabel = { Danger: 'Красный', Success: 'Зеленый', Primary: 'Синий', Warning: 'Оранжевый' }
 
 const loadEvents = async () => {
   try {
@@ -276,7 +292,10 @@ const loadEvents = async () => {
       start: e.start,
       end: e.end,
       allDay: e.allDay,
-      extendedProps: e.extendedProps,
+      extendedProps: {
+        calendar: e.extendedProps?.calendar ?? 'Primary',
+        notes: e.extendedProps?.notes ?? '',
+      },
     }))
   } catch (err) {
     console.error('Ошибка загрузки событий:', err)
@@ -304,7 +323,8 @@ const resetModalFields = () => {
   eventStartTime.value = ''
   eventEndDate.value = ''
   eventEndTime.value = ''
-  eventLevel.value = ''
+  eventLevel.value = 'Синий'
+  eventNotes.value = ''
   selectedEvent.value = null
 }
 
@@ -333,7 +353,8 @@ const handleEventClick = (clickInfo) => {
   eventEndDate.value = endDate.toISOString().split('T')[0]
   eventEndTime.value = endDate.toTimeString().slice(0, 5)
   
-  eventLevel.value = event.extendedProps?.calendar || 'Primary'
+  eventLevel.value = colorValueToLabel[event.extendedProps?.calendar] ?? 'Синий'
+  eventNotes.value = event.extendedProps?.notes ?? ''
   openModal()
 }
 
@@ -359,6 +380,7 @@ const handleAddOrUpdateEvent = async () => {
         : undefined
 
     const allDay = !eventStartTime.value && !eventEndTime.value
+    const colorValue = calendarsEvents[eventLevel.value] ?? 'Primary'
 
     if (selectedEvent.value) {
       // Update existing event
@@ -367,7 +389,8 @@ const handleAddOrUpdateEvent = async () => {
         start: startDateTime,
         end: endDateTime,
         allDay,
-        color: eventLevel.value || 'Primary',
+        color: colorValue,
+        notes: eventNotes.value || undefined,
       })
     } else {
       // Add new event
@@ -376,7 +399,8 @@ const handleAddOrUpdateEvent = async () => {
         start: startDateTime,
         end: endDateTime,
         allDay,
-        color: eventLevel.value || 'Primary',
+        color: colorValue,
+        notes: eventNotes.value || undefined,
       })
       
       // Уведомление создается на сервере при создании события
@@ -399,10 +423,11 @@ const handleDeleteEvent = async () => {
     return
   }
 
+  const eventId = String(selectedEvent.value.id)
   try {
     loading.value = true
-    await api.delete(`/api/calendar/events/${selectedEvent.value.id}`)
-    await loadEvents()
+    await api.delete(`/api/calendar/events/${eventId}`)
+    events.value = events.value.filter((e) => String(e.id) !== eventId)
     closeModal()
   } catch (err) {
     console.error('Ошибка удаления события:', err)
@@ -412,14 +437,24 @@ const handleDeleteEvent = async () => {
   }
 }
 
+const truncateTitle = (title, maxLen = 28) => {
+  if (!title) return ''
+  return title.length <= maxLen ? title : title.slice(0, maxLen) + '…'
+}
+
 const renderEventContent = (eventInfo) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`
+  const cal = eventInfo.event.extendedProps?.calendar ?? 'Primary'
+  const colorClass = `fc-bg-${String(cal).toLowerCase()}`
+  const title = eventInfo.event.title || ''
+  const shortTitle = truncateTitle(title)
+  const fullTitle = title.length > 28 ? title : ''
+  const titleAttr = fullTitle ? ` title="${fullTitle.replace(/"/g, '&quot;')}"` : ''
   return {
     html: `
-      <div class="event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm">
+      <div class="event-fc-color fc-event-main fc-event-title-truncate flex ${colorClass} p-1 rounded-sm"${titleAttr}>
         <div class="fc-daygrid-event-dot"></div>
         <div class="fc-event-time">${eventInfo.timeText}</div>
-        <div class="fc-event-title">${eventInfo.event.title}</div>
+        <div class="fc-event-title">${shortTitle}</div>
       </div>
     `,
   }
@@ -445,6 +480,12 @@ const calendarOptions = reactive({
   select: handleDateSelect,
   eventClick: handleEventClick,
   eventContent: renderEventContent,
+  dayMaxEvents: 4,
+  dayMaxEventRows: true,
+  moreLinkText: (num) => `+ ещё ${num}`,
+  selectMirror: true,
+  selectOverlap: true,
+  eventOverlap: true,
   customButtons: {
     addEventButton: {
       text: 'Добавить событие +',
