@@ -31,6 +31,15 @@ function toImageUrls(arr: unknown[], limit: number): string[] {
   return out.slice(0, limit)
 }
 
+/** Превращает относительный URL (например /uploads/...) в абсолютный для загрузки в Puppeteer */
+function toAbsoluteImageUrl(url: string, baseUrl: string): string {
+  if (!url || !url.trim()) return url
+  const u = url.trim()
+  if (u.startsWith('data:') || u.startsWith('http://') || u.startsWith('https://')) return u
+  if (u.startsWith('/')) return baseUrl.replace(/\/$/, '') + u
+  return baseUrl.replace(/\/$/, '') + '/' + u
+}
+
 /** Генерирует HTML для презентации */
 function generatePresentationHTML(data: PresentationData, baseUrl: string): string {
   const slides = data.content?.slides || []
@@ -56,7 +65,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
               <div class="booklet-content booklet-main">
                 <div class="booklet-main__wrap">
                   <div class="booklet-main__img">
-                    ${coverImage ? `<img src="${coverImage}" alt="">` : ''}
+                    ${coverImage ? `<img src="${toAbsoluteImageUrl(coverImage, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}
                   </div>
                   <div class="booklet-main__content">
                     <div class="booklet-main__top">${title.replace(/\n/g, '<br>')}</div>
@@ -93,7 +102,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-info__text">${String(text).replace(/\n/g, '<br>')}</div>
                   </div>
                   <div class="booklet-info__grid">
-                    ${images.map((url) => `<div class="booklet-info__block booklet-info__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
+                    ${images.map((url) => `<div class="booklet-info__block booklet-info__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                   </div>
                 </div>
               </div>
@@ -119,7 +128,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-stroen__text">${String(text).replace(/\n/g, '<br>')}</div>
                   </div>
                   <div class="booklet-stroen__grid">
-                    ${images.map((url) => `<div class="booklet-stroen__block booklet-stroen__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
+                    ${images.map((url) => `<div class="booklet-stroen__block booklet-stroen__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                   </div>
                 </div>
               </div>
@@ -173,7 +182,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-img__bottom-square"></div>
                 <div class="booklet-img__wrap">
                   ${heading ? `<h2 class="booklet-img__title mb-2">${heading}</h2>` : ''}
-                  ${imageUrl ? `<div class="booklet-img__img"><img src="${imageUrl}" alt=""></div>` : ''}
+                  ${imageUrl ? `<div class="booklet-img__img"><img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
                 </div>
               </div>
             </div>
@@ -193,7 +202,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-galery__bottom-square"></div>
                 <div class="booklet-galery__wrap">
                   ${heading ? `<h2 class="mb-2 font-semibold uppercase col-span-full">${heading}</h2>` : ''}
-                  ${images.map((url) => `<div class="booklet-galery__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
+                  ${images.map((url) => `<div class="booklet-galery__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                 </div>
               </div>
             </div>
@@ -216,7 +225,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-char__img">
                       <div class="booklet-char__top-square"></div>
                       <div class="booklet-char__bottom-square"></div>
-                      <img src="${imageUrl}" alt="">
+                      <img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt="">
                     </div>
                   ` : ''}
                   <div class="booklet-char__content">
@@ -246,7 +255,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
               <div class="booklet-content booklet-layout">
                 <div class="booklet-layout__wrap">
                   <h2 class="booklet-layout__title">${heading}</h2>
-                  ${imageUrl ? `<div class="booklet-layout__img"><img src="${imageUrl}" alt=""></div>` : ''}
+                  ${imageUrl ? `<div class="booklet-layout__img"><img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
                 </div>
               </div>
             </div>
@@ -266,7 +275,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-grid__bottom-square"></div>
                 <div class="booklet-grid__wrap">
                   ${heading ? `<h2 class="mb-2 font-semibold uppercase col-span-full">${heading}</h2>` : ''}
-                  ${images.map((url) => `<div class="booklet-grid__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
+                  ${images.map((url) => `<div class="booklet-grid__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                 </div>
               </div>
             </div>
@@ -300,7 +309,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-contacts__top-square"></div>
                     <div class="booklet-contacts__bottom-square"></div>
                     <div class="booklet-contacts-grid">
-                      ${images.map((url) => `<div class="booklet-contacts__block booklet-contacts__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
+                      ${images.map((url) => `<div class="booklet-contacts__block booklet-contacts__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                     </div>
                   </div>
                 </div>
@@ -329,7 +338,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-char__item font-medium">${escapeHtml(String(item.value ?? ''))}</div>
                   </div>
                 `).join('')}</div>` : ''}
-                ${images.some(Boolean) ? `<div class="mt-4 grid grid-cols-2 gap-2">${images.filter(Boolean).map((url) => `<img src="${url}" alt="" class="h-24 w-full object-cover rounded" />`).join('')}</div>` : ''}
+                ${images.some(Boolean) ? `<div class="mt-4 grid grid-cols-2 gap-2">${images.filter(Boolean).map((url) => `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="" class="h-24 w-full object-cover rounded" />`).join('')}</div>` : ''}
               </div>
             </div>
           </div>
