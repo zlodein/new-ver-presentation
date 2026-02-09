@@ -63,7 +63,7 @@
                 </div>
               </div>
             </div>
-            <!-- 4. Местоположение: 50% карта слева, 50% изображения справа -->
+            <!-- 4. Местоположение: слева карта (__left), справа адрес/метро + фото (__content) -->
             <div v-else-if="slide.type === 'location'" class="booklet-content booklet-map overflow-visible">
               <div class="booklet-map__wrap">
                 <h2 class="booklet-map__title">{{ slide.data?.heading ?? slide.data?.title ?? 'МЕСТОПОЛОЖЕНИЕ' }}</h2>
@@ -71,6 +71,8 @@
                   <div class="booklet-map__img">
                     <LocationMap :lat="Number(slide.data?.lat)" :lng="Number(slide.data?.lng)" />
                   </div>
+                </div>
+                <div class="booklet-map__content">
                   <div class="booklet-map__info">
                     <p v-if="slide.data?.location_name" class="font-medium">{{ slide.data.location_name }}</p>
                     <p class="font-medium">{{ slide.data?.address ?? slide.data?.location_address }}</p>
@@ -83,8 +85,6 @@
                       </ul>
                     </div>
                   </div>
-                </div>
-                <div class="booklet-map__content">
                   <div class="booklet-map__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                     <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-map__grid-img">
                       <img v-if="url" :src="url" alt="">

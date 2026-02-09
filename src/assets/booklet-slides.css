@@ -548,29 +548,6 @@
   min-height: 0;
 }
 
-/* Режим просмотра и публичная ссылка: карта и адрес/метро 50/50 в первой колонке */
-.presentation-view-fixed.booklet-view .booklet-map__left {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr;
-  gap: 1rem;
-  min-height: 0;
-}
-
-.presentation-view-fixed.booklet-view .booklet-map__img {
-  min-width: 0;
-}
-
-.presentation-view-fixed.booklet-view .booklet-map__info {
-  min-width: 0;
-  overflow: auto;
-}
-
-.presentation-view-fixed.booklet-view .booklet-map__content {
-  min-width: 0;
-  min-height: 0;
-}
-
 .presentation-slider-wrap.booklet-view .booklet-map__content {
   position: relative;
   display: flex;
@@ -580,18 +557,18 @@
 }
 
 .presentation-slider-wrap.booklet-view .booklet-map__info {
-  flex: 1;
+  flex: none;
   font-size: 0.9375rem;
   color: #444;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  overflow: auto;
 }
 
-.presentation-view-fixed.booklet-view .booklet-map__info {
-  flex: none;
+.presentation-slider-wrap.booklet-view .booklet-map__grid {
+  flex: 1;
   min-height: 0;
-  overflow: auto;
 }
 
 /* ---------- Контакты: 50% слева список контактов + аватар/лого сверху, 50% справа изображение ---------- */

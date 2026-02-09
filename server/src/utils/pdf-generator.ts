@@ -176,6 +176,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   <h2 class="booklet-map__title">${heading}</h2>
                   <div class="booklet-map__left">
                     <div class="booklet-map__img"><div class="map-placeholder" data-lat="${Number(dataObj.lat) || 55.76}" data-lng="${Number(dataObj.lng) || 37.62}">Карта</div></div>
+                  </div>
+                  <div class="booklet-map__content">
                     <div class="booklet-map__info">
                       ${locationName ? `<p class="font-medium">${escapeHtml(locationName)}</p>` : ''}
                       ${address ? `<p class="font-medium">${escapeHtml(address)}</p>` : ''}
@@ -186,8 +188,6 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                         </ul>
                       ` : ''}
                     </div>
-                  </div>
-                  <div class="booklet-map__content">
                     <div class="booklet-map__grid" style="${gridStyle}">
                       ${images.map((url) => `<div class="booklet-map__grid-img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                     </div>
@@ -383,9 +383,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: cover; }
     .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
-    .presentation-slider-wrap.booklet-view .booklet-map__left { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; gap: 1rem; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-map__img, .presentation-slider-wrap.booklet-view .booklet-map__info { min-width: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; min-height: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-map__left { display: flex; flex-direction: column; min-height: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info { flex: none; font-size: 0.9375rem; color: #444; overflow: auto; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid { display: grid; gap: 8px; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid-img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid-img img { width: 100%; height: 100%; object-fit: cover; }
