@@ -9,6 +9,10 @@ interface PresentationData {
   content: { slides: ViewSlideItem[] }
 }
 
+// A4 альбомная в пикселях (96 DPI): 297mm × 210mm — один слайд = один лист
+const A4_LANDSCAPE_WIDTH = Math.round((297 / 25.4) * 96)   // 1123
+const A4_LANDSCAPE_HEIGHT = Math.round((210 / 25.4) * 96)  // 794
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -348,12 +352,12 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     }
   }).join('')
 
-  // Встроенные CSS стили для PDF (упрощенная версия основных стилей)
+  // Встроенные CSS стили для PDF: один слайд = один лист A4 альбомная, контент на всю область
   const embeddedCSS = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #eeeeee; padding: 20px; }
-    .presentation-container { max-width: 1200px; margin: 0 auto; background: white; }
-    .booklet-page { page-break-after: always; position: relative; width: 100%; min-height: 100vh; background-color: #eeeeee; padding: 1rem; }
+    html, body { width: ${A4_LANDSCAPE_WIDTH}px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #eeeeee; padding: 0; overflow: hidden; }
+    .presentation-container { width: 100%; margin: 0; background: white; }
+    .booklet-page { page-break-after: always; position: relative; width: 100vw; height: 100vh; min-height: 100vh; max-height: 100vh; background-color: #eeeeee; padding: 1rem; overflow: hidden; }
     .booklet-page:last-child { page-break-after: auto; }
     .presentation-slider-wrap.booklet-view { --theme-main-color: #2c7f8d; }
     .presentation-slider-wrap.booklet-view .booklet-page__inner { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; padding: 1rem; box-sizing: border-box; overflow: hidden; background: #fff; }
@@ -397,7 +401,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__info { flex-shrink: 0; font-size: 0.9375rem; color: #444; }
-    @media print { .booklet-page { page-break-after: always; min-height: 100vh; } body { padding: 0; } }
+    @media print {
+      .booklet-page { page-break-after: always; height: 100vh; min-height: 100vh; max-height: 100vh; }
+      body { padding: 0; }
+    }
   `
 
   return `<!DOCTYPE html>
@@ -474,40 +481,47 @@ export async function generatePDF(data: PresentationData, baseUrl: string): Prom
   
   try {
     const page = await browser.newPage()
-    
+
+    // Viewport = размер одного листа A4 альбомная, чтобы 100vh/100vw = один слайд
+    await page.setViewport({
+      width: A4_LANDSCAPE_WIDTH,
+      height: A4_LANDSCAPE_HEIGHT,
+      deviceScaleFactor: 1,
+    })
+
     // Устанавливаем таймаут для загрузки изображений
     await page.setDefaultNavigationTimeout(30000)
     await page.setDefaultTimeout(30000)
-    
+
     // Загружаем HTML контент
-    await page.setContent(html, { 
+    await page.setContent(html, {
       waitUntil: 'networkidle0',
       timeout: 30000,
     })
-    
+
     // Ждем загрузки всех изображений
     await page.evaluate(() => {
       return Promise.all(
         Array.from(document.images)
-          .filter(img => !img.complete)
-          .map(img => new Promise((resolve, reject) => {
-            img.onload = resolve
-            img.onerror = resolve // Продолжаем даже если изображение не загрузилось
-            setTimeout(resolve, 5000) // Таймаут 5 секунд на изображение
-          }))
+          .filter((img) => !img.complete)
+          .map(
+            (img) =>
+              new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+                setTimeout(resolve, 5000)
+              })
+          )
       )
     })
-    
+
+    // Каждый .booklet-page — одна страница PDF (A4 альбомная)
     const pdf = await page.pdf({
       format: 'A4',
       landscape: true,
       printBackground: true,
-      margin: {
-        top: '0',
-        right: '0',
-        bottom: '0',
-        left: '0',
-      },
+      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      preferCSSPageSize: false,
     })
     
     return Buffer.from(pdf)
