@@ -94,7 +94,7 @@
             href="#"
           >
             <span
-              v-if="notification.type !== 'calendar'"
+              v-if="notification.type !== 'calendar' && notification.type !== 'presentation'"
               class="relative block w-full h-10 rounded-full z-1 max-w-10 flex-shrink-0"
             >
               <div 
@@ -102,7 +102,7 @@
                   'bg-success-500': notification.type === 'success',
                   'bg-warning-500': notification.type === 'warning',
                   'bg-error-500': notification.type === 'error',
-                  'bg-primary-500': notification.type === 'info' || notification.type === 'presentation',
+                  'bg-primary-500': notification.type === 'info',
                 }"
                 class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
               >

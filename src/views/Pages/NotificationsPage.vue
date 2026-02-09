@@ -73,12 +73,12 @@
             :class="{ 'bg-gray-50 dark:bg-white/5': !notification.read }"
           >
             <div
-              v-if="notification.type !== 'calendar'"
+              v-if="notification.type !== 'calendar' && notification.type !== 'presentation'"
               :class="{
                 'bg-success-500': notification.type === 'success',
                 'bg-warning-500': notification.type === 'warning',
                 'bg-error-500': notification.type === 'error',
-                'bg-primary-500': notification.type === 'info' || notification.type === 'presentation',
+                'bg-primary-500': notification.type === 'info',
               }"
               class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-white text-lg font-semibold"
             >

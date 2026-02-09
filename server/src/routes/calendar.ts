@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, desc, gte, lte, and } from 'drizzle-orm'
+import { eq, desc, gte, lte, and, lt, isNotNull, isNull } from 'drizzle-orm'
 import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -446,5 +446,111 @@ export async function calendarRoutes(app: FastifyInstance) {
         return reply.status(500).send({ error: 'Ошибка сервера' })
       }
     }
+  )
+
+  // Периодическая проверка истекших событий по дате/времени окончания (уведомления создаются в момент истечения)
+  async function checkExpiredEventsAndNotify() {
+    if (useFileStore) return
+    const now = new Date()
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+
+    if (useMysql) {
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const withEnd = await mysqlDb.query.calendarEvents.findMany({
+        where: and(
+          isNotNull(mysqlSchema.calendarEvents.end),
+          lt(mysqlSchema.calendarEvents.end, now),
+          gte(mysqlSchema.calendarEvents.end, oneHourAgo)
+        ),
+        columns: { id: true, user_id: true, title: true, start: true, end: true },
+      })
+      const withoutEnd = await mysqlDb.query.calendarEvents.findMany({
+        where: and(
+          isNull(mysqlSchema.calendarEvents.end),
+          lt(mysqlSchema.calendarEvents.start, now),
+          gte(mysqlSchema.calendarEvents.start, oneHourAgo)
+        ),
+        columns: { id: true, user_id: true, title: true, start: true, end: true },
+      })
+      const expired = [...withEnd, ...withoutEnd]
+      for (const e of expired) {
+        const eventEnd = e.end ? new Date(e.end) : new Date(e.start)
+        const existing = await mysqlDb.query.notifications.findFirst({
+          where: and(
+            eq(mysqlSchema.notifications.user_id, e.user_id),
+            eq(mysqlSchema.notifications.type, 'calendar'),
+            eq(mysqlSchema.notifications.source_id, String(e.id))
+          ),
+        })
+        if (!existing) {
+          try {
+            const message = `Событие "${e.title}" истекло (${eventEnd.toLocaleString('ru-RU')})`
+            await mysqlDb.insert(mysqlSchema.notifications).values({
+              user_id: e.user_id,
+              title: 'Истекшее событие в календаре',
+              message,
+              type: 'calendar',
+              source_id: String(e.id),
+            })
+          } catch (err) {
+            console.error('[calendar] Ошибка уведомления об истекшем событии:', err)
+          }
+        }
+      }
+      return
+    }
+
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    const withEnd = await pgDb.query.calendarEvents.findMany({
+      where: and(
+        isNotNull(pgSchema.calendarEvents.end),
+        lt(pgSchema.calendarEvents.end, now),
+        gte(pgSchema.calendarEvents.end, oneHourAgo)
+      ),
+      columns: { id: true, userId: true, title: true, start: true, end: true },
+    })
+    const withoutEnd = await pgDb.query.calendarEvents.findMany({
+      where: and(
+        isNull(pgSchema.calendarEvents.end),
+        lt(pgSchema.calendarEvents.start, now),
+        gte(pgSchema.calendarEvents.start, oneHourAgo)
+      ),
+      columns: { id: true, userId: true, title: true, start: true, end: true },
+    })
+    const expired = [...withEnd, ...withoutEnd]
+    for (const e of expired) {
+      const eventEnd = e.end ? new Date(e.end) : new Date(e.start)
+      const existing = await pgDb.query.notifications.findFirst({
+        where: and(
+          eq(pgSchema.notifications.userId, e.userId),
+          eq(pgSchema.notifications.type, 'calendar'),
+          eq(pgSchema.notifications.sourceId, e.id)
+        ),
+      })
+      if (!existing) {
+        try {
+          const message = `Событие "${e.title}" истекло (${eventEnd.toLocaleString('ru-RU')})`
+          await pgDb.insert(pgSchema.notifications).values({
+            userId: e.userId,
+            title: 'Истекшее событие в календаре',
+            message,
+            type: 'calendar',
+            sourceId: e.id,
+          })
+        } catch (err) {
+          console.error('[calendar] Ошибка уведомления об истекшем событии:', err)
+        }
+      }
+    }
+  }
+
+  const EXPIRED_CHECK_INTERVAL_MS = 60 * 1000
+  setInterval(() => {
+    checkExpiredEventsAndNotify().catch((err) =>
+      console.error('[calendar] Проверка истекших событий:', err)
+    )
+  }, EXPIRED_CHECK_INTERVAL_MS)
+  checkExpiredEventsAndNotify().catch((err) =>
+    console.error('[calendar] Первый запуск проверки истекших событий:', err)
   )
 }

@@ -302,6 +302,19 @@ export async function presentationRoutes(app: FastifyInstance) {
         })
         if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
         const u = updated as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null }
+        try {
+          await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            .insert(mysqlSchema.notifications)
+            .values({
+              user_id: userIdNum,
+              title: `Презентация «${u.title}» сохранена`,
+              message: `Презентация «${u.title}» сохранена.`,
+              type: 'presentation',
+              source_id: String(u.id),
+            })
+        } catch (notifErr) {
+          console.error('[presentations] Ошибка создания уведомления о сохранении:', notifErr)
+        }
         return reply.send({
           id: String(u.id),
           title: u.title,
@@ -331,6 +344,19 @@ export async function presentationRoutes(app: FastifyInstance) {
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning()
       if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
+      try {
+        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+          .insert(pgSchema.notifications)
+          .values({
+            userId: userId!,
+            title: `Презентация «${updated.title}» сохранена`,
+            message: `Презентация «${updated.title}» сохранена.`,
+            type: 'presentation',
+            sourceId: updated.id,
+          })
+      } catch (notifErr) {
+        console.error('[presentations] Ошибка создания уведомления о сохранении:', notifErr)
+      }
       return reply.send({
         id: updated.id,
         title: updated.title,
