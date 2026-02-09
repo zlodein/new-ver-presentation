@@ -63,14 +63,14 @@
                 </div>
               </div>
             </div>
-            <!-- 4. Местоположение -->
+            <!-- 4. Местоположение: 50% карта слева, 50% изображения справа -->
             <div v-else-if="slide.type === 'location'" class="booklet-content booklet-map overflow-visible">
               <div class="booklet-map__wrap">
                 <h2 class="booklet-map__title">{{ slide.data?.heading ?? slide.data?.title ?? 'МЕСТОПОЛОЖЕНИЕ' }}</h2>
-                <div class="booklet-map__img">
-                  <LocationMap :lat="Number(slide.data?.lat)" :lng="Number(slide.data?.lng)" />
-                </div>
-                <div class="booklet-map__content">
+                <div class="booklet-map__left">
+                  <div class="booklet-map__img">
+                    <LocationMap :lat="Number(slide.data?.lat)" :lng="Number(slide.data?.lng)" />
+                  </div>
                   <div class="booklet-map__info">
                     <p v-if="slide.data?.location_name" class="font-medium">{{ slide.data.location_name }}</p>
                     <p class="font-medium">{{ slide.data?.address ?? slide.data?.location_address }}</p>
@@ -84,9 +84,16 @@
                     </div>
                   </div>
                 </div>
+                <div class="booklet-map__content">
+                  <div class="booklet-map__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                    <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-map__grid-img">
+                      <img v-if="url" :src="url" alt="">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <!-- 5. Изображение -->
+            <!-- 5. Изображение: 100% по ширине и высоте -->
             <div v-else-if="slide.type === 'image'" class="booklet-content booklet-img">
               <div class="booklet-img__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2">{{ slide.data?.heading ?? slide.data?.title }}</h2>
@@ -123,7 +130,7 @@
                 </div>
               </div>
             </div>
-            <!-- 8. Планировка -->
+            <!-- 8. Планировка: 100% изображение -->
             <div v-else-if="slide.type === 'layout'" class="booklet-content booklet-layout">
               <div class="booklet-layout__wrap">
                 <h2 class="booklet-layout__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ПЛАНИРОВКА' }}</h2>
@@ -132,35 +139,27 @@
                 </div>
               </div>
             </div>
-            <!-- 9. Сетка 4 фото -->
-            <div v-else-if="slide.type === 'grid'" class="booklet-content booklet-grid">
-              <div class="booklet-grid__wrap">
-                <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
-                <div class="booklet-grid__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
-                  <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-grid__img">
-                    <img v-if="url" :src="url" alt="">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- 10. Контакты -->
+            <!-- 9. Контакты: 50% слева аватар + список, 50% справа изображение -->
             <div v-else-if="slide.type === 'contacts'" class="booklet-content booklet-contacts">
               <div class="booklet-contacts__wrap">
-                <div class="booklet-contacts__block booklet-contacts__content">
-                  <h2 class="mb-2 text-base font-semibold uppercase">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'КОНТАКТЫ' }}</h2>
-                  <p v-if="slide.data?.contact_name">{{ slide.data.contact_name }}</p>
-                  <p v-if="slide.data?.phone ?? slide.data?.contact_phone">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
-                  <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
-                  <p v-if="slide.data?.contact_role">{{ slide.data.contact_role }}</p>
-                  <p v-if="slide.data?.contact_messengers">{{ slide.data.contact_messengers }}</p>
-                  <p v-if="slide.data?.address ?? slide.data?.contact_address">{{ slide.data?.address ?? slide.data?.contact_address }}</p>
-                </div>
-                <div class="booklet-contacts__images-wrap">
-                    <div class="booklet-contacts-grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
-                      <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-contacts__block booklet-contacts__img">
-                        <img v-if="url" :src="url" alt="">
-                      </div>
+                <div class="booklet-contacts__left">
+                  <div v-if="slide.data?.avatarUrl || slide.data?.logoUrl" class="booklet-contacts__avatar-wrap">
+                    <div class="booklet-contacts__avatar">
+                      <img :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="">
                     </div>
+                  </div>
+                  <div class="booklet-contacts__block booklet-contacts__content">
+                    <h2 class="mb-2 text-base font-semibold uppercase">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'КОНТАКТЫ' }}</h2>
+                    <p v-if="slide.data?.contact_name">{{ slide.data.contact_name }}</p>
+                    <p v-if="slide.data?.phone ?? slide.data?.contact_phone">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
+                    <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
+                    <p v-if="slide.data?.contact_role">{{ slide.data.contact_role }}</p>
+                    <p v-if="slide.data?.contact_messengers">{{ slide.data.contact_messengers }}</p>
+                    <p v-if="slide.data?.address ?? slide.data?.contact_address">{{ slide.data?.address ?? slide.data?.contact_address }}</p>
+                  </div>
+                </div>
+                <div v-if="contactImageUrl(slide)" class="booklet-contacts__block booklet-contacts__img">
+                  <img :src="contactImageUrl(slide)!" alt="">
                 </div>
               </div>
             </div>
@@ -301,7 +300,7 @@ const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
   gallery: '3x1',
-  grid: '2x2',
+  location: '1x2',
   contacts: '1x2',
 }
 
@@ -316,6 +315,15 @@ function getViewImageLimit(slide: ViewSlideItem): number {
   const grid = getImageGrid(slide)
   const [c, r] = grid.split('x').map(Number)
   return (c || 2) * (r || 2)
+}
+
+/** Контакты: одно изображение справа (contactImageUrl или images[0]) */
+function contactImageUrl(slide: ViewSlideItem): string | undefined {
+  const url = slide.data?.contactImageUrl
+  if (url) return String(url)
+  const images = slide.data?.images
+  if (Array.isArray(images) && images[0]) return String(images[0])
+  return undefined
 }
 
 /** Извлечь URL изображений из слайда (поддержка строк и { url }), limit — максимум штук */

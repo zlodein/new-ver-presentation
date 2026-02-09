@@ -194,7 +194,6 @@ const SLIDE_TYPES = [
   { type: 'gallery', label: 'Галерея' },
   { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
-  { type: 'grid', label: 'Сетка с изображениями' },
   { type: 'contacts', label: 'Контакты' },
 ]
 
@@ -238,8 +237,6 @@ function getDefaultDataForType(type: string, title: string, subtitle: string): R
       }
     case 'layout':
       return { heading: 'Планировка' }
-    case 'grid':
-      return { heading: 'Сетка', images: [] as string[] }
     case 'contacts':
       return { heading: 'Контакты', phone: '', email: '', address: '' }
     default:

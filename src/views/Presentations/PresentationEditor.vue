@@ -338,7 +338,7 @@
                     </div>
                   </div>
 
-                  <!-- 4. Местоположение (как на presentation-realty.ru/view) -->
+                  <!-- 4. Местоположение: 50% карта слева, 50% изображения справа с выбором сетки -->
                   <div
                     v-else-if="slide.type === 'location'"
                     class="booklet-content booklet-map overflow-visible"
@@ -350,15 +350,15 @@
                         placeholder="МЕСТОПОЛОЖЕНИЕ"
                         class="booklet-map__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
-                      <div class="booklet-map__img">
-                        <LocationMap
-                          :key="slide.id"
-                          :lat="Number(slide.data?.lat)"
-                          :lng="Number(slide.data?.lng)"
-                        />
-                      </div>
-                      <div class="booklet-map__content">
-                        <div class="booklet-map__info relative">
+                      <div class="booklet-map__left flex flex-col gap-2 min-h-0">
+                        <div class="booklet-map__img flex-1 min-h-0">
+                          <LocationMap
+                            :key="slide.id"
+                            :lat="Number(slide.data?.lat)"
+                            :lng="Number(slide.data?.lng)"
+                          />
+                        </div>
+                        <div class="booklet-map__info relative flex-shrink-0">
                           <div class="relative mb-2">
                             <input
                               v-model="slide.data.address"
@@ -374,14 +374,14 @@
                               v-if="addressSuggestionsFor(slide).length > 0"
                               class="absolute left-0 right-0 top-full z-[100] mt-1 max-h-40 overflow-auto rounded border border-gray-200 bg-white py-1 shadow-lg"
                             >
-                            <li
-                              v-for="(s, i) in addressSuggestionsFor(slide)"
-                              :key="i"
-                              class="cursor-pointer px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                              @mousedown.prevent="selectAddressSuggestion(slide, s)"
-                            >
-                              {{ s.display_name || s.address || s }}
-                            </li>
+                              <li
+                                v-for="(s, i) in addressSuggestionsFor(slide)"
+                                :key="i"
+                                class="cursor-pointer px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                                @mousedown.prevent="selectAddressSuggestion(slide, s)"
+                              >
+                                {{ s.display_name || s.address || s }}
+                              </li>
                             </ul>
                           </div>
                           <button
@@ -414,16 +414,46 @@
                           </div>
                         </div>
                       </div>
+                      <div class="booklet-map__content flex flex-col min-h-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-2 flex-shrink-0">
+                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                          >
+                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
+                        <div class="booklet-map__grid image-grid-bound flex-1 min-h-0" :data-image-grid="getImageGrid(slide)">
+                          <div
+                            v-for="(img, i) in locationImages(slide)"
+                            :key="i"
+                            class="booklet-map__grid-img relative"
+                          >
+                            <label class="booklet-upload-btn cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onLocationImageUpload(slide, $event, i)"
+                              />
+                            </label>
+                            <img v-if="img" :src="img" alt="">
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- 5. Изображение (как на presentation-realty.ru/view) -->
+                  <!-- 5. Изображение: 100% по ширине и высоте слайда -->
                   <div
                     v-else-if="slide.type === 'image'"
                     class="booklet-content booklet-img"
                   >
                     <div class="booklet-img__wrap">
-                      <div class="booklet-img__img">
+                      <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2 flex-shrink-0">{{ slide.data?.heading ?? slide.data?.title }}</h2>
+                      <div class="booklet-img__img flex-1 min-h-0">
                         <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
@@ -547,13 +577,13 @@
                     </div>
                   </div>
 
-                  <!-- 8. Планировка (как на presentation-realty.ru/view) -->
+                  <!-- 8. Планировка: 100% изображение по ширине и высоте -->
                   <div
                     v-else-if="slide.type === 'layout'"
                     class="booklet-content booklet-layout"
                   >
                     <div class="booklet-layout__wrap">
-                      <div class="booklet-layout__title-wrapper">
+                      <div class="booklet-layout__title-wrapper flex-shrink-0">
                         <input
                           v-model="slide.data.heading"
                           type="text"
@@ -561,7 +591,7 @@
                           class="booklet-layout__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
                       </div>
-                      <div class="booklet-layout__img relative">
+                      <div class="booklet-layout__img relative flex-1 min-h-0">
                         <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
@@ -575,102 +605,64 @@
                     </div>
                   </div>
 
-                  <!-- 9. Сетка 4 фото (как на presentation-realty.ru/view) -->
-                  <div
-                    v-else-if="slide.type === 'grid'"
-                    class="booklet-content booklet-grid"
-                  >
-                    <div class="booklet-grid__wrap">
-                      <div class="flex items-center gap-2 px-2 py-1">
-                        <span class="text-xs font-medium text-gray-500">Сетка:</span>
-                        <select
-                          :value="getImageGrid(slide)"
-                          class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
-                          @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                        >
-                          <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                        </select>
-                      </div>
-                      <div class="booklet-grid__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
-                        <div
-                          v-for="(img, i) in gridImages4(slide)"
-                          :key="i"
-                          class="booklet-grid__img relative"
-                        >
-                          <label class="booklet-upload-btn cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              class="hidden"
-                              @change="onGridImageUpload(slide, $event, i)"
-                            />
-                          </label>
-                          <img v-if="img" :src="img" alt="">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 10. Контакты (как на presentation-realty.ru/view) -->
+                  <!-- 9. Контакты: 50% слева аватар/лого + список контактов, 50% справа изображение -->
                   <div
                     v-else-if="slide.type === 'contacts'"
                     class="booklet-content booklet-contacts"
                   >
                     <div class="booklet-contacts__wrap">
-                      <div class="booklet-contacts__block booklet-contacts__content">
-                        <input
-                          v-model="slide.data.heading"
-                          type="text"
-                          placeholder="КОНТАКТЫ"
-                          class="mb-2 w-full border-0 bg-transparent p-0 text-base font-semibold uppercase focus:outline-none focus:ring-0"
-                        />
-                        <input
-                          v-model="slide.data.phone"
-                          type="text"
-                          placeholder="Телефон"
-                          class="mb-1 w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                        />
-                        <input
-                          v-model="slide.data.email"
-                          type="text"
-                          placeholder="Email"
-                          class="mb-1 w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                        />
-                        <input
-                          v-model="slide.data.address"
-                          type="text"
-                          placeholder="Адрес"
-                          class="w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                        />
+                      <div class="booklet-contacts__left">
+                        <div class="booklet-contacts__avatar-wrap">
+                          <div class="booklet-contacts__avatar relative">
+                            <label class="booklet-upload-btn cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onContactsAvatarUpload(slide, $event)"
+                              />
+                            </label>
+                            <img v-if="slide.data?.avatarUrl || slide.data?.logoUrl" :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="">
+                          </div>
+                          <span class="text-xs text-gray-500">Аватар риэлтора / лого компании</span>
+                        </div>
+                        <div class="booklet-contacts__block booklet-contacts__content">
+                          <input
+                            v-model="slide.data.heading"
+                            type="text"
+                            placeholder="КОНТАКТЫ"
+                            class="mb-2 w-full border-0 bg-transparent p-0 text-base font-semibold uppercase focus:outline-none focus:ring-0"
+                          />
+                          <input
+                            v-model="slide.data.phone"
+                            type="text"
+                            placeholder="Телефон"
+                            class="mb-1 w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                          />
+                          <input
+                            v-model="slide.data.email"
+                            type="text"
+                            placeholder="Email"
+                            class="mb-1 w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                          />
+                          <input
+                            v-model="slide.data.address"
+                            type="text"
+                            placeholder="Адрес"
+                            class="w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                          />
+                        </div>
                       </div>
-                      <div class="booklet-contacts__images-wrap relative">
-                        <div class="flex items-center gap-2 mb-1">
-                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
-                          <select
-                            :value="getImageGrid(slide)"
-                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
-                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                          >
-                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                          </select>
-                        </div>
-                        <div class="booklet-contacts-grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
-                        <div
-                          v-for="(url, i) in imageSlotsForSlide(slide)"
-                          :key="i"
-                          class="booklet-contacts__block booklet-contacts__img relative"
-                        >
-                          <label class="booklet-upload-btn cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              class="hidden"
-                              @change="onContactsImageUpload(slide, $event, i)"
-                            />
-                          </label>
-                          <img v-if="url" :src="url" alt="">
-                        </div>
-                        </div>
+                      <div class="booklet-contacts__block booklet-contacts__img relative">
+                        <label class="booklet-upload-btn cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            class="hidden"
+                            @change="onContactsImageUpload(slide, $event, 0)"
+                          />
+                        </label>
+                        <img v-if="contactImageUrl(slide)" :src="contactImageUrl(slide)!" alt="">
                       </div>
                     </div>
                   </div>
@@ -781,7 +773,6 @@ const SLIDE_TYPE_LABELS: Record<string, string> = {
   gallery: 'Галерея',
   characteristics: 'Характеристики',
   layout: 'Планировка',
-  grid: 'Сетка с изображениями',
   contacts: 'Контакты',
 }
 
@@ -801,8 +792,8 @@ const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
   gallery: '3x1',
-  grid: '2x2',
-  contacts: '1x2',
+  location: '1x2',
+  contacts: '1x1',
 }
 
 function getImageGrid(slide: SlideItem): string {
@@ -834,7 +825,6 @@ const SLIDE_TYPE_OPTIONS = [
   { type: 'gallery', label: 'Галерея' },
   { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
-  { type: 'grid', label: 'Сетка' },
   { type: 'contacts', label: 'Контакты' },
 ]
 
@@ -842,13 +832,11 @@ const SLIDE_TYPES = [
   { type: 'cover', label: 'Обложка' },
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
-  { type: 'description', label: 'Описание' },
   { type: 'location', label: 'Местоположение' },
   { type: 'image', label: 'Изображение' },
   { type: 'gallery', label: 'Галерея' },
   { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
-  { type: 'grid', label: 'Сетка с изображениями' },
   { type: 'contacts', label: 'Контакты' },
 ] as const
 
@@ -1285,6 +1273,8 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
         lng: 37.617698,
         show_metro: true,
         metro_stations: [],
+        imageGrid: '1x2',
+        images: [] as string[],
       }
     case 'image':
       return { heading: '', imageUrl: '' }
@@ -1298,10 +1288,8 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
       return { heading: 'Характеристики', items: defaultCharItems.map((x) => ({ ...x })) }
     case 'layout':
       return { heading: 'Планировка' }
-    case 'grid':
-      return { heading: 'Сетка', imageGrid: '2x2', images: [] as string[] }
     case 'contacts':
-      return { heading: 'Контакты', phone: '', email: '', address: '', imageGrid: '1x2', images: [] as string[] }
+      return { heading: 'Контакты', phone: '', email: '', address: '', avatarUrl: '', contactImageUrl: '', images: [] as string[] }
     default:
       return {}
   }
@@ -1502,19 +1490,24 @@ async function onContactsImageUpload(slide: SlideItem, event: Event, index: numb
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  if (!Array.isArray(slide.data.images)) slide.data.images = []
-  const arr = slide.data.images as string[]
-  while (arr.length <= index) arr.push('')
   try {
     if (hasApi() && getToken()) {
       try {
-        arr[index] = await uploadPresentationImage(file)
+        const url = await uploadPresentationImage(file)
+        slide.data.contactImageUrl = url
+        if (!Array.isArray(slide.data.images)) slide.data.images = []
+        const arr = slide.data.images as string[]
+        arr[0] = url
         return
       } catch (e) {
         console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
       }
     }
-    arr[index] = await readFileAsDataUrl(file)
+    const dataUrl = await readFileAsDataUrl(file)
+    slide.data.contactImageUrl = dataUrl
+    if (!Array.isArray(slide.data.images)) slide.data.images = []
+    const arr = slide.data.images as string[]
+    arr[0] = dataUrl
   } finally {
     input.value = ''
   }
@@ -1582,6 +1575,63 @@ async function onDescriptionImageUpload(slide: SlideItem, event: Event, index: n
 
 function infrastructureImages(slide: SlideItem): string[] {
   return imageSlotsForSlide(slide)
+}
+
+function locationImages(slide: SlideItem): string[] {
+  return imageSlotsForSlide(slide)
+}
+
+async function onLocationImageUpload(slide: SlideItem, event: Event, index: number) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!Array.isArray(slide.data.images)) slide.data.images = []
+  const arr = slide.data.images as string[]
+  while (arr.length <= index) arr.push('')
+  try {
+    if (hasApi() && getToken()) {
+      try {
+        arr[index] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
+    arr[index] = await readFileAsDataUrl(file)
+  } finally {
+    input.value = ''
+  }
+}
+
+function contactImageUrl(slide: SlideItem): string | undefined {
+  const url = slide.data?.contactImageUrl
+  if (url) return String(url)
+  const images = slide.data?.images
+  if (Array.isArray(images) && images[0]) return String(images[0])
+  return undefined
+}
+
+async function onContactsAvatarUpload(slide: SlideItem, event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  try {
+    if (hasApi() && getToken()) {
+      try {
+        const url = await uploadPresentationImage(file)
+        slide.data.avatarUrl = url
+        slide.data.logoUrl = url
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
+    const dataUrl = await readFileAsDataUrl(file)
+    slide.data.avatarUrl = dataUrl
+    slide.data.logoUrl = dataUrl
+  } finally {
+    input.value = ''
+  }
 }
 
 async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index: number) {
@@ -1881,9 +1931,9 @@ async function exportToPDF() {
 </script>
 
 <style>
-/* Слайдер: горизонтальный (альбомный) формат 16:10 */
+/* Слайдер: горизонтальный А4 (297×210) */
 .presentation-slider-wrap {
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 297 / 210;
   max-height: min(72vh, 640px);
   width: 100%;
 }
