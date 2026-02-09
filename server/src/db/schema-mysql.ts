@@ -99,6 +99,7 @@ export const notifications = mysqlTable('notifications', {
   message: longtext('message'),
   type: varchar('type', { length: 50 }).notNull().default('info'), // 'info', 'success', 'warning', 'error', 'calendar'
   read: varchar('read', { length: 10 }).notNull().default('false'), // 'true' или 'false'
+  source_id: varchar('source_id', { length: 64 }), // для type=calendar — id события календаря
   created_at: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   userIdIdx: index('notifications_user_id_idx').on(table.user_id),

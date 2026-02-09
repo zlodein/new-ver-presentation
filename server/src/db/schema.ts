@@ -80,6 +80,7 @@ export const notifications = pgTable('notifications', {
   message: text('message'),
   type: varchar('type', { length: 50 }).notNull().default('info'), // 'info', 'success', 'warning', 'error', 'calendar'
   read: text('read').notNull().default('false'), // 'true' или 'false' как строка
+  sourceId: varchar('source_id', { length: 64 }), // для type=calendar — id события календаря
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   index('notifications_user_id_idx').on(table.userId),

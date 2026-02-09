@@ -286,17 +286,33 @@ const loadEvents = async () => {
   try {
     loading.value = true
     const data = await api.get('/api/calendar/events')
-    events.value = data.map((e) => ({
-      id: e.id,
-      title: e.title,
-      start: e.start,
-      end: e.end,
-      allDay: e.allDay,
-      extendedProps: {
-        calendar: e.extendedProps?.calendar ?? 'Primary',
-        notes: e.extendedProps?.notes ?? '',
-      },
-    }))
+    events.value = data.map((e) => {
+      const allDay = !!e.allDay
+      let start = e.start
+      let end = e.end
+      if (!allDay && start) {
+        const startDate = new Date(start)
+        if (!end) {
+          end = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString()
+        } else {
+          const endDate = new Date(end)
+          if (endDate <= startDate) {
+            end = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString()
+          }
+        }
+      }
+      return {
+        id: e.id,
+        title: e.title,
+        start,
+        end,
+        allDay,
+        extendedProps: {
+          calendar: e.extendedProps?.calendar ?? 'Primary',
+          notes: e.extendedProps?.notes ?? '',
+        },
+      }
+    })
   } catch (err) {
     console.error('Ошибка загрузки событий:', err)
   } finally {
@@ -488,6 +504,11 @@ const calendarOptions = reactive({
   selectMirror: true,
   selectOverlap: true,
   eventOverlap: true,
+  slotDuration: '00:30:00',
+  slotLabelInterval: '00:30:00',
+  slotMinTime: '00:00:00',
+  slotMaxTime: '24:00:00',
+  eventMinHeight: 25,
   customButtons: {
     addEventButton: {
       text: 'Добавить событие +',

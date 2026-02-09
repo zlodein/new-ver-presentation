@@ -93,10 +93,12 @@
             :class="{ 'bg-gray-50 dark:bg-white/5': !notification.read }"
             href="#"
           >
-            <span class="relative block w-full h-10 rounded-full z-1 max-w-10 flex-shrink-0">
+            <span
+              v-if="notification.type !== 'calendar'"
+              class="relative block w-full h-10 rounded-full z-1 max-w-10 flex-shrink-0"
+            >
               <div 
                 :class="{
-                  'bg-brand-500': notification.type === 'calendar',
                   'bg-success-500': notification.type === 'success',
                   'bg-warning-500': notification.type === 'warning',
                   'bg-error-500': notification.type === 'error',
@@ -116,7 +118,7 @@
               <span class="mb-1.5 block text-theme-sm text-gray-800 dark:text-white/90 font-medium">
                 {{ notification.title }}
               </span>
-              <span v-if="notification.message" class="mb-1 block text-theme-xs text-gray-500 dark:text-gray-400">
+              <span v-if="notification.message" class="mb-1 block text-theme-xs text-gray-500 dark:text-gray-400 whitespace-pre-line">
                 {{ notification.message }}
               </span>
               <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
@@ -192,7 +194,7 @@ const toggleDropdown = async () => {
   if (dropdownOpen.value) {
     await loadNotifications()
   }
-  notifying.value = false
+  notifying.value = unreadCount.value > 0
 }
 
 const closeDropdown = () => {

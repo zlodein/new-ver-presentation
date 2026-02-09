@@ -57,21 +57,24 @@ export async function calendarRoutes(app: FastifyInstance) {
         for (const e of list) {
           const eventEnd = e.end ? new Date(e.end) : new Date(e.start)
           if (eventEnd < now) {
-            // Проверяем, есть ли уже уведомление об этом событии
             const existingNotification = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findFirst({
               where: and(
                 eq(mysqlSchema.notifications.user_id, userIdNum),
                 eq(mysqlSchema.notifications.type, 'calendar'),
-                eq(mysqlSchema.notifications.title, 'Истекшее событие в календаре')
+                eq(mysqlSchema.notifications.source_id, String(e.id))
               ),
             })
             if (!existingNotification) {
               try {
+                const notes = (e as { notes?: string | null }).notes
+                const baseMsg = `Событие "${e.title}" истекло (${eventEnd.toLocaleString('ru-RU')})`
+                const message = notes ? `${baseMsg}\n\nЗаметки: ${notes}` : baseMsg
                 await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
                   user_id: userIdNum,
                   title: 'Истекшее событие в календаре',
-                  message: `Событие "${e.title}" истекло (${eventEnd.toLocaleString('ru-RU')})`,
+                  message,
                   type: 'calendar',
+                  source_id: String(e.id),
                 })
               } catch (notifErr) {
                 console.error('[calendar] Ошибка создания уведомления об истекшем событии:', notifErr)
@@ -103,21 +106,24 @@ export async function calendarRoutes(app: FastifyInstance) {
       for (const e of events) {
         const eventEnd = e.end ? new Date(e.end) : new Date(e.start)
         if (eventEnd < now) {
-          // Проверяем, есть ли уже уведомление об этом событии
           const existingNotification = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.notifications.findFirst({
             where: and(
               eq(pgSchema.notifications.userId, userId),
               eq(pgSchema.notifications.type, 'calendar'),
-              eq(pgSchema.notifications.title, `Истекшее событие в календаре`)
+              eq(pgSchema.notifications.sourceId, e.id)
             ),
           })
           if (!existingNotification) {
             try {
+              const notes = (e as { notes?: string | null }).notes
+              const baseMsg = `Событие "${e.title}" истекло (${eventEnd.toLocaleString('ru-RU')})`
+              const message = notes ? `${baseMsg}\n\nЗаметки: ${notes}` : baseMsg
               await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).insert(pgSchema.notifications).values({
                 userId,
                 title: 'Истекшее событие в календаре',
-                message: `Событие "${e.title}" истекло (${eventEnd.toLocaleString('ru-RU')})`,
+                message,
                 type: 'calendar',
+                sourceId: e.id,
               })
             } catch (notifErr) {
               console.error('[calendar] Ошибка создания уведомления об истекшем событии:', notifErr)
@@ -185,14 +191,17 @@ export async function calendarRoutes(app: FastifyInstance) {
           const eventEnd = created.end ? new Date(created.end) : new Date(created.start)
           const now = new Date()
           const isExpired = eventEnd < now
-          
+          const notes = (created as { notes?: string | null }).notes
+          const baseMsg = isExpired
+            ? `Событие "${created.title}" уже истекло (${eventEnd.toLocaleString('ru-RU')})`
+            : `Событие "${created.title}" добавлено в календарь`
+          const message = notes ? `${baseMsg}\n\nЗаметки: ${notes}` : baseMsg
           await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.notifications).values({
             user_id: userIdNum,
             title: isExpired ? 'Истекшее событие в календаре' : 'Новое событие в календаре',
-            message: isExpired 
-              ? `Событие "${created.title}" уже истекло (${eventEnd.toLocaleString('ru-RU')})`
-              : `Событие "${created.title}" добавлено в календарь`,
+            message,
             type: 'calendar',
+            source_id: String(created.id),
           })
         } catch (notifErr) {
           console.error('[calendar] Ошибка создания уведомления:', notifErr)
@@ -234,14 +243,17 @@ export async function calendarRoutes(app: FastifyInstance) {
         const eventEnd = event.end ? new Date(event.end) : new Date(event.start)
         const now = new Date()
         const isExpired = eventEnd < now
-        
+        const notes = (event as { notes?: string | null }).notes
+        const baseMsg = isExpired
+          ? `Событие "${event.title}" уже истекло (${eventEnd.toLocaleString('ru-RU')})`
+          : `Событие "${event.title}" добавлено в календарь`
+        const message = notes ? `${baseMsg}\n\nЗаметки: ${notes}` : baseMsg
         await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).insert(pgSchema.notifications).values({
           userId,
           title: isExpired ? 'Истекшее событие в календаре' : 'Новое событие в календаре',
-          message: isExpired 
-            ? `Событие "${event.title}" уже истекло (${eventEnd.toLocaleString('ru-RU')})`
-            : `Событие "${event.title}" добавлено в календарь`,
+          message,
           type: 'calendar',
+          sourceId: event.id,
         })
       } catch (notifErr) {
         console.error('[calendar] Ошибка создания уведомления:', notifErr)
@@ -377,7 +389,9 @@ export async function calendarRoutes(app: FastifyInstance) {
         reply.status(400).send({ error: 'Неверный формат id события (ожидается целое число)' })
         return false
       }
-      const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      await mysqlDb.delete(mysqlSchema.notifications).where(and(eq(mysqlSchema.notifications.user_id, userIdNum), eq(mysqlSchema.notifications.type, 'calendar'), eq(mysqlSchema.notifications.source_id, id)))
+      const result = await mysqlDb
         .delete(mysqlSchema.calendarEvents)
         .where(and(eq(mysqlSchema.calendarEvents.id, idNum), eq(mysqlSchema.calendarEvents.user_id, userIdNum)))
       const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
@@ -389,7 +403,9 @@ export async function calendarRoutes(app: FastifyInstance) {
       reply.status(204).send()
       return true
     }
-    const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    await pgDb.delete(pgSchema.notifications).where(and(eq(pgSchema.notifications.userId, userId), eq(pgSchema.notifications.type, 'calendar'), eq(pgSchema.notifications.sourceId, id)))
+    const deleted = await pgDb
       .delete(pgSchema.calendarEvents)
       .where(and(eq(pgSchema.calendarEvents.id, id), eq(pgSchema.calendarEvents.userId, userId)))
       .returning({ id: pgSchema.calendarEvents.id })

@@ -69,8 +69,8 @@
             :class="{ 'bg-gray-50 dark:bg-white/5': !notification.read }"
           >
             <div
+              v-if="notification.type !== 'calendar'"
               :class="{
-                'bg-brand-500': notification.type === 'calendar',
                 'bg-success-500': notification.type === 'success',
                 'bg-warning-500': notification.type === 'warning',
                 'bg-error-500': notification.type === 'error',
@@ -87,7 +87,7 @@
                   <h4 class="text-base font-semibold text-gray-800 dark:text-white/90">
                     {{ notification.title }}
                   </h4>
-                  <p v-if="notification.message" class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  <p v-if="notification.message" class="mt-1 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
                     {{ notification.message }}
                   </p>
                   <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
