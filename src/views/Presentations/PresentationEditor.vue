@@ -478,6 +478,7 @@
                           />
                         </label>
                         <img v-if="img" :src="img" alt="">
+                        </div>
                       </div>
                     </div>
                   </div>
