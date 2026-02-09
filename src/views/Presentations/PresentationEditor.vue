@@ -229,6 +229,16 @@
                           placeholder="ОПИСАНИЕ"
                           class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                          >
+                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
                         <div class="booklet-info__text">
                           <textarea
                             :value="String(slide.data?.text ?? '')"
@@ -248,7 +258,7 @@
                           </button>
                         </div>
                       </div>
-                      <div class="booklet-info__grid">
+                      <div class="booklet-info__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                         <div
                           v-for="(img, i) in descriptionImages(slide)"
                           :key="i"
@@ -283,6 +293,16 @@
                           placeholder="ИНФРАСТРУКТУРА"
                           class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                          >
+                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
                         <div class="booklet-stroen__text">
                           <textarea
                             :value="String(slide.data?.content ?? '')"
@@ -302,7 +322,7 @@
                           </button>
                         </div>
                       </div>
-                      <div class="booklet-stroen__grid">
+                      <div class="booklet-stroen__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                         <div
                           v-for="(img, i) in infrastructureImages(slide)"
                           :key="i"
@@ -433,11 +453,22 @@
                     <div class="booklet-galery__top-square" />
                     <div class="booklet-galery__bottom-square" />
                     <div class="booklet-galery__wrap">
-                      <div
-                        v-for="(img, i) in galleryImages3(slide)"
-                        :key="i"
-                        class="booklet-galery__img relative"
-                      >
+                      <div class="flex items-center gap-2 px-2 py-1 col-span-full">
+                        <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                        <select
+                          :value="getImageGrid(slide)"
+                          class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                          @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                        >
+                          <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                        </select>
+                      </div>
+                      <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                        <div
+                          v-for="(img, i) in galleryImages3(slide)"
+                          :key="i"
+                          class="booklet-galery__img relative"
+                        >
                         <label class="booklet-upload-btn cursor-pointer">
                           <input
                             type="file"
@@ -563,20 +594,32 @@
                     <div class="booklet-grid__top-square" />
                     <div class="booklet-grid__bottom-square" />
                     <div class="booklet-grid__wrap">
-                      <div
-                        v-for="(img, i) in gridImages4(slide)"
-                        :key="i"
-                        class="booklet-grid__img relative"
-                      >
-                        <label class="booklet-upload-btn cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                            @change="onGridImageUpload(slide, $event, i)"
-                          />
-                        </label>
-                        <img v-if="img" :src="img" alt="">
+                      <div class="flex items-center gap-2 px-2 py-1">
+                        <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                        <select
+                          :value="getImageGrid(slide)"
+                          class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                          @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                        >
+                          <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                        </select>
+                      </div>
+                      <div class="booklet-grid__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                        <div
+                          v-for="(img, i) in gridImages4(slide)"
+                          :key="i"
+                          class="booklet-grid__img relative"
+                        >
+                          <label class="booklet-upload-btn cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              class="hidden"
+                              @change="onGridImageUpload(slide, $event, i)"
+                            />
+                          </label>
+                          <img v-if="img" :src="img" alt="">
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -614,21 +657,34 @@
                         />
                       </div>
                       <div class="booklet-contacts__images-wrap relative">
+                        <div class="flex items-center gap-2 mb-1">
+                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                          >
+                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
                         <div class="booklet-contacts__top-square" />
                         <div class="booklet-contacts__bottom-square" />
-                        <div class="booklet-contacts-grid">
-                        <div class="booklet-contacts__block booklet-contacts__img relative">
+                        <div class="booklet-contacts-grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                        <div
+                          v-for="(url, i) in imageSlotsForSlide(slide)"
+                          :key="i"
+                          class="booklet-contacts__block booklet-contacts__img relative"
+                        >
                           <label class="booklet-upload-btn cursor-pointer">
                             <input
                               type="file"
                               accept="image/*"
                               class="hidden"
-                              @change="onSingleImageUpload(slide, $event, 'contactsImageUrl')"
+                              @change="onContactsImageUpload(slide, $event, i)"
                             />
                           </label>
-                          <img v-if="slide.data?.contactsImageUrl" :src="String(slide.data.contactsImageUrl)" alt="">
+                          <img v-if="url" :src="url" alt="">
                         </div>
-                        <div class="booklet-contacts__block booklet-contacts__img relative bg-gray-100" />
                         </div>
                       </div>
                     </div>
@@ -734,6 +790,45 @@ const SLIDE_TYPE_LABELS: Record<string, string> = {
   layout: 'Планировка',
   grid: 'Сетка с изображениями',
   contacts: 'Контакты',
+}
+
+/** Варианты сетки для слайдов с изображениями (колонки × строки) */
+const IMAGE_GRID_OPTIONS = [
+  { value: '1x1', label: '1×1', cols: 1, rows: 1 },
+  { value: '2x1', label: '2×1', cols: 2, rows: 1 },
+  { value: '1x2', label: '1×2', cols: 1, rows: 2 },
+  { value: '2x2', label: '2×2', cols: 2, rows: 2 },
+  { value: '3x1', label: '3×1', cols: 3, rows: 1 },
+  { value: '1x3', label: '1×3', cols: 1, rows: 3 },
+  { value: '3x2', label: '3×2', cols: 3, rows: 2 },
+  { value: '2x3', label: '2×3', cols: 2, rows: 3 },
+] as const
+
+const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
+  description: '1x2',
+  infrastructure: '1x2',
+  gallery: '3x1',
+  grid: '2x2',
+  contacts: '1x2',
+}
+
+function getImageGrid(slide: SlideItem): string {
+  const v = slide.data?.imageGrid
+  if (typeof v === 'string' && v) return v
+  return DEFAULT_IMAGE_GRID_BY_TYPE[slide.type] ?? '2x2'
+}
+
+function getImageGridColsRows(slide: SlideItem): { cols: number; rows: number } {
+  const grid = getImageGrid(slide)
+  const opt = IMAGE_GRID_OPTIONS.find((o) => o.value === grid)
+  if (opt) return { cols: opt.cols, rows: opt.rows }
+  const [c, r] = grid.split('x').map(Number)
+  return { cols: c || 2, rows: r || 2 }
+}
+
+function getImageGridLimit(slide: SlideItem): number {
+  const { cols, rows } = getImageGridColsRows(slide)
+  return cols * rows
 }
 
 /** Набор готовых типов слайдов для добавления (уникальные) */
@@ -1189,10 +1284,6 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
         price_value: 0,
         show_all_currencies: false,
       }
-    case 'description':
-      return { heading: '', text: '' }
-    case 'infrastructure':
-      return { heading: 'Инфраструктура', content: '', items: ['Пункт 1', 'Пункт 2', 'Пункт 3'] }
     case 'location':
       return {
         heading: 'Местоположение',
@@ -1204,16 +1295,20 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
       }
     case 'image':
       return { heading: '', imageUrl: '' }
+    case 'description':
+      return { heading: 'ОПИСАНИЕ', text: '', imageGrid: '1x2', images: [] as string[] }
+    case 'infrastructure':
+      return { heading: 'ИНФРАСТРУКТУРА', content: '', imageGrid: '1x2', images: [] as string[] }
     case 'gallery':
-      return { heading: 'Галерея', images: [] as string[] }
+      return { heading: 'Галерея', imageGrid: '3x1', images: [] as string[] }
     case 'characteristics':
       return { heading: 'Характеристики', items: defaultCharItems.map((x) => ({ ...x })) }
     case 'layout':
       return { heading: 'Планировка' }
     case 'grid':
-      return { heading: 'Сетка', images: [] as string[] }
+      return { heading: 'Сетка', imageGrid: '2x2', images: [] as string[] }
     case 'contacts':
-      return { heading: 'Контакты', phone: '', email: '', address: '' }
+      return { heading: 'Контакты', phone: '', email: '', address: '', imageGrid: '1x2', images: [] as string[] }
     default:
       return {}
   }
@@ -1410,6 +1505,28 @@ async function onGridImageUpload(slide: SlideItem, event: Event, index: number) 
   }
 }
 
+async function onContactsImageUpload(slide: SlideItem, event: Event, index: number) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!Array.isArray(slide.data.images)) slide.data.images = []
+  const arr = slide.data.images as string[]
+  while (arr.length <= index) arr.push('')
+  try {
+    if (hasApi() && getToken()) {
+      try {
+        arr[index] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
+    arr[index] = await readFileAsDataUrl(file)
+  } finally {
+    input.value = ''
+  }
+}
+
 function galleryImages(slide: SlideItem): string[] {
   const arr = slide.data?.images
   if (!Array.isArray(arr)) return ['', '', '', '']
@@ -1419,11 +1536,7 @@ function galleryImages(slide: SlideItem): string[] {
 }
 
 function galleryImages3(slide: SlideItem): string[] {
-  const arr = slide.data?.images
-  if (!Array.isArray(arr)) return ['', '', '']
-  const out = [...arr]
-  while (out.length < 3) out.push('')
-  return out.slice(0, 3)
+  return imageSlotsForSlide(slide)
 }
 
 function gridImages(slide: SlideItem): string[] {
@@ -1435,19 +1548,21 @@ function gridImages(slide: SlideItem): string[] {
 }
 
 function gridImages4(slide: SlideItem): string[] {
+  return imageSlotsForSlide(slide)
+}
+
+/** Слоты изображений по выбранной сетке (массив длины cols×rows) */
+function imageSlotsForSlide(slide: SlideItem): string[] {
+  const limit = getImageGridLimit(slide)
   const arr = slide.data?.images
-  if (!Array.isArray(arr)) return ['', '', '', '']
+  if (!Array.isArray(arr)) return Array(limit).fill('')
   const out = [...arr]
-  while (out.length < 4) out.push('')
-  return out.slice(0, 4)
+  while (out.length < limit) out.push('')
+  return out.slice(0, limit)
 }
 
 function descriptionImages(slide: SlideItem): string[] {
-  const arr = slide.data?.images
-  if (!Array.isArray(arr)) return ['', '']
-  const out = [...arr]
-  while (out.length < 2) out.push('')
-  return out.slice(0, 2)
+  return imageSlotsForSlide(slide)
 }
 
 async function onDescriptionImageUpload(slide: SlideItem, event: Event, index: number) {
@@ -1473,11 +1588,7 @@ async function onDescriptionImageUpload(slide: SlideItem, event: Event, index: n
 }
 
 function infrastructureImages(slide: SlideItem): string[] {
-  const arr = slide.data?.images
-  if (!Array.isArray(arr)) return ['', '']
-  const out = [...arr]
-  while (out.length < 2) out.push('')
-  return out.slice(0, 2)
+  return imageSlotsForSlide(slide)
 }
 
 async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index: number) {
@@ -1777,16 +1888,16 @@ async function exportToPDF() {
 </script>
 
 <style>
-/* Слайдер: высота увеличена, контент презентации занимает больше места */
+/* Слайдер: горизонтальный (альбомный) формат 16:10 */
 .presentation-slider-wrap {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   max-height: min(72vh, 640px);
   width: 100%;
 }
 @media (max-width: 1023px) {
   .presentation-slider-wrap {
-    min-height: min(60vh, 420px);
-    max-height: min(78vh, 560px);
+    min-height: min(50vh, 360px);
+    max-height: min(70vh, 500px);
   }
 }
 .presentation-swiper {

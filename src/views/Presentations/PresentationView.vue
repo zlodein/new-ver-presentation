@@ -44,8 +44,8 @@
                   <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
                   <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text" v-html="String(slide.data?.text ?? slide.data?.content ?? '').replace(/\n/g, '<br>')" />
                 </div>
-                <div class="booklet-info__grid">
-                  <div v-for="(url, i) in viewSlideImages(slide, 2)" :key="i" class="booklet-info__block booklet-info__img">
+                <div class="booklet-info__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                  <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-info__block booklet-info__img">
                     <img v-if="url" :src="url" alt="">
                   </div>
                 </div>
@@ -60,8 +60,8 @@
                   <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
                   <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text" v-html="String(slide.data?.content ?? slide.data?.text ?? '').replace(/\n/g, '<br>')" />
                 </div>
-                <div class="booklet-stroen__grid">
-                  <div v-for="(url, i) in viewSlideImages(slide, 2)" :key="i" class="booklet-stroen__block booklet-stroen__img">
+                <div class="booklet-stroen__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                  <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-stroen__block booklet-stroen__img">
                     <img v-if="url" :src="url" alt="">
                   </div>
                 </div>
@@ -109,8 +109,10 @@
               <div class="booklet-galery__bottom-square" />
               <div class="booklet-galery__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
-                <div v-for="(url, i) in viewSlideImages(slide, 3)" :key="i" class="booklet-galery__img">
-                  <img v-if="url" :src="url" alt="">
+                <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                  <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-galery__img">
+                    <img v-if="url" :src="url" alt="">
+                  </div>
                 </div>
               </div>
             </div>
@@ -148,8 +150,10 @@
               <div class="booklet-grid__bottom-square" />
               <div class="booklet-grid__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
-                <div v-for="(url, i) in viewSlideImages(slide, 4)" :key="i" class="booklet-grid__img">
-                  <img v-if="url" :src="url" alt="">
+                <div class="booklet-grid__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                  <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-grid__img">
+                    <img v-if="url" :src="url" alt="">
+                  </div>
                 </div>
               </div>
             </div>
@@ -168,11 +172,11 @@
                 <div class="booklet-contacts__images-wrap">
                   <div class="booklet-contacts__top-square" />
                   <div class="booklet-contacts__bottom-square" />
-                  <div class="booklet-contacts-grid">
-                    <div v-for="(url, i) in viewSlideImages(slide, 2)" :key="i" class="booklet-contacts__block booklet-contacts__img">
-                      <img v-if="url" :src="url" alt="">
+                    <div class="booklet-contacts-grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                      <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-contacts__block booklet-contacts__img">
+                        <img v-if="url" :src="url" alt="">
+                      </div>
                     </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -309,6 +313,27 @@ function coverImageUrl(slide: ViewSlideItem): string | undefined {
   return url ? String(url) : undefined
 }
 
+const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
+  description: '1x2',
+  infrastructure: '1x2',
+  gallery: '3x1',
+  grid: '2x2',
+  contacts: '1x2',
+}
+
+function getImageGrid(slide: ViewSlideItem): string {
+  const v = slide.data?.imageGrid
+  if (typeof v === 'string' && v) return v
+  return DEFAULT_IMAGE_GRID_BY_TYPE[slide.type] ?? '2x2'
+}
+
+/** Количество слотов по сетке (cols×rows) */
+function getViewImageLimit(slide: ViewSlideItem): number {
+  const grid = getImageGrid(slide)
+  const [c, r] = grid.split('x').map(Number)
+  return (c || 2) * (r || 2)
+}
+
 /** Извлечь URL изображений из слайда (поддержка строк и { url }), limit — максимум штук */
 function viewSlideImages(slide: ViewSlideItem, limit: number): string[] {
   const arr = slide.data?.images
@@ -349,18 +374,22 @@ onMounted(async () => {
 .presentation-view-wrap.presentation-slider-wrap {
   aspect-ratio: unset;
   overflow: visible;
+  max-width: 960px;
 }
+/* Горизонтальный (альбомный) формат слайдов: ширина 100%, высота по соотношению 16:10 */
 .booklet-page--stacked {
-  min-height: min(70vh, 560px);
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  min-height: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 .booklet-page--stacked .booklet-page__inner {
-  height: auto;
-  min-height: min(68vh, 520px);
+  height: 100%;
+  min-height: 0;
   max-height: none;
 }
 .booklet-page--stacked .booklet-content {
-  min-height: min(60vh, 480px);
+  min-height: 0;
 }
 .booklet-page--stacked:last-child {
   border-bottom: none;

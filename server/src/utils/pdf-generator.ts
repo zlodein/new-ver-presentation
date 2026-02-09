@@ -40,6 +40,22 @@ function toAbsoluteImageUrl(url: string, baseUrl: string): string {
   return baseUrl.replace(/\/$/, '') + '/' + u
 }
 
+const DEFAULT_IMAGE_GRID: Record<string, string> = {
+  description: '1x2',
+  infrastructure: '1x2',
+  gallery: '3x1',
+  grid: '2x2',
+  contacts: '1x2',
+}
+
+function getImageGridLimit(dataObj: Record<string, unknown>, slideType: string): { cols: number; rows: number; limit: number } {
+  const grid = String(dataObj.imageGrid || DEFAULT_IMAGE_GRID[slideType] || '2x2')
+  const [c, r] = grid.split('x').map(Number)
+  const cols = c || 2
+  const rows = r || 2
+  return { cols, rows, limit: cols * rows }
+}
+
 /** Генерирует HTML для презентации */
 function generatePresentationHTML(data: PresentationData, baseUrl: string): string {
   const slides = data.content?.slides || []
@@ -88,7 +104,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || 'ОПИСАНИЕ')
         const text = String(dataObj.text || dataObj.content || '')
-        const images = toImageUrls((dataObj.images as unknown[]) || [], 2)
+        const { cols, rows, limit } = getImageGridLimit(dataObj, 'description')
+        const images = toImageUrls((dataObj.images as unknown[]) || [], limit)
+        const gridStyle = `grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);`
 
         return `
           <div class="booklet-page">
@@ -101,7 +119,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <h2 class="booklet-info__title">${heading}</h2>
                     <div class="booklet-info__text">${String(text).replace(/\n/g, '<br>')}</div>
                   </div>
-                  <div class="booklet-info__grid">
+                  <div class="booklet-info__grid" style="${gridStyle}">
                     ${images.map((url) => `<div class="booklet-info__block booklet-info__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                   </div>
                 </div>
@@ -114,7 +132,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || 'ИНФРАСТРУКТУРА')
         const text = String(dataObj.content || dataObj.text || '')
-        const images = toImageUrls((dataObj.images as unknown[]) || [], 2)
+        const { cols, rows, limit } = getImageGridLimit(dataObj, 'infrastructure')
+        const images = toImageUrls((dataObj.images as unknown[]) || [], limit)
+        const gridStyle = `grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);`
 
         return `
           <div class="booklet-page">
@@ -127,7 +147,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <h2 class="booklet-stroen__title">${heading}</h2>
                     <div class="booklet-stroen__text">${String(text).replace(/\n/g, '<br>')}</div>
                   </div>
-                  <div class="booklet-stroen__grid">
+                  <div class="booklet-stroen__grid" style="${gridStyle}">
                     ${images.map((url) => `<div class="booklet-stroen__block booklet-stroen__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                   </div>
                 </div>
@@ -192,7 +212,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'gallery': {
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || '')
-        const images = toImageUrls((dataObj.images as unknown[]) || [], 3)
+        const { cols, rows, limit } = getImageGridLimit(dataObj, 'gallery')
+        const images = toImageUrls((dataObj.images as unknown[]) || [], limit)
+        const gridStyle = `grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);`
 
         return `
           <div class="booklet-page">
@@ -202,7 +224,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-galery__bottom-square"></div>
                 <div class="booklet-galery__wrap">
                   ${heading ? `<h2 class="mb-2 font-semibold uppercase col-span-full">${heading}</h2>` : ''}
-                  ${images.map((url) => `<div class="booklet-galery__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
+                  <div class="booklet-galery__grid" style="${gridStyle}">
+                    ${images.map((url) => `<div class="booklet-galery__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -265,7 +289,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'grid': {
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || '')
-        const images = toImageUrls((dataObj.images as unknown[]) || [], 4)
+        const { cols, rows, limit } = getImageGridLimit(dataObj, 'grid')
+        const images = toImageUrls((dataObj.images as unknown[]) || [], limit)
+        const gridStyle = `grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);`
 
         return `
           <div class="booklet-page">
@@ -275,7 +301,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-grid__bottom-square"></div>
                 <div class="booklet-grid__wrap">
                   ${heading ? `<h2 class="mb-2 font-semibold uppercase col-span-full">${heading}</h2>` : ''}
-                  ${images.map((url) => `<div class="booklet-grid__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
+                  <div class="booklet-grid__grid" style="${gridStyle}">
+                    ${images.map((url) => `<div class="booklet-grid__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -290,7 +318,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const email = String(dataObj.email || dataObj.contact_email || '')
         const role = String(dataObj.contact_role || '')
         const address = String(dataObj.address || dataObj.contact_address || '')
-        const images = toImageUrls((dataObj.images as unknown[]) || [], 2)
+        const { cols, rows, limit } = getImageGridLimit(dataObj, 'contacts')
+        const images = toImageUrls((dataObj.images as unknown[]) || [], limit)
+        const gridStyle = `grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);`
 
         return `
           <div class="booklet-page">
@@ -308,7 +338,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   <div class="booklet-contacts__images-wrap">
                     <div class="booklet-contacts__top-square"></div>
                     <div class="booklet-contacts__bottom-square"></div>
-                    <div class="booklet-contacts-grid">
+                    <div class="booklet-contacts-grid" style="${gridStyle}">
                       ${images.map((url) => `<div class="booklet-contacts__block booklet-contacts__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                     </div>
                   </div>
@@ -359,7 +389,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-main__wrap { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; }
     .presentation-slider-wrap.booklet-view .booklet-main__img { position: relative; flex: 0 0 50%; min-width: 200px; min-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #e8e8e8; box-sizing: border-box; padding: 40px 0 40px 40px; box-shadow: 7px 7px 7px rgba(73, 71, 71, 0.2); }
-    .presentation-slider-wrap.booklet-view .booklet-main__img img, .presentation-slider-wrap.booklet-view .booklet-img__img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img, .presentation-slider-wrap.booklet-view .booklet-grid__img img, .presentation-slider-wrap.booklet-view .booklet-char__img img, .presentation-slider-wrap.booklet-view .booklet-layout__img img, .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: cover; object-position: center; display: block; }
+    .presentation-slider-wrap.booklet-view .booklet-main__img img, .presentation-slider-wrap.booklet-view .booklet-img__img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img, .presentation-slider-wrap.booklet-view .booklet-grid__img img, .presentation-slider-wrap.booklet-view .booklet-char__img img, .presentation-slider-wrap.booklet-view .booklet-layout__img img, .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; }
     .presentation-slider-wrap.booklet-view .booklet-main__content { flex: 1 1 50%; min-width: 200px; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 40px 25px; }
     .presentation-slider-wrap.booklet-view .booklet-main__top, .presentation-slider-wrap.booklet-view .booklet-main__center { flex: 0 0 auto; font-size: 1rem; line-height: 1.3; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: #1a1a1a; }
     .presentation-slider-wrap.booklet-view .booklet-main__center { font-size: 1.25rem; margin-top: 0.25rem; }
@@ -379,8 +409,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-layout__wrap { display: flex; flex-direction: column; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; flex: 1; min-height: 240px; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: contain; }
-    .presentation-slider-wrap.booklet-view .booklet-galery__wrap, .presentation-slider-wrap.booklet-view .booklet-grid__wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 15px 15px 70px 70px; width: 100%; height: 100%; min-height: 0; max-height: 100%; box-sizing: border-box; overflow: hidden; }
-    .presentation-slider-wrap.booklet-view .booklet-grid__wrap { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .presentation-slider-wrap.booklet-view .booklet-galery__wrap, .presentation-slider-wrap.booklet-view .booklet-grid__wrap { display: flex; flex-direction: column; gap: 8px; padding: 15px 15px 70px 70px; width: 100%; height: 100%; min-height: 0; max-height: 100%; box-sizing: border-box; overflow: hidden; }
+    .presentation-slider-wrap.booklet-view .booklet-galery__grid, .presentation-slider-wrap.booklet-view .booklet-grid__grid { display: grid; gap: 12px; flex: 1; min-height: 0; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-galery__img, .presentation-slider-wrap.booklet-view .booklet-grid__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; z-index: 2; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 15px 15px 70px 70px; width: 100%; height: 100%; min-height: 320px; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__images-wrap { position: relative; }
@@ -502,6 +532,7 @@ export async function generatePDF(data: PresentationData, baseUrl: string): Prom
     
     const pdf = await page.pdf({
       format: 'A4',
+      landscape: true,
       printBackground: true,
       margin: {
         top: '0',

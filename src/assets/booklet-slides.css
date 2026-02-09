@@ -67,7 +67,7 @@
   box-shadow: 7px 7px 7px rgba(73, 71, 71, 0.2);
 }
 
-/* Все изображения строго вписываются в область, не ломают верстку */
+/* Все изображения строго вписываются в область слайда, не выходят за рамки */
 .presentation-slider-wrap.booklet-view .booklet-main__img img,
 .presentation-slider-wrap.booklet-view .booklet-img__img img,
 .presentation-slider-wrap.booklet-view .booklet-galery__img img,
@@ -83,9 +83,43 @@
   min-height: 0;
   max-width: 100%;
   max-height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   display: block;
+}
+
+/* Динамическая сетка для слайдов с изображениями (data-image-grid задаётся в редакторе) */
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="1x1"] {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="2x1"] {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr;
+}
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="1x2"] {
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(2, 1fr);
+}
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="2x2"] {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="3x1"] {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr;
+}
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="1x3"] {
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, 1fr);
+}
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="3x2"] {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+.presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="2x3"] {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__content {
@@ -197,15 +231,23 @@
 }
 
 .presentation-slider-wrap.booklet-view .booklet-galery__wrap {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 15px 15px 70px 70px;
   width: 100%;
   height: 100%;
   min-height: 0;
   max-height: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-galery__grid {
+  display: grid;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -392,16 +434,23 @@
 }
 
 .presentation-slider-wrap.booklet-view .booklet-grid__wrap {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 15px 15px 70px 70px;
   width: 100%;
   height: 100%;
   min-height: 0;
   max-height: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-grid__grid {
+  display: grid;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
