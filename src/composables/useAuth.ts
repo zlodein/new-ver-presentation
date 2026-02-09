@@ -3,22 +3,31 @@ import { getToken, setToken, api, hasApi, type AuthUser, type AuthResponse } fro
 
 const token = ref<string | null>(getToken())
 const user = ref<AuthUser | null>(null)
+let fetchUserInFlight: Promise<void> | null = null
 
 export function useAuth() {
   const isLoggedIn = computed(() => !!token.value && hasApi())
   const currentUser = computed(() => user.value)
 
-  async function fetchUser() {
+  async function fetchUser(): Promise<void> {
     const currentToken = getToken()
     if (!currentToken || !hasApi()) return
-    try {
-      user.value = await api.get<AuthUser>('/api/auth/me')
-      token.value = currentToken
-    } catch {
-      setToken(null)
-      token.value = null
-      user.value = null
+    if (fetchUserInFlight) return fetchUserInFlight
+    const run = async () => {
+      try {
+        const next = await api.get<AuthUser>('/api/auth/me')
+        token.value = getToken()
+        user.value = next
+      } catch {
+        setToken(null)
+        token.value = null
+        user.value = null
+      } finally {
+        fetchUserInFlight = null
+      }
     }
+    fetchUserInFlight = run()
+    return fetchUserInFlight
   }
 
   async function login(email: string, password: string) {

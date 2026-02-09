@@ -1,5 +1,6 @@
 const API_BASE = (import.meta as ImportMeta & { env: { VITE_API_URL?: string } }).env?.VITE_API_URL?.replace(/\/$/, '') ?? ''
 const IS_PROD = (import.meta as ImportMeta & { env: { PROD?: boolean } }).env?.PROD === true
+const REQUEST_TIMEOUT_MS = 30000
 
 const TOKEN_KEY = 'auth_token'
 
@@ -22,11 +23,17 @@ export function getApiBase(): string {
   return API_BASE
 }
 
+function buildUrl(path: string): string {
+  const base = API_BASE
+  const p = path.startsWith('/') ? path : `/${path}`
+  return base ? `${base}${p}` : p
+}
+
 async function request<T>(
   path: string,
-  options: Omit<RequestInit, 'body'> & { method?: string; body?: unknown } = {}
+  options: Omit<RequestInit, 'body'> & { method?: string; body?: unknown; signal?: AbortSignal } = {}
 ): Promise<T> {
-  const { method = 'GET', body, headers: optHeaders, ...rest } = options
+  const { method = 'GET', body, headers: optHeaders, signal: optSignal, ...rest } = options
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(optHeaders as Record<string, string>),
@@ -34,9 +41,24 @@ async function request<T>(
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
+  const controller = new AbortController()
+  const signal = optSignal ?? controller.signal
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  if (!optSignal) {
+    timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  }
+  const clearTimeoutOnce = () => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+  }
+  signal.addEventListener('abort', clearTimeoutOnce, { once: true })
+
   const fetchOptions: RequestInit = {
     method,
     headers,
+    signal,
     ...rest,
   }
 
@@ -44,12 +66,25 @@ async function request<T>(
     fetchOptions.body = JSON.stringify(body) as BodyInit
   }
 
-  const res = await fetch(`${API_BASE}${path}`, fetchOptions)
-
-  if (res.status === 204) return undefined as T
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(res.status, data?.error ?? res.statusText, data)
-  return data as T
+  try {
+    const res = await fetch(buildUrl(path), fetchOptions)
+    clearTimeoutOnce()
+    signal.removeEventListener('abort', clearTimeoutOnce)
+    if (res.status === 204) return undefined as T
+    const data = await res.json().catch(() => ({}))
+    const errMsg = (data && typeof data === 'object' && 'error' in data && typeof (data as { error: unknown }).error === 'string')
+      ? (data as { error: string }).error
+      : res.statusText
+    if (!res.ok) throw new ApiError(res.status, errMsg, data)
+    return data as T
+  } catch (err) {
+    clearTimeoutOnce()
+    signal.removeEventListener('abort', clearTimeoutOnce)
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new ApiError(408, 'Превышено время ожидания', undefined)
+    }
+    throw err
+  }
 }
 
 export class ApiError extends Error {

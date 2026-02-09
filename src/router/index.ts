@@ -245,8 +245,7 @@ router.beforeEach((to, from, next) => {
     next({ path: '/signin', query: { redirect: to.fullPath } })
     return
   }
-  document.title = to.meta.title
-    ? `${to.meta.title} | E-Presentation`
-    : 'E-Presentation'
+  const title = to.meta?.title
+  document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
   next()
 })

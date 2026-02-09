@@ -164,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -189,7 +189,6 @@ const SLIDE_TYPES = [
   { type: 'cover', label: 'Обложка' },
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
-  { type: 'description', label: 'Описание' },
   { type: 'location', label: 'Местоположение' },
   { type: 'image', label: 'Изображение' },
   { type: 'gallery', label: 'Галерея' },
@@ -329,20 +328,33 @@ function normalizePresentationId(id: string | number | undefined): string {
   return part
 }
 
+let isMounted = false
+onMounted(() => {
+  isMounted = true
+  loadPresentations()
+})
+onUnmounted(() => {
+  isMounted = false
+})
+
 async function loadFromApi() {
   loading.value = true
   error.value = ''
   try {
     const list = await api.get<PresentationListItem[]>('/api/presentations')
-    presentations.value = list.map((p) => ({
-      ...p,
-      id: normalizePresentationId(p.id) || String(p.id ?? ''),
-    }))
+    if (isMounted) {
+      presentations.value = list.map((p) => ({
+        ...p,
+        id: normalizePresentationId(p.id) || String(p.id ?? ''),
+      }))
+    }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Не удалось загрузить список'
-    presentations.value = []
+    if (isMounted) {
+      error.value = e instanceof Error ? e.message : 'Не удалось загрузить список'
+      presentations.value = []
+    }
   } finally {
-    loading.value = false
+    if (isMounted) loading.value = false
   }
 }
 
@@ -364,6 +376,7 @@ function loadFromLocalStorage() {
 }
 
 function loadPresentations() {
+  if (!isMounted) return
   if (hasApi() && getToken()) {
     loadFromApi()
   } else {
@@ -407,5 +420,4 @@ async function confirmDelete(presentation: Presentation) {
   }
 }
 
-onMounted(loadPresentations)
 </script>

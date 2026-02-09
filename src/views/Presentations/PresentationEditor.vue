@@ -1468,6 +1468,7 @@ function backupToLocalStorage() {
   }
 }
 
+let editorMounted = true
 onMounted(async () => {
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
@@ -1477,6 +1478,7 @@ onMounted(async () => {
   if (hasApi() && getToken()) {
     try {
       const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
+      if (!editorMounted) return
       if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
         slides.value = (data.content.slides as SlideItem[]).map((s) => ({
           ...s,
@@ -1494,18 +1496,21 @@ onMounted(async () => {
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
       if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
     } catch {
-      loadFromLocalStorage()
+      if (editorMounted) loadFromLocalStorage()
     }
   } else {
     loadFromLocalStorage()
   }
-  nextTick(() => { initialLoadDone.value = true })
+  if (editorMounted) nextTick(() => { initialLoadDone.value = true })
   window.addEventListener('beforeunload', backupToLocalStorage)
 })
 
 onBeforeUnmount(() => {
+  editorMounted = false
   window.removeEventListener('beforeunload', backupToLocalStorage)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  if (addressSuggestionsBlurTimer) clearTimeout(addressSuggestionsBlurTimer)
+  if (addressSuggestionsFetchTimer) clearTimeout(addressSuggestionsFetchTimer)
 })
 
 function loadFromLocalStorage() {
