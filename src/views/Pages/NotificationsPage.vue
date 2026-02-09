@@ -177,11 +177,12 @@ const formatTime = (dateString) => {
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
+  const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 
-  if (diffMins < 1) return 'только что'
-  if (diffMins < 60) return `${diffMins} мин. назад`
-  if (diffHours < 24) return `${diffHours} ч. назад`
-  if (diffDays < 7) return `${diffDays} дн. назад`
+  if (diffMins < 1) return `только что, ${timeStr}`
+  if (diffMins < 60) return `${diffMins} мин. назад, ${timeStr}`
+  if (diffHours < 24) return `${diffHours} ч. назад, ${timeStr}`
+  if (diffDays < 7) return `${diffDays} дн. назад, ${timeStr}`
   return date.toLocaleDateString('ru-RU', { 
     day: 'numeric', 
     month: 'long', 
