@@ -9,6 +9,28 @@ interface PresentationData {
   content: { slides: ViewSlideItem[] }
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/** Нормализует массив изображений (строка или { url }) в массив URL для img src */
+function toImageUrls(arr: unknown[], limit: number): string[] {
+  if (!Array.isArray(arr)) return []
+  const out: string[] = []
+  for (let i = 0; i < Math.min(limit, arr.length); i++) {
+    const v = arr[i]
+    const u = typeof v === 'string' ? v : (v as { url?: string })?.url
+    out.push(u ? String(u) : '')
+  }
+  while (out.length < limit) out.push('')
+  return out.slice(0, limit)
+}
+
 /** Генерирует HTML для презентации */
 function generatePresentationHTML(data: PresentationData, baseUrl: string): string {
   const slides = data.content?.slides || []
@@ -57,7 +79,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || 'ОПИСАНИЕ')
         const text = String(dataObj.text || dataObj.content || '')
-        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 2) : []
+        const images = toImageUrls((dataObj.images as unknown[]) || [], 2)
 
         return `
           <div class="booklet-page">
@@ -71,7 +93,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-info__text">${String(text).replace(/\n/g, '<br>')}</div>
                   </div>
                   <div class="booklet-info__grid">
-                    ${images.map((url) => `<div class="booklet-info__block booklet-info__img"><img src="${url}" alt=""></div>`).join('')}
+                    ${images.map((url) => `<div class="booklet-info__block booklet-info__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
                   </div>
                 </div>
               </div>
@@ -83,7 +105,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || 'ИНФРАСТРУКТУРА')
         const text = String(dataObj.content || dataObj.text || '')
-        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 2) : []
+        const images = toImageUrls((dataObj.images as unknown[]) || [], 2)
 
         return `
           <div class="booklet-page">
@@ -97,7 +119,40 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-stroen__text">${String(text).replace(/\n/g, '<br>')}</div>
                   </div>
                   <div class="booklet-stroen__grid">
-                    ${images.map((url) => `<div class="booklet-stroen__block booklet-stroen__img"><img src="${url}" alt=""></div>`).join('')}
+                    ${images.map((url) => `<div class="booklet-stroen__block booklet-stroen__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      }
+      case 'location': {
+        const dataObj = slide.data || {}
+        const heading = String(dataObj.heading || dataObj.title || 'МЕСТОПОЛОЖЕНИЕ')
+        const locationName = String(dataObj.location_name || '')
+        const address = String(dataObj.address || dataObj.location_address || '')
+        const metroStations = Array.isArray(dataObj.metro_stations)
+          ? (dataObj.metro_stations as Array<{ name?: string; walk_time_text?: string }>)
+          : []
+
+        return `
+          <div class="booklet-page">
+            <div class="booklet-page__inner">
+              <div class="booklet-content booklet-map">
+                <div class="booklet-map__wrap">
+                  <h2 class="booklet-map__title">${heading}</h2>
+                  <div class="booklet-map__content">
+                    <div class="booklet-map__info">
+                      ${locationName ? `<p class="font-medium">${escapeHtml(locationName)}</p>` : ''}
+                      ${address ? `<p class="font-medium">${escapeHtml(address)}</p>` : ''}
+                      ${metroStations.length ? `
+                        <p class="font-medium text-gray-500 mt-2">Ближайшие станции метро</p>
+                        <ul class="mt-1 space-y-0.5 text-sm text-gray-600">
+                          ${metroStations.map((st) => `<li>${escapeHtml(st.name || '')}${st.walk_time_text ? ` — ${escapeHtml(st.walk_time_text)}` : ''}</li>`).join('')}
+                        </ul>
+                      ` : ''}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -128,7 +183,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'gallery': {
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || '')
-        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 3) : []
+        const images = toImageUrls((dataObj.images as unknown[]) || [], 3)
 
         return `
           <div class="booklet-page">
@@ -138,7 +193,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-galery__bottom-square"></div>
                 <div class="booklet-galery__wrap">
                   ${heading ? `<h2 class="mb-2 font-semibold uppercase col-span-full">${heading}</h2>` : ''}
-                  ${images.map((url) => `<div class="booklet-galery__img"><img src="${url}" alt=""></div>`).join('')}
+                  ${images.map((url) => `<div class="booklet-galery__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
                 </div>
               </div>
             </div>
@@ -201,7 +256,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'grid': {
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || '')
-        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 4) : []
+        const images = toImageUrls((dataObj.images as unknown[]) || [], 4)
 
         return `
           <div class="booklet-page">
@@ -211,7 +266,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-grid__bottom-square"></div>
                 <div class="booklet-grid__wrap">
                   ${heading ? `<h2 class="mb-2 font-semibold uppercase col-span-full">${heading}</h2>` : ''}
-                  ${images.map((url) => `<div class="booklet-grid__img"><img src="${url}" alt=""></div>`).join('')}
+                  ${images.map((url) => `<div class="booklet-grid__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
                 </div>
               </div>
             </div>
@@ -226,7 +281,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const email = String(dataObj.email || dataObj.contact_email || '')
         const role = String(dataObj.contact_role || '')
         const address = String(dataObj.address || dataObj.contact_address || '')
-        const images = Array.isArray(dataObj.images) ? (dataObj.images as string[]).slice(0, 2) : []
+        const images = toImageUrls((dataObj.images as unknown[]) || [], 2)
 
         return `
           <div class="booklet-page">
@@ -245,7 +300,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-contacts__top-square"></div>
                     <div class="booklet-contacts__bottom-square"></div>
                     <div class="booklet-contacts-grid">
-                      ${images.map((url) => `<div class="booklet-contacts__block booklet-contacts__img"><img src="${url}" alt=""></div>`).join('')}
+                      ${images.map((url) => `<div class="booklet-contacts__block booklet-contacts__img">${url ? `<img src="${url}" alt="">` : ''}</div>`).join('')}
                     </div>
                   </div>
                 </div>
@@ -259,13 +314,22 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const heading = String(dataObj.heading || dataObj.title || slide.type)
         const text = dataObj.text ? String(dataObj.text) : ''
         const content = dataObj.content ? String(dataObj.content) : ''
+        const items = Array.isArray(dataObj.items) ? (dataObj.items as Array<{ label?: string; value?: string; text?: string }>) : []
+        const images = toImageUrls((dataObj.images as unknown[]) || [], 8)
         return `
           <div class="booklet-page">
             <div class="booklet-page__inner">
               <div class="booklet-content booklet-info p-6">
                 <h2 class="booklet-info__title mb-4">${heading}</h2>
-                ${text ? `<div class="booklet-info__text">${text.replace(/\n/g, '<br>')}</div>` : ''}
-                ${content ? `<div class="booklet-info__text">${content.replace(/\n/g, '<br>')}</div>` : ''}
+                ${text ? `<div class="booklet-info__text">${String(text).replace(/\n/g, '<br>')}</div>` : ''}
+                ${content ? `<div class="booklet-info__text">${String(content).replace(/\n/g, '<br>')}</div>` : ''}
+                ${items.length ? `<div class="booklet-char__table mt-4">${items.map((item) => `
+                  <div class="booklet-char__row">
+                    <div class="booklet-char__item text-gray-600">${escapeHtml(String(item.label ?? item.text ?? ''))}</div>
+                    <div class="booklet-char__item font-medium">${escapeHtml(String(item.value ?? ''))}</div>
+                  </div>
+                `).join('')}</div>` : ''}
+                ${images.some(Boolean) ? `<div class="mt-4 grid grid-cols-2 gap-2">${images.filter(Boolean).map((url) => `<img src="${url}" alt="" class="h-24 w-full object-cover rounded" />`).join('')}</div>` : ''}
               </div>
             </div>
           </div>

@@ -33,22 +33,39 @@ function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>
   return match ? decodeURIComponent(match[1]) : ''
 }
 function normContent(c: unknown): { slides: unknown[] } {
+  let slides: unknown[] = []
   if (typeof c === 'string') {
     try {
       const parsed = JSON.parse(c) as { slides?: unknown[] } | unknown[]
-      const slides = Array.isArray(parsed)
+      slides = Array.isArray(parsed)
         ? parsed
         : Array.isArray((parsed as { slides?: unknown[] })?.slides)
           ? (parsed as { slides: unknown[] }).slides
           : []
-      return { slides }
     } catch {
-      return { slides: [] }
+      slides = []
     }
+  } else {
+    const obj = c as { slides?: unknown[] } | undefined
+    slides = Array.isArray(obj) ? obj : Array.isArray(obj?.slides) ? obj!.slides : []
   }
-  const obj = c as { slides?: unknown[] } | undefined
-  if (Array.isArray(obj)) return { slides: obj }
-  return { slides: Array.isArray(obj?.slides) ? obj.slides : [] }
+  // Нормализуем каждый слайд: гарантируем наличие data со всеми полями (для просмотра и PDF)
+  const normalized = slides.map((s) => {
+    const raw = s as Record<string, unknown>
+    const type = String(raw.type ?? '')
+    const hidden = Boolean(raw.hidden ?? (raw.data as Record<string, unknown>)?.hidden)
+    const dataSource = (raw.data as Record<string, unknown>) ?? raw
+    const data = typeof dataSource === 'object' && dataSource !== null && !Array.isArray(dataSource)
+      ? { ...dataSource }
+      : {}
+    // Убедимся, что в data попали все поля из плоского слайда (кроме служебных)
+    const skipKeys = new Set(['type', 'id', 'hidden', 'data'])
+    for (const [k, v] of Object.entries(raw)) {
+      if (!skipKeys.has(k) && v !== undefined && !(k in data)) (data as Record<string, unknown>)[k] = v
+    }
+    return { type, data, hidden, id: raw.id }
+  })
+  return { slides: normalized }
 }
 
 export async function presentationRoutes(app: FastifyInstance) {

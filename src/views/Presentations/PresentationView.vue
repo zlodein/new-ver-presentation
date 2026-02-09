@@ -240,7 +240,7 @@ function normalizeSlideData(raw: Record<string, unknown>, type: string, topCover
   const imgs = Array.isArray(flat.images) ? flat.images : []
   if (imgs.length === 0 && (flat.contactsImageUrl ?? flat.image) != null && type === 'contacts') {
     out.images = [flat.contactsImageUrl ?? flat.image]
-  } else if (out.images == null) {
+  } else if (out.images == null || (Array.isArray(out.images) && out.images.length === 0 && imgs.length > 0)) {
     out.images = imgs
   }
   if (out.phone == null && flat.contact_phone != null) out.phone = flat.contact_phone
