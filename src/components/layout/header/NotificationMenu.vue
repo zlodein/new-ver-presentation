@@ -29,10 +29,10 @@
       </svg>
     </button>
 
-    <!-- Dropdown Start -->
+    <!-- Dropdown Start: высота по контенту, не более 5 уведомлений -->
     <div
       v-if="dropdownOpen"
-      class="absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0"
+      class="absolute -right-[240px] mt-[17px] flex w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0 max-h-[min(85vh,420px)] min-h-0"
     >
       <div
         class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800"
@@ -40,12 +40,13 @@
         <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">Уведомления</h5>
 
         <div class="flex items-center gap-2">
-          <button 
-            v-if="notifications.length > 0"
-            @click="handleClearAll" 
-            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            title="Очистить все уведомления"
+          <button
+            v-if="displayedNotifications.length > 0"
+            @click="handleClearAll"
+            class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-theme-xs"
+            title="Очистить все уведомления (только в виджете)"
           >
+            <span class="hidden sm:inline">Очистить все</span>
             <svg
               class="fill-current"
               width="20"
@@ -82,11 +83,11 @@
         </div>
       </div>
 
-      <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
+      <ul class="flex flex-col min-h-0 flex-1 overflow-y-auto custom-scrollbar max-h-[320px]">
         <li v-if="notifications.length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
           Нет уведомлений
         </li>
-        <li v-for="notification in notifications" :key="notification.id" @click="handleItemClick(notification)">
+        <li v-for="notification in displayedNotifications" :key="notification.id" @click="handleItemClick(notification)">
           <a
             class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 cursor-pointer"
             :class="{ 'bg-gray-50 dark:bg-white/5': !notification.read }"
@@ -154,6 +155,9 @@ const unreadCount = computed(() => {
   return notifications.value.filter((n) => !n.read).length
 })
 
+// В виджете показываем не более 5 последних уведомлений
+const displayedNotifications = computed(() => notifications.value.slice(0, 5))
+
 const formatTime = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
@@ -215,7 +219,7 @@ const handleItemClick = async (notification) => {
 }
 
 const handleClearAll = async () => {
-  if (!confirm('Вы уверены, что хотите очистить все уведомления?')) {
+  if (!confirm('Очистить все уведомления из виджета? На странице уведомлений можно удалять по одному или все сразу.')) {
     return
   }
 

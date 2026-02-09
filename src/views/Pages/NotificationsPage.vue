@@ -4,8 +4,7 @@
     <div
       class="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12"
     >
-      <div class="mx-auto w-full max-w-4xl">
-        <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex items-center justify-between">
           <h3
             class="font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl"
           >
@@ -31,7 +30,7 @@
                 fill="currentColor"
               />
             </svg>
-            Очистить все
+            Удалить все
           </button>
         </div>
 
@@ -125,7 +124,6 @@
             </div>
           </div>
         </div>
-      </div>
     </div>
   </AdminLayout>
 </template>
@@ -186,7 +184,7 @@ const handleDelete = async (id) => {
 }
 
 const handleClearAll = async () => {
-  if (!confirm('Вы уверены, что хотите очистить все уведомления?')) {
+  if (!confirm('Удалить все уведомления?')) {
     return
   }
 
