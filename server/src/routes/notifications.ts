@@ -257,4 +257,48 @@ export async function notificationRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: 'Ошибка сервера' })
     }
   })
+
+  // Удалить одно уведомление по id (должен быть ПОСЛЕ /api/notifications/clear)
+  app.delete<{ Params: { id?: string } }>('/api/notifications/:id', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
+    const userId = getUserId(req)
+    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+
+    const idRaw = req.params?.id ?? getIdFromDeleteRequest(req)
+    if (!idRaw || String(idRaw).trim() === '') return reply.status(400).send({ error: 'ID уведомления обязателен' })
+
+    try {
+      if (useFileStore) {
+        return reply.status(501).send({ error: 'Файловое хранилище не поддерживает уведомления' })
+      }
+
+      if (useMysql) {
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const notificationIdNum = parseMysqlId(idRaw)
+        if (notificationIdNum === null) return reply.status(400).send({ error: 'Неверный ID уведомления' })
+
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const result = await mysqlDb
+          .delete(mysqlSchema.notifications)
+          .where(and(eq(mysqlSchema.notifications.id, notificationIdNum), eq(mysqlSchema.notifications.user_id, userIdNum)))
+
+        const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
+        const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
+        if (affected === 0) return reply.status(404).send({ error: 'Уведомление не найдено' })
+        return reply.status(204).send()
+      }
+
+      // PostgreSQL
+      const [deleted] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .delete(pgSchema.notifications)
+        .where(and(eq(pgSchema.notifications.id, idRaw.trim()), eq(pgSchema.notifications.userId, userId)))
+        .returning({ id: pgSchema.notifications.id })
+
+      if (!deleted) return reply.status(404).send({ error: 'Уведомление не найдено' })
+      return reply.status(204).send()
+    } catch (err) {
+      console.error('[notifications] Ошибка удаления уведомления:', err)
+      return reply.status(500).send({ error: 'Ошибка сервера' })
+    }
+  })
 }

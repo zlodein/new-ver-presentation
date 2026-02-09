@@ -177,8 +177,8 @@ const loadNotifications = async () => {
 
 const handleDelete = async (id) => {
   try {
-    await api.delete(`/api/notifications/${id}`)
-    notifications.value = notifications.value.filter((n) => n.id !== id)
+    await api.delete(`/api/notifications/${String(id)}`)
+    notifications.value = notifications.value.filter((n) => String(n.id) !== String(id))
   } catch (err) {
     console.error('Ошибка удаления уведомления:', err)
     alert('Ошибка удаления уведомления')
