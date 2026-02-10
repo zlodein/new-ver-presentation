@@ -1,66 +1,37 @@
 <template>
   <AdminLayout>
     <div class="flex flex-col gap-4">
-      <!-- Публичная ссылка (стиль как на /dashboard/form-elements: label + input + кнопка Copy) -->
+      <!-- Публичная ссылка активна (при включённом «Поделиться») -->
       <div
         v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
-        class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+        class="cursor-pointer rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-200"
+        title="Нажмите, чтобы скопировать ссылку"
+        @click="copyPublicLink"
       >
-        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Website</label>
-        <div class="relative">
-          <input
-            type="url"
-            :value="presentationMeta.publicUrl"
-            readonly
-            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-3 pl-4 pr-[90px] text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-          />
-          <button
-            type="button"
-            class="absolute right-0 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 border-l border-gray-200 py-3 pl-3.5 pr-3 text-sm font-medium text-gray-700 dark:border-gray-800 dark:text-gray-400"
-            @click="copyPublicLink"
-          >
-            <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M6.58822 4.58398C6.58822 4.30784 6.81207 4.08398 7.08822 4.08398H15.4154C15.6915 4.08398 15.9154 4.30784 15.9154 4.58398L15.9154 12.9128C15.9154 13.189 15.6916 13.4128 15.4154 13.4128H7.08821C6.81207 13.4128 6.58822 13.189 6.58822 12.9128V4.58398ZM7.08822 2.58398C5.98365 2.58398 5.08822 3.47942 5.08822 4.58398V5.09416H4.58496C3.48039 5.09416 2.58496 5.98959 2.58496 7.09416V15.4161C2.58496 16.5207 3.48039 17.4161 4.58496 17.4161H12.9069C14.0115 17.4161 14.9069 16.5207 14.9069 15.4161L14.9069 14.9128H15.4154C16.52 14.9128 17.4154 14.0174 17.4154 12.9128L17.4154 4.58398C17.4154 3.47941 16.52 2.58398 15.4154 2.58398H7.08822ZM13.4069 14.9128H7.08821C5.98364 14.9128 5.08822 14.0174 5.08822 12.9128V6.59416H4.58496C4.30882 6.59416 4.08496 6.81801 4.08496 7.09416V15.4161C4.08496 15.6922 4.30882 15.9161 4.58496 15.9161H12.9069C13.183 15.9161 13.4069 15.6922 13.4069 15.4161L13.4069 14.9128Z" fill=""/>
-            </svg>
-            <span>Copy</span>
-          </button>
-        </div>
+        Публичная ссылка активна
       </div>
 
-      <!-- Оповещение о сохранении (тост после кнопки «Сохранить» / «Опубликовать» / экспорт PDF) -->
-      <Teleport to="#dashboard-content">
-        <Transition name="toast">
-          <div
-            v-if="autoSaveStatus"
-            :class="['absolute right-4 top-4 z-[200] max-w-sm rounded-xl border p-4 shadow-lg', autoSaveAlertClasses.container]"
-            role="status"
-            aria-live="polite"
-          >
-            <div class="flex items-center gap-3">
-              <div :class="['shrink-0', autoSaveAlertClasses.icon]">
-                <!-- Иконки inline, без <component :is=""> чтобы не было emitsOptions после unmount -->
-                <svg v-if="autoSaveAlertVariant === 'success'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <svg v-else-if="autoSaveAlertVariant === 'error'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div class="min-w-0">
-                <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
-                  {{ autoSaveAlertTitle }}
-                </h4>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ autoSaveAlertMessage }}
-                </p>
-              </div>
-            </div>
+      <!-- Оповещение автосохранения (стили как в /dashboard/alerts) -->
+      <div
+        v-if="autoSaveStatus"
+        :class="['rounded-xl border p-4', autoSaveAlertClasses.container]"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="flex items-center gap-3">
+          <div :class="['shrink-0', autoSaveAlertClasses.icon]">
+            <component :is="autoSaveAlertIcon" />
           </div>
-        </Transition>
-      </Teleport>
+          <div>
+            <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
+              {{ autoSaveAlertTitle }}
+            </h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ autoSaveAlertMessage }}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <!-- Панель со слайдами: на ПК — горизонтальная лента, на мобильных — кнопка + раскрывающийся вертикальный список -->
       <div class="editor-slides-nav flex flex-col gap-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:flex-row md:items-center md:gap-1.5 md:p-1.5">
@@ -164,42 +135,8 @@
           </draggable>
         </div>
 
-        <!-- ПК: горизонтальная лента со слайдами; кнопка «Добавить» слева, чтобы не выпадала за рамки -->
-        <div class="hidden md:flex md:min-w-0 md:flex-1 md:items-center md:gap-1.5">
-          <!-- Кнопка "Добавить слайд" (десктоп) — первой в ряду, всегда видна -->
-          <div ref="addSlideWrapRef" class="relative shrink-0">
-            <button
-              type="button"
-              class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              @click="showAddSlideMenu = !showAddSlideMenu"
-            >
-              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Добавить</span>
-              <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div
-              v-if="showAddSlideMenu"
-              ref="addSlideMenuRef"
-              class="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
-              @click.stop
-            >
-              <div class="py-1">
-                <button
-                  v-for="opt in SLIDE_TYPE_OPTIONS"
-                  :key="opt.type"
-                  type="button"
-                  class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  @click="addSlide(opt.type); showAddSlideMenu = false"
-                >
-                  {{ opt.label }}
-                </button>
-              </div>
-            </div>
-          </div>
+        <!-- ПК: горизонтальная лента со слайдами -->
+        <div class="hidden md:flex md:flex-1 md:items-center md:gap-1.5">
           <button
             type="button"
             class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
@@ -211,7 +148,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div ref="slidesContainerRef" class="min-w-0 flex-1 overflow-x-auto scrollbar-hide" @scroll="onSlidesScroll">
+          <div ref="slidesContainerRef" class="flex-1 overflow-x-auto scrollbar-hide" @scroll="onSlidesScroll">
             <div class="slides-strip flex gap-2 min-w-max">
               <draggable
                 v-model="slides"
@@ -301,6 +238,42 @@
             </svg>
           </button>
         </div>
+
+        <!-- Кнопка "Добавить слайд" с выпадающим меню (скрыта на мобильных — есть в нижней панели) -->
+        <div ref="addSlideWrapRef" class="relative hidden shrink-0 md:block">
+          <button
+            type="button"
+            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            @click="showAddSlideMenu = !showAddSlideMenu"
+          >
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Добавить</span>
+            <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <!-- Выпадающее меню -->
+          <div
+            v-if="showAddSlideMenu"
+            ref="addSlideMenuRef"
+            class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+            @click.stop
+          >
+            <div class="py-1">
+              <button
+                v-for="opt in SLIDE_TYPE_OPTIONS"
+                :key="opt.type"
+                type="button"
+                class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                @click="addSlide(opt.type); showAddSlideMenu = false"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Область превью слайдов (Swiper) -->
@@ -388,25 +361,13 @@
                                   </select>
                                 </div>
                               </div>
-                              <label class="flex cursor-pointer select-none items-center pb-1 text-sm font-medium text-gray-700 dark:text-gray-400">
-                                <div class="relative">
-                                  <input
-                                    v-model="slide.data.show_all_currencies"
-                                    type="checkbox"
-                                    class="sr-only"
-                                  />
-                                  <div
-                                    :class="slide.data.show_all_currencies ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
-                                    class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
-                                  >
-                                    <span :class="slide.data.show_all_currencies ? '' : 'opacity-0'">
-                                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round"/>
-                                      </svg>
-                                    </span>
-                                  </div>
-                                </div>
-                                Показывать все валюты
+                              <label class="flex cursor-pointer items-center gap-2 pb-1 text-sm text-gray-600">
+                                <input
+                                  v-model="slide.data.show_all_currencies"
+                                  type="checkbox"
+                                  class="h-4 w-4 rounded border-gray-300"
+                                />
+                                <span>Показывать все валюты</span>
                               </label>
                             </div>
                             <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
@@ -430,20 +391,15 @@
                           placeholder="ОПИСАНИЕ"
                           class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <div class="mb-2">
-                          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Сетка изображений</label>
-                          <div class="relative z-20 bg-transparent">
-                            <select
-                              :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                              @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                            >
-                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute z-30 text-gray-500 pointer-events-none right-4 top-1/2 -translate-y-1/2 dark:text-gray-400">
-                              <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </span>
-                          </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                          >
+                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                          </select>
                         </div>
                         <div class="booklet-info__text">
                           <textarea
@@ -497,20 +453,15 @@
                           placeholder="ИНФРАСТРУКТУРА"
                           class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <div class="mb-2">
-                          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Сетка изображений</label>
-                          <div class="relative z-20 bg-transparent">
-                            <select
-                              :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                              @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                            >
-                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute z-30 text-gray-500 pointer-events-none right-4 top-1/2 -translate-y-1/2 dark:text-gray-400">
-                              <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </span>
-                          </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                          >
+                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                          </select>
                         </div>
                         <div class="booklet-stroen__text">
                           <textarea
@@ -608,20 +559,8 @@
                           >
                             {{ locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}
                           </button>
-                          <label class="flex cursor-pointer select-none items-center text-sm font-medium text-gray-700 dark:text-gray-400">
-                            <div class="relative">
-                              <input v-model="slide.data.show_metro" type="checkbox" class="sr-only" />
-                              <div
-                                :class="slide.data.show_metro ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
-                                class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
-                              >
-                                <span :class="slide.data.show_metro ? '' : 'opacity-0'">
-                                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round"/>
-                                  </svg>
-                                </span>
-                              </div>
-                            </div>
+                          <label class="flex cursor-pointer items-center gap-1.5 text-xs text-gray-600">
+                            <input v-model="slide.data.show_metro" type="checkbox" class="rounded" />
                             Показывать метро в презентации
                           </label>
                           <div
@@ -651,20 +590,15 @@
                     class="booklet-content booklet-galery"
                   >
                     <div class="booklet-galery__wrap">
-                      <div class="mb-2 px-2 col-span-full">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Сетка изображений</label>
-                        <div class="relative z-20 bg-transparent">
-                          <select
-                            :value="getImageGrid(slide)"
-                            class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                          >
-                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
-                          </select>
-                          <span class="absolute z-30 text-gray-500 pointer-events-none right-4 top-1/2 -translate-y-1/2 dark:text-gray-400">
-                            <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                          </span>
-                        </div>
+                      <div class="flex items-center gap-2 px-2 py-1 col-span-full">
+                        <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                        <select
+                          :value="getImageGrid(slide)"
+                          class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
+                          @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                        >
+                          <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                        </select>
                       </div>
                       <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                         <div
@@ -872,7 +806,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span :key="`counter-${activeSlideIndex}`" class="text-sm text-gray-500 tabular-nums">
+            <span class="text-sm text-gray-500">
               {{ visibleSlideNumber }} / {{ visibleSlides.length }}
             </span>
             <button
@@ -1049,7 +983,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, shallowRef } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import type { Swiper as SwiperType } from 'swiper'
@@ -1058,6 +992,7 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
+import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
 
@@ -1167,8 +1102,7 @@ interface SlideItem {
 }
 
 const slides = ref<SlideItem[]>([...defaultSlides])
-/** shallowRef: инстанс Swiper не оборачивать в глубокую реактивность, иначе Vue трогает внутренние ссылки и возможна ошибка emitsOptions на null */
-const swiperInstance = shallowRef<SwiperType | null>(null)
+const swiperInstance = ref<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
 const slidesContainerRef = ref<HTMLElement | null>(null)
 const canScrollLeft = ref(false)
@@ -1189,10 +1123,14 @@ const presentationMeta = ref<{
   publicHash: '',
 })
 
-/** Статус сохранения (тост после нажатия «Сохранить», «Опубликовать», экспорт PDF) */
+/** Статус автосохранения */
 const autoSaveStatus = ref('')
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+/** Интервал автосохранения после последнего изменения (промежуточное сохранение без кнопки) */
+const AUTO_SAVE_INTERVAL_MS = 12000
+const initialLoadDone = ref(false)
 
-/** Стили и иконка оповещения о сохранении (как в /dashboard/alerts) */
+/** Стили и иконка оповещения автосохранения (как в /dashboard/alerts) */
 const AUTO_SAVE_ALERT = {
   success: {
     container: 'border-success-500 bg-success-50 dark:border-success-500/30 dark:bg-success-500/15',
@@ -1214,12 +1152,18 @@ const autoSaveAlertVariant = computed(() => {
   return 'info'
 })
 const autoSaveAlertClasses = computed(() => AUTO_SAVE_ALERT[autoSaveAlertVariant.value])
-const autoSaveAlertTitle = computed(() => autoSaveStatus.value || 'Сохранение')
+const autoSaveAlertIcon = computed(() => {
+  const v = autoSaveAlertVariant.value
+  if (v === 'success') return SuccessIcon
+  if (v === 'error') return ErrorIcon
+  return InfoCircleIcon
+})
+const autoSaveAlertTitle = computed(() => autoSaveStatus.value || 'Автосохранение')
 const autoSaveAlertMessage = computed(() => {
   const s = autoSaveStatus.value
   if (s === 'Сохранено' || s === 'Опубликовано' || s === 'PDF экспортирован') return 'Изменения сохранены. Кнопка «Сохранить» доступна для ручного сохранения в любой момент.'
   if (s === 'Ошибка' || s === 'Ошибка сохранения' || s === 'Ошибка экспорта') return 'Попробуйте нажать «Сохранить» вручную или проверьте подключение.'
-  return 'Кнопка «Сохранить» доступна для ручного сохранения в любой момент.'
+  return 'Изменения сохраняются автоматически через несколько секунд после правок. Кнопка «Сохранить» — для ручного сохранения.'
 })
 
 /** Слайды, отображаемые в Swiper (без скрытых) */
@@ -1513,10 +1457,7 @@ const swiperOptions = {
 }
 
 function onSwiper(swiper: SwiperType) {
-  // Не задаём ref в том же тике, что и инициализация Swiper (избегаем конфликта с внутренним деревом Vue в Swiper)
-  nextTick(() => {
-    if (editorMounted.value) swiperInstance.value = swiper
-  })
+  swiperInstance.value = swiper
 }
 
 function onSlideChange(swiper: SwiperType) {
@@ -1524,25 +1465,17 @@ function onSlideChange(swiper: SwiperType) {
   const slide = visibleSlides.value[visibleIdx]
   if (slide) {
     const fullIdx = slides.value.findIndex((s) => s.id === slide.id)
-    if (fullIdx >= 0) {
-      // Откладываем обновление, чтобы не вызывать re-render внутри цикла обновления Swiper (избегаем emitsOptions на размонтированных компонентах)
-      nextTick(() => {
-        if (editorMounted.value) activeSlideIndex.value = fullIdx
-      })
-    }
+    if (fullIdx >= 0) activeSlideIndex.value = fullIdx
   }
 }
 
 function goToSlide(fullIndex: number) {
+  activeSlideIndex.value = fullIndex
   const slide = slides.value[fullIndex]
   if (slide && !slide.hidden) {
     const visibleIdx = visibleSlides.value.findIndex((s) => s.id === slide.id)
     if (visibleIdx >= 0) swiperInstance.value?.slideTo(visibleIdx)
   }
-  // Всегда обновляем индекс в следующем тике, чтобы не вызывать re-render внутри цикла Swiper (избегаем emitsOptions на null)
-  nextTick(() => {
-    if (editorMounted.value) activeSlideIndex.value = fullIndex
-  })
 }
 
 function prevSlide() {
@@ -1643,8 +1576,11 @@ function addSlide(type: string) {
   }
   slides.value.push(newSlide)
   const idx = slides.value.length - 1
-
-  // Переход к новому слайду (activeSlideIndex обновится внутри goToSlide в nextTick)
+  
+  // Устанавливаем активный слайд
+  activeSlideIndex.value = idx
+  
+  // Прокручиваем список к новому слайду с задержкой для обновления DOM
   nextTick(() => {
     goToSlide(idx)
     setTimeout(() => {
@@ -1716,8 +1652,8 @@ function duplicateSlide(index: number) {
 function deleteSlide(index: number) {
   slides.value.splice(index, 1)
   const newIndex = Math.min(activeSlideIndex.value, Math.max(0, slides.value.length - 1))
+  activeSlideIndex.value = newIndex
   nextTick(() => {
-    if (editorMounted.value) activeSlideIndex.value = newIndex
     const slide = slides.value[newIndex]
     if (slide && !slide.hidden) {
       const visibleIdx = visibleSlides.value.findIndex((s) => s.id === slide.id)
@@ -1738,10 +1674,9 @@ function onDragEnd() {
   if (slide) {
     const fullIdx = slides.value.findIndex((s) => s.id === slide.id)
     if (fullIdx >= 0) {
-      nextTick(() => {
-        if (editorMounted.value) activeSlideIndex.value = fullIdx
-        scrollToSlideInList(fullIdx)
-      })
+      activeSlideIndex.value = fullIdx
+      // Прокручиваем к перетащенному слайду
+      nextTick(() => scrollToSlideInList(fullIdx))
     }
   }
   updateScrollButtons()
@@ -2107,6 +2042,10 @@ async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index
 
 const presentationId = computed(() => route.params.id as string)
 
+watch(slides, () => {
+  if (initialLoadDone.value) scheduleAutoSave()
+}, { deep: true })
+
 function backupToLocalStorage() {
   try {
     const title = (slides.value[0]?.type === 'cover' && slides.value[0]?.data?.title)
@@ -2167,16 +2106,15 @@ function handleClickOutside(event: MouseEvent) {
   showAddSlideMenu.value = false
 }
 
-const editorMounted = ref(true)
-let stopSlidesScrollWatch: (() => void) | null = null
+let editorMounted = true
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
   
-  // Обновляем состояние кнопок прокрутки; сохраняем stop, чтобы отписаться при размонтировании (избегаем emitsOptions после unmount)
+  // Обновляем состояние кнопок прокрутки
   nextTick(() => {
     updateScrollButtons()
-    stopSlidesScrollWatch = watch(slides, () => {
+    watch(slides, () => {
       nextTick(() => updateScrollButtons())
     }, { deep: true })
   })
@@ -2185,41 +2123,33 @@ onMounted(async () => {
     return
   }
   const id = presentationId.value
-  try {
-    if (hasApi() && getToken()) {
-      try {
-        const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
-        if (!editorMounted.value) return
-        // Все присвоения ref — в nextTick, чтобы не вызывать re-render в том же тике, что и промис (избегаем emitsOptions на null)
-        nextTick(() => {
-          if (!editorMounted.value) return
-          if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
-            slides.value = (data.content.slides as SlideItem[]).map((s) => ({
-              ...s,
-              id: s.id ?? genSlideId(),
-              hidden: s.hidden ?? false,
-            }))
-          }
-          const currentSlides = slides.value
-          const coverSlide = currentSlides.find((s) => s.type === 'cover')
-          if (coverSlide && data?.coverImage) {
-            if (!coverSlide.data) coverSlide.data = {}
-            coverSlide.data.coverImageUrl = data.coverImage
-          }
-          if (data?.status != null) presentationMeta.value = { ...presentationMeta.value, status: data.status }
-          if (data?.isPublic != null) presentationMeta.value = { ...presentationMeta.value, isPublic: data.isPublic }
-          if (data?.publicUrl != null) presentationMeta.value = { ...presentationMeta.value, publicUrl: data.publicUrl }
-          if (data?.publicHash != null) presentationMeta.value = { ...presentationMeta.value, publicHash: data.publicHash }
-        })
-      } catch {
-        if (editorMounted.value) nextTick(() => loadFromLocalStorage(true))
+  if (hasApi() && getToken()) {
+    try {
+      const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
+      if (!editorMounted) return
+      if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
+        slides.value = (data.content.slides as SlideItem[]).map((s) => ({
+          ...s,
+          id: s.id ?? genSlideId(),
+          hidden: s.hidden ?? false,
+        }))
       }
-    } else {
-      nextTick(() => loadFromLocalStorage(true))
+      const coverSlide = slides.value.find((s) => s.type === 'cover')
+      if (coverSlide && data?.coverImage) {
+        if (!coverSlide.data) coverSlide.data = {}
+        coverSlide.data.coverImageUrl = data.coverImage
+      }
+      if (data?.status != null) presentationMeta.value.status = data.status
+      if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
+      if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
+      if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
+    } catch {
+      if (editorMounted) loadFromLocalStorage()
     }
-  } finally {
-    // Загрузка завершена
+  } else {
+    loadFromLocalStorage()
   }
+  if (editorMounted) nextTick(() => { initialLoadDone.value = true })
   
   // Отслеживание позиции мыши при перетаскивании
   document.addEventListener('mousemove', (e) => {
@@ -2230,33 +2160,25 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  editorMounted.value = false
-  stopSlidesScrollWatch?.()
-  stopSlidesScrollWatch = null
+  editorMounted = false
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
   if (addressSuggestionsBlurTimer) clearTimeout(addressSuggestionsBlurTimer)
   if (addressSuggestionsFetchTimer) clearTimeout(addressSuggestionsFetchTimer)
 })
 
-function loadFromLocalStorage(deferRefUpdate = false) {
+function loadFromLocalStorage() {
   try {
     const raw = localStorage.getItem(`presentation-${presentationId.value}`)
     if (raw) {
       const saved = JSON.parse(raw)
       if (Array.isArray(saved.slides) && saved.slides.length) {
-        const mapped = saved.slides.map((s: SlideItem) => ({
+        slides.value = saved.slides.map((s: SlideItem) => ({
           ...s,
           id: s.id ?? genSlideId(),
           hidden: s.hidden ?? false,
         }))
-        if (deferRefUpdate) {
-          nextTick(() => {
-            if (editorMounted.value) slides.value = mapped
-          })
-        } else {
-          slides.value = mapped
-        }
       }
     }
   } catch {
@@ -2279,12 +2201,10 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
       const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string } = { title, coverImage, content }
       if (status !== undefined) body.status = status
       const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${presentationId.value}`, body)
-      nextTick(() => {
-        if (data?.status != null) presentationMeta.value = { ...presentationMeta.value, status: data.status }
-        if (data?.isPublic != null) presentationMeta.value = { ...presentationMeta.value, isPublic: data.isPublic }
-        if (data?.publicUrl != null) presentationMeta.value = { ...presentationMeta.value, publicUrl: data.publicUrl }
-        if (data?.publicHash != null) presentationMeta.value = { ...presentationMeta.value, publicHash: data.publicHash }
-      })
+      if (data?.status != null) presentationMeta.value.status = data.status
+      if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
+      if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
+      if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
       if (!skipRedirect) router.push('/dashboard/presentations')
       return true
     } catch {
@@ -2297,26 +2217,24 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
 }
 
 async function saveToStorage() {
-  autoSaveStatus.value = 'Сохранение...'
-  const ok = await doSave()
-  if (!editorMounted.value) return
-  nextTick(() => {
-    if (!editorMounted.value) return
-    autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
-    if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 3000)
-    else setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 5000)
-  })
+  await doSave()
 }
 
 async function publishPresentation() {
   autoSaveStatus.value = 'Публикация...'
   const ok = await doSave({ status: 'published', skipRedirect: true })
-  if (!editorMounted.value) return
-  nextTick(() => {
-    if (!editorMounted.value) return
-    autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
-    if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
-  })
+  autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
+  if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+}
+
+function scheduleAutoSave() {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  autoSaveTimer = setTimeout(async () => {
+    autoSaveStatus.value = 'Сохранение...'
+    const ok = await doSave({ skipRedirect: true })
+    autoSaveStatus.value = ok ? 'Сохранено' : ''
+    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+  }, AUTO_SAVE_INTERVAL_MS)
 }
 
 function saveToLocalStorage(skipRedirect = false) {
@@ -2405,17 +2323,13 @@ async function exportToPDF() {
   // Сначала сохраняем презентацию
   autoSaveStatus.value = 'Сохранение перед экспортом...'
   const saved = await doSave({ skipRedirect: true })
-  if (!editorMounted.value) return
   if (!saved) {
-    nextTick(() => {
-      if (!editorMounted.value) return
-      autoSaveStatus.value = 'Ошибка сохранения'
-      setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
-    })
+    autoSaveStatus.value = 'Ошибка сохранения'
+    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
     return
   }
   
-  nextTick(() => { if (editorMounted.value) autoSaveStatus.value = 'Генерация PDF...' })
+  autoSaveStatus.value = 'Генерация PDF...'
   const id = presentationId.value
   try {
     const apiBase = getApiBase()
@@ -2433,7 +2347,6 @@ async function exportToPDF() {
     }
     
     const blob = await response.blob()
-    if (!editorMounted.value) return
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -2446,20 +2359,12 @@ async function exportToPDF() {
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
     
-    nextTick(() => {
-      if (!editorMounted.value) return
-      autoSaveStatus.value = 'PDF экспортирован'
-      setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
-    })
+    autoSaveStatus.value = 'PDF экспортирован'
+    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
   } catch (err) {
     console.error(err)
-    if (editorMounted.value) {
-      nextTick(() => {
-        if (!editorMounted.value) return
-        autoSaveStatus.value = 'Ошибка экспорта'
-        setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
-      })
-    }
+    autoSaveStatus.value = 'Ошибка экспорта'
+    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
     alert('Не удалось экспортировать презентацию в PDF: ' + (err instanceof Error ? err.message : 'Неизвестная ошибка'))
   }
 }
@@ -2660,15 +2565,4 @@ async function exportToPDF() {
         padding-bottom: max(12px, env(safe-area-inset-bottom));
       }
     }
-
-  /* Тост автосохранения: плавное появление/исчезновение */
-  .toast-enter-active,
-  .toast-leave-active {
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  .toast-enter-from,
-  .toast-leave-to {
-    opacity: 0;
-    transform: translateX(1rem);
-  }
 </style>
