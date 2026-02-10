@@ -11,12 +11,12 @@
         Публичная ссылка активна
       </div>
 
-      <!-- Оповещение автосохранения: фиксированный тост, не смещает контент -->
-      <Teleport to="body">
+      <!-- Оповещение автосохранения: тост в блоке контента (не под шапкой), не смещает контент -->
+      <Teleport to="#dashboard-content">
         <Transition name="toast">
           <div
             v-if="autoSaveStatus"
-            :class="['fixed right-4 top-4 z-[200] max-w-sm rounded-xl border p-4 shadow-lg', autoSaveAlertClasses.container]"
+            :class="['absolute right-4 top-4 z-[200] max-w-sm rounded-xl border p-4 shadow-lg', autoSaveAlertClasses.container]"
             role="status"
             aria-live="polite"
           >

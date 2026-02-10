@@ -7,7 +7,7 @@
       :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
     >
       <app-header />
-      <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <div id="dashboard-content" class="relative p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
         <slot></slot>
       </div>
     </div>
