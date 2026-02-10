@@ -1217,13 +1217,14 @@ const showSettingsMenu = ref(false)
 const showMobSlidesNav = ref(false)
 const settingsMenuRef = ref<HTMLElement | null>(null)
 
-/** Настройки отображения презентации (редактор / просмотр / публичная ссылка / PDF) */
+/** Настройки отображения презентации (редактор / просмотр / публичная ссылка / PDF). Шрифты с кириллицей (Google Fonts). */
 const FONT_OPTIONS = [
   { value: 'system-ui', label: 'Системный' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: '"Times New Roman", serif', label: 'Times New Roman' },
   { value: '"Open Sans", sans-serif', label: 'Open Sans' },
-  { value: 'Inter, sans-serif', label: 'Inter' },
+  { value: '"Montserrat", sans-serif', label: 'Montserrat' },
+  { value: '"Raleway", sans-serif', label: 'Raleway' },
+  { value: '"Rubik", sans-serif', label: 'Rubik' },
+  { value: '"Source Sans 3", sans-serif', label: 'Source Sans Pro' },
 ]
 const RADIUS_OPTIONS = [
   { value: '0', label: 'Без скругления' },

@@ -55,7 +55,7 @@
 
 .presentation-slider-wrap.booklet-view .booklet-main__img {
   position: relative;
-  flex: 0 0 65%;
+  flex: 0 0 55%;
   min-width: 200px;
   min-height: 280px;
   overflow: hidden;
@@ -65,6 +65,7 @@
   background: #C4C4C4;
   box-sizing: border-box;
   padding: 40px 0 40px 40px;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 /* Все изображения строго вписываются в область слайда, не выходят за рамки */
@@ -124,7 +125,7 @@
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__content {
-  flex: 1 1 35%;
+  flex: 1 1 45%;
   min-width: 200px;
   display: flex;
   flex-direction: column;
@@ -231,6 +232,7 @@
   align-items: center;
   justify-content: center;
   z-index: 2;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-galery__img img {
@@ -272,6 +274,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-char__img img {
@@ -345,6 +348,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-layout__img img {
@@ -423,6 +427,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img {
@@ -503,6 +508,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img {
@@ -649,6 +655,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img {
@@ -764,12 +771,12 @@
     flex-direction: row;
   }
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__img {
-    flex: 0 0 65%;
+    flex: 0 0 55%;
     min-height: 280px;
     padding: 40px 0 40px 40px;
   }
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__content {
-    flex: 1 1 35%;
+    flex: 1 1 45%;
     padding: 40px 25px;
   }
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-img__wrap,
