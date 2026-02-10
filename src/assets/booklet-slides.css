@@ -85,7 +85,9 @@
   object-fit: contain;
   object-position: center;
   display: block;
+  border-radius: var(--booklet-image-radius, 8px);
 }
+
 
 /* Динамическая сетка для слайдов с изображениями (data-image-grid задаётся в редакторе) */
 .presentation-slider-wrap.booklet-view .image-grid-bound[data-image-grid="1x1"] {
@@ -201,6 +203,17 @@
   overflow: hidden;
 }
 
+.presentation-slider-wrap.booklet-view .booklet-galery__title,
+.presentation-slider-wrap.booklet-view .booklet-galery__title input {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-galery__grid {
   display: grid;
   gap: 8px;
@@ -280,7 +293,6 @@
 
 .presentation-slider-wrap.booklet-view .booklet-char__table {
   flex: 1;
-  margin-top: 2.5rem;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -312,6 +324,7 @@
 
 .presentation-slider-wrap.booklet-view .booklet-layout__title-wrapper {
   flex: 0 0 auto;
+  margin-bottom: 1rem;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-layout__title {
@@ -361,13 +374,14 @@
   overflow: hidden;
 }
 
-.presentation-slider-wrap.booklet-view .booklet-info__title {
+.presentation-slider-wrap.booklet-view .booklet-info__title,
+.presentation-slider-wrap.booklet-view .booklet-info__title input {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: #1a1a1a;
+  color: #1a1a1a !important;
   flex-shrink: 0;
 }
 
@@ -530,7 +544,7 @@
   min-height: 200px;
   height: 100%;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--booklet-image-radius, 8px);
   display: flex;
   flex-direction: column;
 }
@@ -538,6 +552,7 @@
 .presentation-slider-wrap.booklet-view .booklet-map__img > * {
   flex: 1;
   min-height: 0;
+  border-radius: var(--booklet-image-radius, 8px);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-map__left {
@@ -588,6 +603,17 @@
   gap: 1rem;
   min-height: 0;
   overflow: hidden;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__title,
+.presentation-slider-wrap.booklet-view .booklet-contacts__title input {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  flex-shrink: 0;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-contacts__avatar-wrap {

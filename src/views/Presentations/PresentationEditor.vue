@@ -232,38 +232,91 @@
           </div>
         </div>
 
-        <!-- Кнопка "Добавить слайд" с выпадающим меню (скрыта на мобильных — есть в нижней панели) -->
-        <div ref="addSlideWrapRef" class="relative hidden shrink-0 md:block">
-          <button
-            type="button"
-            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            @click="showAddSlideMenu = !showAddSlideMenu"
-          >
-            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Добавить</span>
-            <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <!-- Выпадающее меню -->
-          <div
-            v-if="showAddSlideMenu"
-            ref="addSlideMenuRef"
-            class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
-            @click.stop
-          >
-            <div class="py-1">
-              <button
-                v-for="opt in SLIDE_TYPE_OPTIONS"
-                :key="opt.type"
-                type="button"
-                class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                @click="addSlide(opt.type); showAddSlideMenu = false"
-              >
-                {{ opt.label }}
-              </button>
+        <!-- Кнопка "Добавить слайд" и настройки отображения (скрыты на мобильных) -->
+        <div ref="addSlideWrapRef" class="relative hidden shrink-0 items-center gap-1 md:flex">
+          <div class="relative">
+            <button
+              type="button"
+              class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="showAddSlideMenu = !showAddSlideMenu"
+            >
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Добавить</span>
+              <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div
+              v-if="showAddSlideMenu"
+              ref="addSlideMenuRef"
+              class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              @click.stop
+            >
+              <div class="py-1">
+                <button
+                  v-for="opt in SLIDE_TYPE_OPTIONS"
+                  :key="opt.type"
+                  type="button"
+                  class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  @click="addSlide(opt.type); showAddSlideMenu = false"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Иконка шестерёнки: настройки отображения (редактор / просмотр / PDF) -->
+          <div class="relative">
+            <button
+              type="button"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+              title="Настройки отображения презентации"
+              @click="showSettingsMenu = !showSettingsMenu"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            <div
+              v-if="showSettingsMenu"
+              ref="settingsMenuRef"
+              class="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              @click.stop
+            >
+              <p class="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Отображение в редакторе / просмотре / PDF</p>
+              <div class="space-y-2">
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Шрифт</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select
+                      v-model="presentationSettings.fontFamily"
+                      class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                    >
+                      <option v-for="f in FONT_OPTIONS" :key="f.value" :value="f.value">{{ f.label }}</option>
+                    </select>
+                    <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                      <svg class="stroke-current h-4 w-4" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Скругление изображений и карт</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select
+                      v-model="presentationSettings.imageBorderRadius"
+                      class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                    >
+                      <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
+                    </select>
+                    <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                      <svg class="stroke-current h-4 w-4" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -275,8 +328,11 @@
           class="editor-slider-wrap rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
           @paste.capture="onPasteStripFormat"
         >
-          <!-- Высота слайдера ограничена, на мобиле больше места под контент -->
-          <div class="presentation-slider-wrap booklet-view mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900">
+          <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
+          <div
+            class="presentation-slider-wrap booklet-view mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900"
+            :style="presentationStyle"
+          >
             <Swiper
               v-bind="swiperOptions"
               @swiper="onSwiper"
@@ -405,7 +461,7 @@
                           class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
                         <div class="flex flex-wrap items-center gap-2">
-                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
                           <div class="relative z-20 bg-transparent">
                             <select
                               :value="getImageGrid(slide)"
@@ -431,7 +487,7 @@
                           />
                           <button
                             type="button"
-                            class="mt-2 inline-flex items-center gap-2 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                            class="mt-2 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                             :disabled="generateTextLoading === slide.id"
                             @click="generateTextWithAI(slide, 'description')"
                           >
@@ -474,7 +530,7 @@
                           class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
                         <div class="flex flex-wrap items-center gap-2">
-                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                          <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
                           <div class="relative z-20 bg-transparent">
                             <select
                               :value="getImageGrid(slide)"
@@ -500,7 +556,7 @@
                           />
                           <button
                             type="button"
-                            class="mt-1 inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50"
+                            class="mt-1 inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                             :disabled="generateTextLoading === slide.id"
                             @click="generateTextWithAI(slide, 'infrastructure')"
                           >
@@ -629,8 +685,14 @@
                     class="booklet-content booklet-galery"
                   >
                     <div class="booklet-galery__wrap">
+                      <input
+                        v-model="slide.data.heading"
+                        type="text"
+                        placeholder="ГАЛЕРЕЯ"
+                        class="booklet-galery__title w-full flex-shrink-0 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                      />
                       <div class="flex items-center gap-2 px-2 py-1 col-span-full">
-                        <span class="text-xs font-medium text-gray-500">Сетка:</span>
+                        <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
                         <div class="relative z-20 bg-transparent">
                           <select
                             :value="getImageGrid(slide)"
@@ -725,7 +787,7 @@
                             </button>
                           </div>
                           <button
-                            v-if="charItems(slide).length < 12"
+                            v-if="charItems(slide).length < 8"
                             type="button"
                             class="add-row mt-2 flex w-full items-center justify-center gap-1 rounded border border-dashed border-gray-300 py-1.5 text-xs text-gray-600 hover:border-brand-500 hover:text-brand-600"
                             @click="addCharacteristicItem(slide)"
@@ -775,6 +837,12 @@
                   >
                     <div class="booklet-contacts__wrap">
                       <div class="booklet-contacts__left">
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="КОНТАКТЫ"
+                          class="booklet-contacts__title mb-2 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold uppercase focus:outline-none focus:ring-0"
+                        />
                         <div class="booklet-contacts__avatar-wrap">
                           <div class="booklet-contacts__avatar relative">
                             <label class="booklet-upload-btn cursor-pointer">
@@ -790,12 +858,6 @@
                           <span class="text-xs text-gray-500">Аватар риэлтора / лого компании</span>
                         </div>
                         <div class="booklet-contacts__block booklet-contacts__content">
-                          <input
-                            v-model="slide.data.heading"
-                            type="text"
-                            placeholder="КОНТАКТЫ"
-                            class="mb-2 w-full border-0 bg-transparent p-0 text-base font-semibold uppercase focus:outline-none focus:ring-0"
-                          />
                           <input
                             v-model="slide.data.phone"
                             type="text"
@@ -1151,7 +1213,34 @@ const slides = ref<SlideItem[]>([...defaultSlides])
 const swiperInstance = ref<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
 const showAddSlideMenu = ref(false)
+const showSettingsMenu = ref(false)
 const showMobSlidesNav = ref(false)
+const settingsMenuRef = ref<HTMLElement | null>(null)
+
+/** Настройки отображения презентации (редактор / просмотр / публичная ссылка / PDF) */
+const FONT_OPTIONS = [
+  { value: 'system-ui', label: 'Системный' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: '"Times New Roman", serif', label: 'Times New Roman' },
+  { value: '"Open Sans", sans-serif', label: 'Open Sans' },
+  { value: 'Inter, sans-serif', label: 'Inter' },
+]
+const RADIUS_OPTIONS = [
+  { value: '0', label: 'Без скругления' },
+  { value: '4px', label: '4 px' },
+  { value: '8px', label: '8 px' },
+  { value: '12px', label: '12 px' },
+  { value: '16px', label: '16 px' },
+  { value: '9999px', label: 'Круглые' },
+]
+const presentationSettings = ref({
+  fontFamily: 'system-ui',
+  imageBorderRadius: '8px',
+})
+const presentationStyle = computed(() => ({
+  fontFamily: presentationSettings.value.fontFamily,
+  '--booklet-image-radius': presentationSettings.value.imageBorderRadius,
+} as Record<string, string>))
 
 /** Мета презентации: статус, публичная ссылка (только владелец) */
 const presentationMeta = ref<{
@@ -1993,7 +2082,7 @@ function backupToLocalStorage() {
     const title = (slides.value[0]?.type === 'cover' && slides.value[0]?.data?.title)
       ? String(slides.value[0].data.title).trim() || 'Без названия'
       : 'Без названия'
-    localStorage.setItem(`presentation-${presentationId.value}`, JSON.stringify({ slides: slides.value }))
+    localStorage.setItem(`presentation-${presentationId.value}`, JSON.stringify({ slides: slides.value, settings: { ...presentationSettings.value } }))
     const listRaw = localStorage.getItem('presentations-list')
     if (listRaw) {
       const list = JSON.parse(listRaw)
@@ -2018,6 +2107,7 @@ function handleClickOutside(event: MouseEvent) {
   const inMobileAdd = target.closest('.mob-editor-buttons__add') || target.closest('[data-mob-add-menu]')
   if (inDesktopWrap || inMobileAdd) return
   showAddSlideMenu.value = false
+  showSettingsMenu.value = false
 }
 
 let editorMounted = true
@@ -2050,6 +2140,12 @@ onMounted(async () => {
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
       if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
+      const contentWithSettings = data?.content as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | undefined
+      if (contentWithSettings?.settings && typeof contentWithSettings.settings === 'object') {
+        const s = contentWithSettings.settings
+        if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
+        if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+      }
     } catch {
       if (editorMounted) loadFromLocalStorage()
     }
@@ -2087,6 +2183,11 @@ function loadFromLocalStorage() {
           hidden: s.hidden ?? false,
         }))
       }
+      if (saved.settings && typeof saved.settings === 'object') {
+        const s = saved.settings as { fontFamily?: string; imageBorderRadius?: string }
+        if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
+        if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+      }
     }
   } catch {
     // keep default slides
@@ -2099,7 +2200,7 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
     ? String(cover.data.title).trim() || 'Без названия'
     : 'Без названия'
   const coverImage = (cover?.type === 'cover' && cover.data?.coverImageUrl) ? String(cover.data.coverImageUrl) : undefined
-  const content = { slides: slides.value }
+  const content = { slides: slides.value, settings: { ...presentationSettings.value } }
   const status = options?.status
   const skipRedirect = options?.skipRedirect ?? false
 

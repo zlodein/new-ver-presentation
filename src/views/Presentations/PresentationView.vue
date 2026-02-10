@@ -6,7 +6,11 @@
     <div v-else-if="error" class="flex min-h-screen items-center justify-center p-4">
       <p class="text-red-600">{{ error }}</p>
     </div>
-    <div v-else class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-4xl rounded-xl bg-white shadow-lg dark:bg-gray-900">
+    <div
+      v-else
+      class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-4xl rounded-xl bg-white shadow-lg dark:bg-gray-900"
+      :style="presentationStyle"
+    >
       <div
         v-for="(slide, index) in visibleSlides"
         :key="index"
@@ -105,7 +109,7 @@
             <!-- 6. Галерея 3 фото -->
             <div v-else-if="slide.type === 'gallery'" class="booklet-content booklet-galery">
               <div class="booklet-galery__wrap">
-                <h2 v-if="slide.data?.heading ?? slide.data?.title" class="mb-2 font-semibold uppercase col-span-full">{{ slide.data?.heading ?? slide.data?.title }}</h2>
+                <h2 class="booklet-galery__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ГАЛЕРЕЯ' }}</h2>
                 <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                   <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-galery__img">
                     <img v-if="url" :src="url" alt="">
@@ -139,17 +143,17 @@
                 </div>
               </div>
             </div>
-            <!-- 9. Контакты: 50% слева аватар + список, 50% справа изображение -->
+            <!-- 9. Контакты: 50% слева заголовок + аватар + список, 50% справа изображение -->
             <div v-else-if="slide.type === 'contacts'" class="booklet-content booklet-contacts">
               <div class="booklet-contacts__wrap">
                 <div class="booklet-contacts__left">
+                  <h2 class="booklet-contacts__title">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'КОНТАКТЫ' }}</h2>
                   <div v-if="slide.data?.avatarUrl || slide.data?.logoUrl" class="booklet-contacts__avatar-wrap">
                     <div class="booklet-contacts__avatar">
                       <img :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="">
                     </div>
                   </div>
                   <div class="booklet-contacts__block booklet-contacts__content">
-                    <h2 class="mb-2 text-base font-semibold uppercase">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'КОНТАКТЫ' }}</h2>
                     <p v-if="slide.data?.contact_name">{{ slide.data.contact_name }}</p>
                     <p v-if="slide.data?.phone ?? slide.data?.contact_phone">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
                     <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
@@ -200,7 +204,22 @@ interface ViewSlideItem {
 const route = useRoute()
 const loading = ref(true)
 const error = ref('')
-const presentation = ref<{ id: string; title: string; coverImage?: string; content: { slides: ViewSlideItem[] } } | null>(null)
+const presentation = ref<{
+  id: string
+  title: string
+  coverImage?: string
+  content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string } }
+} | null>(null)
+
+/** Стили отображения (шрифт и скругления) из настроек презентации */
+const presentationStyle = computed<Record<string, string>>(() => {
+  const s = presentation.value?.content?.settings
+  if (!s) return {}
+  return {
+    ...(s.fontFamily ? { fontFamily: s.fontFamily } : {}),
+    ...(s.imageBorderRadius != null ? { '--booklet-image-radius': s.imageBorderRadius } : {}),
+  }
+})
 
 /** Нормализуем слайды: сохраняем все поля, добавляем алиасы для совместимости редактора и PHP */
 function normalizeSlideData(raw: Record<string, unknown>, type: string, topCoverImage?: string): Record<string, unknown> {
