@@ -1,9 +1,8 @@
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'node:url'
 import { basename, dirname, join } from 'node:path'
-import { buildApp } from './app.js'
 
-// Загружаем .env из папки server/ (при запуске из server/src или server/dist)
+// Загружаем .env до импорта app, иначе маршруты прочитают process.env до загрузки переменных
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const serverDir =
   basename(__dirname) === 'dist' || basename(__dirname) === 'src'
@@ -14,6 +13,7 @@ dotenv.config({ path: join(serverDir, '.env') })
 const PORT = Number(process.env.PORT) || 3001
 
 async function main() {
+  const { buildApp } = await import('./app.js')
   const app = await buildApp()
   try {
     await app.listen({ port: PORT, host: '0.0.0.0' })
