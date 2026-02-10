@@ -28,7 +28,7 @@
         
         <!-- Список слайдов с горизонтальной прокруткой -->
         <div ref="slidesContainerRef" class="flex-1 overflow-x-auto scrollbar-hide" @scroll="onSlidesScroll">
-          <div class="flex gap-2 min-w-max">
+          <div class="slides-strip flex gap-2 min-w-max">
             <draggable
               v-model="slides"
               item-key="id"
@@ -58,7 +58,7 @@
                   </span>
                   <button
                     type="button"
-                    class="min-w-0 truncate text-[10px] font-medium transition whitespace-nowrap"
+                    class="min-w-0 truncate text-xs font-medium transition whitespace-nowrap"
                     :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
                     @click="goToSlide(index)"
                   >
@@ -123,9 +123,8 @@
         <div class="relative shrink-0">
           <button
             type="button"
-            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 !text-[10px]"
+            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             @click="showAddSlideMenu = !showAddSlideMenu"
-            style="font-size: 10px;"
           >
             <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -2209,27 +2208,13 @@ async function exportToPDF() {
         display: none;
       }
       
-      /* Принудительно устанавливаем размер шрифта для верхней панели слайдов */
-      .flex.items-center.gap-1\.5.rounded-lg button,
-      .flex.items-center.gap-1\.5.rounded-lg span,
-      .flex.items-center.gap-1\.5.rounded-lg [class*="text-"] {
-        font-size: 10px !important;
-        line-height: 1.2;
-      }
-      
-      /* Уменьшаем размеры элементов в панели слайдов */
-      .flex.items-center.gap-1\.5.rounded-lg {
-        font-size: 10px;
-      }
-      
-      /* Уменьшаем размеры кнопок в панели */
-      .flex.items-center.gap-1\.5.rounded-lg button[class*="text-"] {
-        font-size: 10px !important;
-      }
-      
-      /* Уменьшаем размеры текста в элементах слайдов */
-      [data-slide-index] button,
-      [data-slide-index] span {
-        font-size: 10px !important;
+      /* Шрифт панели слайдов (редактор): чуть крупнее для читаемости */
+      .slides-strip,
+      .slides-strip button,
+      .slides-strip span,
+      .slides-strip [data-slide-index] button,
+      .slides-strip [data-slide-index] span {
+        font-size: 12px;
+        line-height: 1.25;
       }
 </style>
