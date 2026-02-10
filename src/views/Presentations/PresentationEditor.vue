@@ -2106,9 +2106,10 @@ function handleClickOutside(event: MouseEvent) {
   showSettingsMenu.value = false
 }
 
-// Левый клик по подсказке Dadata: preventDefault на mousedown, чтобы input не терял фокус
-// до срабатывания обработчика выбора (иначе список закрывается до клика)
-function handleDadataSuggestionsMouseDown(event: MouseEvent) {
+// Левый клик по подсказке Dadata: preventDefault на pointerdown (не на mousedown),
+// чтобы input не терял фокус до выбора подсказки, но mousedown доходил до vue-dadata
+// и срабатывал onSuggestionClick — иначе точка на карте обновлялась только по ПКМ.
+function handleDadataSuggestionsPointerDown(event: PointerEvent) {
   if (event.button !== 0) return
   const target = event.target as HTMLElement
   if (target.closest('.vue-dadata__suggestions')) event.preventDefault()
@@ -2118,7 +2119,7 @@ let editorMounted = true
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
-  document.addEventListener('mousedown', handleDadataSuggestionsMouseDown, true)
+  document.addEventListener('pointerdown', handleDadataSuggestionsPointerDown, true)
   
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
@@ -2177,7 +2178,7 @@ onBeforeUnmount(() => {
   editorMounted = false
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
-  document.removeEventListener('mousedown', handleDadataSuggestionsMouseDown, true)
+  document.removeEventListener('pointerdown', handleDadataSuggestionsPointerDown, true)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   Object.values(locationGeocodeTimerBySlideId.value).forEach((tid) => clearTimeout(tid))
 })
