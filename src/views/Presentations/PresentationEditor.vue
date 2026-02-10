@@ -617,7 +617,7 @@
                       <div class="booklet-map__left flex flex-col gap-2 min-h-0">
                         <div class="booklet-map__img flex-1 min-h-0">
                           <LocationMap
-                            :key="slide.id"
+                            :key="`${slide.id}-${Number(slide.data?.lat)}-${Number(slide.data?.lng)}`"
                             :lat="Number(slide.data?.lat)"
                             :lng="Number(slide.data?.lng)"
                           />
@@ -627,16 +627,21 @@
                         <div class="booklet-map__info relative flex-shrink-0">
                           <div class="relative mb-2">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Поиск по адресу</label>
-                            <VueDadata
-                              v-if="dadataToken"
-                              :token="dadataToken"
-                              :model-value="String(slide.data?.address ?? '')"
-                              placeholder="ЖК «Успешная продажа»"
-                              debounce-wait="300ms"
-                              class="location-dadata"
-                              @update:model-value="(v: string) => onDadataAddressInput(slide, v)"
-                              @update:suggestion="(s: Suggestion | undefined) => onDadataSuggestion(slide, s)"
-                            />
+                            <div
+                              class="location-dadata-wrap"
+                              @mousedown.capture="handleDadataWrapMouseDown"
+                            >
+                              <VueDadata
+                                v-if="dadataToken"
+                                :token="dadataToken"
+                                :model-value="String(slide.data?.address ?? '')"
+                                placeholder="ЖК «Успешная продажа»"
+                                debounce-wait="300ms"
+                                class="location-dadata"
+                                @update:model-value="(v: string) => onDadataAddressInput(slide, v)"
+                                @update:suggestion="(s: Suggestion | undefined) => onDadataSuggestion(slide, s)"
+                              />
+                            </div>
                             <template v-else>
                               <input
                                 v-model="slide.data.address"
@@ -1424,6 +1429,14 @@ const dadataToken = (typeof import.meta !== 'undefined' && import.meta.env?.VITE
 
 const locationGeocodeTimerBySlideId = ref<Record<string, ReturnType<typeof setTimeout>>>({})
 
+// ЛКМ по подсказке: preventDefault на обёртке (capture), чтобы input не терял фокус
+// до срабатывания mousedown внутри vue-dadata — выбор подсказки и @update:suggestion успевают сработать.
+function handleDadataWrapMouseDown(event: MouseEvent) {
+  if (event.button !== 0) return
+  const target = event.target as HTMLElement
+  if (target.closest('.vue-dadata__suggestions')) event.preventDefault()
+}
+
 function onDadataAddressInput(slide: SlideItem, v: string) {
   const idx = slides.value.findIndex((item) => item.id === slide.id)
   if (idx === -1) return
@@ -1445,6 +1458,9 @@ function onDadataAddressInput(slide: SlideItem, v: string) {
 }
 
 function onDadataSuggestion(slide: SlideItem, s: Suggestion | undefined) {
+  if (import.meta.env?.DEV) {
+    console.log('[Dadata] onDadataSuggestion вызвана', s ? { value: s.value, geo_lat: s.data?.geo_lat, geo_lon: s.data?.geo_lon } : 'suggestion пустой')
+  }
   if (!s) return
   const tid = locationGeocodeTimerBySlideId.value[slide.id]
   if (tid) {
@@ -1465,6 +1481,9 @@ function onDadataSuggestion(slide: SlideItem, s: Suggestion | undefined) {
     address: s.value,
     ...(hasCoords ? { lat, lng } : {}),
   }
+  nextTick(() => {
+    // Принудительное обновление карты через key (key уже привязан к lat/lng)
+  })
   if (!hasCoords) {
     geocodeAddress(target)
   }
