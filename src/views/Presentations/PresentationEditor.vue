@@ -646,13 +646,6 @@
                               />
                               <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">Задайте VITE_DADATA_API_KEY в .env для подсказок Dadata.</p>
                             </template>
-                            <button
-                              type="button"
-                              class="mt-1.5 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
-                              @click="geocodeAddress(slide)"
-                            >
-                              Обновить точку на карте по адресу
-                            </button>
                           </div>
                           <button
                             type="button"
@@ -1431,11 +1424,21 @@ const dadataToken = (typeof import.meta !== 'undefined' && import.meta.env?.VITE
 
 function onDadataSuggestion(slide: SlideItem, s: Suggestion | undefined) {
   if (!s) return
-  ;(slide.data as Record<string, string>).address = s.value
-  const lat = parseFloat(s.data.geo_lat)
-  const lng = parseFloat(s.data.geo_lon)
-  if (Number.isFinite(lat)) (slide.data as Record<string, number>).lat = lat
-  if (Number.isFinite(lng)) (slide.data as Record<string, number>).lng = lng
+  const idx = slides.value.findIndex((item) => item.id === slide.id)
+  if (idx === -1) return
+  const target = slides.value[idx]
+  if (!target.data) target.data = {} as Record<string, unknown>
+  const data = target.data as Record<string, unknown>
+  data.address = s.value
+  const latRaw = s.data?.geo_lat
+  const lngRaw = s.data?.geo_lon
+  const lat = latRaw != null && latRaw !== '' ? parseFloat(String(latRaw)) : NaN
+  const lng = lngRaw != null && lngRaw !== '' ? parseFloat(String(lngRaw)) : NaN
+  if (Number.isFinite(lat)) data.lat = lat
+  if (Number.isFinite(lng)) data.lng = lng
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    geocodeAddress(target)
+  }
 }
 
 const geocodeLoadingBySlideId = ref<Record<string, boolean>>({})
