@@ -137,7 +137,7 @@
 
         <!-- ПК: плитка слайдов по левому краю, справа — кнопка -->
         <div class="hidden md:flex md:flex-1 md:items-center md:gap-1.5">
-          <div ref="slidesContainerRef" class="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2">
+          <div class="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2">
             <draggable
               v-model="slides"
               item-key="id"
@@ -212,14 +212,6 @@
                 </div>
               </template>
             </draggable>
-          </div>
-          <div class="flex shrink-0 items-center border-l border-gray-200 pl-2 dark:border-gray-700">
-            <button
-              type="button"
-              class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              <!-- Содержимое кнопки при необходимости -->
-            </button>
           </div>
         </div>
 
@@ -1088,9 +1080,6 @@ interface SlideItem {
 const slides = ref<SlideItem[]>([...defaultSlides])
 const swiperInstance = ref<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
-const slidesContainerRef = ref<HTMLElement | null>(null)
-const canScrollLeft = ref(false)
-const canScrollRight = ref(false)
 const showAddSlideMenu = ref(false)
 const showMobSlidesNav = ref(false)
 
@@ -1564,61 +1553,7 @@ function addSlide(type: string) {
   // Устанавливаем активный слайд
   activeSlideIndex.value = idx
   
-  // Прокручиваем список к новому слайду с задержкой для обновления DOM
-  nextTick(() => {
-    goToSlide(idx)
-    setTimeout(() => {
-      scrollToSlideInList(idx)
-    }, 100)
-  })
-}
-
-// Прокрутка списка слайдов к указанному индексу
-function scrollToSlideInList(index: number) {
-  if (!slidesContainerRef.value) return
-  
-  // Используем несколько nextTick для гарантии, что DOM обновлен
-  nextTick(() => {
-    nextTick(() => {
-      const container = slidesContainerRef.value
-      if (!container) return
-      
-      // Находим элемент слайда в DOM по data-slide-index
-      const slideElements = container.querySelectorAll('[data-slide-index]')
-      let targetElement: HTMLElement | undefined
-      
-      for (let i = 0; i < slideElements.length; i++) {
-        const el = slideElements[i] as HTMLElement
-        const slideIdx = parseInt(el.getAttribute('data-slide-index') || '-1')
-        if (slideIdx === index) {
-          targetElement = el
-          break
-        }
-      }
-      
-      if (targetElement) {
-        // Используем scrollIntoView для более надежной прокрутки
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        })
-      } else {
-        // Fallback: прокручиваем вручную
-        const containerRect = container.getBoundingClientRect()
-        const scrollLeft = container.scrollLeft
-        const estimatedWidth = 150 // Примерная ширина одного слайда
-        const targetScrollLeft = index * estimatedWidth
-        
-        container.scrollTo({
-          left: Math.max(0, targetScrollLeft - containerRect.width / 2),
-          behavior: 'smooth'
-        })
-      }
-      
-      updateScrollButtons()
-    })
-  })
+  nextTick(() => goToSlide(idx))
 }
 
 function duplicateSlide(index: number) {
@@ -1647,66 +1582,16 @@ function deleteSlide(index: number) {
 }
 
 function onDragEnd() {
-  // Очищаем интервал авто-прокрутки
-  if (dragScrollInterval) {
-    clearInterval(dragScrollInterval)
-    dragScrollInterval = null
-  }
-  
   const visibleIdx = swiperInstance.value?.activeIndex ?? 0
   const slide = visibleSlides.value[visibleIdx]
   if (slide) {
     const fullIdx = slides.value.findIndex((s) => s.id === slide.id)
-    if (fullIdx >= 0) {
-      activeSlideIndex.value = fullIdx
-      // Прокручиваем к перетащенному слайду
-      nextTick(() => scrollToSlideInList(fullIdx))
-    }
+    if (fullIdx >= 0) activeSlideIndex.value = fullIdx
   }
-  updateScrollButtons()
 }
 
-// Авто-прокрутка при перетаскивании слайда
-let dragScrollInterval: ReturnType<typeof setInterval> | null = null
-function onDragMove(event: { relatedContext: { index: number } }) {
-  if (!slidesContainerRef.value) return
-  
-  const container = slidesContainerRef.value
-  
-  // Очищаем предыдущий интервал
-  if (dragScrollInterval) {
-    clearInterval(dragScrollInterval)
-  }
-  
-  // Создаем интервал для авто-прокрутки
-  dragScrollInterval = setInterval(() => {
-    if (!container) {
-      if (dragScrollInterval) {
-        clearInterval(dragScrollInterval)
-        dragScrollInterval = null
-      }
-      return
-    }
-    
-    const containerRect = container.getBoundingClientRect()
-    const mouseX = (window as any).dragMouseX ?? containerRect.left + containerRect.width / 2
-    
-    const scrollZone = 80 // Зона прокрутки от краев
-    const scrollSpeed = 15
-    
-    if (mouseX < containerRect.left + scrollZone) {
-      // Прокрутка влево
-      container.scrollLeft = Math.max(0, container.scrollLeft - scrollSpeed)
-      updateScrollButtons()
-    } else if (mouseX > containerRect.right - scrollZone) {
-      // Прокрутка вправо
-      container.scrollLeft = Math.min(
-        container.scrollWidth - container.clientWidth,
-        container.scrollLeft + scrollSpeed
-      )
-      updateScrollButtons()
-    }
-  }, 16) // ~60fps
+function onDragMove(_event: { relatedContext: { index: number } }) {
+  // Прокрутка отключена — слайды выводятся плиткой
 }
 
 const MAX_CHARACTERISTICS = 12
@@ -2051,34 +1936,6 @@ function backupToLocalStorage() {
   }
 }
 
-// Функции для прокрутки слайдов
-function updateScrollButtons() {
-  if (!slidesContainerRef.value) {
-    canScrollLeft.value = false
-    canScrollRight.value = false
-    return
-  }
-  const container = slidesContainerRef.value
-  canScrollLeft.value = container.scrollLeft > 0
-  canScrollRight.value = container.scrollLeft < container.scrollWidth - container.clientWidth - 1
-}
-
-function scrollSlidesLeft() {
-  if (slidesContainerRef.value) {
-    slidesContainerRef.value.scrollBy({ left: -200, behavior: 'smooth' })
-  }
-}
-
-function scrollSlidesRight() {
-  if (slidesContainerRef.value) {
-    slidesContainerRef.value.scrollBy({ left: 200, behavior: 'smooth' })
-  }
-}
-
-function onSlidesScroll() {
-  updateScrollButtons()
-}
-
 // Обработчик клика вне меню "Добавить слайд"
 const addSlideMenuRef = ref<HTMLElement | null>(null)
 const addSlideWrapRef = ref<HTMLElement | null>(null)
@@ -2095,13 +1952,6 @@ onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
   
-  // Обновляем состояние кнопок прокрутки
-  nextTick(() => {
-    updateScrollButtons()
-    watch(slides, () => {
-      nextTick(() => updateScrollButtons())
-    }, { deep: true })
-  })
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
     return
