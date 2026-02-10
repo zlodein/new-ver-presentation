@@ -1433,39 +1433,30 @@ function onLocationAddressInput(slide: SlideItem, value: string) {
   slide.data.address = value
   if (!value.trim()) {
     addressSuggestionsBySlideId.value[slide.id] = []
-    console.log('[LocationSuggest] Ввод очищен, slide.id:', slide.id)
     return
   }
   clearTimeout(addressSuggestionsFetchTimer ?? 0)
   const id = slide.id
-  const url = `${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`
-  console.log('[LocationSuggest] Запрос через 300ms: EDITOR_API_BASE=', EDITOR_API_BASE, 'url=', url, 'slide.id=', id, 'value=', value)
   addressSuggestionsFetchTimer = setTimeout(() => {
-    console.log('[LocationSuggest] Отправка fetch:', url)
-    fetch(url)
+    fetch(`${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`)
       .then(async (r) => {
         const text = await r.text()
-        console.log('[LocationSuggest] Ответ: status=', r.status, 'ok=', r.ok, 'text(200)=', text.slice(0, 200))
         let data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>; error?: string }
         try {
           data = JSON.parse(text)
-        } catch (parseErr) {
-          console.error('[LocationSuggest] JSON.parse ошибка:', parseErr, 'text=', text)
+        } catch {
           if (!r.ok) {
             alert(r.status === 502 ? 'Сервис подсказок временно недоступен (502). Проверьте, что бэкенд запущен на сервере.' : `Ошибка сервера: ${r.status}`)
           }
           addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: [] }
           return
         }
-        console.log('[LocationSuggest] data.error=', data.error, 'suggestions.length=', data.suggestions?.length ?? 0, 'suggestions=', data.suggestions)
         if (data.error) {
           alert(data.error)
         }
         addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: data.suggestions ?? [] }
-        console.log('[LocationSuggest] Записано в addressSuggestionsBySlideId[' + id + ']:', addressSuggestionsBySlideId.value[id]?.length ?? 0, 'элементов')
       })
-      .catch((err) => {
-        console.error('[LocationSuggest] fetch catch:', err)
+      .catch(() => {
         addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: [] }
       })
   }, 300)
@@ -1476,7 +1467,6 @@ function addressSuggestionsFor(slide: SlideItem) {
 }
 
 function showAddressSuggestions(slide: SlideItem) {
-  console.log('[LocationSuggest] showAddressSuggestions slide.id=', slide.id, 'address=', slide.data?.address)
   if ((addressSuggestionsBySlideId.value[slide.id] ?? []).length > 0) {
     addressSuggestionsVisibleBySlideId.value[slide.id] = true
   }

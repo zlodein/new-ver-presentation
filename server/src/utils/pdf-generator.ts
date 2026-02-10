@@ -2,6 +2,18 @@ import puppeteer from 'puppeteer'
 import { existsSync } from 'node:fs'
 import type { ViewSlideItem } from './types.js'
 
+const YANDEX_STATIC_API_KEY = process.env.YANDEX_STATIC_API_KEY ?? ''
+
+/** URL статичной карты для PDF (Static API Яндекс.Карт) */
+function getStaticMapImageUrl(lat: number, lng: number, width = 400, height = 300, zoom = 16): string {
+  const ll = `${lng},${lat}`
+  const size = `${width},${height}`
+  const pt = `${lng},${lat}`
+  let url = `https://static-maps.yandex.ru/1.x/?ll=${ll}&size=${size}&z=${zoom}&l=map&pt=${pt}`
+  if (YANDEX_STATIC_API_KEY) url += `&apikey=${encodeURIComponent(YANDEX_STATIC_API_KEY)}`
+  return url
+}
+
 interface PresentationData {
   id: string
   title: string
@@ -188,6 +200,12 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const { limit, grid } = getImageGridLimit(dataObj, 'location')
         const images = toImageUrls((dataObj.images as unknown[]) || [], limit)
         const hasImages = images.some(Boolean)
+        const lat = Number(dataObj.lat)
+        const lng = Number(dataObj.lng)
+        const hasCoords = Number.isFinite(lat) && Number.isFinite(lng)
+        const mapContent = hasCoords
+          ? `<img src="${escapeHtml(getStaticMapImageUrl(lat, lng))}" alt="Карта" width="400" height="300" style="width:100%;height:100%;object-fit:cover;">`
+          : '<div class="map-placeholder">Карта</div>'
 
         return `
           <div class="booklet-page">
@@ -196,7 +214,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-map__wrap">
                   <h2 class="booklet-map__title">${escapeHtml(heading)}</h2>
                   <div class="booklet-map__left">
-                    <div class="booklet-map__img"><div class="map-placeholder">Карта</div></div>
+                    <div class="booklet-map__img">${mapContent}</div>
                   </div>
                   <div class="booklet-map__content">
                     <div class="booklet-map__info">
