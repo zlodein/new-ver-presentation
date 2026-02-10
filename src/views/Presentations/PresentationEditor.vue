@@ -11,114 +11,212 @@
         Публичная ссылка активна
       </div>
 
-      <!-- Горизонтальная панель со слайдами (на мобильных — стили mob-editor-nav) -->
-      <div class="editor-slides-nav flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white p-1.5 dark:border-gray-700 dark:bg-gray-800">
-        <!-- Кнопка прокрутки влево -->
+      <!-- Панель со слайдами: на ПК — горизонтальная лента, на мобильных — кнопка + раскрывающийся вертикальный список -->
+      <div class="editor-slides-nav flex flex-col gap-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:flex-row md:items-center md:gap-1.5 md:p-1.5">
+        <!-- Мобильная: кнопка «Навигация по слайдам» со стрелкой -->
         <button
           type="button"
-          class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-          :disabled="!canScrollLeft"
-          @click="scrollSlidesLeft"
-          title="Прокрутить влево"
+          class="editor-slides-nav__mob-trigger flex w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left md:hidden"
+          :class="showMobSlidesNav ? 'bg-gray-100 dark:bg-gray-700' : ''"
+          aria-expanded="showMobSlidesNav"
+          @click="showMobSlidesNav = !showMobSlidesNav"
         >
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Навигация по слайдам</span>
+          <svg
+            class="h-5 w-5 shrink-0 text-gray-500 transition-transform dark:text-gray-400"
+            :class="{ 'rotate-180': showMobSlidesNav }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-        
-        <!-- Список слайдов с горизонтальной прокруткой -->
-        <div ref="slidesContainerRef" class="flex-1 overflow-x-auto scrollbar-hide" @scroll="onSlidesScroll">
-          <div class="slides-strip flex gap-2 min-w-max">
-            <draggable
-              v-model="slides"
-              item-key="id"
-              handle=".slide-drag-handle"
-              @end="onDragEnd"
-              @move="onDragMove"
-              class="flex gap-2"
-            >
-              <template #item="{ element: slide, index }">
-                <div
-                  :data-slide-index="index"
-                  :class="[
-                    'flex items-center gap-1 rounded-lg border px-1.5 py-1 transition shrink-0',
-                    activeSlideIndex === index
-                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
-                      : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
-                    slide.hidden ? 'opacity-60' : '',
-                  ]"
+        <!-- Мобильная: раскрытый список слайдов (вертикально) -->
+        <div
+          v-show="showMobSlidesNav"
+          class="slides-strip-mob max-h-[60vh] overflow-y-auto border-t border-gray-200 py-2 dark:border-gray-700 md:hidden"
+        >
+          <draggable
+            v-model="slides"
+            item-key="id"
+            handle=".slide-drag-handle"
+            @end="onDragEnd"
+            @move="onDragMove"
+            class="flex flex-col gap-2 px-2"
+          >
+            <template #item="{ element: slide, index }">
+              <div
+                :data-slide-index="index"
+                :class="[
+                  'slide-item-mob flex items-center gap-3 rounded-lg border px-3 py-2.5 transition',
+                  activeSlideIndex === index
+                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
+                    : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
+                  slide.hidden ? 'opacity-60' : '',
+                ]"
+              >
+                <span
+                  class="slide-drag-handle flex h-9 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded text-gray-400 active:cursor-grabbing hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                  title="Перетащить"
                 >
-                  <span
-                    class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    title="Перетащить"
-                  >
-                    <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                    </svg>
-                  </span>
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                  </svg>
+                </span>
+                <button
+                  type="button"
+                  class="min-w-0 flex-1 truncate text-left text-base font-medium"
+                  :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
+                  @click="goToSlide(index)"
+                >
+                  {{ getSlideLabel(slide) }}
+                </button>
+                <div class="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    class="min-w-0 truncate text-xs font-medium transition whitespace-nowrap"
-                    :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
-                    @click="goToSlide(index)"
+                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
+                    @click.stop="toggleSlideVisibility(index)"
                   >
-                    {{ getSlideLabel(slide) }}
+                    <svg v-if="slide.hidden" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262" />
+                    </svg>
                   </button>
-                  <div class="flex shrink-0 items-center gap-0.5">
-                    <button
-                      type="button"
-                      class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                      :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
-                      @click.stop="toggleSlideVisibility(index)"
-                    >
-                      <svg v-if="slide.hidden" class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262M4.031 11.117A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.05 10.05 0 01-1.563 3.029m5.858-.908a3 3 0 11-4.243-4.243M9.88 9.88a4.5 4.5 0 106.262-6.262" />
-                      </svg>
-                      <svg v-else class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                      title="Дублировать"
-                      @click.stop="duplicateSlide(index)"
-                    >
-                      <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                    <button
-                      v-if="slides.length > 1"
-                      type="button"
-                      class="rounded p-0.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
-                      title="Удалить"
-                      @click.stop="deleteSlide(index)"
-                    >
-                      <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    title="Дублировать"
+                    @click.stop="duplicateSlide(index)"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  <button
+                    v-if="slides.length > 1"
+                    type="button"
+                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                    title="Удалить"
+                    @click.stop="deleteSlide(index)"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
-              </template>
-            </draggable>
-          </div>
+              </div>
+            </template>
+          </draggable>
         </div>
-        
-        <!-- Кнопка прокрутки вправо -->
-        <button
-          type="button"
-          class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-          :disabled="!canScrollRight"
-          @click="scrollSlidesRight"
-          title="Прокрутить вправо"
-        >
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-        
+
+        <!-- ПК: горизонтальная лента со слайдами -->
+        <div class="hidden md:flex md:flex-1 md:items-center md:gap-1.5">
+          <button
+            type="button"
+            class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            :disabled="!canScrollLeft"
+            @click="scrollSlidesLeft"
+            title="Прокрутить влево"
+          >
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div ref="slidesContainerRef" class="flex-1 overflow-x-auto scrollbar-hide" @scroll="onSlidesScroll">
+            <div class="slides-strip flex gap-2 min-w-max">
+              <draggable
+                v-model="slides"
+                item-key="id"
+                handle=".slide-drag-handle"
+                @end="onDragEnd"
+                @move="onDragMove"
+                class="flex gap-2"
+              >
+                <template #item="{ element: slide, index }">
+                  <div
+                    :data-slide-index="index"
+                    :class="[
+                      'flex items-center gap-1 rounded-lg border px-1.5 py-1 transition shrink-0',
+                      activeSlideIndex === index
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
+                        : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
+                      slide.hidden ? 'opacity-60' : '',
+                    ]"
+                  >
+                    <span
+                      class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      title="Перетащить"
+                    >
+                      <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                      </svg>
+                    </span>
+                    <button
+                      type="button"
+                      class="min-w-0 truncate text-xs font-medium transition whitespace-nowrap"
+                      :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
+                      @click="goToSlide(index)"
+                    >
+                      {{ getSlideLabel(slide) }}
+                    </button>
+                    <div class="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                        :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
+                        @click.stop="toggleSlideVisibility(index)"
+                      >
+                        <svg v-if="slide.hidden" class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg v-else class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262M4.031 11.117A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.05 10.05 0 01-1.563 3.029m5.858-.908a3 3 0 11-4.243-4.243M9.88 9.88a4.5 4.5 0 106.262-6.262" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                        title="Дублировать"
+                        @click.stop="duplicateSlide(index)"
+                      >
+                        <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                      <button
+                        v-if="slides.length > 1"
+                        type="button"
+                        class="rounded p-0.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                        title="Удалить"
+                        @click.stop="deleteSlide(index)"
+                      >
+                        <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+              </draggable>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            :disabled="!canScrollRight"
+            @click="scrollSlidesRight"
+            title="Прокрутить вправо"
+          >
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
         <!-- Кнопка "Добавить слайд" с выпадающим меню (скрыта на мобильных — есть в нижней панели) -->
         <div ref="addSlideWrapRef" class="relative hidden shrink-0 md:block">
           <button
@@ -821,7 +919,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-4 0l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </button>
-            <!-- Публичная ссылка: иконка глобуса (вкл) / глобус перечёркнут (выкл) -->
+            <!-- Публичная ссылка: глобус (вкл) / глобус перечёркнут (выкл) -->
             <button
               type="button"
               class="mob-editor-buttons__share inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition"
@@ -832,14 +930,18 @@
               aria-label="Публичная ссылка"
               @click="toggleShare"
             >
-              <!-- Глобус перечёркнут (ссылка выкл) -->
-              <svg v-if="!presentationMeta.isPublic" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0h.5a2.5 2.5 0 002.5-2.5V3.935M12 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16" />
+              <!-- Глобус (ссылка вкл) — круг + меридиан -->
+              <svg v-if="presentationMeta.isPublic" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2 12h20" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a9 9 0 0 1 6 10 9 9 0 0 1-6 10 9 9 0 0 1-6-10 9 9 0 0 1 6-10z" />
               </svg>
-              <!-- Глобус (ссылка вкл) -->
-              <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0h.5a2.5 2.5 0 002.5-2.5V3.935M12 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <!-- Глобус перечёркнут (ссылка выкл) — тот же глобус + диагональ -->
+              <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2 12h20" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a9 9 0 0 1 6 10 9 9 0 0 1-6 10 9 9 0 0 1-6-10 9 9 0 0 1 6-10z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 5l14 14" />
               </svg>
             </button>
           </div>
@@ -974,6 +1076,7 @@ const slidesContainerRef = ref<HTMLElement | null>(null)
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
 const showAddSlideMenu = ref(false)
+const showMobSlidesNav = ref(false)
 
 /** Мета презентации: статус, публичная ссылка (только владелец) */
 const presentationMeta = ref<{
@@ -2369,76 +2472,12 @@ async function exportToPDF() {
         background: #1f2937;
         border-bottom-color: #374151;
       }
-      .editor-slides-nav .slides-strip {
-        padding: 10px 0 14px;
-        gap: 6px;
+      /* Вертикальный список слайдов на мобильных: прокрутка */
+      .editor-slides-nav .slides-strip-mob {
+        -webkit-overflow-scrolling: touch;
       }
-      .editor-slides-nav .slides-strip > div {
-        gap: 6px;
-      }
-      /* Пункты слайдов: компактный чип, не растягивается, читаемый текст и иконки */
-      .editor-slides-nav [data-slide-index] {
-        width: auto !important;
-        max-width: 160px;
-        flex: 0 0 auto;
-        padding: 6px 8px 6px 10px;
-        font-weight: 600;
-        font-size: 13px;
-        line-height: 20px;
-        color: #374151;
-        white-space: nowrap;
-        min-height: 40px;
-        gap: 6px;
-        align-items: center;
-      }
-      .dark .editor-slides-nav [data-slide-index] {
-        color: #e5e7eb;
-      }
-      .editor-slides-nav [data-slide-index].border-brand-500 {
-        color: var(--theme-main-color, #2c7f8d);
-      }
-      .editor-slides-nav .slide-drag-handle {
-        cursor: grab;
-        flex: 0 0 auto;
-        padding: 6px;
-        min-width: 28px;
-        min-height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      .editor-slides-nav .slide-item-mob .slide-drag-handle {
         -webkit-tap-highlight-color: transparent;
-      }
-      .editor-slides-nav .slide-drag-handle svg {
-        width: 14px;
-        height: 14px;
-      }
-      .editor-slides-nav .slide-drag-handle:active {
-        cursor: grabbing;
-      }
-      .editor-slides-nav [data-slide-index] button.min-w-0.truncate {
-        cursor: pointer;
-        flex: 0 1 auto;
-        min-width: 0;
-        max-width: 72px;
-        padding: 2px 4px;
-        text-align: left;
-        font-size: 13px;
-        line-height: 20px;
-        min-height: 28px;
-        display: flex;
-        align-items: center;
-      }
-      .editor-slides-nav [data-slide-index] > div:last-child {
-        gap: 2px;
-      }
-      .editor-slides-nav [data-slide-index] > div:last-child button {
-        min-width: 28px;
-        min-height: 28px;
-        padding: 4px;
-      }
-      .editor-slides-nav [data-slide-index] > div:last-child button svg {
-        width: 14px;
-        height: 14px;
       }
 
       /* На мобильных отключаем aspect-ratio, чтобы высота задавалась min/max и контент помещался с прокруткой */
