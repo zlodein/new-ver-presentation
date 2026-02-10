@@ -1,6 +1,23 @@
 <template>
   <AdminLayout>
     <div class="flex flex-col gap-4">
+      <!-- Презентация не найдена (404) -->
+      <div
+        v-if="presentationNotFound"
+        class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40"
+        role="alert"
+      >
+        <p class="mb-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+          Презентация не найдена или у вас нет к ней доступа.
+        </p>
+        <RouterLink
+          to="/dashboard/presentations"
+          class="text-sm font-medium text-amber-700 underline hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
+        >
+          Вернуться к списку презентаций
+        </RouterLink>
+      </div>
+
       <!-- Публичная ссылка активна (оформление как /dashboard/form-elements — Website с Copy) -->
       <div
         v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
@@ -1107,7 +1124,7 @@ import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
-import { api, hasApi, getToken, getApiBase } from '@/api/client'
+import { api, hasApi, getToken, getApiBase, ApiError } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
 
 const route = useRoute()
@@ -1271,6 +1288,7 @@ let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
 /** Интервал автосохранения после последнего изменения (промежуточное сохранение без кнопки) */
 const AUTO_SAVE_INTERVAL_MS = 12000
 const initialLoadDone = ref(false)
+const presentationNotFound = ref(false)
 
 /** Стили и иконка оповещения автосохранения (как в /dashboard/alerts) */
 const AUTO_SAVE_ALERT = {
@@ -2153,8 +2171,14 @@ onMounted(async () => {
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
       }
-    } catch {
-      if (editorMounted) loadFromLocalStorage()
+    } catch (err) {
+      if (editorMounted) {
+        if (err instanceof ApiError && err.status === 404) {
+          presentationNotFound.value = true
+        } else {
+          loadFromLocalStorage()
+        }
+      }
     }
   } else {
     loadFromLocalStorage()
