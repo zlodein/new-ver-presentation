@@ -1049,7 +1049,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import type { Swiper as SwiperType } from 'swiper'
@@ -1167,7 +1167,8 @@ interface SlideItem {
 }
 
 const slides = ref<SlideItem[]>([...defaultSlides])
-const swiperInstance = ref<SwiperType | null>(null)
+/** shallowRef: инстанс Swiper не оборачивать в глубокую реактивность, иначе Vue трогает внутренние ссылки и возможна ошибка emitsOptions на null */
+const swiperInstance = shallowRef<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
 const slidesContainerRef = ref<HTMLElement | null>(null)
 const canScrollLeft = ref(false)
@@ -1516,7 +1517,10 @@ const swiperOptions = {
 }
 
 function onSwiper(swiper: SwiperType) {
-  swiperInstance.value = swiper
+  // Не задаём ref в том же тике, что и инициализация Swiper (избегаем конфликта с внутренним деревом Vue в Swiper)
+  nextTick(() => {
+    if (editorMounted.value) swiperInstance.value = swiper
+  })
 }
 
 function onSlideChange(swiper: SwiperType) {
@@ -2199,30 +2203,34 @@ onMounted(async () => {
       try {
         const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
         if (!editorMounted.value) return
-        if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
-          slides.value = (data.content.slides as SlideItem[]).map((s) => ({
-            ...s,
-            id: s.id ?? genSlideId(),
-            hidden: s.hidden ?? false,
-          }))
-        }
-        const coverSlide = slides.value.find((s) => s.type === 'cover')
-        if (coverSlide && data?.coverImage) {
-          if (!coverSlide.data) coverSlide.data = {}
-          coverSlide.data.coverImageUrl = data.coverImage
-        }
-        if (data?.status != null) presentationMeta.value.status = data.status
-        if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
-        if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
-        if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
+        // Все присвоения ref — в nextTick, чтобы не вызывать re-render в том же тике, что и промис (избегаем emitsOptions на null)
+        nextTick(() => {
+          if (!editorMounted.value) return
+          if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
+            slides.value = (data.content.slides as SlideItem[]).map((s) => ({
+              ...s,
+              id: s.id ?? genSlideId(),
+              hidden: s.hidden ?? false,
+            }))
+          }
+          const currentSlides = slides.value
+          const coverSlide = currentSlides.find((s) => s.type === 'cover')
+          if (coverSlide && data?.coverImage) {
+            if (!coverSlide.data) coverSlide.data = {}
+            coverSlide.data.coverImageUrl = data.coverImage
+          }
+          if (data?.status != null) presentationMeta.value = { ...presentationMeta.value, status: data.status }
+          if (data?.isPublic != null) presentationMeta.value = { ...presentationMeta.value, isPublic: data.isPublic }
+          if (data?.publicUrl != null) presentationMeta.value = { ...presentationMeta.value, publicUrl: data.publicUrl }
+          if (data?.publicHash != null) presentationMeta.value = { ...presentationMeta.value, publicHash: data.publicHash }
+        })
       } catch {
-        if (editorMounted.value) loadFromLocalStorage()
+        if (editorMounted.value) nextTick(() => loadFromLocalStorage(true))
       }
     } else {
-      loadFromLocalStorage()
+      nextTick(() => loadFromLocalStorage(true))
     }
   } finally {
-    // Всегда включаем автосохранение после попытки загрузки, иначе правки не будут сохраняться
     if (editorMounted.value) nextTick(() => { initialLoadDone.value = true })
   }
   
@@ -2245,17 +2253,24 @@ onBeforeUnmount(() => {
   if (addressSuggestionsFetchTimer) clearTimeout(addressSuggestionsFetchTimer)
 })
 
-function loadFromLocalStorage() {
+function loadFromLocalStorage(deferRefUpdate = false) {
   try {
     const raw = localStorage.getItem(`presentation-${presentationId.value}`)
     if (raw) {
       const saved = JSON.parse(raw)
       if (Array.isArray(saved.slides) && saved.slides.length) {
-        slides.value = saved.slides.map((s: SlideItem) => ({
+        const mapped = saved.slides.map((s: SlideItem) => ({
           ...s,
           id: s.id ?? genSlideId(),
           hidden: s.hidden ?? false,
         }))
+        if (deferRefUpdate) {
+          nextTick(() => {
+            if (editorMounted.value) slides.value = mapped
+          })
+        } else {
+          slides.value = mapped
+        }
       }
     }
   } catch {
@@ -2278,10 +2293,12 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
       const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string } = { title, coverImage, content }
       if (status !== undefined) body.status = status
       const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${presentationId.value}`, body)
-      if (data?.status != null) presentationMeta.value.status = data.status
-      if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
-      if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
-      if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
+      nextTick(() => {
+        if (data?.status != null) presentationMeta.value = { ...presentationMeta.value, status: data.status }
+        if (data?.isPublic != null) presentationMeta.value = { ...presentationMeta.value, isPublic: data.isPublic }
+        if (data?.publicUrl != null) presentationMeta.value = { ...presentationMeta.value, publicUrl: data.publicUrl }
+        if (data?.publicHash != null) presentationMeta.value = { ...presentationMeta.value, publicHash: data.publicHash }
+      })
       if (!skipRedirect) router.push('/dashboard/presentations')
       return true
     } catch {
@@ -2301,8 +2318,11 @@ async function publishPresentation() {
   autoSaveStatus.value = 'Публикация...'
   const ok = await doSave({ status: 'published', skipRedirect: true })
   if (!editorMounted.value) return
-  autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
-  if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+  nextTick(() => {
+    if (!editorMounted.value) return
+    autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
+    if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+  })
 }
 
 function scheduleAutoSave() {
@@ -2310,9 +2330,13 @@ function scheduleAutoSave() {
   autoSaveTimer = setTimeout(async () => {
     const ok = await doSave({ skipRedirect: true })
     if (!editorMounted.value) return
-    autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
-    if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 3000)
-    else setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 5000)
+    // Обновляем статус в nextTick, чтобы не вызывать re-render в том же тике, что и разрешение промиса (источник emitsOptions на null)
+    nextTick(() => {
+      if (!editorMounted.value) return
+      autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
+      if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 3000)
+      else setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 5000)
+    })
   }, AUTO_SAVE_INTERVAL_MS)
 }
 
@@ -2404,12 +2428,15 @@ async function exportToPDF() {
   const saved = await doSave({ skipRedirect: true })
   if (!editorMounted.value) return
   if (!saved) {
-    autoSaveStatus.value = 'Ошибка сохранения'
-    setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+    nextTick(() => {
+      if (!editorMounted.value) return
+      autoSaveStatus.value = 'Ошибка сохранения'
+      setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+    })
     return
   }
   
-  autoSaveStatus.value = 'Генерация PDF...'
+  nextTick(() => { if (editorMounted.value) autoSaveStatus.value = 'Генерация PDF...' })
   const id = presentationId.value
   try {
     const apiBase = getApiBase()
@@ -2440,13 +2467,19 @@ async function exportToPDF() {
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
     
-    autoSaveStatus.value = 'PDF экспортирован'
-    setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+    nextTick(() => {
+      if (!editorMounted.value) return
+      autoSaveStatus.value = 'PDF экспортирован'
+      setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+    })
   } catch (err) {
     console.error(err)
     if (editorMounted.value) {
-      autoSaveStatus.value = 'Ошибка экспорта'
-      setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+      nextTick(() => {
+        if (!editorMounted.value) return
+        autoSaveStatus.value = 'Ошибка экспорта'
+        setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+      })
     }
     alert('Не удалось экспортировать презентацию в PDF: ' + (err instanceof Error ? err.message : 'Неизвестная ошибка'))
   }
