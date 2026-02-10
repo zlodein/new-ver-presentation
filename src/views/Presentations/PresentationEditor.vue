@@ -11,8 +11,8 @@
         Публичная ссылка активна
       </div>
 
-      <!-- Горизонтальная панель со слайдами -->
-      <div class="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white p-1.5 dark:border-gray-700 dark:bg-gray-800">
+      <!-- Горизонтальная панель со слайдами (на мобильных — стили mob-editor-nav) -->
+      <div class="editor-slides-nav flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white p-1.5 dark:border-gray-700 dark:bg-gray-800">
         <!-- Кнопка прокрутки влево -->
         <button
           type="button"
@@ -162,6 +162,43 @@
           class="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50 p-4 lg:p-6"
           @paste.capture="onPasteStripFormat"
         >
+          <!-- На мобильных: панель управления текущим слайдом (скрыть/дублировать/удалить) -->
+          <div class="mob-editor__slide-controls flex md:hidden">
+            <button
+              type="button"
+              class="mob-editor__control-btn mob-editor__control-btn--hide rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              :class="{ 'opacity-70': currentSlide?.hidden }"
+              :title="currentSlide?.hidden ? 'Показать слайд' : 'Скрыть слайд'"
+              @click="currentSlide != null && toggleSlideVisibility(activeSlideIndex)"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path v-if="currentSlide?.hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="mob-editor__control-btn mob-editor__control-btn--up rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              title="Дублировать"
+              @click="currentSlide != null && duplicateSlide(activeSlideIndex)"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <button
+              v-if="slides.length > 1"
+              type="button"
+              class="mob-editor__control-btn mob-editor__control-btn--delete rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
+              title="Удалить"
+              @click="currentSlide != null && deleteSlide(activeSlideIndex)"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+
           <!-- Высота слайдера ограничена, на мобиле больше места под контент -->
           <div class="presentation-slider-wrap booklet-view mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900">
             <Swiper
@@ -674,7 +711,7 @@
             </Swiper>
           </div>
 
-          <div class="mt-4 flex flex-wrap items-center gap-[30px]">
+          <div class="editor-actions mt-4 flex flex-wrap items-center gap-[30px]">
             <button
               type="button"
               class="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -738,6 +775,90 @@
               Опубликовать
             </button>
             <span v-if="autoSaveStatus" class="text-xs text-gray-500">{{ autoSaveStatus }}</span>
+          </div>
+
+          <!-- Мобильная нижняя панель: навигация, добавить, просмотр, сохранение, публичная ссылка -->
+          <div class="mob-editor-buttons fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800 md:hidden">
+            <button
+              type="button"
+              class="mob-editor-buttons__prev inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              :class="{ 'invisible': visibleSlideNumber <= 1 }"
+              :disabled="visibleSlideNumber <= 1"
+              @click="prevSlide"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              Назад
+            </button>
+            <button
+              type="button"
+              class="mob-editor-buttons__next inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              :class="{ 'invisible': visibleSlideNumber >= visibleSlides.length }"
+              :disabled="visibleSlideNumber >= visibleSlides.length"
+              @click="nextSlide"
+            >
+              Вперёд
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <div class="relative">
+              <button
+                type="button"
+                class="mob-editor-buttons__add flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700"
+                title="Добавить слайд"
+                @click="showAddSlideMenu = !showAddSlideMenu"
+              >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+              <div
+                v-if="showAddSlideMenu"
+                class="absolute bottom-full left-1/2 z-50 mb-2 w-48 -translate-x-1/2 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                @click.stop
+              >
+                <div class="max-h-64 overflow-y-auto py-1">
+                  <button
+                    v-for="opt in SLIDE_TYPE_OPTIONS"
+                    :key="opt.type"
+                    type="button"
+                    class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    @click="addSlide(opt.type); showAddSlideMenu = false"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              @click="openViewPage"
+            >
+              Просмотр
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700"
+              @click="saveToStorage"
+            >
+              Сохранить
+            </button>
+            <!-- Переключатель публичной ссылки -->
+            <label
+              class="mob-editor-buttons__share flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-2 py-2 dark:border-gray-600 dark:bg-gray-700"
+              title="Поделиться (публичная ссылка)"
+            >
+              <input
+                :checked="presentationMeta.isPublic"
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                @change="toggleShare"
+              >
+              <span class="text-xs font-medium text-gray-700 dark:text-gray-200">Ссылка</span>
+            </label>
           </div>
         </div>
       </main>
@@ -892,6 +1013,9 @@ const initialLoadDone = ref(false)
 
 /** Слайды, отображаемые в Swiper (без скрытых) */
 const visibleSlides = computed(() => slides.value.filter((s) => !s.hidden))
+
+/** Текущий слайд по активному индексу (для панели управления на мобильных) */
+const currentSlide = computed(() => slides.value[activeSlideIndex.value] ?? null)
 
 /** Номер текущего слайда среди видимых (1-based для отображения) */
 const visibleSlideNumber = computed(() => {
@@ -2217,4 +2341,137 @@ async function exportToPDF() {
         font-size: 12px;
         line-height: 1.25;
       }
+
+      /* --- Стили свайпера и мобильного редактора (адаптация под TailAdmin) --- */
+      .presentation-swiper.swiper,
+      .presentation-slider-wrap .swiper {
+        padding: 0;
+        overflow: hidden;
+        width: 100%;
+      }
+      .presentation-swiper .swiper-wrapper {
+        width: auto;
+      }
+      .presentation-swiper .swiper-slide {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+    /* Мобильная версия: скрыть десктопные действия, показать нижнюю панель */
+    @media (max-width: 768px) {
+      .editor-actions {
+        display: none;
+      }
+
+      /* Навигация по слайдам вверху (стили mob-editor-nav) */
+      .editor-slides-nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        width: 100%;
+        max-width: 100vw;
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        margin-bottom: 0;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 0;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        overflow-y: visible;
+      }
+      .dark .editor-slides-nav {
+        background: #1f2937;
+        border-bottom-color: #374151;
+      }
+      .editor-slides-nav .slides-strip {
+        padding: 15px 0 20px;
+      }
+      .editor-slides-nav [data-slide-index] {
+        width: auto !important;
+        padding: 0 8px 0 16px;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 24px;
+        color: #374151;
+        white-space: nowrap;
+        min-height: 24px;
+        gap: 6px;
+      }
+      .dark .editor-slides-nav [data-slide-index] {
+        color: #e5e7eb;
+      }
+      .editor-slides-nav [data-slide-index].border-brand-500 {
+        color: var(--theme-main-color, #2c7f8d);
+      }
+      .editor-slides-nav .slide-drag-handle {
+        cursor: pointer;
+        flex: 0 0 auto;
+        padding: 0 4px;
+        min-width: 0;
+      }
+      .editor-slides-nav [data-slide-index] button.min-w-0.truncate {
+        cursor: pointer;
+        flex: 1;
+        padding: 0 4px;
+        min-width: 0;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      /* Панель управления текущим слайдом (скрыть / дублировать / удалить) */
+      .mob-editor__slide-controls {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e5e7eb;
+        margin: 0 -1rem 0 -1rem 16px -1rem;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .dark .mob-editor__slide-controls {
+        background: #111827;
+        border-bottom-color: #374151;
+      }
+      .mob-editor__control-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: transform 0.2s;
+      }
+      .mob-editor__control-btn:active {
+        transform: scale(0.95);
+      }
+
+      /* Контейнер редактора слайдов (высота и прокрутка) */
+      .presentation-slider-wrap.booklet-view {
+        min-height: 50vh;
+        max-height: min(70vh, 500px);
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
+      .presentation-slider-wrap.booklet-view .booklet-page__inner {
+        min-height: 400px;
+        padding: 20px 16px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* Нижняя панель: отступ снизу для safe area (вырезы/индикатор) */
+      .mob-editor-buttons {
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+    }
 </style>
