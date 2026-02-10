@@ -120,7 +120,7 @@
         </button>
         
         <!-- Кнопка "Добавить слайд" с выпадающим меню (скрыта на мобильных — есть в нижней панели) -->
-        <div class="relative hidden shrink-0 md:block">
+        <div ref="addSlideWrapRef" class="relative hidden shrink-0 md:block">
           <button
             type="button"
             class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -1931,12 +1931,12 @@ function onSlidesScroll() {
 
 // Обработчик клика вне меню "Добавить слайд"
 const addSlideMenuRef = ref<HTMLElement | null>(null)
-const mobAddSlideMenuRef = ref<HTMLElement | null>(null)
+const addSlideWrapRef = ref<HTMLElement | null>(null)
 function handleClickOutside(event: MouseEvent) {
   const target = event.target as HTMLElement
-  const inDesktopMenu = addSlideMenuRef.value?.contains(target)
+  const inDesktopWrap = addSlideWrapRef.value?.contains(target)
   const inMobileAdd = target.closest('.mob-editor-buttons__add') || target.closest('[data-mob-add-menu]')
-  if (inDesktopMenu || inMobileAdd) return
+  if (inDesktopWrap || inMobileAdd) return
   showAddSlideMenu.value = false
 }
 
@@ -2321,14 +2321,14 @@ async function exportToPDF() {
         display: none;
       }
       
-      /* Шрифт панели слайдов (редактор): чуть крупнее для читаемости */
+      /* Шрифт панели слайдов (редактор): крупнее для читаемости на ПК */
       .slides-strip,
       .slides-strip button,
       .slides-strip span,
       .slides-strip [data-slide-index] button,
       .slides-strip [data-slide-index] span {
-        font-size: 12px;
-        line-height: 1.25;
+        font-size: 14px;
+        line-height: 1.3;
       }
 
       /* --- Стили свайпера и мобильного редактора (адаптация под TailAdmin) --- */
