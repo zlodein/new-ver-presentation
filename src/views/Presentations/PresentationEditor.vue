@@ -1524,17 +1524,25 @@ function onSlideChange(swiper: SwiperType) {
   const slide = visibleSlides.value[visibleIdx]
   if (slide) {
     const fullIdx = slides.value.findIndex((s) => s.id === slide.id)
-    if (fullIdx >= 0) activeSlideIndex.value = fullIdx
+    if (fullIdx >= 0) {
+      // Откладываем обновление, чтобы не вызывать re-render внутри цикла обновления Swiper (избегаем emitsOptions на размонтированных компонентах)
+      nextTick(() => {
+        if (editorMounted.value) activeSlideIndex.value = fullIdx
+      })
+    }
   }
 }
 
 function goToSlide(fullIndex: number) {
-  activeSlideIndex.value = fullIndex
   const slide = slides.value[fullIndex]
   if (slide && !slide.hidden) {
     const visibleIdx = visibleSlides.value.findIndex((s) => s.id === slide.id)
     if (visibleIdx >= 0) swiperInstance.value?.slideTo(visibleIdx)
   }
+  // Всегда обновляем индекс в следующем тике, чтобы не вызывать re-render внутри цикла Swiper (избегаем emitsOptions на null)
+  nextTick(() => {
+    if (editorMounted.value) activeSlideIndex.value = fullIndex
+  })
 }
 
 function prevSlide() {
@@ -1635,11 +1643,8 @@ function addSlide(type: string) {
   }
   slides.value.push(newSlide)
   const idx = slides.value.length - 1
-  
-  // Устанавливаем активный слайд
-  activeSlideIndex.value = idx
-  
-  // Прокручиваем список к новому слайду с задержкой для обновления DOM
+
+  // Переход к новому слайду (activeSlideIndex обновится внутри goToSlide в nextTick)
   nextTick(() => {
     goToSlide(idx)
     setTimeout(() => {
@@ -1711,8 +1716,8 @@ function duplicateSlide(index: number) {
 function deleteSlide(index: number) {
   slides.value.splice(index, 1)
   const newIndex = Math.min(activeSlideIndex.value, Math.max(0, slides.value.length - 1))
-  activeSlideIndex.value = newIndex
   nextTick(() => {
+    if (editorMounted.value) activeSlideIndex.value = newIndex
     const slide = slides.value[newIndex]
     if (slide && !slide.hidden) {
       const visibleIdx = visibleSlides.value.findIndex((s) => s.id === slide.id)
@@ -1733,9 +1738,10 @@ function onDragEnd() {
   if (slide) {
     const fullIdx = slides.value.findIndex((s) => s.id === slide.id)
     if (fullIdx >= 0) {
-      activeSlideIndex.value = fullIdx
-      // Прокручиваем к перетащенному слайду
-      nextTick(() => scrollToSlideInList(fullIdx))
+      nextTick(() => {
+        if (editorMounted.value) activeSlideIndex.value = fullIdx
+        scrollToSlideInList(fullIdx)
+      })
     }
   }
   updateScrollButtons()
@@ -2171,14 +2177,15 @@ function handleClickOutside(event: MouseEvent) {
 }
 
 const editorMounted = ref(true)
+let stopSlidesScrollWatch: (() => void) | null = null
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
   
-  // Обновляем состояние кнопок прокрутки
+  // Обновляем состояние кнопок прокрутки; сохраняем stop, чтобы отписаться при размонтировании (избегаем emitsOptions после unmount)
   nextTick(() => {
     updateScrollButtons()
-    watch(slides, () => {
+    stopSlidesScrollWatch = watch(slides, () => {
       nextTick(() => updateScrollButtons())
     }, { deep: true })
   })
@@ -2229,6 +2236,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   editorMounted.value = false
+  stopSlidesScrollWatch?.()
+  stopSlidesScrollWatch = null
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
