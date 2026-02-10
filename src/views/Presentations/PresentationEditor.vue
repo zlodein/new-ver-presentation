@@ -60,9 +60,9 @@
           :aria-expanded="showMobSlidesNav"
           @click="showMobSlidesNav = !showMobSlidesNav"
         >
-          <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Навигация по слайдам</span>
+          <span class="text-base font-semibold text-gray-700 dark:text-gray-200">Навигация по слайдам</span>
           <svg
-            class="h-5 w-5 shrink-0 text-gray-500 transition-transform dark:text-gray-400"
+            class="h-6 w-6 shrink-0 text-gray-500 transition-transform dark:text-gray-400"
             :class="{ 'rotate-180': showMobSlidesNav }"
             fill="none"
             stroke="currentColor"
@@ -96,16 +96,16 @@
                 ]"
               >
                 <span
-                  class="slide-drag-handle flex h-9 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded text-gray-400 active:cursor-grabbing hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                  class="slide-drag-handle flex h-10 w-10 shrink-0 cursor-grab touch-none items-center justify-center rounded text-gray-400 active:cursor-grabbing hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                   title="Перетащить"
                 >
-                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                   </svg>
                 </span>
                 <button
                   type="button"
-                  class="min-w-0 flex-1 truncate text-left text-base font-medium"
+                  class="min-w-0 flex-1 truncate text-left text-lg font-medium"
                   :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
                   @click="goToSlide(index)"
                 >
@@ -114,35 +114,35 @@
                 <div class="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                     :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
                     @click.stop="toggleSlideVisibility(index)"
                   >
-                    <svg v-if="slide.hidden" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="slide.hidden" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-else class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262" />
                     </svg>
                   </button>
                   <button
                     type="button"
-                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                     title="Дублировать"
                     @click.stop="duplicateSlide(index)"
                   >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </button>
                   <button
                     v-if="slides.length > 1"
                     type="button"
-                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                    class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
                     title="Удалить"
                     @click.stop="deleteSlide(index)"
                   >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
@@ -167,7 +167,7 @@
                 <div
                   :data-slide-index="index"
                   :class="[
-                    'flex items-center gap-1 rounded-lg border px-1.5 py-1 transition shrink-0',
+                    'flex items-center gap-1.5 rounded-lg border px-2 py-1.5 transition shrink-0',
                     activeSlideIndex === index
                       ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
                       : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
@@ -178,13 +178,13 @@
                     class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     title="Перетащить"
                   >
-                    <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                     </svg>
                   </span>
                   <button
                     type="button"
-                    class="min-w-0 truncate text-xs font-medium transition whitespace-nowrap"
+                    class="min-w-0 truncate text-sm font-medium transition whitespace-nowrap"
                     :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
                     @click="goToSlide(index)"
                   >
@@ -193,35 +193,35 @@
                   <div class="flex shrink-0 items-center gap-0.5">
                     <button
                       type="button"
-                      class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                       :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
                       @click.stop="toggleSlideVisibility(index)"
                     >
-                      <svg v-if="slide.hidden" class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg v-if="slide.hidden" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
-                      <svg v-else class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262M4.031 11.117A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.05 10.05 0 01-1.563 3.029m5.858-.908a3 3 0 11-4.243-4.243M9.88 9.88a4.5 4.5 0 106.262-6.262" />
                       </svg>
                     </button>
                     <button
                       type="button"
-                      class="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                       title="Дублировать"
                       @click.stop="duplicateSlide(index)"
                     >
-                      <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                     </button>
                     <button
                       v-if="slides.length > 1"
                       type="button"
-                      class="rounded p-0.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                      class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
                       title="Удалить"
                       @click.stop="deleteSlide(index)"
                     >
-                      <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
@@ -232,41 +232,8 @@
           </div>
         </div>
 
-        <!-- Кнопка "Добавить слайд" и настройки отображения (скрыты на мобильных) -->
-        <div ref="addSlideWrapRef" class="relative hidden shrink-0 items-center gap-1 md:flex">
-          <div class="relative">
-            <button
-              type="button"
-              class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              @click="showAddSlideMenu = !showAddSlideMenu"
-            >
-              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Добавить</span>
-              <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div
-              v-if="showAddSlideMenu"
-              ref="addSlideMenuRef"
-              class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
-              @click.stop
-            >
-              <div class="py-1">
-                <button
-                  v-for="opt in SLIDE_TYPE_OPTIONS"
-                  :key="opt.type"
-                  type="button"
-                  class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  @click="addSlide(opt.type); showAddSlideMenu = false"
-                >
-                  {{ opt.label }}
-                </button>
-              </div>
-            </div>
-          </div>
+        <!-- Шестерёнка (слева) и кнопка "Добавить слайд" (скрыты на мобильных) -->
+        <div ref="addSlideWrapRef" class="relative hidden shrink-0 items-center gap-3 md:flex">
           <!-- Иконка шестерёнки: настройки отображения (редактор / просмотр / PDF) -->
           <div class="relative">
             <button
@@ -316,6 +283,39 @@
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div class="relative">
+            <button
+              type="button"
+              class="flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="showAddSlideMenu = !showAddSlideMenu"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Добавить</span>
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div
+              v-if="showAddSlideMenu"
+              ref="addSlideMenuRef"
+              class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              @click.stop
+            >
+              <div class="py-1">
+                <button
+                  v-for="opt in SLIDE_TYPE_OPTIONS"
+                  :key="opt.type"
+                  type="button"
+                  class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  @click="addSlide(opt.type); showAddSlideMenu = false"
+                >
+                  {{ opt.label }}
+                </button>
               </div>
             </div>
           </div>
@@ -422,23 +422,23 @@
                                   </div>
                                 </div>
                               </div>
-                              <label class="flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
-                                <div class="relative">
-                                  <input v-model="slide.data.show_all_currencies" type="checkbox" class="sr-only" />
-                                  <div
-                                    :class="slide.data.show_all_currencies ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
-                                    class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
-                                  >
-                                    <span :class="slide.data.show_all_currencies ? '' : 'opacity-0'">
-                                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" />
-                                      </svg>
-                                    </span>
-                                  </div>
-                                </div>
-                                Показывать все валюты
-                              </label>
                             </div>
+                            <label class="mt-3 flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
+                              <div class="relative">
+                                <input v-model="slide.data.show_all_currencies" type="checkbox" class="sr-only" />
+                                <div
+                                  :class="slide.data.show_all_currencies ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
+                                  class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
+                                >
+                                  <span :class="slide.data.show_all_currencies ? '' : 'opacity-0'">
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                  </span>
+                                </div>
+                              </div>
+                              Показывать все валюты
+                            </label>
                             <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
                               <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                             </div>
@@ -841,7 +841,7 @@
                           v-model="slide.data.heading"
                           type="text"
                           placeholder="КОНТАКТЫ"
-                          class="booklet-contacts__title mb-2 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold uppercase focus:outline-none focus:ring-0"
+                          class="booklet-contacts__title mb-2 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
                         />
                         <div class="booklet-contacts__avatar-wrap">
                           <div class="booklet-contacts__avatar relative">

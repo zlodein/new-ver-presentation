@@ -228,7 +228,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
             <div class="booklet-page__inner">
               <div class="booklet-content booklet-galery">
                 <div class="booklet-galery__wrap">
-                  ${heading ? `<h2 class="mb-2 font-semibold uppercase col-span-full">${heading}</h2>` : ''}
+                  ${heading ? `<h2 class="mb-2 font-semibold col-span-full">${heading}</h2>` : ''}
                   <div class="booklet-galery__grid" style="${gridStyle}">
                     ${images.map((url) => `<div class="booklet-galery__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
                   </div>
@@ -308,7 +308,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   <div class="booklet-contacts__left">
                     ${avatarUrl ? `<div class="booklet-contacts__avatar-wrap"><div class="booklet-contacts__avatar"><img src="${toAbsoluteImageUrl(avatarUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div></div>` : ''}
                     <div class="booklet-contacts__block booklet-contacts__content">
-                      <h2 class="mb-2 text-base font-semibold uppercase">${heading}</h2>
+                      <h2 class="mb-2 text-base font-semibold">${heading}</h2>
                       ${contactName ? `<p>${contactName}</p>` : ''}
                       ${phone ? `<p>${phone}</p>` : ''}
                       ${email ? `<p>${email}</p>` : ''}
@@ -366,12 +366,12 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-main__img { position: relative; flex: 0 0 65%; min-width: 200px; min-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #C4C4C4; box-sizing: border-box; padding: 40px 0 40px 40px; }
     .presentation-slider-wrap.booklet-view .booklet-main__img img, .presentation-slider-wrap.booklet-view .booklet-img__img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img, .presentation-slider-wrap.booklet-view .booklet-grid__img img, .presentation-slider-wrap.booklet-view .booklet-char__img img, .presentation-slider-wrap.booklet-view .booklet-layout__img img, .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; }
     .presentation-slider-wrap.booklet-view .booklet-main__content { flex: 1 1 35%; min-width: 200px; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 40px 25px; }
-    .presentation-slider-wrap.booklet-view .booklet-main__top, .presentation-slider-wrap.booklet-view .booklet-main__center { flex: 0 0 auto; font-size: 1rem; line-height: 1.3; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: #1a1a1a; }
+    .presentation-slider-wrap.booklet-view .booklet-main__top, .presentation-slider-wrap.booklet-view .booklet-main__center { flex: 0 0 auto; font-size: 1rem; line-height: 1.3; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
     .presentation-slider-wrap.booklet-view .booklet-main__center { font-size: 1.25rem; margin-top: 0.25rem; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom { flex: 0 0 auto; margin-top: auto; }
     .presentation-slider-wrap.booklet-view .booklet-info__wrap, .presentation-slider-wrap.booklet-view .booklet-stroen__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; height: 100%; min-height: 320px; }
-    .presentation-slider-wrap.booklet-view .booklet-info__title, .presentation-slider-wrap.booklet-view .booklet-stroen__title, .presentation-slider-wrap.booklet-view .booklet-char__title, .presentation-slider-wrap.booklet-view .booklet-layout__title { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: #1a1a1a; }
-    .presentation-slider-wrap.booklet-view .booklet-map__title { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: #1a1a1a; grid-column: 1 / -1; }
+    .presentation-slider-wrap.booklet-view .booklet-info__title, .presentation-slider-wrap.booklet-view .booklet-stroen__title, .presentation-slider-wrap.booklet-view .booklet-char__title, .presentation-slider-wrap.booklet-view .booklet-layout__title { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
+    .presentation-slider-wrap.booklet-view .booklet-map__title { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; grid-column: 1 / -1; }
     .presentation-slider-wrap.booklet-view .booklet-info__text, .presentation-slider-wrap.booklet-view .booklet-stroen__text { flex: 1; min-height: 60px; overflow: auto; font-size: 0.9375rem; line-height: 1.5; color: #444; }
     .presentation-slider-wrap.booklet-view .booklet-info__grid, .presentation-slider-wrap.booklet-view .booklet-stroen__grid { display: grid; grid-template-rows: 1fr 1fr; gap: 12px; min-height: 0; flex: 1; }
     .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
