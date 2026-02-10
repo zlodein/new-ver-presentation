@@ -11,27 +11,31 @@
         Публичная ссылка активна
       </div>
 
-      <!-- Оповещение автосохранения (стили как в /dashboard/alerts) -->
-      <div
-        v-if="autoSaveStatus"
-        :class="['rounded-xl border p-4', autoSaveAlertClasses.container]"
-        role="status"
-        aria-live="polite"
-      >
-        <div class="flex items-center gap-3">
-          <div :class="['shrink-0', autoSaveAlertClasses.icon]">
-            <component :is="autoSaveAlertIcon" />
+      <!-- Оповещение автосохранения: фиксированный тост, не смещает контент -->
+      <Teleport to="body">
+        <Transition name="toast">
+          <div
+            v-if="autoSaveStatus"
+            :class="['fixed right-4 top-4 z-[200] max-w-sm rounded-xl border p-4 shadow-lg', autoSaveAlertClasses.container]"
+            role="status"
+            aria-live="polite"
+          >
+            <div class="flex items-center gap-3">
+              <div :class="['shrink-0', autoSaveAlertClasses.icon]">
+                <component :is="autoSaveAlertIcon" />
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
+                  {{ autoSaveAlertTitle }}
+                </h4>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ autoSaveAlertMessage }}
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
-              {{ autoSaveAlertTitle }}
-            </h4>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ autoSaveAlertMessage }}
-            </p>
-          </div>
-        </div>
-      </div>
+        </Transition>
+      </Teleport>
 
       <!-- Панель со слайдами: на ПК — горизонтальная лента, на мобильных — кнопка + раскрывающийся вертикальный список -->
       <div class="editor-slides-nav flex flex-col gap-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:flex-row md:items-center md:gap-1.5 md:p-1.5">
@@ -1163,8 +1167,7 @@ const autoSaveAlertMessage = computed(() => {
   const s = autoSaveStatus.value
   if (s === 'Сохранено' || s === 'Опубликовано' || s === 'PDF экспортирован') return 'Изменения сохранены. Кнопка «Сохранить» доступна для ручного сохранения в любой момент.'
   if (s === 'Ошибка' || s === 'Ошибка сохранения' || s === 'Ошибка экспорта') return 'Попробуйте нажать «Сохранить» вручную или проверьте подключение.'
-  if (s === 'Сохранение через 12 сек') return 'Через 12 секунд после последнего изменения черновик будет сохранён. Можно также нажать «Сохранить» вручную.'
-  return 'Изменения сохраняются автоматически через несколько секунд после правок. Кнопка «Сохранить» — для ручного сохранения.'
+  return 'Кнопка «Сохранить» доступна для ручного сохранения в любой момент.'
 })
 
 /** Слайды, отображаемые в Swiper (без скрытых) */
@@ -2239,10 +2242,7 @@ async function publishPresentation() {
 
 function scheduleAutoSave() {
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
-  // Сразу показываем, что изменения учтены и сохранение запланировано
-  autoSaveStatus.value = 'Сохранение через 12 сек'
   autoSaveTimer = setTimeout(async () => {
-    autoSaveStatus.value = 'Сохранение...'
     const ok = await doSave({ skipRedirect: true })
     autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
     if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 3000)
@@ -2578,4 +2578,15 @@ async function exportToPDF() {
         padding-bottom: max(12px, env(safe-area-inset-bottom));
       }
     }
+
+  /* Тост автосохранения: плавное появление/исчезновение */
+  .toast-enter-active,
+  .toast-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast-enter-from,
+  .toast-leave-to {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
 </style>
