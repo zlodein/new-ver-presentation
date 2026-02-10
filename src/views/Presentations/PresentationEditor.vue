@@ -1163,6 +1163,7 @@ const autoSaveAlertMessage = computed(() => {
   const s = autoSaveStatus.value
   if (s === 'Сохранено' || s === 'Опубликовано' || s === 'PDF экспортирован') return 'Изменения сохранены. Кнопка «Сохранить» доступна для ручного сохранения в любой момент.'
   if (s === 'Ошибка' || s === 'Ошибка сохранения' || s === 'Ошибка экспорта') return 'Попробуйте нажать «Сохранить» вручную или проверьте подключение.'
+  if (s === 'Сохранение через 12 сек') return 'Через 12 секунд после последнего изменения черновик будет сохранён. Можно также нажать «Сохранить» вручную.'
   return 'Изменения сохраняются автоматически через несколько секунд после правок. Кнопка «Сохранить» — для ручного сохранения.'
 })
 
@@ -2042,9 +2043,14 @@ async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index
 
 const presentationId = computed(() => route.params.id as string)
 
-watch(slides, () => {
-  if (initialLoadDone.value) scheduleAutoSave()
-}, { deep: true })
+// Надёжный отслеживание изменений: getter + deep, чтобы автосохранение срабатывало при любых правках
+watch(
+  () => slides.value,
+  () => {
+    if (initialLoadDone.value) scheduleAutoSave()
+  },
+  { deep: true }
+)
 
 function backupToLocalStorage() {
   try {
@@ -2123,33 +2129,37 @@ onMounted(async () => {
     return
   }
   const id = presentationId.value
-  if (hasApi() && getToken()) {
-    try {
-      const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
-      if (!editorMounted) return
-      if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
-        slides.value = (data.content.slides as SlideItem[]).map((s) => ({
-          ...s,
-          id: s.id ?? genSlideId(),
-          hidden: s.hidden ?? false,
-        }))
+  try {
+    if (hasApi() && getToken()) {
+      try {
+        const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
+        if (!editorMounted) return
+        if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
+          slides.value = (data.content.slides as SlideItem[]).map((s) => ({
+            ...s,
+            id: s.id ?? genSlideId(),
+            hidden: s.hidden ?? false,
+          }))
+        }
+        const coverSlide = slides.value.find((s) => s.type === 'cover')
+        if (coverSlide && data?.coverImage) {
+          if (!coverSlide.data) coverSlide.data = {}
+          coverSlide.data.coverImageUrl = data.coverImage
+        }
+        if (data?.status != null) presentationMeta.value.status = data.status
+        if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
+        if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
+        if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
+      } catch {
+        if (editorMounted) loadFromLocalStorage()
       }
-      const coverSlide = slides.value.find((s) => s.type === 'cover')
-      if (coverSlide && data?.coverImage) {
-        if (!coverSlide.data) coverSlide.data = {}
-        coverSlide.data.coverImageUrl = data.coverImage
-      }
-      if (data?.status != null) presentationMeta.value.status = data.status
-      if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
-      if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
-      if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
-    } catch {
-      if (editorMounted) loadFromLocalStorage()
+    } else {
+      loadFromLocalStorage()
     }
-  } else {
-    loadFromLocalStorage()
+  } finally {
+    // Всегда включаем автосохранение после попытки загрузки, иначе правки не будут сохраняться
+    if (editorMounted) nextTick(() => { initialLoadDone.value = true })
   }
-  if (editorMounted) nextTick(() => { initialLoadDone.value = true })
   
   // Отслеживание позиции мыши при перетаскивании
   document.addEventListener('mousemove', (e) => {
@@ -2229,11 +2239,14 @@ async function publishPresentation() {
 
 function scheduleAutoSave() {
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  // Сразу показываем, что изменения учтены и сохранение запланировано
+  autoSaveStatus.value = 'Сохранение через 12 сек'
   autoSaveTimer = setTimeout(async () => {
     autoSaveStatus.value = 'Сохранение...'
     const ok = await doSave({ skipRedirect: true })
-    autoSaveStatus.value = ok ? 'Сохранено' : ''
-    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
+    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 3000)
+    else setTimeout(() => { autoSaveStatus.value = '' }, 5000)
   }, AUTO_SAVE_INTERVAL_MS)
 }
 
