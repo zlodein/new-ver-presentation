@@ -209,11 +209,11 @@ const router = createRouter({
         title: 'Восстановление пароля',
       },
     },
-    // Все неизвестные пути — страница 404 (тот же компонент, что и /dashboard/error-404)
+    // Все неизвестные пути — редирект на страницу 404
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
-      component: () => import('../views/Errors/FourZeroFour.vue'),
+      redirect: () => ({ path: '/dashboard/error-404' }),
       meta: {
         title: 'Ошибка 404',
       },
