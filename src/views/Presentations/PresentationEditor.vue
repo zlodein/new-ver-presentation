@@ -627,35 +627,32 @@
                         <div class="booklet-map__info relative flex-shrink-0">
                           <div class="relative mb-2">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Поиск по адресу</label>
-                            <input
-                              v-model="slide.data.address"
-                              type="text"
+                            <VueDadata
+                              v-if="dadataToken"
+                              :token="dadataToken"
+                              :model-value="String(slide.data?.address ?? '')"
                               placeholder="ЖК «Успешная продажа»"
-                              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                              @input="(slide.data as Record<string, string>).address = ($event.target as HTMLInputElement).value; onLocationAddressInput(slide, ($event.target as HTMLInputElement).value)"
-                              @focus="showAddressSuggestions(slide)"
-                              @blur="onLocationAddressBlur(slide)"
-                              @keydown.enter.prevent="geocodeAddress(slide)"
+                              debounce-wait="300ms"
+                              class="location-dadata"
+                              @update:model-value="(v: string) => (slide.data as Record<string, string>).address = v"
+                              @update:suggestion="(s: Suggestion | undefined) => onDadataSuggestion(slide, s)"
                             />
-                            <div
-                              v-if="addressSuggestionsFor(slide).length > 0"
-                              class="absolute left-0 right-0 top-full z-[100] mt-1 w-full rounded-lg border border-gray-300 bg-white shadow-theme-xs dark:border-gray-700 dark:bg-gray-900"
+                            <template v-else>
+                              <input
+                                v-model="slide.data.address"
+                                type="text"
+                                placeholder="ЖК «Успешная продажа»"
+                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                              />
+                              <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">Задайте VITE_DADATA_API_KEY в .env для подсказок Dadata.</p>
+                            </template>
+                            <button
+                              type="button"
+                              class="mt-1.5 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                              @click="geocodeAddress(slide)"
                             >
-                              <ul
-                                class="custom-scrollbar max-h-60 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-800"
-                                role="listbox"
-                              >
-                                <li
-                                  v-for="(s, i) in addressSuggestionsFor(slide)"
-                                  :key="i"
-                                  role="option"
-                                  class="relative flex w-full cursor-pointer items-center px-3 py-2.5 text-sm text-gray-800 first:rounded-t-lg last:rounded-b-lg hover:bg-gray-100 dark:text-white/90 dark:hover:bg-gray-800"
-                                  @mousedown.prevent="selectAddressSuggestion(slide, s)"
-                                >
-                                  <span class="grow">{{ s.display_name || s.address || s }}</span>
-                                </li>
-                              </ul>
-                            </div>
+                              Обновить точку на карте по адресу
+                            </button>
                           </div>
                           <button
                             type="button"
@@ -1123,6 +1120,9 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
+import { VueDadata } from 'vue-dadata'
+import type { Suggestion } from 'vue-dadata'
+import 'vue-dadata/dist/vue-dadata.css'
 import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase, ApiError } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
@@ -1418,66 +1418,24 @@ function coverConvertedPrices(slide: SlideItem): string[] {
   })
 }
 
-// Местоположение и генерация: базовый URL API (в проде — относительный /api, в dev — VITE_API_URL)
+// Местоположение и генерация: базовый URL API (геокодер, метро)
 const EDITOR_API_BASE =
   typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
     ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '')
     : '/api'
 
-const addressSuggestionsBySlideId = ref<Record<string, Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>>>({})
-const addressSuggestionsVisibleBySlideId = ref<Record<string, boolean>>({})
-let addressSuggestionsBlurTimer: ReturnType<typeof setTimeout> | null = null
-let addressSuggestionsFetchTimer: ReturnType<typeof setTimeout> | null = null
+const dadataToken = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DADATA_API_KEY
+  ? String(import.meta.env.VITE_DADATA_API_KEY)
+  : ''
+).trim()
 
-function onLocationAddressInput(slide: SlideItem, value: string) {
-  slide.data.address = value
-  if (!value.trim()) {
-    addressSuggestionsBySlideId.value[slide.id] = []
-    return
-  }
-  clearTimeout(addressSuggestionsFetchTimer ?? 0)
-  const id = slide.id
-  addressSuggestionsFetchTimer = setTimeout(() => {
-    fetch(`${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`)
-      .then(async (r) => {
-        const text = await r.text()
-        let data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>; error?: string }
-        try {
-          data = JSON.parse(text)
-        } catch {
-          if (!r.ok) {
-            alert(r.status === 502 ? 'Сервис подсказок временно недоступен (502). Проверьте, что бэкенд запущен на сервере.' : `Ошибка сервера: ${r.status}`)
-          }
-          addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: [] }
-          return
-        }
-        if (data.error) {
-          alert(data.error)
-        }
-        addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: data.suggestions ?? [] }
-      })
-      .catch(() => {
-        addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: [] }
-      })
-  }, 300)
-}
-
-function addressSuggestionsFor(slide: SlideItem) {
-  return addressSuggestionsBySlideId.value[slide.id] ?? []
-}
-
-function showAddressSuggestions(slide: SlideItem) {
-  if ((addressSuggestionsBySlideId.value[slide.id] ?? []).length > 0) {
-    addressSuggestionsVisibleBySlideId.value[slide.id] = true
-  }
-  const address = String(slide.data?.address ?? '').trim()
-  if (address.length >= 2) onLocationAddressInput(slide, address)
-}
-
-function hideAddressSuggestionsDelay(slide: SlideItem) {
-  addressSuggestionsBlurTimer = setTimeout(() => {
-    addressSuggestionsVisibleBySlideId.value[slide.id] = false
-  }, 200)
+function onDadataSuggestion(slide: SlideItem, s: Suggestion | undefined) {
+  if (!s) return
+  ;(slide.data as Record<string, string>).address = s.value
+  const lat = parseFloat(s.data.geo_lat)
+  const lng = parseFloat(s.data.geo_lon)
+  if (Number.isFinite(lat)) (slide.data as Record<string, number>).lat = lat
+  if (Number.isFinite(lng)) (slide.data as Record<string, number>).lng = lng
 }
 
 const geocodeLoadingBySlideId = ref<Record<string, boolean>>({})
@@ -1500,25 +1458,6 @@ async function geocodeAddress(slide: SlideItem) {
   } finally {
     geocodeLoadingBySlideId.value[slide.id] = false
   }
-}
-
-function onLocationAddressBlur(slide: SlideItem) {
-  hideAddressSuggestionsDelay(slide)
-  setTimeout(() => {
-    const address = String(slide.data?.address ?? '').trim()
-    if (address.length >= 2) geocodeAddress(slide)
-  }, 350)
-}
-
-function selectAddressSuggestion(
-  slide: SlideItem,
-  s: { display_name?: string; address?: string; lat?: number; lon?: number }
-) {
-  slide.data.address = s.display_name || s.address || ''
-  if (s.lat != null) slide.data.lat = s.lat
-  if (s.lon != null) slide.data.lng = s.lon
-  addressSuggestionsBySlideId.value[slide.id] = []
-  addressSuggestionsVisibleBySlideId.value[slide.id] = false
 }
 
 function locationMapUrl(slide: SlideItem): string {
@@ -2198,8 +2137,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
-  if (addressSuggestionsBlurTimer) clearTimeout(addressSuggestionsBlurTimer)
-  if (addressSuggestionsFetchTimer) clearTimeout(addressSuggestionsFetchTimer)
 })
 
 function loadFromLocalStorage() {
