@@ -2115,7 +2115,7 @@ function handleClickOutside(event: MouseEvent) {
   showAddSlideMenu.value = false
 }
 
-let editorMounted = true
+const editorMounted = ref(true)
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
@@ -2136,7 +2136,7 @@ onMounted(async () => {
     if (hasApi() && getToken()) {
       try {
         const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
-        if (!editorMounted) return
+        if (!editorMounted.value) return
         if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
           slides.value = (data.content.slides as SlideItem[]).map((s) => ({
             ...s,
@@ -2154,14 +2154,14 @@ onMounted(async () => {
         if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
         if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
       } catch {
-        if (editorMounted) loadFromLocalStorage()
+        if (editorMounted.value) loadFromLocalStorage()
       }
     } else {
       loadFromLocalStorage()
     }
   } finally {
     // Всегда включаем автосохранение после попытки загрузки, иначе правки не будут сохраняться
-    if (editorMounted) nextTick(() => { initialLoadDone.value = true })
+    if (editorMounted.value) nextTick(() => { initialLoadDone.value = true })
   }
   
   // Отслеживание позиции мыши при перетаскивании
@@ -2173,7 +2173,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  editorMounted = false
+  editorMounted.value = false
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
@@ -2236,17 +2236,19 @@ async function saveToStorage() {
 async function publishPresentation() {
   autoSaveStatus.value = 'Публикация...'
   const ok = await doSave({ status: 'published', skipRedirect: true })
+  if (!editorMounted.value) return
   autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
-  if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+  if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
 }
 
 function scheduleAutoSave() {
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   autoSaveTimer = setTimeout(async () => {
     const ok = await doSave({ skipRedirect: true })
+    if (!editorMounted.value) return
     autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
-    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 3000)
-    else setTimeout(() => { autoSaveStatus.value = '' }, 5000)
+    if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 3000)
+    else setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 5000)
   }, AUTO_SAVE_INTERVAL_MS)
 }
 
@@ -2336,9 +2338,10 @@ async function exportToPDF() {
   // Сначала сохраняем презентацию
   autoSaveStatus.value = 'Сохранение перед экспортом...'
   const saved = await doSave({ skipRedirect: true })
+  if (!editorMounted.value) return
   if (!saved) {
     autoSaveStatus.value = 'Ошибка сохранения'
-    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
     return
   }
   
@@ -2360,6 +2363,7 @@ async function exportToPDF() {
     }
     
     const blob = await response.blob()
+    if (!editorMounted.value) return
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -2373,11 +2377,13 @@ async function exportToPDF() {
     window.URL.revokeObjectURL(url)
     
     autoSaveStatus.value = 'PDF экспортирован'
-    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
   } catch (err) {
     console.error(err)
-    autoSaveStatus.value = 'Ошибка экспорта'
-    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    if (editorMounted.value) {
+      autoSaveStatus.value = 'Ошибка экспорта'
+      setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
+    }
     alert('Не удалось экспортировать презентацию в PDF: ' + (err instanceof Error ? err.message : 'Неизвестная ошибка'))
   }
 }
