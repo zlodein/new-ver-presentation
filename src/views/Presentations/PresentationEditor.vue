@@ -628,11 +628,11 @@
                           <div class="relative mb-2">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Поиск по адресу</label>
                             <div
+                              v-if="dadataToken"
                               class="location-dadata-wrap"
                               @mousedown.capture="handleDadataWrapMouseDown"
                             >
                               <VueDadata
-                                v-if="dadataToken"
                                 :token="dadataToken"
                                 :model-value="String(slide.data?.address ?? '')"
                                 placeholder="ЖК «Успешная продажа»"
