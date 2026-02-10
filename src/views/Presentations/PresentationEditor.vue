@@ -11,6 +11,28 @@
         Публичная ссылка активна
       </div>
 
+      <!-- Оповещение автосохранения (стили как в /dashboard/alerts) -->
+      <div
+        v-if="autoSaveStatus"
+        :class="['rounded-xl border p-4', autoSaveAlertClasses.container]"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="flex items-center gap-3">
+          <div :class="['shrink-0', autoSaveAlertClasses.icon]">
+            <component :is="autoSaveAlertIcon" />
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
+              {{ autoSaveAlertTitle }}
+            </h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ autoSaveAlertMessage }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Панель со слайдами: на ПК — горизонтальная лента, на мобильных — кнопка + раскрывающийся вертикальный список -->
       <div class="editor-slides-nav flex flex-col gap-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:flex-row md:items-center md:gap-1.5 md:p-1.5">
         <!-- Мобильная: кнопка «Навигация по слайдам» со стрелкой -->
@@ -835,7 +857,6 @@
             >
               Опубликовать
             </button>
-            <span v-if="autoSaveStatus" class="text-xs text-gray-500">{{ autoSaveStatus }}</span>
           </div>
 
           <!-- Мобильная нижняя панель: навигация, добавить, просмотр, сохранение, публичная ссылка -->
@@ -971,6 +992,7 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
+import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
 
@@ -1104,8 +1126,45 @@ const presentationMeta = ref<{
 /** Статус автосохранения */
 const autoSaveStatus = ref('')
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-const AUTO_SAVE_INTERVAL_MS = 30000
+/** Интервал автосохранения после последнего изменения (промежуточное сохранение без кнопки) */
+const AUTO_SAVE_INTERVAL_MS = 12000
 const initialLoadDone = ref(false)
+
+/** Стили и иконка оповещения автосохранения (как в /dashboard/alerts) */
+const AUTO_SAVE_ALERT = {
+  success: {
+    container: 'border-success-500 bg-success-50 dark:border-success-500/30 dark:bg-success-500/15',
+    icon: 'text-success-500',
+  },
+  error: {
+    container: 'border-error-500 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15',
+    icon: 'text-error-500',
+  },
+  info: {
+    container: 'border-blue-light-500 bg-blue-light-50 dark:border-blue-light-500/30 dark:bg-blue-light-500/15',
+    icon: 'text-blue-light-500',
+  },
+}
+const autoSaveAlertVariant = computed(() => {
+  const s = autoSaveStatus.value
+  if (s === 'Сохранено' || s === 'Опубликовано' || s === 'PDF экспортирован') return 'success'
+  if (s === 'Ошибка' || s === 'Ошибка сохранения' || s === 'Ошибка экспорта') return 'error'
+  return 'info'
+})
+const autoSaveAlertClasses = computed(() => AUTO_SAVE_ALERT[autoSaveAlertVariant.value])
+const autoSaveAlertIcon = computed(() => {
+  const v = autoSaveAlertVariant.value
+  if (v === 'success') return SuccessIcon
+  if (v === 'error') return ErrorIcon
+  return InfoCircleIcon
+})
+const autoSaveAlertTitle = computed(() => autoSaveStatus.value || 'Автосохранение')
+const autoSaveAlertMessage = computed(() => {
+  const s = autoSaveStatus.value
+  if (s === 'Сохранено' || s === 'Опубликовано' || s === 'PDF экспортирован') return 'Изменения сохранены. Кнопка «Сохранить» доступна для ручного сохранения в любой момент.'
+  if (s === 'Ошибка' || s === 'Ошибка сохранения' || s === 'Ошибка экспорта') return 'Попробуйте нажать «Сохранить» вручную или проверьте подключение.'
+  return 'Изменения сохраняются автоматически через несколько секунд после правок. Кнопка «Сохранить» — для ручного сохранения.'
+})
 
 /** Слайды, отображаемые в Swiper (без скрытых) */
 const visibleSlides = computed(() => slides.value.filter((s) => !s.hidden))
