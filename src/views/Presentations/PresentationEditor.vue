@@ -135,9 +135,9 @@
           </draggable>
         </div>
 
-        <!-- ПК: плитка слайдов по левому краю, справа — кнопка -->
+        <!-- ПК: плитка слайдов по левому краю -->
         <div class="hidden md:flex md:flex-1 md:items-center md:gap-1.5">
-          <div class="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2">
+          <div class="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 border-r border-gray-200 pr-2 dark:border-gray-700">
             <draggable
               v-model="slides"
               item-key="id"
