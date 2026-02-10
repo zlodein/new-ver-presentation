@@ -200,8 +200,8 @@ function getDefaultDataForType(type: string, title: string, subtitle: string): R
   switch (type) {
     case 'cover':
       return {
-        title: title || 'Новая презентация',
-        subtitle: subtitle || '',
+        title: subtitle || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ',
+        subtitle: title || '',
         deal_type: 'Аренда',
         currency: 'RUB',
         price_value: 0,
