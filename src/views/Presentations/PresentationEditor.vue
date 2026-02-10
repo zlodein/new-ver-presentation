@@ -919,6 +919,16 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-4 0l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </button>
+            <button
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+              title="Экспорт в PDF"
+              @click="exportToPDF"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </button>
             <!-- Публичная ссылка: глобус (вкл) / глобус перечёркнут (выкл) -->
             <button
               type="button"
@@ -2451,16 +2461,6 @@ async function exportToPDF() {
 
       /* Навигация по слайдам вверху (стили mob-editor-nav) */
       .editor-slides-nav {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        width: 100%;
-        max-width: 100vw;
-        margin-left: -1rem;
-        margin-right: -1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
-        margin-bottom: 0;
         background: white;
         border-bottom: 1px solid #e5e7eb;
         border-radius: 0;
