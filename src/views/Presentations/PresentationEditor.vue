@@ -1,17 +1,33 @@
 <template>
   <AdminLayout>
     <div class="flex flex-col gap-4">
-      <!-- Публичная ссылка активна (при включённом «Поделиться») -->
+      <!-- Публичная ссылка (стиль как на /dashboard/form-elements: label + input + кнопка Copy) -->
       <div
         v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
-        class="cursor-pointer rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-200"
-        title="Нажмите, чтобы скопировать ссылку"
-        @click="copyPublicLink"
+        class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
       >
-        Публичная ссылка активна
+        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Website</label>
+        <div class="relative">
+          <input
+            type="url"
+            :value="presentationMeta.publicUrl"
+            readonly
+            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-3 pl-4 pr-[90px] text-sm text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+          />
+          <button
+            type="button"
+            class="absolute right-0 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 border-l border-gray-200 py-3 pl-3.5 pr-3 text-sm font-medium text-gray-700 dark:border-gray-800 dark:text-gray-400"
+            @click="copyPublicLink"
+          >
+            <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M6.58822 4.58398C6.58822 4.30784 6.81207 4.08398 7.08822 4.08398H15.4154C15.6915 4.08398 15.9154 4.30784 15.9154 4.58398L15.9154 12.9128C15.9154 13.189 15.6916 13.4128 15.4154 13.4128H7.08821C6.81207 13.4128 6.58822 13.189 6.58822 12.9128V4.58398ZM7.08822 2.58398C5.98365 2.58398 5.08822 3.47942 5.08822 4.58398V5.09416H4.58496C3.48039 5.09416 2.58496 5.98959 2.58496 7.09416V15.4161C2.58496 16.5207 3.48039 17.4161 4.58496 17.4161H12.9069C14.0115 17.4161 14.9069 16.5207 14.9069 15.4161L14.9069 14.9128H15.4154C16.52 14.9128 17.4154 14.0174 17.4154 12.9128L17.4154 4.58398C17.4154 3.47941 16.52 2.58398 15.4154 2.58398H7.08822ZM13.4069 14.9128H7.08821C5.98364 14.9128 5.08822 14.0174 5.08822 12.9128V6.59416H4.58496C4.30882 6.59416 4.08496 6.81801 4.08496 7.09416V15.4161C4.08496 15.6922 4.30882 15.9161 4.58496 15.9161H12.9069C13.183 15.9161 13.4069 15.6922 13.4069 15.4161L13.4069 14.9128Z" fill=""/>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Оповещение автосохранения: тост в блоке контента (не под шапкой), не смещает контент -->
+      <!-- Оповещение автосохранения: тост без динамического компонента (избегаем emitsOptions после unmount) -->
       <Teleport to="#dashboard-content">
         <Transition name="toast">
           <div
@@ -22,7 +38,16 @@
           >
             <div class="flex items-center gap-3">
               <div :class="['shrink-0', autoSaveAlertClasses.icon]">
-                <component :is="autoSaveAlertIcon" />
+                <!-- Иконки inline, без <component :is=""> чтобы не было emitsOptions после unmount -->
+                <svg v-if="autoSaveAlertVariant === 'success'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <svg v-else-if="autoSaveAlertVariant === 'error'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
               <div class="min-w-0">
                 <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">
@@ -139,8 +164,42 @@
           </draggable>
         </div>
 
-        <!-- ПК: горизонтальная лента со слайдами -->
-        <div class="hidden md:flex md:flex-1 md:items-center md:gap-1.5">
+        <!-- ПК: горизонтальная лента со слайдами; кнопка «Добавить» слева, чтобы не выпадала за рамки -->
+        <div class="hidden md:flex md:min-w-0 md:flex-1 md:items-center md:gap-1.5">
+          <!-- Кнопка "Добавить слайд" (десктоп) — первой в ряду, всегда видна -->
+          <div ref="addSlideWrapRef" class="relative shrink-0">
+            <button
+              type="button"
+              class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="showAddSlideMenu = !showAddSlideMenu"
+            >
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Добавить</span>
+              <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div
+              v-if="showAddSlideMenu"
+              ref="addSlideMenuRef"
+              class="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              @click.stop
+            >
+              <div class="py-1">
+                <button
+                  v-for="opt in SLIDE_TYPE_OPTIONS"
+                  :key="opt.type"
+                  type="button"
+                  class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  @click="addSlide(opt.type); showAddSlideMenu = false"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </div>
+          </div>
           <button
             type="button"
             class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
@@ -152,7 +211,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div ref="slidesContainerRef" class="flex-1 overflow-x-auto scrollbar-hide" @scroll="onSlidesScroll">
+          <div ref="slidesContainerRef" class="min-w-0 flex-1 overflow-x-auto scrollbar-hide" @scroll="onSlidesScroll">
             <div class="slides-strip flex gap-2 min-w-max">
               <draggable
                 v-model="slides"
@@ -242,42 +301,6 @@
             </svg>
           </button>
         </div>
-
-        <!-- Кнопка "Добавить слайд" с выпадающим меню (скрыта на мобильных — есть в нижней панели) -->
-        <div ref="addSlideWrapRef" class="relative hidden shrink-0 md:block">
-          <button
-            type="button"
-            class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            @click="showAddSlideMenu = !showAddSlideMenu"
-          >
-            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Добавить</span>
-            <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <!-- Выпадающее меню -->
-          <div
-            v-if="showAddSlideMenu"
-            ref="addSlideMenuRef"
-            class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
-            @click.stop
-          >
-            <div class="py-1">
-              <button
-                v-for="opt in SLIDE_TYPE_OPTIONS"
-                :key="opt.type"
-                type="button"
-                class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                @click="addSlide(opt.type); showAddSlideMenu = false"
-              >
-                {{ opt.label }}
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Область превью слайдов (Swiper) -->
@@ -365,13 +388,25 @@
                                   </select>
                                 </div>
                               </div>
-                              <label class="flex cursor-pointer items-center gap-2 pb-1 text-sm text-gray-600">
-                                <input
-                                  v-model="slide.data.show_all_currencies"
-                                  type="checkbox"
-                                  class="h-4 w-4 rounded border-gray-300"
-                                />
-                                <span>Показывать все валюты</span>
+                              <label class="flex cursor-pointer select-none items-center pb-1 text-sm font-medium text-gray-700 dark:text-gray-400">
+                                <div class="relative">
+                                  <input
+                                    v-model="slide.data.show_all_currencies"
+                                    type="checkbox"
+                                    class="sr-only"
+                                  />
+                                  <div
+                                    :class="slide.data.show_all_currencies ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
+                                    class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
+                                  >
+                                    <span :class="slide.data.show_all_currencies ? '' : 'opacity-0'">
+                                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round"/>
+                                      </svg>
+                                    </span>
+                                  </div>
+                                </div>
+                                Показывать все валюты
                               </label>
                             </div>
                             <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
@@ -395,15 +430,20 @@
                           placeholder="ОПИСАНИЕ"
                           class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
-                          <select
-                            :value="getImageGrid(slide)"
-                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
-                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                          >
-                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                          </select>
+                        <div class="mb-2">
+                          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Сетка изображений</label>
+                          <div class="relative z-20 bg-transparent">
+                            <select
+                              :value="getImageGrid(slide)"
+                              class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                              @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                            >
+                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
+                            </select>
+                            <span class="absolute z-30 text-gray-500 pointer-events-none right-4 top-1/2 -translate-y-1/2 dark:text-gray-400">
+                              <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                          </div>
                         </div>
                         <div class="booklet-info__text">
                           <textarea
@@ -457,15 +497,20 @@
                           placeholder="ИНФРАСТРУКТУРА"
                           class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="text-xs font-medium text-gray-500">Сетка:</span>
-                          <select
-                            :value="getImageGrid(slide)"
-                            class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
-                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                          >
-                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                          </select>
+                        <div class="mb-2">
+                          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Сетка изображений</label>
+                          <div class="relative z-20 bg-transparent">
+                            <select
+                              :value="getImageGrid(slide)"
+                              class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                              @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                            >
+                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
+                            </select>
+                            <span class="absolute z-30 text-gray-500 pointer-events-none right-4 top-1/2 -translate-y-1/2 dark:text-gray-400">
+                              <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                          </div>
                         </div>
                         <div class="booklet-stroen__text">
                           <textarea
@@ -563,8 +608,20 @@
                           >
                             {{ locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}
                           </button>
-                          <label class="flex cursor-pointer items-center gap-1.5 text-xs text-gray-600">
-                            <input v-model="slide.data.show_metro" type="checkbox" class="rounded" />
+                          <label class="flex cursor-pointer select-none items-center text-sm font-medium text-gray-700 dark:text-gray-400">
+                            <div class="relative">
+                              <input v-model="slide.data.show_metro" type="checkbox" class="sr-only" />
+                              <div
+                                :class="slide.data.show_metro ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
+                                class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
+                              >
+                                <span :class="slide.data.show_metro ? '' : 'opacity-0'">
+                                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round"/>
+                                  </svg>
+                                </span>
+                              </div>
+                            </div>
                             Показывать метро в презентации
                           </label>
                           <div
@@ -594,15 +651,20 @@
                     class="booklet-content booklet-galery"
                   >
                     <div class="booklet-galery__wrap">
-                      <div class="flex items-center gap-2 px-2 py-1 col-span-full">
-                        <span class="text-xs font-medium text-gray-500">Сетка:</span>
-                        <select
-                          :value="getImageGrid(slide)"
-                          class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs"
-                          @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                        >
-                          <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                        </select>
+                      <div class="mb-2 px-2 col-span-full">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Сетка изображений</label>
+                        <div class="relative z-20 bg-transparent">
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                          >
+                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
+                          </select>
+                          <span class="absolute z-30 text-gray-500 pointer-events-none right-4 top-1/2 -translate-y-1/2 dark:text-gray-400">
+                            <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </span>
+                        </div>
                       </div>
                       <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                         <div
@@ -810,7 +872,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span class="text-sm text-gray-500">
+            <span :key="`counter-${activeSlideIndex}`" class="text-sm text-gray-500 tabular-nums">
               {{ visibleSlideNumber }} / {{ visibleSlides.length }}
             </span>
             <button
@@ -996,7 +1058,6 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
-import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
 
@@ -1156,12 +1217,6 @@ const autoSaveAlertVariant = computed(() => {
   return 'info'
 })
 const autoSaveAlertClasses = computed(() => AUTO_SAVE_ALERT[autoSaveAlertVariant.value])
-const autoSaveAlertIcon = computed(() => {
-  const v = autoSaveAlertVariant.value
-  if (v === 'success') return SuccessIcon
-  if (v === 'error') return ErrorIcon
-  return InfoCircleIcon
-})
 const autoSaveAlertTitle = computed(() => autoSaveStatus.value || 'Автосохранение')
 const autoSaveAlertMessage = computed(() => {
   const s = autoSaveStatus.value
