@@ -27,7 +27,7 @@
         </div>
       </div>
 
-      <!-- Оповещение автосохранения: тост без динамического компонента (избегаем emitsOptions после unmount) -->
+      <!-- Оповещение о сохранении (тост после кнопки «Сохранить» / «Опубликовать» / экспорт PDF) -->
       <Teleport to="#dashboard-content">
         <Transition name="toast">
           <div
@@ -1189,14 +1189,10 @@ const presentationMeta = ref<{
   publicHash: '',
 })
 
-/** Статус автосохранения */
+/** Статус сохранения (тост после нажатия «Сохранить», «Опубликовать», экспорт PDF) */
 const autoSaveStatus = ref('')
-let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-/** Интервал автосохранения после последнего изменения (промежуточное сохранение без кнопки) */
-const AUTO_SAVE_INTERVAL_MS = 12000
-const initialLoadDone = ref(false)
 
-/** Стили и иконка оповещения автосохранения (как в /dashboard/alerts) */
+/** Стили и иконка оповещения о сохранении (как в /dashboard/alerts) */
 const AUTO_SAVE_ALERT = {
   success: {
     container: 'border-success-500 bg-success-50 dark:border-success-500/30 dark:bg-success-500/15',
@@ -1218,7 +1214,7 @@ const autoSaveAlertVariant = computed(() => {
   return 'info'
 })
 const autoSaveAlertClasses = computed(() => AUTO_SAVE_ALERT[autoSaveAlertVariant.value])
-const autoSaveAlertTitle = computed(() => autoSaveStatus.value || 'Автосохранение')
+const autoSaveAlertTitle = computed(() => autoSaveStatus.value || 'Сохранение')
 const autoSaveAlertMessage = computed(() => {
   const s = autoSaveStatus.value
   if (s === 'Сохранено' || s === 'Опубликовано' || s === 'PDF экспортирован') return 'Изменения сохранены. Кнопка «Сохранить» доступна для ручного сохранения в любой момент.'
@@ -2111,15 +2107,6 @@ async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index
 
 const presentationId = computed(() => route.params.id as string)
 
-// Надёжный отслеживание изменений: getter + deep, чтобы автосохранение срабатывало при любых правках
-watch(
-  () => slides.value,
-  () => {
-    if (initialLoadDone.value) scheduleAutoSave()
-  },
-  { deep: true }
-)
-
 function backupToLocalStorage() {
   try {
     const title = (slides.value[0]?.type === 'cover' && slides.value[0]?.data?.title)
@@ -2231,7 +2218,7 @@ onMounted(async () => {
       nextTick(() => loadFromLocalStorage(true))
     }
   } finally {
-    if (editorMounted.value) nextTick(() => { initialLoadDone.value = true })
+    // Загрузка завершена
   }
   
   // Отслеживание позиции мыши при перетаскивании
@@ -2248,7 +2235,6 @@ onBeforeUnmount(() => {
   stopSlidesScrollWatch = null
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
-  if (autoSaveTimer) clearTimeout(autoSaveTimer)
   if (addressSuggestionsBlurTimer) clearTimeout(addressSuggestionsBlurTimer)
   if (addressSuggestionsFetchTimer) clearTimeout(addressSuggestionsFetchTimer)
 })
@@ -2311,7 +2297,15 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
 }
 
 async function saveToStorage() {
-  await doSave()
+  autoSaveStatus.value = 'Сохранение...'
+  const ok = await doSave()
+  if (!editorMounted.value) return
+  nextTick(() => {
+    if (!editorMounted.value) return
+    autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
+    if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 3000)
+    else setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 5000)
+  })
 }
 
 async function publishPresentation() {
@@ -2323,21 +2317,6 @@ async function publishPresentation() {
     autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
     if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 2000)
   })
-}
-
-function scheduleAutoSave() {
-  if (autoSaveTimer) clearTimeout(autoSaveTimer)
-  autoSaveTimer = setTimeout(async () => {
-    const ok = await doSave({ skipRedirect: true })
-    if (!editorMounted.value) return
-    // Обновляем статус в nextTick, чтобы не вызывать re-render в том же тике, что и разрешение промиса (источник emitsOptions на null)
-    nextTick(() => {
-      if (!editorMounted.value) return
-      autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
-      if (ok) setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 3000)
-      else setTimeout(() => { if (editorMounted.value) autoSaveStatus.value = '' }, 5000)
-    })
-  }, AUTO_SAVE_INTERVAL_MS)
 }
 
 function saveToLocalStorage(skipRedirect = false) {
