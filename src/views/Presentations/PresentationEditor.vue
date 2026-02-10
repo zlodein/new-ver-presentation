@@ -18,7 +18,7 @@
           type="button"
           class="editor-slides-nav__mob-trigger flex w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left md:hidden"
           :class="showMobSlidesNav ? 'bg-gray-100 dark:bg-gray-700' : ''"
-          aria-expanded="showMobSlidesNav"
+          :aria-expanded="showMobSlidesNav"
           @click="showMobSlidesNav = !showMobSlidesNav"
         >
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Навигация по слайдам</span>
