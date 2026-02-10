@@ -347,8 +347,7 @@
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
-            class="presentation-slider-wrap booklet-view mx-auto w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
-            :class="currentSlide?.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
+            class="presentation-slider-wrap booklet-view mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900"
             :style="presentationStyle"
           >
             <Swiper
@@ -1434,30 +1433,39 @@ function onLocationAddressInput(slide: SlideItem, value: string) {
   slide.data.address = value
   if (!value.trim()) {
     addressSuggestionsBySlideId.value[slide.id] = []
+    console.log('[LocationSuggest] Ввод очищен, slide.id:', slide.id)
     return
   }
   clearTimeout(addressSuggestionsFetchTimer ?? 0)
   const id = slide.id
+  const url = `${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`
+  console.log('[LocationSuggest] Запрос через 300ms: EDITOR_API_BASE=', EDITOR_API_BASE, 'url=', url, 'slide.id=', id, 'value=', value)
   addressSuggestionsFetchTimer = setTimeout(() => {
-    fetch(`${EDITOR_API_BASE}/suggest?q=${encodeURIComponent(value)}`)
+    console.log('[LocationSuggest] Отправка fetch:', url)
+    fetch(url)
       .then(async (r) => {
         const text = await r.text()
+        console.log('[LocationSuggest] Ответ: status=', r.status, 'ok=', r.ok, 'text(200)=', text.slice(0, 200))
         let data: { suggestions?: Array<{ display_name?: string; address?: string; lat?: number; lon?: number }>; error?: string }
         try {
           data = JSON.parse(text)
-        } catch {
+        } catch (parseErr) {
+          console.error('[LocationSuggest] JSON.parse ошибка:', parseErr, 'text=', text)
           if (!r.ok) {
             alert(r.status === 502 ? 'Сервис подсказок временно недоступен (502). Проверьте, что бэкенд запущен на сервере.' : `Ошибка сервера: ${r.status}`)
           }
           addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: [] }
           return
         }
+        console.log('[LocationSuggest] data.error=', data.error, 'suggestions.length=', data.suggestions?.length ?? 0, 'suggestions=', data.suggestions)
         if (data.error) {
           alert(data.error)
         }
         addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: data.suggestions ?? [] }
+        console.log('[LocationSuggest] Записано в addressSuggestionsBySlideId[' + id + ']:', addressSuggestionsBySlideId.value[id]?.length ?? 0, 'элементов')
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[LocationSuggest] fetch catch:', err)
         addressSuggestionsBySlideId.value = { ...addressSuggestionsBySlideId.value, [id]: [] }
       })
   }, 300)
@@ -1468,6 +1476,7 @@ function addressSuggestionsFor(slide: SlideItem) {
 }
 
 function showAddressSuggestions(slide: SlideItem) {
+  console.log('[LocationSuggest] showAddressSuggestions slide.id=', slide.id, 'address=', slide.data?.address)
   if ((addressSuggestionsBySlideId.value[slide.id] ?? []).length > 0) {
     addressSuggestionsVisibleBySlideId.value[slide.id] = true
   }
@@ -2545,10 +2554,6 @@ async function exportToPDF() {
         overflow: hidden;
         width: 100%;
       }
-      /* Чтобы выпадающий список подсказок адреса не обрезался на слайде «Местоположение» */
-      .presentation-slider-wrap.overflow-visible .swiper {
-        overflow: visible;
-      }
       .presentation-swiper .swiper-wrapper {
         width: auto;
       }
@@ -2603,10 +2608,6 @@ async function exportToPDF() {
         -webkit-overflow-scrolling: touch;
         max-width: 100%;
         box-sizing: border-box;
-      }
-      /* На слайде «Местоположение» не обрезать выпадающий список подсказок адреса */
-      .presentation-slider-wrap.booklet-view .booklet-page.overflow-visible .booklet-page__inner {
-        overflow: visible;
       }
 
       /* Нижняя панель: отступ снизу для safe area (вырезы/индикатор) */
