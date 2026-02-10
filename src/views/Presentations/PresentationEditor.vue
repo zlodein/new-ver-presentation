@@ -2106,10 +2106,19 @@ function handleClickOutside(event: MouseEvent) {
   showSettingsMenu.value = false
 }
 
+// Левый клик по подсказке Dadata: preventDefault на mousedown, чтобы input не терял фокус
+// до срабатывания обработчика выбора (иначе список закрывается до клика)
+function handleDadataSuggestionsMouseDown(event: MouseEvent) {
+  if (event.button !== 0) return
+  const target = event.target as HTMLElement
+  if (target.closest('.vue-dadata__suggestions')) event.preventDefault()
+}
+
 let editorMounted = true
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('mousedown', handleDadataSuggestionsMouseDown, true)
   
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
@@ -2168,6 +2177,7 @@ onBeforeUnmount(() => {
   editorMounted = false
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('mousedown', handleDadataSuggestionsMouseDown, true)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   Object.values(locationGeocodeTimerBySlideId.value).forEach((tid) => clearTimeout(tid))
 })
