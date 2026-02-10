@@ -634,7 +634,7 @@
                               placeholder="ЖК «Успешная продажа»"
                               debounce-wait="300ms"
                               class="location-dadata"
-                              @update:model-value="(v: string) => (slide.data as Record<string, string>).address = v"
+                              @update:model-value="(v: string) => onDadataAddressInput(slide, v)"
                               @update:suggestion="(s: Suggestion | undefined) => onDadataSuggestion(slide, s)"
                             />
                             <template v-else>
@@ -1422,21 +1422,50 @@ const dadataToken = (typeof import.meta !== 'undefined' && import.meta.env?.VITE
   : ''
 ).trim()
 
-function onDadataSuggestion(slide: SlideItem, s: Suggestion | undefined) {
-  if (!s) return
+const locationGeocodeTimerBySlideId = ref<Record<string, ReturnType<typeof setTimeout>>>({})
+
+function onDadataAddressInput(slide: SlideItem, v: string) {
   const idx = slides.value.findIndex((item) => item.id === slide.id)
   if (idx === -1) return
   const target = slides.value[idx]
   if (!target.data) target.data = {} as Record<string, unknown>
-  const data = target.data as Record<string, unknown>
-  data.address = s.value
+  ;(target.data as Record<string, unknown>).address = v
+  const tid = locationGeocodeTimerBySlideId.value[slide.id]
+  if (tid) clearTimeout(tid)
+  if (v.trim().length < 5) return
+  locationGeocodeTimerBySlideId.value[slide.id] = setTimeout(() => {
+    delete locationGeocodeTimerBySlideId.value[slide.id]
+    const t = slides.value.find((item) => item.id === slide.id)
+    if (t?.data && String((t.data as Record<string, unknown>).address ?? '').trim().length >= 5) {
+      const lat = Number((t.data as Record<string, unknown>).lat)
+      const lng = Number((t.data as Record<string, unknown>).lng)
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) geocodeAddress(t)
+    }
+  }, 500)
+}
+
+function onDadataSuggestion(slide: SlideItem, s: Suggestion | undefined) {
+  if (!s) return
+  const tid = locationGeocodeTimerBySlideId.value[slide.id]
+  if (tid) {
+    clearTimeout(tid)
+    delete locationGeocodeTimerBySlideId.value[slide.id]
+  }
+  const idx = slides.value.findIndex((item) => item.id === slide.id)
+  if (idx === -1) return
+  const target = slides.value[idx]
+  const prevData = (target.data || {}) as Record<string, unknown>
   const latRaw = s.data?.geo_lat
   const lngRaw = s.data?.geo_lon
   const lat = latRaw != null && latRaw !== '' ? parseFloat(String(latRaw)) : NaN
   const lng = lngRaw != null && lngRaw !== '' ? parseFloat(String(lngRaw)) : NaN
-  if (Number.isFinite(lat)) data.lat = lat
-  if (Number.isFinite(lng)) data.lng = lng
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng)
+  target.data = {
+    ...prevData,
+    address: s.value,
+    ...(hasCoords ? { lat, lng } : {}),
+  }
+  if (!hasCoords) {
     geocodeAddress(target)
   }
 }
@@ -2140,6 +2169,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', backupToLocalStorage)
   document.removeEventListener('click', handleClickOutside)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  Object.values(locationGeocodeTimerBySlideId.value).forEach((tid) => clearTimeout(tid))
 })
 
 function loadFromLocalStorage() {
