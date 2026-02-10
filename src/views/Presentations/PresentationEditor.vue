@@ -627,20 +627,37 @@
                         <div class="booklet-map__info relative flex-shrink-0">
                           <div class="relative mb-2">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Поиск по адресу</label>
-                            <div
-                              v-if="dadataToken"
-                              class="location-dadata-wrap"
-                              @mousedown.capture="handleDadataWrapMouseDown"
-                            >
-                              <VueDadata
-                                :token="dadataToken"
-                                :model-value="String(slide.data?.address ?? '')"
+                            <div v-if="dadataToken" class="relative">
+                              <input
+                                :value="String(slide.data?.address ?? '')"
+                                type="text"
                                 placeholder="ЖК «Успешная продажа»"
-                                debounce-wait="300ms"
-                                class="location-dadata"
-                                @update:model-value="(v: string) => onDadataAddressInput(slide, v)"
-                                @update:suggestion="(s: Suggestion | undefined) => onDadataSuggestion(slide, s)"
+                                autocomplete="off"
+                                class="location-dadata-input dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                @input="onLocationAddressInput(slide, ($event.target as HTMLInputElement).value)"
+                                @focus="onLocationAddressFocus(slide)"
+                                @blur="onLocationAddressBlur"
                               />
+                              <div
+                                v-if="dadataLoadingBySlideId[slide.id]"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400"
+                              >
+                                Поиск...
+                              </div>
+                              <ul
+                                v-if="(dadataSuggestionsBySlideId[slide.id]?.length ?? 0) > 0"
+                                class="location-dadata-suggestions absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                              >
+                                <li
+                                  v-for="(item, idx) in dadataSuggestionsBySlideId[slide.id]"
+                                  :key="idx"
+                                  class="cursor-pointer px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                                  @mousedown.prevent
+                                  @click="applyDadataSuggestion(slide, item)"
+                                >
+                                  {{ item.value }}
+                                </li>
+                              </ul>
                             </div>
                             <template v-else>
                               <input
@@ -1118,9 +1135,6 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
-import { VueDadata } from 'vue-dadata'
-import type { Suggestion } from 'vue-dadata'
-import 'vue-dadata/dist/vue-dadata.css'
 import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase, ApiError } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
@@ -1429,22 +1443,77 @@ const dadataToken = (typeof import.meta !== 'undefined' && import.meta.env?.VITE
 
 const locationGeocodeTimerBySlideId = ref<Record<string, ReturnType<typeof setTimeout>>>({})
 
-// ЛКМ по подсказке: preventDefault на обёртке (capture), чтобы input не терял фокус
-// до срабатывания mousedown внутри vue-dadata — выбор подсказки и @update:suggestion успевают сработать.
-function handleDadataWrapMouseDown(event: MouseEvent) {
-  if (event.button !== 0) return
-  const target = event.target as HTMLElement
-  if (target.closest('.vue-dadata__suggestions')) event.preventDefault()
+// Подсказки Dadata через JavaScript API (без vue-dadata)
+type DadataSuggestionItem = { value: string; geo_lat?: number; geo_lon?: number }
+const dadataSuggestionsBySlideId = ref<Record<string, DadataSuggestionItem[]>>({})
+const dadataLoadingBySlideId = ref<Record<string, boolean>>({})
+const dadataDebounceBySlideId = ref<Record<string, ReturnType<typeof setTimeout>>>({})
+const dadataBlurTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+
+const DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address'
+
+async function fetchDadataSuggestions(slideId: string, query: string): Promise<void> {
+  if (!dadataToken || !query.trim()) {
+    dadataSuggestionsBySlideId.value[slideId] = []
+    return
+  }
+  dadataLoadingBySlideId.value[slideId] = true
+  try {
+    const res = await fetch(DADATA_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Token ${dadataToken}`,
+      },
+      body: JSON.stringify({ query: query.trim(), count: 10 }),
+    })
+    if (!res.ok) {
+      dadataSuggestionsBySlideId.value[slideId] = []
+      return
+    }
+    const data = (await res.json()) as {
+      suggestions?: Array<{
+        value?: string
+        data?: { geo_lat?: string | null; geo_lon?: string | null }
+      }>
+    }
+    const list = (data.suggestions ?? []).map((s) => {
+      const value = s.value ?? ''
+      const latRaw = s.data?.geo_lat
+      const lonRaw = s.data?.geo_lon
+      const geo_lat = latRaw != null && latRaw !== '' ? parseFloat(String(latRaw)) : undefined
+      const geo_lon = lonRaw != null && lonRaw !== '' ? parseFloat(String(lonRaw)) : undefined
+      return { value, geo_lat: Number.isFinite(geo_lat) ? geo_lat : undefined, geo_lon: Number.isFinite(geo_lon) ? geo_lon : undefined }
+    })
+    dadataSuggestionsBySlideId.value[slideId] = list
+  } catch {
+    dadataSuggestionsBySlideId.value[slideId] = []
+  } finally {
+    dadataLoadingBySlideId.value[slideId] = false
+  }
 }
 
-function onDadataAddressInput(slide: SlideItem, v: string) {
+function onLocationAddressInput(slide: SlideItem, v: string) {
   const idx = slides.value.findIndex((item) => item.id === slide.id)
   if (idx === -1) return
   const target = slides.value[idx]
   if (!target.data) target.data = {} as Record<string, unknown>
   ;(target.data as Record<string, unknown>).address = v
-  const tid = locationGeocodeTimerBySlideId.value[slide.id]
+
+  const tid = dadataDebounceBySlideId.value[slide.id]
   if (tid) clearTimeout(tid)
+  if (v.trim().length < 3) {
+    dadataSuggestionsBySlideId.value[slide.id] = []
+    return
+  }
+  dadataDebounceBySlideId.value[slide.id] = setTimeout(() => {
+    delete dadataDebounceBySlideId.value[slide.id]
+    fetchDadataSuggestions(slide.id, v)
+  }, 300)
+
+  const geocodeTid = locationGeocodeTimerBySlideId.value[slide.id]
+  if (geocodeTid) clearTimeout(geocodeTid)
   if (v.trim().length < 5) return
   locationGeocodeTimerBySlideId.value[slide.id] = setTimeout(() => {
     delete locationGeocodeTimerBySlideId.value[slide.id]
@@ -1457,33 +1526,37 @@ function onDadataAddressInput(slide: SlideItem, v: string) {
   }, 500)
 }
 
-function onDadataSuggestion(slide: SlideItem, s: Suggestion | undefined) {
-  if (import.meta.env?.DEV) {
-    console.log('[Dadata] onDadataSuggestion вызвана', s ? { value: s.value, geo_lat: s.data?.geo_lat, geo_lon: s.data?.geo_lon } : 'suggestion пустой')
+function onLocationAddressFocus(_slide: SlideItem) {
+  if (dadataBlurTimer.value) {
+    clearTimeout(dadataBlurTimer.value)
+    dadataBlurTimer.value = null
   }
-  if (!s) return
+}
+
+function onLocationAddressBlur() {
+  dadataBlurTimer.value = setTimeout(() => {
+    dadataSuggestionsBySlideId.value = {}
+    dadataBlurTimer.value = null
+  }, 200)
+}
+
+function applyDadataSuggestion(slide: SlideItem, item: DadataSuggestionItem) {
   const tid = locationGeocodeTimerBySlideId.value[slide.id]
   if (tid) {
     clearTimeout(tid)
     delete locationGeocodeTimerBySlideId.value[slide.id]
   }
-  const idx = slides.value.findIndex((item) => item.id === slide.id)
+  const idx = slides.value.findIndex((s) => s.id === slide.id)
   if (idx === -1) return
   const target = slides.value[idx]
   const prevData = (target.data || {}) as Record<string, unknown>
-  const latRaw = s.data?.geo_lat
-  const lngRaw = s.data?.geo_lon
-  const lat = latRaw != null && latRaw !== '' ? parseFloat(String(latRaw)) : NaN
-  const lng = lngRaw != null && lngRaw !== '' ? parseFloat(String(lngRaw)) : NaN
-  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng)
+  const hasCoords = item.geo_lat != null && item.geo_lon != null
   target.data = {
     ...prevData,
-    address: s.value,
-    ...(hasCoords ? { lat, lng } : {}),
+    address: item.value,
+    ...(hasCoords ? { lat: item.geo_lat, lng: item.geo_lon } : {}),
   }
-  nextTick(() => {
-    // Принудительное обновление карты через key (key уже привязан к lat/lng)
-  })
+  dadataSuggestionsBySlideId.value[slide.id] = []
   if (!hasCoords) {
     geocodeAddress(target)
   }
@@ -2189,6 +2262,8 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   Object.values(locationGeocodeTimerBySlideId.value).forEach((tid) => clearTimeout(tid))
+  Object.values(dadataDebounceBySlideId.value).forEach((tid) => clearTimeout(tid))
+  if (dadataBlurTimer.value) clearTimeout(dadataBlurTimer.value)
 })
 
 function loadFromLocalStorage() {
