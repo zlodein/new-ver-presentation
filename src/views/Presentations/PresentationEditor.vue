@@ -821,37 +821,27 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-4 0l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </button>
-            <!-- Переключатель публичной ссылки (radio) -->
-            <div class="mob-editor-buttons__share flex rounded-lg border border-gray-300 bg-gray-100 p-0.5 dark:border-gray-600 dark:bg-gray-700" role="radiogroup" aria-label="Публичная ссылка">
-              <label
-                class="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition"
-                :class="!presentationMeta.isPublic ? 'bg-white text-gray-900 shadow dark:bg-gray-800 dark:text-white' : 'text-gray-600 dark:text-gray-400'"
-              >
-                <input
-                  type="radio"
-                  name="mobShareToggle"
-                  value="off"
-                  :checked="!presentationMeta.isPublic"
-                  class="sr-only"
-                  @change="presentationMeta.isPublic && toggleShare()"
-                >
-                <span>Выкл</span>
-              </label>
-              <label
-                class="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition"
-                :class="presentationMeta.isPublic ? 'bg-white text-gray-900 shadow dark:bg-gray-800 dark:text-white' : 'text-gray-600 dark:text-gray-400'"
-              >
-                <input
-                  type="radio"
-                  name="mobShareToggle"
-                  value="on"
-                  :checked="presentationMeta.isPublic"
-                  class="sr-only"
-                  @change="!presentationMeta.isPublic && toggleShare()"
-                >
-                <span>Вкл</span>
-              </label>
-            </div>
+            <!-- Публичная ссылка: иконка глобуса (вкл) / глобус перечёркнут (выкл) -->
+            <button
+              type="button"
+              class="mob-editor-buttons__share inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition"
+              :class="presentationMeta.isPublic
+                ? 'border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-600 dark:bg-brand-950/50 dark:text-brand-400'
+                : 'border-gray-300 bg-white text-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'"
+              :title="presentationMeta.isPublic ? 'Публичная ссылка включена' : 'Поделиться (включить публичную ссылку)'"
+              aria-label="Публичная ссылка"
+              @click="toggleShare"
+            >
+              <!-- Глобус перечёркнут (ссылка выкл) -->
+              <svg v-if="!presentationMeta.isPublic" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0h.5a2.5 2.5 0 002.5-2.5V3.935M12 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16" />
+              </svg>
+              <!-- Глобус (ссылка вкл) -->
+              <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0h.5a2.5 2.5 0 002.5-2.5V3.935M12 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
           </div>
         </div>
       </main>
@@ -2380,19 +2370,25 @@ async function exportToPDF() {
         border-bottom-color: #374151;
       }
       .editor-slides-nav .slides-strip {
-        padding: 15px 0 20px;
+        padding: 10px 0 14px;
+        gap: 6px;
       }
-      /* Пункты слайдов: удобная зона для нажатия и перетаскивания на мобильных */
+      .editor-slides-nav .slides-strip > div {
+        gap: 6px;
+      }
+      /* Пункты слайдов: компактный чип, не растягивается, читаемый текст и иконки */
       .editor-slides-nav [data-slide-index] {
         width: auto !important;
-        padding: 10px 12px 10px 14px;
+        max-width: 160px;
+        flex: 0 0 auto;
+        padding: 6px 8px 6px 10px;
         font-weight: 600;
-        font-size: 14px;
-        line-height: 24px;
+        font-size: 13px;
+        line-height: 20px;
         color: #374151;
         white-space: nowrap;
-        min-height: 44px;
-        gap: 8px;
+        min-height: 40px;
+        gap: 6px;
         align-items: center;
       }
       .dark .editor-slides-nav [data-slide-index] {
@@ -2404,34 +2400,51 @@ async function exportToPDF() {
       .editor-slides-nav .slide-drag-handle {
         cursor: grab;
         flex: 0 0 auto;
-        padding: 8px;
-        min-width: 36px;
-        min-height: 36px;
+        padding: 6px;
+        min-width: 28px;
+        min-height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
         -webkit-tap-highlight-color: transparent;
+      }
+      .editor-slides-nav .slide-drag-handle svg {
+        width: 14px;
+        height: 14px;
       }
       .editor-slides-nav .slide-drag-handle:active {
         cursor: grabbing;
       }
       .editor-slides-nav [data-slide-index] button.min-w-0.truncate {
         cursor: pointer;
-        flex: 1;
-        padding: 4px 6px;
+        flex: 0 1 auto;
         min-width: 0;
+        max-width: 72px;
+        padding: 2px 4px;
         text-align: left;
-        font-size: 14px;
-        min-height: 36px;
+        font-size: 13px;
+        line-height: 20px;
+        min-height: 28px;
         display: flex;
         align-items: center;
       }
+      .editor-slides-nav [data-slide-index] > div:last-child {
+        gap: 2px;
+      }
       .editor-slides-nav [data-slide-index] > div:last-child button {
-        min-width: 36px;
-        min-height: 36px;
-        padding: 6px;
+        min-width: 28px;
+        min-height: 28px;
+        padding: 4px;
+      }
+      .editor-slides-nav [data-slide-index] > div:last-child button svg {
+        width: 14px;
+        height: 14px;
       }
 
+      /* На мобильных отключаем aspect-ratio, чтобы высота задавалась min/max и контент помещался с прокруткой */
+      .presentation-slider-wrap {
+        aspect-ratio: auto;
+      }
       /* Контейнер редактора слайдов: большая высота на мобильных, чтобы контент помещался с вертикальной прокруткой */
       .presentation-slider-wrap.booklet-view {
         min-height: 60vh;
