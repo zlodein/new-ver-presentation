@@ -159,7 +159,7 @@
       <!-- Область превью слайдов (Swiper) -->
       <main class="w-full">
         <div
-          class="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50 p-4 lg:p-6"
+          class="editor-slider-wrap rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
           @paste.capture="onPasteStripFormat"
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент -->
@@ -744,25 +744,29 @@
           <div class="mob-editor-buttons fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800 md:hidden">
             <button
               type="button"
-              class="mob-editor-buttons__prev inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-              :class="{ 'invisible': visibleSlideNumber <= 1 }"
+              class="mob-editor-buttons__prev inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition"
+              :class="visibleSlideNumber <= 1
+                ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'"
               :disabled="visibleSlideNumber <= 1"
+              title="Назад"
               @click="prevSlide"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Назад
             </button>
             <button
               type="button"
-              class="mob-editor-buttons__next inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-              :class="{ 'invisible': visibleSlideNumber >= visibleSlides.length }"
+              class="mob-editor-buttons__next inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition"
+              :class="visibleSlideNumber >= visibleSlides.length
+                ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'"
               :disabled="visibleSlideNumber >= visibleSlides.length"
+              title="Вперёд"
               @click="nextSlide"
             >
-              Вперёд
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -2428,15 +2432,15 @@ async function exportToPDF() {
         padding: 6px;
       }
 
-      /* Контейнер редактора слайдов (высота и прокрутка) */
+      /* Контейнер редактора слайдов: большая высота на мобильных, чтобы контент помещался с вертикальной прокруткой */
       .presentation-slider-wrap.booklet-view {
-        min-height: 50vh;
-        max-height: min(70vh, 500px);
+        min-height: 60vh;
+        max-height: min(85vh, calc(100vh - 160px));
         overflow-x: hidden;
         box-sizing: border-box;
       }
       .presentation-slider-wrap.booklet-view .booklet-page__inner {
-        min-height: 400px;
+        min-height: 480px;
         padding: 20px 16px;
         overflow-y: auto;
         overflow-x: hidden;
