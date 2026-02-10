@@ -87,7 +87,10 @@ async function dadataSuggest(q: string, limit: number): Promise<SuggestItem[]> {
     },
     body: JSON.stringify({ query: q, count: Math.min(limit, 10) }),
   })
-  if (!res.ok) return []
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Dadata ${res.status}: ${errText.slice(0, 200)}`)
+  }
   const data = (await res.json()) as {
     suggestions?: Array<{
       value?: string
@@ -260,7 +263,17 @@ export async function editorApiRoutes(app: FastifyInstance) {
       return reply.send({ suggestions: [] })
     }
     try {
-      const suggestions = DADATA_API_KEY ? await dadataSuggest(q, 10) : await yandexSuggest(q, 10)
+      let suggestions: SuggestItem[]
+      if (DADATA_API_KEY) {
+        try {
+          suggestions = await dadataSuggest(q, 10)
+        } catch (e) {
+          app.log.warn(e, 'Dadata suggest failed, falling back to Yandex')
+          suggestions = YANDEX_GEOCODER_API_KEY ? await yandexSuggest(q, 10) : []
+        }
+      } else {
+        suggestions = await yandexSuggest(q, 10)
+      }
       return reply.send({ suggestions })
     } catch (e) {
       app.log.error(e)
