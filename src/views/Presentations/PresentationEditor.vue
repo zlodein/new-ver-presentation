@@ -620,19 +620,25 @@
                               @blur="onLocationAddressBlur(slide)"
                               @keydown.enter.prevent="geocodeAddress(slide)"
                             />
-                            <ul
+                            <div
                               v-if="addressSuggestionsFor(slide).length > 0"
-                              class="absolute left-0 right-0 top-full z-[100] mt-1 max-h-40 overflow-auto rounded border border-gray-200 bg-white py-1 shadow-lg"
+                              class="absolute left-0 right-0 top-full z-[100] mt-1 w-full rounded-lg border border-gray-300 bg-white shadow-theme-xs dark:border-gray-700 dark:bg-gray-900"
                             >
-                              <li
-                                v-for="(s, i) in addressSuggestionsFor(slide)"
-                                :key="i"
-                                class="cursor-pointer px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                                @mousedown.prevent="selectAddressSuggestion(slide, s)"
+                              <ul
+                                class="custom-scrollbar max-h-60 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-800"
+                                role="listbox"
                               >
-                                {{ s.display_name || s.address || s }}
-                              </li>
-                            </ul>
+                                <li
+                                  v-for="(s, i) in addressSuggestionsFor(slide)"
+                                  :key="i"
+                                  role="option"
+                                  class="relative flex w-full cursor-pointer items-center px-3 py-2.5 text-sm text-gray-800 first:rounded-t-lg last:rounded-b-lg hover:bg-gray-100 dark:text-white/90 dark:hover:bg-gray-800"
+                                  @mousedown.prevent="selectAddressSuggestion(slide, s)"
+                                >
+                                  <span class="grow">{{ s.display_name || s.address || s }}</span>
+                                </li>
+                              </ul>
+                            </div>
                           </div>
                           <button
                             type="button"

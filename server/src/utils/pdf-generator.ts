@@ -6,7 +6,7 @@ interface PresentationData {
   id: string
   title: string
   coverImage?: string
-  content: { slides: ViewSlideItem[] }
+  content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string } }
 }
 
 // A4 альбомная в пикселях (96 DPI): 297mm × 210mm — один слайд = один лист
@@ -64,6 +64,8 @@ function getImageGridLimit(dataObj: Record<string, unknown>, slideType: string):
 function generatePresentationHTML(data: PresentationData, baseUrl: string): string {
   const slides = data.content?.slides || []
   const visibleSlides = slides.filter((s) => !s.hidden)
+  const fontFamilyRaw = (data.content?.settings?.fontFamily || '').trim()
+  const fontFamily = fontFamilyRaw && fontFamilyRaw !== 'system-ui' ? fontFamilyRaw : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
 
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {
@@ -371,7 +373,22 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   // Встроенные CSS стили для PDF: один слайд = один лист A4 альбомная, контент на всю область
   const embeddedCSS = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: ${A4_LANDSCAPE_WIDTH}px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #eeeeee; padding: 0; overflow: hidden; }
+    html, body { width: ${A4_LANDSCAPE_WIDTH}px; font-family: ${fontFamily}; font-size: 16px; line-height: 1.5; color: #1a1a1a; background: #eeeeee; padding: 0; overflow: hidden; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-lg { font-size: 1.125rem; line-height: 1.375rem; }
+    .font-medium { font-weight: 600; }
+    .font-semibold { font-weight: 600; }
+    .font-normal { font-weight: 400; }
+    .text-gray-500 { color: #6b7280; }
+    .text-gray-600 { color: #4b5563; }
+    .text-gray-800 { color: #1f2937; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .flex { display: flex; }
+    .flex-wrap { flex-wrap: wrap; }
+    .gap-x-4 { column-gap: 1rem; }
+    .gap-y-1 { row-gap: 0.25rem; }
+    .space-y-0\\.5 > * + * { margin-top: 0.125rem; }
     .presentation-container { width: 100%; margin: 0; background: white; }
     .booklet-page { page-break-after: always; position: relative; width: 100vw; height: 100vh; min-height: 100vh; max-height: 100vh; background-color: #eeeeee; padding: 1rem; overflow: hidden; }
     .booklet-page:last-child { page-break-after: auto; }
@@ -380,7 +397,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-main__wrap { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; }
     .presentation-slider-wrap.booklet-view .booklet-main__img { position: relative; flex: 0 0 55%; min-width: 200px; min-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #C4C4C4; box-sizing: border-box; padding: 40px 0 40px 40px; }
-    .presentation-slider-wrap.booklet-view .booklet-main__img img, .presentation-slider-wrap.booklet-view .booklet-img__img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img, .presentation-slider-wrap.booklet-view .booklet-grid__img img, .presentation-slider-wrap.booklet-view .booklet-char__img img, .presentation-slider-wrap.booklet-view .booklet-layout__img img, .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; }
+    .presentation-slider-wrap.booklet-view .booklet-main__img img, .presentation-slider-wrap.booklet-view .booklet-img__img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img, .presentation-slider-wrap.booklet-view .booklet-grid__img img, .presentation-slider-wrap.booklet-view .booklet-char__img img, .presentation-slider-wrap.booklet-view .booklet-layout__img img, .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img, .presentation-slider-wrap.booklet-view .booklet-map__grid-img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; }
     .presentation-slider-wrap.booklet-view .booklet-main__content { flex: 1 1 45%; min-width: 200px; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 40px 25px; }
     .presentation-slider-wrap.booklet-view .booklet-main__top, .presentation-slider-wrap.booklet-view .booklet-main__center { flex: 0 0 auto; font-size: 1rem; line-height: 1.3; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
     .presentation-slider-wrap.booklet-view .booklet-main__center { font-size: 1.25rem; margin-top: 0.25rem; }
@@ -401,17 +418,22 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="2x3"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-char__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
-    .presentation-slider-wrap.booklet-view .booklet-char__img { position: relative; min-height: 180px; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
-    .presentation-slider-wrap.booklet-view .booklet-char__content { display: flex; flex-direction: column; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-char__table { flex: 1; margin-top: 0; display: flex; flex-direction: column; gap: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-char__title { grid-column: 1 / -1; }
+    .presentation-slider-wrap.booklet-view .booklet-char__img { position: relative; min-height: 180px; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; grid-row: 2; grid-column: 1; }
+    .presentation-slider-wrap.booklet-view .booklet-char__content { display: flex; flex-direction: column; min-height: 0; grid-row: 2; grid-column: 2; overflow: auto; }
+    .presentation-slider-wrap.booklet-view .booklet-char__table { flex: 1; margin-top: 0; display: flex; flex-direction: column; gap: 0; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-char__row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); align-items: center; }
     .presentation-slider-wrap.booklet-view .booklet-layout__wrap { display: flex; flex-direction: column; gap: 0; width: 100%; height: 100%; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
-    .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: cover; }
+    .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-map__left { display: flex; flex-direction: column; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info { flex: none; font-size: 0.9375rem; color: #444; overflow: auto; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info { flex: none; font-size: 0.9375rem; line-height: 1.5; color: #444; overflow: auto; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info p { margin: 0 0 0.35rem 0; font-size: 0.9375rem; line-height: 1.5; color: #1a1a1a; font-weight: 600; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info p.text-gray-500 { color: #6b7280; font-weight: 600; margin-top: 0.5rem; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info ul { margin: 0.25rem 0 0 0; padding-left: 1.25rem; font-size: 0.875rem; line-height: 1.5; color: #4b5563; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info li { margin-bottom: 0.125rem; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid { display: grid; gap: 8px; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="1x1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="2x1"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
@@ -422,11 +444,11 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-map__grid-img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
-    .presentation-slider-wrap.booklet-view .booklet-map__grid-img img { width: 100%; height: 100%; object-fit: cover; }
+    .presentation-slider-wrap.booklet-view .booklet-map__grid-img img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; height: 100%; min-height: 320px; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__left { display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: #e8e8e8; flex-shrink: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-contacts__avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .presentation-slider-wrap.booklet-view .booklet-contacts__avatar img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-galery__wrap { display: flex; flex-direction: column; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-galery__grid { display: grid; gap: 8px; flex: 1; min-height: 0; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="1x1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
@@ -439,7 +461,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-galery__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; z-index: 2; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img { position: relative; min-height: 120px; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
-    .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; object-fit: cover; }
+    .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__content { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-height: 0; overflow: auto; }
     .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; background: #e8e8e8; }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
@@ -450,12 +472,14 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     }
   `
 
+  const googleFontsLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700&family=Open+Sans:ital,wght@0,400;0,600;0,700&family=Raleway:ital,wght@0,400;0,600;0,700&family=Rubik:ital,wght@0,400;0,600;0,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700&display=swap" rel="stylesheet">'
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title}</title>
+  ${googleFontsLink}
   <style>${embeddedCSS}</style>
 </head>
 <body>
