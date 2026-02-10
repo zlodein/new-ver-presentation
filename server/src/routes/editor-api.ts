@@ -2,7 +2,6 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 
 const GIGACHAT_AUTH_KEY = process.env.GIGACHAT_AUTH_KEY ?? ''
 const YANDEX_GEOCODER_API_KEY = process.env.YANDEX_GEOCODER_API_KEY ?? ''
-const DADATA_API_KEY = process.env.DADATA_API_KEY ?? ''
 
 async function gigachatGetToken(log?: { error: (e: unknown) => void }): Promise<string | null> {
   if (!GIGACHAT_AUTH_KEY) return null
@@ -76,41 +75,6 @@ async function gigachatGenerateText(
 }
 
 type SuggestItem = { display_name: string; address: string; lat?: number; lon?: number }
-
-async function dadataSuggest(q: string, limit: number): Promise<SuggestItem[]> {
-  if (!DADATA_API_KEY) return []
-  const res = await fetch('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Token ${DADATA_API_KEY}`,
-    },
-    body: JSON.stringify({ query: q, count: Math.min(limit, 10) }),
-  })
-  if (!res.ok) {
-    const errText = await res.text()
-    throw new Error(`Dadata ${res.status}: ${errText.slice(0, 200)}`)
-  }
-  const data = (await res.json()) as {
-    suggestions?: Array<{
-      value?: string
-      unrestricted_value?: string
-      data?: { geo_lat?: string | null; geo_lon?: string | null }
-    }>
-  }
-  const list = data.suggestions ?? []
-  return list.map((s) => {
-    const value = s.value ?? s.unrestricted_value ?? ''
-    const lat = s.data?.geo_lat != null ? parseFloat(String(s.data.geo_lat)) : NaN
-    const lon = s.data?.geo_lon != null ? parseFloat(String(s.data.geo_lon)) : NaN
-    return {
-      display_name: value,
-      address: value,
-      lat: Number.isFinite(lat) ? lat : undefined,
-      lon: Number.isFinite(lon) ? lon : undefined,
-    }
-  })
-}
 
 async function yandexSuggest(q: string, limit: number): Promise<SuggestItem[]> {
   if (!YANDEX_GEOCODER_API_KEY) return []
@@ -252,10 +216,10 @@ async function yandexFindNearestMetro(
 
 export async function editorApiRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { q?: string } }>('/suggest', async (req: FastifyRequest<{ Querystring: { q?: string } }>, reply: FastifyReply) => {
-    if (!DADATA_API_KEY && !YANDEX_GEOCODER_API_KEY) {
+    if (!YANDEX_GEOCODER_API_KEY) {
       return reply.send({
         suggestions: [],
-        error: 'Подсказки адресов не настроены. Задайте DADATA_API_KEY или YANDEX_GEOCODER_API_KEY в .env на сервере.',
+        error: 'Подсказки адресов не настроены. Задайте YANDEX_GEOCODER_API_KEY в .env на сервере (ключ JavaScript API и HTTP Геокодера).',
       })
     }
     const q = (req.query.q ?? '').trim()
@@ -263,17 +227,7 @@ export async function editorApiRoutes(app: FastifyInstance) {
       return reply.send({ suggestions: [] })
     }
     try {
-      let suggestions: SuggestItem[]
-      if (DADATA_API_KEY) {
-        try {
-          suggestions = await dadataSuggest(q, 10)
-        } catch (e) {
-          app.log.warn(e, 'Dadata suggest failed, falling back to Yandex')
-          suggestions = YANDEX_GEOCODER_API_KEY ? await yandexSuggest(q, 10) : []
-        }
-      } else {
-        suggestions = await yandexSuggest(q, 10)
-      }
+      const suggestions = await yandexSuggest(q, 10)
       return reply.send({ suggestions })
     } catch (e) {
       app.log.error(e)

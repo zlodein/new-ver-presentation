@@ -347,7 +347,8 @@
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
-            class="presentation-slider-wrap booklet-view mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900"
+            class="presentation-slider-wrap booklet-view mx-auto w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
+            :class="currentSlide?.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
             :style="presentationStyle"
           >
             <Swiper
@@ -2544,6 +2545,10 @@ async function exportToPDF() {
         overflow: hidden;
         width: 100%;
       }
+      /* Чтобы выпадающий список подсказок адреса не обрезался на слайде «Местоположение» */
+      .presentation-slider-wrap.overflow-visible .swiper {
+        overflow: visible;
+      }
       .presentation-swiper .swiper-wrapper {
         width: auto;
       }
@@ -2598,6 +2603,10 @@ async function exportToPDF() {
         -webkit-overflow-scrolling: touch;
         max-width: 100%;
         box-sizing: border-box;
+      }
+      /* На слайде «Местоположение» не обрезать выпадающий список подсказок адреса */
+      .presentation-slider-wrap.booklet-view .booklet-page.overflow-visible .booklet-page__inner {
+        overflow: visible;
       }
 
       /* Нижняя панель: отступ снизу для safe area (вырезы/индикатор) */
