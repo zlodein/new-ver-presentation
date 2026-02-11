@@ -113,7 +113,7 @@
                       <button
                         type="button"
                         @click="toggleActive(user)"
-                        :disabled="deactivatingId === user.id || (user.role_id === 2 && !!user.is_active)"
+                        :disabled="deactivatingId === user.id || user.role_id === 2"
                         class="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         :class="user.is_active
                           ? 'border-error-300 bg-white text-error-600 hover:bg-error-50 dark:border-error-800 dark:bg-gray-800 dark:text-error-400 dark:hover:bg-error-500/15'
@@ -125,7 +125,7 @@
                       <button
                         type="button"
                         @click="impersonate(user)"
-                        :disabled="impersonatingId === user.id || !user.is_active"
+                        :disabled="impersonatingId === user.id || !user.is_active || user.role_id === 2"
                         class="inline-flex items-center justify-center rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title="Войти под учёткой"
                       >

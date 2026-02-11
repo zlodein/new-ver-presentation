@@ -41,27 +41,24 @@ const SidebarSymbol = Symbol()
 
 export function useSidebarProvider() {
   const router = useRouter()
-  // Загружаем состояние из localStorage или используем false по умолчанию
-  const savedState = typeof window !== 'undefined' ? localStorage.getItem('sidebar-expanded') : null
-  const isExpanded = ref(savedState === 'true' ? true : false)
+  // На странице редактирования презентаций — свёрнуто по умолчанию, на остальных — раскрыто
+  const isPresentationEdit = (path: string) =>
+    /^\/dashboard\/presentations\/(new|\d+\/edit)$/.test(path) || path === '/dashboard/presentations/new'
+  const getDefaultExpanded = (path: string) => !isPresentationEdit(path)
+  const isExpanded = ref(getDefaultExpanded(router.currentRoute.value.path))
   const isMobileOpen = ref(false)
   const isMobile = ref(false)
   const isHovered = ref(false)
   const activeItem = ref<string | null>(null)
   const openSubmenu = ref<string | null>(null)
 
-  // Сохраняем состояние в localStorage при изменении
-  watch(isExpanded, (newValue) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebar-expanded', String(newValue))
-    }
-  })
-
   watch(
     () => router.currentRoute.value.path,
-    () => {
+    (path) => {
       isMobileOpen.value = false
       openSubmenu.value = null
+      // При смене маршрута: на странице редактирования — свёрнуто, на остальных — раскрыто
+      isExpanded.value = getDefaultExpanded(path)
     }
   )
 
@@ -75,14 +72,7 @@ export function useSidebarProvider() {
 
   onMounted(() => {
     handleResize()
-    // Принудительно устанавливаем свернутое состояние при загрузке (только для десктопа)
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      // Игнорируем сохраненное состояние и всегда начинаем со свернутого
-      isExpanded.value = false
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sidebar-expanded', 'false')
-      }
-    }
+    isExpanded.value = getDefaultExpanded(router.currentRoute.value.path)
     window.addEventListener('resize', handleResize)
   })
 
