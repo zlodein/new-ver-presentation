@@ -66,6 +66,9 @@ function save(data: StoreData): void {
 }
 
 export const fileStore = {
+  load(): StoreData {
+    return load()
+  },
   findUserByEmail(email: string): User | undefined {
     return load().users.find((u) => u.email === email.toLowerCase())
   },

@@ -125,6 +125,7 @@ export interface AuthUser {
   // Работа
   company_name?: string | null
   work_position?: string | null
+  role_id?: number | null
   company_logo?: string | null
   work_email?: string | null
   work_phone?: string | null

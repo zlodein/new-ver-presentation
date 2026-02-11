@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken } from '@/api/client'
+import { getToken, api } from '@/api/client'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -93,6 +93,33 @@ const router = createRouter({
       component: () => import('../views/Tables/BasicTables.vue'),
       meta: {
         title: 'Базовые таблицы',
+      },
+    },
+    {
+      path: '/dashboard/admin/users',
+      name: 'Admin Users',
+      component: () => import('../views/Admin/AdminUsers.vue'),
+      meta: {
+        title: 'Пользователи',
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/dashboard/admin/tariffs',
+      name: 'Admin Tariffs',
+      component: () => import('../views/Admin/AdminTariffs.vue'),
+      meta: {
+        title: 'Тарифы',
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/dashboard/admin/payments',
+      name: 'Admin Payments',
+      component: () => import('../views/Admin/AdminPayments.vue'),
+      meta: {
+        title: 'Платежи',
+        requiresAdmin: true,
       },
     },
     {
@@ -238,12 +265,25 @@ router.onError((err) => {
 
 export default router
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.path.startsWith('/dashboard') || to.path === '/administration'
   const token = getToken()
   if (requiresAuth && !token) {
     next({ path: '/signin', query: { redirect: to.fullPath } })
     return
+  }
+  const requiresAdmin = to.meta?.requiresAdmin === true
+  if (requiresAdmin && token) {
+    try {
+      const user = await api.get<{ role_id?: number }>('/api/auth/me')
+      if (user.role_id !== 2) {
+        next({ path: '/dashboard' })
+        return
+      }
+    } catch {
+      next({ path: '/signin', query: { redirect: to.fullPath } })
+      return
+    }
   }
   const title = to.meta?.title
   document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'

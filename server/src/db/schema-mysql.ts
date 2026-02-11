@@ -30,6 +30,7 @@ export const users = mysqlTable('users', {
   work_email: varchar('work_email', { length: 255 }),
   work_phone: varchar('work_phone', { length: 20 }),
   work_website: varchar('work_website', { length: 512 }),
+  role_id: int('role_id').default(1),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

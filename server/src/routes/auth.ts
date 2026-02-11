@@ -402,7 +402,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, role_id: true, created_at: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
         try {
@@ -412,9 +412,10 @@ export async function authRoutes(app: FastifyInstance) {
           }) as Record<string, unknown> | null
         } catch (err) {
           if (isUnknownColumnError(err)) {
+            const baseColumnsNoRole = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
             user = await mysqlDb.query.users.findFirst({
               where: eq(mysqlSchema.users.id, userId),
-              columns: baseColumns,
+              columns: { ...baseColumnsNoRole, ...workColumns },
             }) as Record<string, unknown> | null
           } else throw err
         }
@@ -438,6 +439,7 @@ export async function authRoutes(app: FastifyInstance) {
           work_email: user.work_email ?? undefined,
           work_phone: user.work_phone ?? undefined,
           work_website: user.work_website ?? undefined,
+          role_id: user.role_id != null ? Number(user.role_id) : undefined,
           createdAt: user.created_at,
           firstName: user.name,
           lastName: user.last_name,
@@ -629,7 +631,7 @@ export async function authRoutes(app: FastifyInstance) {
           } else throw err
         }
 
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, role_id: true, created_at: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let updatedUser: Record<string, unknown> | null = null
         try {

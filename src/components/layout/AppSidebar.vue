@@ -148,6 +148,7 @@
                     <ul class="mt-2 space-y-1 ml-9">
                       <li v-for="subItem in item.subItems" :key="subItem.name">
                         <router-link
+                          v-if="subItem.path && !subItem.disabled"
                           :to="subItem.path"
                           :class="[
                             'menu-dropdown-item',
@@ -197,6 +198,14 @@
                             </span>
                           </span>
                         </router-link>
+                        <span
+                          v-else
+                          :class="[
+                            'menu-dropdown-item menu-dropdown-item-inactive cursor-not-allowed opacity-60',
+                          ]"
+                        >
+                          {{ subItem.name }}
+                        </span>
                       </li>
                     </ul>
                   </div>
@@ -212,7 +221,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 
 import {
@@ -229,65 +238,87 @@ import {
   TableIcon,
   ListIcon,
   PlugInIcon,
+  SettingsIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
+import { useAuth } from "@/composables/useAuth";
 
 const route = useRoute();
+const { currentUser, fetchUser } = useAuth();
+
+onMounted(() => {
+  fetchUser();
+});
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
-const menuGroups = [
-  {
-    title: "Меню",
-    items: [
-      {
-        icon: GridIcon,
-        name: "Панель управления",
-        path: "/dashboard",
-      },
-      {
-        icon: DocsIcon,
-        name: "Презентации",
-        path: "/dashboard/presentations",
-      },
-      {
-        icon: CalenderIcon,
-        name: "Календарь",
-        path: "/dashboard/calendar",
-      },
-      {
-        icon: UserCircleIcon,
-        name: "Профиль пользователя",
-        path: "/dashboard/profile",
-      },
+const isAdmin = computed(() => currentUser.value?.role_id === 2);
 
-      {
-        name: "Формы",
-        icon: ListIcon,
-        subItems: [
-          { name: "Элементы формы", path: "/dashboard/form-elements", pro: false },
-        ],
-      },
-      {
-        name: "Таблицы",
-        icon: TableIcon,
-        subItems: [{ name: "Базовые таблицы", path: "/dashboard/basic-tables", pro: false }],
-      },
-      {
-        name: "Страницы",
-        icon: PageIcon,
-        subItems: [
-          { name: "Пустая страница", path: "/dashboard/blank", pro: false },
-          { name: "Страница 404", path: "/dashboard/error-404", pro: false },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Прочее",
-    items: [
+const adminPanelItem = {
+  icon: SettingsIcon,
+  name: "Админ панель",
+  subItems: [
+    { name: "Пользователи", path: "/dashboard/admin/users" },
+    { name: "Пожелания", disabled: true },
+    { name: "Тарифы", path: "/dashboard/admin/tariffs" },
+    { name: "Платежи", path: "/dashboard/admin/payments" },
+  ],
+};
+
+const menuGroups = computed(() => {
+  const menuItems = [
+    {
+      icon: GridIcon,
+      name: "Панель управления",
+      path: "/dashboard",
+    },
+    ...(isAdmin.value ? [adminPanelItem] : []),
+    {
+      icon: DocsIcon,
+      name: "Презентации",
+      path: "/dashboard/presentations",
+    },
+    {
+      icon: CalenderIcon,
+      name: "Календарь",
+      path: "/dashboard/calendar",
+    },
+    {
+      icon: UserCircleIcon,
+      name: "Профиль пользователя",
+      path: "/dashboard/profile",
+    },
+    {
+      name: "Формы",
+      icon: ListIcon,
+      subItems: [
+        { name: "Элементы формы", path: "/dashboard/form-elements", pro: false },
+      ],
+    },
+    {
+      name: "Таблицы",
+      icon: TableIcon,
+      subItems: [{ name: "Базовые таблицы", path: "/dashboard/basic-tables", pro: false }],
+    },
+    {
+      name: "Страницы",
+      icon: PageIcon,
+      subItems: [
+        { name: "Пустая страница", path: "/dashboard/blank", pro: false },
+        { name: "Страница 404", path: "/dashboard/error-404", pro: false },
+      ],
+    },
+  ];
+  return [
+    {
+      title: "Меню",
+      items: menuItems,
+    },
+    {
+      title: "Прочее",
+      items: [
       {
         icon: PieChartIcon,
         name: "Графики",
@@ -316,10 +347,10 @@ const menuGroups = [
           { name: "Регистрация", path: "/signup", pro: false },
         ],
       },
-      // ... Add other menu items here
     ],
   },
 ];
+});
 
 const isActive = (path) => route.path === path;
 
@@ -329,7 +360,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return menuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -342,8 +373,8 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
-        isActive(subItem.path)
+      menuGroups.value[groupIndex].items[itemIndex].subItems?.some((subItem) =>
+        subItem.path && isActive(subItem.path)
       ))
   );
 };

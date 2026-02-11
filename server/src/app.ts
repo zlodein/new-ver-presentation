@@ -6,6 +6,7 @@ import staticFiles from '@fastify/static'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { authRoutes } from './routes/auth.js'
+import { adminRoutes } from './routes/admin.js'
 import { presentationRoutes } from './routes/presentations.js'
 import { editorApiRoutes } from './routes/editor-api.js'
 import { uploadRoutes } from './routes/upload.js'
@@ -63,6 +64,7 @@ export async function buildApp() {
   })
 
   await app.register(authRoutes, { prefix: '/' })
+  await app.register(adminRoutes, { prefix: '/' })
   await app.register(presentationRoutes, { prefix: '/' })
   await app.register(editorApiRoutes, { prefix: '/api' })
   await app.register(uploadRoutes, { prefix: '/' })
