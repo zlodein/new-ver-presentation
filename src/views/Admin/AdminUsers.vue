@@ -31,13 +31,39 @@
                       Email
                     </p>
                   </th>
+                  <th class="px-5 py-3 text-left sm:px-6">
+                    <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                      Дата регистрации
+                    </p>
+                  </th>
+                  <th class="px-5 py-3 text-left sm:px-6">
+                    <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                      Последняя авторизация
+                    </p>
+                  </th>
+                  <th class="px-5 py-3 text-left sm:px-6">
+                    <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                      Статус
+                    </p>
+                  </th>
+                  <th class="px-5 py-3 text-left sm:px-6">
+                    <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                      Презентаций
+                    </p>
+                  </th>
+                  <th class="px-5 py-3 text-left sm:px-6">
+                    <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                      Действия
+                    </p>
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                 <tr
                   v-for="user in users"
                   :key="user.id"
-                  class="border-t border-gray-100 dark:border-gray-800"
+                  class="border-t border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+                  @click="openUserModal(user)"
                 >
                   <td class="px-5 py-4 sm:px-6">
                     <div class="flex items-center gap-3">
@@ -65,6 +91,58 @@
                       {{ user.email }}
                     </p>
                   </td>
+                  <td class="px-5 py-4 sm:px-6">
+                    <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+                      {{ formatDate(user.created_at) }}
+                    </p>
+                  </td>
+                  <td class="px-5 py-4 sm:px-6">
+                    <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+                      {{ formatDateTime(user.last_login_at) }}
+                    </p>
+                  </td>
+                  <td class="px-5 py-4 sm:px-6">
+                    <span
+                      :class="[
+                        'rounded-full px-2 py-0.5 text-theme-xs font-medium',
+                        user.is_active
+                          ? 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500'
+                          : 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-500',
+                      ]"
+                    >
+                      {{ user.is_active ? 'Активен' : 'Не активен' }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-4 sm:px-6">
+                    <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+                      {{ user.presentations_count ?? 0 }}
+                    </p>
+                  </td>
+                  <td class="px-5 py-4 sm:px-6" @click.stop>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        @click="toggleActive(user)"
+                        :disabled="deactivatingId === user.id || (user.role_id === 2 && !!user.is_active)"
+                        class="rounded-lg px-2 py-1.5 text-xs font-medium transition-colors"
+                        :class="user.is_active
+                          ? 'text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/15'
+                          : 'text-success-600 hover:bg-success-50 dark:text-success-400 dark:hover:bg-success-500/15'"
+                        :title="user.is_active ? 'Деактивировать' : 'Активировать'"
+                      >
+                        {{ user.is_active ? 'Деактивировать' : 'Активировать' }}
+                      </button>
+                      <button
+                        type="button"
+                        @click="impersonate(user)"
+                        :disabled="impersonatingId === user.id || !user.is_active"
+                        class="rounded-lg px-2 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/15 transition-colors"
+                        title="Войти под учёткой"
+                      >
+                        Войти
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -72,15 +150,26 @@
         </div>
       </ComponentCard>
     </div>
+
+    <AdminUserDetailModal
+      v-if="selectedUser"
+      :visible="true"
+      :user="selectedUser"
+      @close="selectedUser = null"
+      @saved="onUserSaved"
+    />
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
-import { api, getApiBase } from '@/api/client'
+import AdminUserDetailModal from './AdminUserDetailModal.vue'
+import { api, getApiBase, setToken } from '@/api/client'
+import { useAuth } from '@/composables/useAuth'
 
 interface AdminUser {
   id: string
@@ -90,13 +179,29 @@ interface AdminUser {
   middle_name: string | null
   user_img: string | null
   work_position: string | null
-  created_at?: string
+  personal_phone?: string | null
+  position?: string | null
+  company_name?: string | null
+  work_email?: string | null
+  work_phone?: string | null
+  work_website?: string | null
+  messengers?: Record<string, string> | null
+  created_at?: string | null
+  last_login_at?: string | null
+  is_active?: number
+  role_id?: number
+  presentations_count?: number
 }
 
+const router = useRouter()
+const { fetchUser } = useAuth()
 const currentPageTitle = ref('Пользователи')
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
 const error = ref('')
+const selectedUser = ref<AdminUser | null>(null)
+const deactivatingId = ref<string | null>(null)
+const impersonatingId = ref<string | null>(null)
 
 function getFullName(u: AdminUser) {
   const parts = [u.name, u.last_name, u.middle_name].filter(Boolean)
@@ -110,9 +215,93 @@ function getAvatarUrl(userImg: string | null) {
   return base ? `${base.replace(/\/$/, '')}${userImg.startsWith('/') ? '' : '/'}${userImg}` : userImg
 }
 
+function formatDate(val: string | null | undefined): string {
+  if (!val) return '—'
+  try {
+    const d = new Date(val)
+    if (isNaN(d.getTime())) return '—'
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = String(d.getFullYear()).slice(-2)
+    return `${day}.${month}.${year}`
+  } catch {
+    return '—'
+  }
+}
+
+function formatDateTime(val: string | null | undefined): string {
+  if (!val) return '—'
+  try {
+    const d = new Date(val)
+    if (isNaN(d.getTime())) return '—'
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = String(d.getFullYear()).slice(-2)
+    const h = String(d.getHours()).padStart(2, '0')
+    const m = String(d.getMinutes()).padStart(2, '0')
+    return `${day}.${month}.${year} в ${h}:${m}`
+  } catch {
+    return '—'
+  }
+}
+
+async function openUserModal(user: AdminUser) {
+  try {
+    const full = await api.get<AdminUser>(`/api/admin/users/${user.id}`)
+    selectedUser.value = full
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка загрузки пользователя'
+  }
+}
+
+function onUserSaved(updated: AdminUser) {
+  const idx = users.value.findIndex((u) => u.id === updated.id)
+  if (idx >= 0) users.value[idx] = { ...users.value[idx], ...updated }
+  selectedUser.value = null
+}
+
+async function toggleActive(user: AdminUser) {
+  if (deactivatingId.value) return
+  const isAdmin = user.role_id === 2
+  if (isAdmin && user.is_active) {
+    error.value = 'Нельзя деактивировать администратора'
+    return
+  }
+  deactivatingId.value = user.id
+  error.value = ''
+  try {
+    await api.patch(`/api/admin/users/${user.id}/active`, {
+      is_active: user.is_active ? 0 : 1,
+    })
+    const idx = users.value.findIndex((u) => u.id === user.id)
+    if (idx >= 0) users.value[idx] = { ...users.value[idx], is_active: user.is_active ? 0 : 1 }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка обновления статуса'
+  } finally {
+    deactivatingId.value = null
+  }
+}
+
+async function impersonate(user: AdminUser) {
+  if (impersonatingId.value || !user.is_active) return
+  impersonatingId.value = user.id
+  error.value = ''
+  try {
+    const res = await api.post<{ token: string }>(`/api/admin/users/${user.id}/impersonate`)
+    setToken(res.token)
+    await fetchUser()
+    router.push('/dashboard')
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка входа под пользователем'
+  } finally {
+    impersonatingId.value = null
+  }
+}
+
 onMounted(async () => {
   try {
-    users.value = await api.get('/api/admin/users') as AdminUser[]
+    const data = await api.get('/api/admin/users') as AdminUser[]
+    users.value = data
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Ошибка загрузки пользователей'
   } finally {

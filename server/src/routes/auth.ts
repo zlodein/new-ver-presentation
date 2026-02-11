@@ -346,10 +346,21 @@ export async function authRoutes(app: FastifyInstance) {
       if (useMysql) {
         const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
           where: eq(mysqlSchema.users.email, normalizedEmail),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true },
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true },
         })
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        if (!user || (user as { is_active?: number }).is_active === 0) {
           return reply.status(401).send({ error: 'Неверный email или пароль' })
+        }
+        if (!(await bcrypt.compare(password, user.password))) {
+          return reply.status(401).send({ error: 'Неверный email или пароль' })
+        }
+        try {
+          await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            .update(mysqlSchema.users)
+            .set({ last_login_at: new Date(), updated_at: new Date() })
+            .where(eq(mysqlSchema.users.id, user.id))
+        } catch (err) {
+          if (!isUnknownColumnError(err)) req.log.warn(err, 'Не удалось обновить last_login_at')
         }
         const token = await reply.jwtSign({ sub: String(user.id), email: user.email }, { expiresIn: '7d' })
         const messengersData = user.messengers ? (typeof user.messengers === 'string' ? JSON.parse(user.messengers) : user.messengers) : null
