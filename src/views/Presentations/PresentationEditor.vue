@@ -2475,17 +2475,9 @@ async function exportToPDF() {
 </script>
 
 <style>
-/* Слайдер: горизонтальный А4 (297×210) - увеличенная высота */
+/* Слайдер: единый формат 1123×794 (из booklet-slides.css), width для гибкости в редакторе */
 .presentation-slider-wrap {
-  aspect-ratio: 297 / 210;
-  max-height: min(80vh, 720px);
   width: 100%;
-}
-@media (max-width: 1023px) {
-  .presentation-slider-wrap {
-    min-height: min(50vh, 360px);
-    max-height: min(70vh, 500px);
-  }
 }
 .presentation-swiper {
   height: 100%;
@@ -2643,12 +2635,10 @@ async function exportToPDF() {
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* На мобильных отключаем aspect-ratio, чтобы высота задавалась min/max и контент помещался с прокруткой */
-      .presentation-slider-wrap {
-        aspect-ratio: auto;
-      }
-      /* Контейнер редактора слайдов: большая высота на мобильных, чтобы контент помещался с вертикальной прокруткой */
+      /* На мобильных отключаем единый формат — высота задаётся min/max, контент с прокруткой */
       .presentation-slider-wrap.booklet-view {
+        aspect-ratio: auto;
+        max-width: none;
         min-height: 60vh;
         max-height: min(85vh, calc(100vh - 160px));
         overflow-x: hidden;

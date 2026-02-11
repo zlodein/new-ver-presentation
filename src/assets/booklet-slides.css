@@ -3,8 +3,30 @@
    Область: .presentation-slider-wrap.booklet-view
    ============================================ */
 
+/* Единый формат слайдов: 1123×794 px (A4 альбом, 96 DPI) — редактор, просмотр, публичная ссылка */
 .presentation-slider-wrap.booklet-view {
   --theme-main-color: #2c7f8d;
+  max-width: 1123px;
+  height: auto;
+  aspect-ratio: 1123 / 794;
+}
+
+/* Мобильный просмотрщик / публичная ссылка: контент не адаптируется, а масштабируется */
+@media screen and (max-width: 768px) {
+  .presentation-view-fixed .booklet-page,
+  .presentation-view-fixed .booklet-page--stacked {
+    width: 297mm !important;
+    height: 210mm !important;
+    min-height: 210mm !important;
+    max-height: 210mm !important;
+    position: relative !important;
+    display: block !important;
+    margin: 0 0 calc(210mm * (1 - 0.35) * -1 + 10px) 0 !important;
+    transform: scale(0.35) !important;
+    transform-origin: left top !important;
+    left: 50% !important;
+    margin-left: calc(-297mm * 0.35 / 2) !important;
+  }
 }
 
 /* ---------- Общие контейнеры слайда ---------- */

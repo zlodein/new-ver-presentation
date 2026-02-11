@@ -382,11 +382,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Режим просмотра / публичная ссылка: строго горизонтальное А4 (297×210 мм) */
+/* Режим просмотра / публичная ссылка: единый формат 1123×794 из booklet-slides.css */
 .presentation-view-wrap.presentation-slider-wrap {
-  aspect-ratio: 297 / 210;
   overflow: visible;
-  max-width: min(960px, 100%);
   width: 100%;
 }
 /* Слайды в пропорции А4 альбом */
@@ -407,7 +405,7 @@ onMounted(async () => {
 .booklet-page--stacked:last-child {
   border-bottom: none;
 }
-/* Мобильная версия: тот же вид, что на ПК, помещённый в рамки экрана (скролл при необходимости) */
+/* Контейнер: скролл на мобильных (scale задаётся в booklet-slides.css) */
 .presentation-view-fixed {
   max-width: 100%;
   overflow: auto;
