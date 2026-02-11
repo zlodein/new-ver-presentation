@@ -96,6 +96,62 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/analytics',
+      name: 'Analytics',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Analytics',
+      },
+    },
+    {
+      path: '/dashboard/marketing',
+      name: 'Marketing',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Marketing',
+      },
+    },
+    {
+      path: '/dashboard/crm',
+      name: 'Crm',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'CRM',
+      },
+    },
+    {
+      path: '/dashboard/data-tables',
+      name: 'Data Tables',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Data Tables',
+      },
+    },
+    {
+      path: '/dashboard/form-layout',
+      name: 'Form Layout',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Form Layout',
+      },
+    },
+    {
+      path: '/dashboard/doughnut-chart',
+      name: 'Doughnut Chart',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Doughnut Chart',
+      },
+    },
+    {
+      path: '/dashboard/chat',
+      name: 'Chat',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Chat',
+      },
+    },
+    {
       path: '/dashboard/admin/users',
       name: 'Admin Users',
       component: () => import('../views/Admin/AdminUsers.vue'),
@@ -181,11 +237,43 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/breadcrumb',
+      name: 'Breadcrumb',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Breadcrumbs',
+      },
+    },
+    {
+      path: '/dashboard/cards',
+      name: 'Cards',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Cards',
+      },
+    },
+    {
+      path: '/dashboard/notifications-ui',
+      name: 'Notifications UI',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'Notifications',
+      },
+    },
+    {
       path: '/dashboard/blank',
       name: 'Blank',
       component: () => import('../views/Pages/BlankPage.vue'),
       meta: {
         title: 'Пустая страница',
+      },
+    },
+    {
+      path: '/dashboard/faq',
+      name: 'Faq',
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      meta: {
+        title: 'FAQ',
       },
     },
     {

@@ -215,7 +215,9 @@
           </div>
         </div>
       </nav>
+      <!-- <div class="pb-20" :class="sidebarToggle ? 'xl:hidden' : ''">
       <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
+      </div> -->
     </div>
   </aside>
 </template>
@@ -295,18 +297,23 @@ const menuGroups = computed(() => {
       icon: ListIcon,
       subItems: [
         { name: "Элементы формы", path: "/dashboard/form-elements", pro: false },
+        { name: "Form Layout", path: "/dashboard/form-layout", pro: false },
       ],
     },
     {
       name: "Таблицы",
       icon: TableIcon,
-      subItems: [{ name: "Базовые таблицы", path: "/dashboard/basic-tables", pro: false }],
+      subItems: [
+        { name: "Базовые таблицы", path: "/dashboard/basic-tables", pro: false },
+        { name: "Data Tables", path: "/dashboard/data-tables", pro: false },
+      ],
     },
     {
       name: "Страницы",
       icon: PageIcon,
       subItems: [
         { name: "Пустая страница", path: "/dashboard/blank", pro: false },
+        { name: "FAQ", path: "/dashboard/faq", pro: false },
         { name: "Страница 404", path: "/dashboard/error-404", pro: false },
       ],
     },
@@ -325,6 +332,21 @@ const menuGroups = computed(() => {
         subItems: [
           { name: "Линейный график", path: "/dashboard/line-chart", pro: false },
           { name: "Столбчатая диаграмма", path: "/dashboard/bar-chart", pro: false },
+          { name: "Doughnut Chart", path: "/dashboard/doughnut-chart", pro: false },
+        ],
+      },
+      {
+        icon: ChatIcon,
+        name: "Чат",
+        path: "/dashboard/chat",
+      },
+      {
+        icon: GridIcon,
+        name: "Дашборды",
+        subItems: [
+          { name: "Analytics", path: "/dashboard/analytics", pro: false },
+          { name: "Marketing", path: "/dashboard/marketing", pro: false },
+          { name: "CRM", path: "/dashboard/crm", pro: false },
         ],
       },
       {
@@ -335,7 +357,10 @@ const menuGroups = computed(() => {
           { name: "Аватары", path: "/dashboard/avatars", pro: false },
           { name: "Значки", path: "/dashboard/badge", pro: false },
           { name: "Кнопки", path: "/dashboard/buttons", pro: false },
+          { name: "Карточки", path: "/dashboard/cards", pro: false },
+          { name: "Breadcrumbs", path: "/dashboard/breadcrumb", pro: false },
           { name: "Изображения", path: "/dashboard/images", pro: false },
+          { name: "Notifications", path: "/dashboard/notifications-ui", pro: false },
           { name: "Видео", path: "/dashboard/videos", pro: false },
         ],
       },
