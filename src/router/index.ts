@@ -122,7 +122,7 @@ const router = createRouter({
     {
       path: '/dashboard/data-tables',
       name: 'Data Tables',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/Tables/DataTables.vue'),
       meta: {
         title: 'Data Tables',
       },
@@ -130,7 +130,7 @@ const router = createRouter({
     {
       path: '/dashboard/form-layout',
       name: 'Form Layout',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/Forms/FormLayout.vue'),
       meta: {
         title: 'Form Layout',
       },
@@ -138,7 +138,7 @@ const router = createRouter({
     {
       path: '/dashboard/doughnut-chart',
       name: 'Doughnut Chart',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/Chart/DoughnutChart/DoughnutChart.vue'),
       meta: {
         title: 'Doughnut Chart',
       },
@@ -146,9 +146,9 @@ const router = createRouter({
     {
       path: '/dashboard/chat',
       name: 'Chat',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/Others/Chat.vue'),
       meta: {
-        title: 'Chat',
+        title: 'Чат',
       },
     },
     {
@@ -239,7 +239,7 @@ const router = createRouter({
     {
       path: '/dashboard/breadcrumb',
       name: 'Breadcrumb',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/UiElements/Breadcrumbs.vue'),
       meta: {
         title: 'Breadcrumbs',
       },
@@ -247,7 +247,7 @@ const router = createRouter({
     {
       path: '/dashboard/cards',
       name: 'Cards',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/UiElements/Cards.vue'),
       meta: {
         title: 'Cards',
       },
@@ -255,7 +255,7 @@ const router = createRouter({
     {
       path: '/dashboard/notifications-ui',
       name: 'Notifications UI',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/UiElements/Notifications.vue'),
       meta: {
         title: 'Notifications',
       },
@@ -271,7 +271,7 @@ const router = createRouter({
     {
       path: '/dashboard/faq',
       name: 'Faq',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/Pages/Faq.vue'),
       meta: {
         title: 'FAQ',
       },
