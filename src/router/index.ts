@@ -130,7 +130,7 @@ const router = createRouter({
     {
       path: '/dashboard/form-layout',
       name: 'Form Layout',
-      component: () => import('../views/Forms/FormLayout.vue'),
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
       meta: {
         title: 'Form Layout',
       },
