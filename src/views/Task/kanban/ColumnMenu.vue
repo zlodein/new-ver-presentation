@@ -1,7 +1,7 @@
 <template>
   <div class="relative" ref="dropdownRef">
     <button @click="openDropDown = !openDropDown" class="text-gray-700 dark:text-gray-400">
-      <MoreDots />
+      <HorizontalDots />
     </button>
     <div
       v-if="openDropDown"
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import MoreDots from '@/icons/MoreDots.vue'
+import HorizontalDots from '@/icons/HorizontalDots.vue'
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const openDropDown = ref(false)
