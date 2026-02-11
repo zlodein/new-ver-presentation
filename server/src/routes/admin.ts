@@ -1,6 +1,11 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { eq, and, ne } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
+
+function isUnknownColumnError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err)
+  return /Unknown column|doesn't exist/i.test(msg)
+}
 import { db, useMysql, useFileStore } from '../db/index.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
@@ -287,14 +292,34 @@ export async function adminRoutes(app: FastifyInstance) {
       const uid = Number(targetId)
       if (Number.isNaN(uid)) return reply.status(404).send({ error: 'Пользователь не найден' })
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-      const user = await mysqlDb.query.users.findFirst({
-        where: eq(mysqlSchema.users.id, uid),
-        columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, messengers: true, is_active: true },
-      })
+      let user: Record<string, unknown> | null = null
+      try {
+        user = await mysqlDb.query.users.findFirst({
+          where: eq(mysqlSchema.users.id, uid),
+          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, messengers: true, is_active: true },
+        }) as Record<string, unknown> | null
+      } catch (err) {
+        if (isUnknownColumnError(err)) {
+          user = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, uid),
+            columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, messengers: true },
+          }) as Record<string, unknown> | null
+          if (user) user.is_active = 1
+        } else throw err
+      }
       if (!user) return reply.status(404).send({ error: 'Пользователь не найден' })
-      if ((user as { is_active?: number }).is_active === 0) return reply.status(400).send({ error: 'Нельзя войти под деактивированным пользователем' })
-      const token = await reply.jwtSign({ sub: String(user.id), email: user.email }, { expiresIn: '7d' })
-      const messengersData = (user as { messengers?: string }).messengers ? JSON.parse((user as { messengers: string }).messengers) : null
+      const isActiveVal = user.is_active
+      if (isActiveVal !== undefined && isActiveVal !== null && Number(isActiveVal) === 0) {
+        return reply.status(403).send({ error: 'Нельзя войти под деактивированным пользователем' })
+      }
+      const token = await reply.jwtSign({ sub: String(user.id), email: String(user.email) }, { expiresIn: '7d' })
+      let messengersData: Record<string, string> | null = null
+      try {
+        const raw = (user as { messengers?: string }).messengers
+        if (raw && typeof raw === 'string') messengersData = JSON.parse(raw)
+      } catch {
+        /* ignore invalid JSON */
+      }
       return reply.send({
         token,
         user: {
@@ -306,7 +331,7 @@ export async function adminRoutes(app: FastifyInstance) {
           user_img: user.user_img,
           firstName: user.name,
           lastName: user.last_name,
-          messengers: messengersData,
+          messengers: messengersData ?? undefined,
         },
       })
     } catch (err) {

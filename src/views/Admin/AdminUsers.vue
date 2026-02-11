@@ -23,11 +23,6 @@
                   </th>
                   <th class="px-5 py-3 text-left sm:px-6">
                     <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
-                      Должность
-                    </p>
-                  </th>
-                  <th class="px-5 py-3 text-left sm:px-6">
-                    <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
                       Email
                     </p>
                   </th>
@@ -83,11 +78,6 @@
                   </td>
                   <td class="px-5 py-4 sm:px-6">
                     <p class="text-gray-500 text-theme-sm dark:text-gray-400">
-                      {{ user.work_position || '—' }}
-                    </p>
-                  </td>
-                  <td class="px-5 py-4 sm:px-6">
-                    <p class="text-gray-500 text-theme-sm dark:text-gray-400">
                       {{ user.email }}
                     </p>
                   </td>
@@ -124,10 +114,10 @@
                         type="button"
                         @click="toggleActive(user)"
                         :disabled="deactivatingId === user.id || (user.role_id === 2 && !!user.is_active)"
-                        class="rounded-lg px-2 py-1.5 text-xs font-medium transition-colors"
+                        class="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         :class="user.is_active
-                          ? 'text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/15'
-                          : 'text-success-600 hover:bg-success-50 dark:text-success-400 dark:hover:bg-success-500/15'"
+                          ? 'border-error-300 bg-white text-error-600 hover:bg-error-50 dark:border-error-800 dark:bg-gray-800 dark:text-error-400 dark:hover:bg-error-500/15'
+                          : 'border-success-300 bg-white text-success-600 hover:bg-success-50 dark:border-success-800 dark:bg-gray-800 dark:text-success-400 dark:hover:bg-success-500/15'"
                         :title="user.is_active ? 'Деактивировать' : 'Активировать'"
                       >
                         {{ user.is_active ? 'Деактивировать' : 'Активировать' }}
@@ -136,10 +126,10 @@
                         type="button"
                         @click="impersonate(user)"
                         :disabled="impersonatingId === user.id || !user.is_active"
-                        class="rounded-lg px-2 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/15 transition-colors"
+                        class="inline-flex items-center justify-center rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title="Войти под учёткой"
                       >
-                        Войти
+                        {{ impersonatingId === user.id ? '...' : 'Войти' }}
                       </button>
                     </div>
                   </td>
@@ -168,7 +158,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import AdminUserDetailModal from './AdminUserDetailModal.vue'
-import { api, getApiBase, setToken } from '@/api/client'
+import { api, getApiBase, setToken, ApiError } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
 
 interface AdminUser {
@@ -287,12 +277,12 @@ async function impersonate(user: AdminUser) {
   impersonatingId.value = user.id
   error.value = ''
   try {
-    const res = await api.post<{ token: string }>(`/api/admin/users/${user.id}/impersonate`)
+    const res = await api.post<{ token: string; user?: unknown }>(`/api/admin/users/${user.id}/impersonate`, {})
     setToken(res.token)
     await fetchUser()
     router.push('/dashboard')
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Ошибка входа под пользователем'
+    error.value = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'Ошибка входа под пользователем')
   } finally {
     impersonatingId.value = null
   }
