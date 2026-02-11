@@ -18,30 +18,50 @@
         </RouterLink>
       </div>
 
-      <!-- Публичная ссылка активна — на мобильных вверху страницы -->
-      <div
-        v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
-        class="rounded-lg md:hidden"
-      >
+      <!-- Публичная ссылка — всегда видна на мобильных, с переключателем -->
+      <div class="rounded-lg md:hidden">
         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
-        <div class="relative">
+        <div class="flex items-center gap-3">
           <button
             type="button"
-            class="absolute right-0 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 border-l border-gray-200 py-3 pl-3.5 pr-3 text-sm font-medium text-gray-700 dark:border-gray-800 dark:text-gray-400"
-            title="Скопировать ссылку"
-            @click="copyPublicLink"
+            role="switch"
+            :aria-checked="presentationMeta.isPublic"
+            :class="[
+              'relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors',
+              presentationMeta.isPublic
+                ? 'border-green-500 bg-green-500'
+                : 'border-red-400 bg-red-400 dark:border-red-500 dark:bg-red-500',
+            ]"
+            @click="toggleShare"
           >
-            <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M6.58822 4.58398C6.58822 4.30784 6.81207 4.08398 7.08822 4.08398H15.4154C15.6915 4.08398 15.9154 4.30784 15.9154 4.58398L15.9154 12.9128C15.9154 13.189 15.6916 13.4128 15.4154 13.4128H7.08821C6.81207 13.4128 6.58822 13.189 6.58822 12.9128V4.58398ZM7.08822 2.58398C5.98365 2.58398 5.08822 3.47942 5.08822 4.58398V5.09416H4.58496C3.48039 5.09416 2.58496 5.98959 2.58496 7.09416V15.4161C2.58496 16.5207 3.48039 17.4161 4.58496 17.4161H12.9069C14.0115 17.4161 14.9069 16.5207 14.9069 15.4161L14.9069 14.9128H15.4154C16.52 14.9128 17.4154 14.0174 17.4154 12.9128L17.4154 4.58398C17.4154 3.47941 16.52 2.58398 15.4154 2.58398H7.08822ZM13.4069 14.9128H7.08821C5.98364 14.9128 5.08822 14.0174 5.08822 12.9128V6.59416H4.58496C4.30882 6.59416 4.08496 6.81801 4.08496 7.09416V15.4161C4.08496 15.6922 4.30882 15.9161 4.58496 15.9161H12.9069C13.183 15.9161 13.4069 15.6922 13.4069 15.4161L13.4069 14.9128Z" fill="" />
-            </svg>
-            <span>{{ copyPublicLinkLabel }}</span>
+            <span
+              :class="[
+                'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                presentationMeta.isPublic ? 'left-6' : 'left-0.5',
+              ]"
+            />
           </button>
-          <input
-            type="url"
-            :value="presentationMeta.publicUrl"
-            readonly
-            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-3 pl-4 pr-[90px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-          />
+          <template v-if="presentationMeta.isPublic && presentationMeta.publicUrl">
+            <div class="relative min-w-0 flex-1">
+              <button
+                type="button"
+                class="absolute right-0 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 border-l border-gray-200 py-2 pl-2 pr-2 text-sm font-medium text-gray-700 dark:border-gray-800 dark:text-gray-400"
+                title="Скопировать ссылку"
+                @click="copyPublicLink"
+              >
+                <svg class="fill-current h-4 w-4" viewBox="0 0 20 20" fill="none">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M6.58822 4.58398C6.58822 4.30784 6.81207 4.08398 7.08822 4.08398H15.4154C15.6915 4.08398 15.9154 4.30784 15.9154 4.58398L15.9154 12.9128C15.9154 13.189 15.6916 13.4128 15.4154 13.4128H7.08821C6.81207 13.4128 6.58822 13.189 6.58822 12.9128V4.58398ZM7.08822 2.58398C5.98365 2.58398 5.08822 3.47942 5.08822 4.58398V5.09416H4.58496C3.48039 5.09416 2.58496 5.98959 2.58496 7.09416V15.4161C2.58496 16.5207 3.48039 17.4161 4.58496 17.4161H12.9069C14.0115 17.4161 14.9069 16.5207 14.9069 15.4161L14.9069 14.9128H15.4154C16.52 14.9128 17.4154 14.0174 17.4154 12.9128L17.4154 4.58398C17.4154 3.47941 16.52 2.58398 15.4154 2.58398H7.08822ZM13.4069 14.9128H7.08821C5.98364 14.9128 5.08822 14.0174 5.08822 12.9128V6.59416H4.58496C4.30882 6.59416 4.08496 6.81801 4.08496 7.09416V15.4161C4.08496 15.6922 4.30882 15.9161 4.58496 15.9161H12.9069C13.183 15.9161 13.4069 15.6922 13.4069 15.4161L13.4069 14.9128Z" fill="currentColor" />
+                </svg>
+                <span>{{ copyPublicLinkLabel }}</span>
+              </button>
+              <input
+                type="url"
+                :value="presentationMeta.publicUrl"
+                readonly
+                class="dark:bg-dark-900 h-10 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-3 pr-[70px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              />
+            </div>
+          </template>
         </div>
       </div>
 
@@ -337,6 +357,32 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Кнопки Просмотр / Сохранить / Экспорт под навигацией по слайдам -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          @click="openViewPage"
+        >
+          Просмотр
+        </button>
+        <button
+          type="button"
+          class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+          @click="saveToStorage"
+        >
+          Сохранить
+        </button>
+        <button
+          type="button"
+          class="rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          @click="exportToPDF"
+          title="Экспортировать презентацию в PDF"
+        >
+          Экспорт в PDF
+        </button>
       </div>
 
       <!-- Область превью слайдов: на ПК — слайдер слева + сайдбар справа -->
@@ -937,7 +983,7 @@
             </Swiper>
           </div>
 
-          <div class="editor-actions mt-4 flex flex-wrap items-center gap-[30px]">
+          <div class="editor-actions mt-4 flex flex-wrap items-center gap-4">
             <button
               type="button"
               class="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -949,9 +995,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span class="text-sm text-gray-500">
-              {{ visibleSlideNumber }} / {{ visibleSlides.length }}
-            </span>
             <button
               type="button"
               class="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -962,35 +1005,6 @@
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              @click="openViewPage"
-            >
-              Просмотр
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              @click="toggleShare"
-            >
-              {{ presentationMeta.isPublic ? 'Скрыть ссылку' : 'Поделиться' }}
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              @click="exportToPDF"
-              title="Экспортировать презентацию в PDF"
-            >
-              Экспорт в PDF
-            </button>
-            <button
-              type="button"
-              class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
-              @click="saveToStorage"
-            >
-              Сохранить
             </button>
             <button
               v-if="presentationMeta.status !== 'published'"
@@ -1093,59 +1107,54 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
             </button>
-            <!-- Публичная ссылка: глобус (вкл) / глобус перечёркнут (выкл) -->
-            <button
-              type="button"
-              class="mob-editor-buttons__share inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition"
-              :class="presentationMeta.isPublic
-                ? 'border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-600 dark:bg-brand-950/50 dark:text-brand-400'
-                : 'border-gray-300 bg-white text-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'"
-              :title="presentationMeta.isPublic ? 'Публичная ссылка включена' : 'Поделиться (включить публичную ссылку)'"
-              aria-label="Публичная ссылка"
-              @click="toggleShare"
-            >
-              <!-- Глобус (ссылка вкл) — круг + меридиан -->
-              <svg v-if="presentationMeta.isPublic" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2 12h20" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a9 9 0 0 1 6 10 9 9 0 0 1-6 10 9 9 0 0 1-6-10 9 9 0 0 1 6-10z" />
-              </svg>
-              <!-- Глобус перечёркнут (ссылка выкл) — тот же глобус + диагональ -->
-              <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2 12h20" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a9 9 0 0 1 6 10 9 9 0 0 1-6 10 9 9 0 0 1-6-10 9 9 0 0 1 6-10z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 5l14 14" />
-              </svg>
-            </button>
           </div>
         </div>
 
         <!-- Сайдбар справа от слайдера (только десктоп) -->
         <aside class="editor-sidebar hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:block">
-          <!-- Публичная ссылка (если активна) -->
-          <div
-            v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
-            class="border-b border-gray-200 p-3 dark:border-gray-700"
-          >
+          <!-- Публичная ссылка — всегда видна, с переключателем -->
+          <div class="border-b border-gray-200 p-3 dark:border-gray-700">
             <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
-            <div class="relative">
+            <div class="flex items-center gap-3">
               <button
                 type="button"
-                class="absolute right-0 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 border-l border-gray-200 py-2 pl-2.5 pr-2 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-400"
-                title="Скопировать"
-                @click="copyPublicLink"
+                role="switch"
+                :aria-checked="presentationMeta.isPublic"
+                :class="[
+                  'relative h-6 w-10 shrink-0 rounded-full border-2 transition-colors',
+                  presentationMeta.isPublic
+                    ? 'border-green-500 bg-green-500'
+                    : 'border-red-400 bg-red-400 dark:border-red-500 dark:bg-red-500',
+                ]"
+                @click="toggleShare"
               >
-                <svg class="fill-current h-4 w-4" viewBox="0 0 20 20" fill="none">
-                  <path fill-rule="evenodd" clip-rule="evenodd" d="M6.58822 4.58398C6.58822 4.30784 6.81207 4.08398 7.08822 4.08398H15.4154C15.6915 4.08398 15.9154 4.30784 15.9154 4.58398L15.9154 12.9128C15.9154 13.189 15.6916 13.4128 15.4154 13.4128H7.08821C6.81207 13.4128 6.58822 13.189 6.58822 12.9128V4.58398ZM7.08822 2.58398C5.98365 2.58398 5.08822 3.47942 5.08822 4.58398V5.09416H4.58496C3.48039 5.09416 2.58496 5.98959 2.58496 7.09416V15.4161C2.58496 16.5207 3.48039 17.4161 4.58496 17.4161H12.9069C14.0115 17.4161 14.9069 16.5207 14.9069 15.4161L14.9069 14.9128H15.4154C16.52 14.9128 17.4154 14.0174 17.4154 12.9128L17.4154 4.58398C17.4154 3.47941 16.52 2.58398 15.4154 2.58398H7.08822ZM13.4069 14.9128H7.08821C5.98364 14.9128 5.08822 14.0174 5.08822 12.9128V6.59416H4.58496C4.30882 6.59416 4.08496 6.81801 4.08496 7.09416V15.4161C4.08496 15.6922 4.30882 15.9161 4.58496 15.9161H12.9069C13.183 15.9161 13.4069 15.6922 13.4069 15.4161L13.4069 14.9128Z" fill="currentColor" />
-                </svg>
+                <span
+                  :class="[
+                    'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
+                    presentationMeta.isPublic ? 'left-5' : 'left-0.5',
+                  ]"
+                />
               </button>
-              <input
-                type="url"
-                :value="presentationMeta.publicUrl"
-                readonly
-                class="h-9 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-3 pr-9 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-              />
+              <template v-if="presentationMeta.isPublic && presentationMeta.publicUrl">
+                <div class="relative min-w-0 flex-1">
+                  <button
+                    type="button"
+                    class="absolute right-0 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 border-l border-gray-200 py-2 pl-2 pr-2 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-400"
+                    title="Скопировать"
+                    @click="copyPublicLink"
+                  >
+                    <svg class="fill-current h-4 w-4" viewBox="0 0 20 20" fill="none">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M6.58822 4.58398C6.58822 4.30784 6.81207 4.08398 7.08822 4.08398H15.4154C15.6915 4.08398 15.9154 4.30784 15.9154 4.58398L15.9154 12.9128C15.9154 13.189 15.6916 13.4128 15.4154 13.4128H7.08821C6.81207 13.4128 6.58822 13.189 6.58822 12.9128V4.58398ZM7.08822 2.58398C5.98365 2.58398 5.08822 3.47942 5.08822 4.58398V5.09416H4.58496C3.48039 5.09416 2.58496 5.98959 2.58496 7.09416V15.4161C2.58496 16.5207 3.48039 17.4161 4.58496 17.4161H12.9069C14.0115 17.4161 14.9069 16.5207 14.9069 15.4161L14.9069 14.9128H15.4154C16.52 14.9128 17.4154 14.0174 17.4154 12.9128L17.4154 4.58398C17.4154 3.47941 16.52 2.58398 15.4154 2.58398H7.08822ZM13.4069 14.9128H7.08821C5.98364 14.9128 5.08822 14.0174 5.08822 12.9128V6.59416H4.58496C4.30882 6.59416 4.08496 6.81801 4.08496 7.09416V15.4161C4.08496 15.6922 4.30882 15.9161 4.58496 15.9161H12.9069C13.183 15.9161 13.4069 15.6922 13.4069 15.4161L13.4069 14.9128Z" fill="currentColor" />
+                    </svg>
+                  </button>
+                  <input
+                    type="url"
+                    :value="presentationMeta.publicUrl"
+                    readonly
+                    class="h-9 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-3 pr-9 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                  />
+                </div>
+              </template>
             </div>
           </div>
 
