@@ -241,6 +241,7 @@ import {
   ListIcon,
   PlugInIcon,
   SettingsIcon,
+  TaskIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
@@ -288,6 +289,11 @@ const menuGroups = computed(() => {
       path: "/dashboard/calendar",
     },
     {
+      icon: TaskIcon,
+      name: "Задачи",
+      path: "/dashboard/tasks",
+    },
+    {
       icon: UserCircleIcon,
       name: "Профиль пользователя",
       path: "/dashboard/profile",
@@ -297,7 +303,7 @@ const menuGroups = computed(() => {
       icon: ListIcon,
       subItems: [
         { name: "Элементы формы", path: "/dashboard/form-elements", pro: false },
-        { name: "Form Layout", path: "/dashboard/form-layout", pro: false },
+        { name: "Макет формы", path: "/dashboard/form-layout", pro: false },
       ],
     },
     {

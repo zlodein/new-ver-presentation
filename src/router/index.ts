@@ -72,6 +72,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/tasks',
+      name: 'Tasks',
+      component: () => import('../views/Task/TaskKanban.vue'),
+      meta: {
+        title: 'Задачи',
+      },
+    },
+    {
       path: '/dashboard/profile',
       name: 'Profile',
       component: () => import('../views/Others/UserProfile.vue'),
@@ -130,9 +138,9 @@ const router = createRouter({
     {
       path: '/dashboard/form-layout',
       name: 'Form Layout',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/Forms/FormLayout.vue'),
       meta: {
-        title: 'Form Layout',
+        title: 'Макет формы',
       },
     },
     {
