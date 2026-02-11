@@ -138,7 +138,7 @@ const router = createRouter({
     {
       path: '/dashboard/form-layout',
       name: 'Form Layout',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/Forms/FormLayout.vue'),
       meta: {
         title: 'Макет формы',
       },
