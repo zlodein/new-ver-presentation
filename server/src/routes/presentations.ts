@@ -33,21 +33,20 @@ function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>
   const match = /\/api\/presentations\/([^/?#]+)/.exec(path)
   return match ? decodeURIComponent(match[1]) : ''
 }
-function normContent(c: unknown): { slides: unknown[] } {
+function normContent(c: unknown): { slides: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } {
   let slides: unknown[] = []
+  let rawObj: { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | undefined
   if (typeof c === 'string') {
     try {
-      const parsed = JSON.parse(c) as { slides?: unknown[] } | unknown[]
-      slides = Array.isArray(parsed)
-        ? parsed
-        : Array.isArray((parsed as { slides?: unknown[] })?.slides)
-          ? (parsed as { slides: unknown[] }).slides
-          : []
+      const parsed = JSON.parse(c) as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | unknown[]
+      rawObj = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? (parsed as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } }) : undefined
+      slides = Array.isArray(parsed) ? parsed : Array.isArray(rawObj?.slides) ? rawObj!.slides : []
     } catch {
       slides = []
     }
   } else {
-    const obj = c as { slides?: unknown[] } | undefined
+    const obj = c as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | undefined
+    rawObj = obj
     slides = Array.isArray(obj) ? obj : Array.isArray(obj?.slides) ? obj!.slides : []
   }
   // Нормализуем каждый слайд: гарантируем наличие data со всеми полями (для просмотра и PDF)
@@ -66,16 +65,26 @@ function normContent(c: unknown): { slides: unknown[] } {
     }
     return { type, data, hidden, id: raw.id }
   })
-  return { slides: normalized }
+  const result: { slides: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } = { slides: normalized }
+  const settings = getContentSettings(rawObj ?? c)
+  if (settings && (settings.fontFamily != null || settings.imageBorderRadius != null)) {
+    result.settings = settings
+  }
+  return result
 }
 
-function getContentSettings(c: unknown): { fontFamily?: string } | undefined {
+function getContentSettings(c: unknown): { fontFamily?: string; imageBorderRadius?: string } | undefined {
   if (c == null || typeof c !== 'object') return undefined
-  const obj = c as { settings?: { fontFamily?: string } }
-  if (obj.settings && typeof obj.settings === 'object' && typeof (obj.settings as { fontFamily?: string }).fontFamily === 'string') {
-    return { fontFamily: (obj.settings as { fontFamily: string }).fontFamily }
+  const obj = c as { settings?: { fontFamily?: string; imageBorderRadius?: string } }
+  if (!obj.settings || typeof obj.settings !== 'object') return undefined
+  const s = obj.settings
+  const hasFont = typeof s.fontFamily === 'string'
+  const hasRadius = s.imageBorderRadius !== undefined && s.imageBorderRadius !== null
+  if (!hasFont && !hasRadius) return undefined
+  return {
+    ...(hasFont ? { fontFamily: s.fontFamily! } : {}),
+    ...(hasRadius ? { imageBorderRadius: String(s.imageBorderRadius) } : {}),
   }
-  return undefined
 }
 
 export async function presentationRoutes(app: FastifyInstance) {

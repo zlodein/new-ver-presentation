@@ -8,9 +8,12 @@
     </div>
     <div
       v-else
-      class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-4xl rounded-xl bg-white shadow-lg dark:bg-gray-900"
-      :style="presentationStyle"
+      class="w-full p-4 pb-20 md:mx-auto md:max-w-(--breakpoint-2xl) md:p-6 md:pb-6"
     >
+      <div
+        class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
+        :style="presentationStyle"
+      >
       <div
         v-for="(slide, index) in visibleSlides"
         :key="index"
@@ -184,6 +187,7 @@
             </div>
           </div>
         </div>
+      </div>
     </div>
   </div>
 </template>

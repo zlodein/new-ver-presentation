@@ -2529,7 +2529,7 @@ function saveToLocalStorage(skipRedirect = false) {
     : 'Без названия'
   localStorage.setItem(
     `presentation-${presentationId.value}`,
-    JSON.stringify({ slides: slides.value })
+    JSON.stringify({ slides: slides.value, settings: { ...presentationSettings.value } })
   )
   const listRaw = localStorage.getItem('presentations-list')
   if (listRaw) {
