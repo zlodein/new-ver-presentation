@@ -1,7 +1,13 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { promises as fs } from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { eq, and, gt, ne } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
+
+const __filenameAuth = fileURLToPath(import.meta.url)
+const __dirnameAuth = path.dirname(__filenameAuth)
 import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -625,6 +631,24 @@ export async function authRoutes(app: FastifyInstance) {
         if (work_phone !== undefined) updateData.work_phone = (typeof work_phone === 'string' ? work_phone.trim() : work_phone) || null
         if (work_website !== undefined) updateData.work_website = (typeof work_website === 'string' ? work_website.trim() : work_website) || null
         updateData.updated_at = new Date()
+
+        // При удалении логотипа/аватара — удалить файл на сервере
+        const shouldDeleteCompanyLogo = company_logo !== undefined && !(typeof company_logo === 'string' && company_logo.trim())
+        if (shouldDeleteCompanyLogo) {
+          const current = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userId),
+            columns: { company_logo: true },
+          })
+          const logoPath = current?.company_logo
+          if (logoPath && typeof logoPath === 'string' && logoPath.includes('/uploads/company-logo/')) {
+            const filepath = path.join(__dirnameAuth, '../../', logoPath.replace(/^\//, ''))
+            try {
+              await fs.unlink(filepath)
+            } catch {
+              // Файл может отсутствовать — игнорируем
+            }
+          }
+        }
 
         try {
           await mysqlDb.update(mysqlSchema.users).set(updateData).where(eq(mysqlSchema.users.id, userId))
