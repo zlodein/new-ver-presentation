@@ -138,7 +138,7 @@ const router = createRouter({
     {
       path: '/dashboard/doughnut-chart',
       name: 'Doughnut Chart',
-      component: () => import('../views/Chart/DoughnutChart/DoughnutChart.vue'),
+      component: () => import('../views/Pages/PlaceholderPage.vue'),
       meta: {
         title: 'Doughnut Chart',
       },
