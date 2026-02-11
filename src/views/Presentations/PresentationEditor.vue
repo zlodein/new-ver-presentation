@@ -18,10 +18,10 @@
         </RouterLink>
       </div>
 
-      <!-- Публичная ссылка активна (оформление как /dashboard/form-elements — Website с Copy) -->
+      <!-- Публичная ссылка активна — на мобильных вверху страницы -->
       <div
         v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
-        class="rounded-lg"
+        class="rounded-lg md:hidden"
       >
         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
         <div class="relative">
@@ -67,8 +67,8 @@
         </div>
       </div>
 
-      <!-- Панель со слайдами: на ПК — горизонтальная лента, на мобильных — кнопка + раскрывающийся вертикальный список -->
-      <div class="editor-slides-nav flex flex-col gap-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:flex-row md:items-center md:gap-1.5 md:p-1.5">
+      <!-- Панель со слайдами: только на мобильных; на ПК — в сайдбаре справа -->
+      <div class="editor-slides-nav flex flex-col gap-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:hidden md:flex-row md:items-center md:gap-1.5 md:p-1.5">
         <!-- Мобильная: кнопка «Навигация по слайдам» со стрелкой -->
         <button
           type="button"
@@ -249,8 +249,8 @@
           </div>
         </div>
 
-        <!-- Шестерёнка (слева) и кнопка "Добавить слайд" (скрыты на мобильных) -->
-        <div ref="addSlideWrapRef" class="relative hidden shrink-0 items-center gap-3 md:flex">
+        <!-- Шестерёнка и кнопка "Добавить" — только на мобильных (на ПК в сайдбаре) -->
+        <div ref="addSlideWrapRef" class="relative hidden shrink-0 items-center gap-3 md:hidden">
           <!-- Иконка шестерёнки: настройки отображения (редактор / просмотр / PDF) -->
           <div class="relative">
             <button
@@ -339,10 +339,10 @@
         </div>
       </div>
 
-      <!-- Область превью слайдов (Swiper) -->
-      <main class="w-full">
+      <!-- Область превью слайдов: на ПК — слайдер слева + сайдбар справа -->
+      <main class="w-full md:flex md:gap-4 md:items-start">
         <div
-          class="editor-slider-wrap rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
+          class="editor-slider-wrap min-w-0 flex-1 rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
           @paste.capture="onPasteStripFormat"
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
@@ -1120,6 +1120,188 @@
             </button>
           </div>
         </div>
+
+        <!-- Сайдбар справа от слайдера (только десктоп) -->
+        <aside class="editor-sidebar hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:block">
+          <!-- Публичная ссылка (если активна) -->
+          <div
+            v-if="presentationMeta.isPublic && presentationMeta.publicUrl"
+            class="border-b border-gray-200 p-3 dark:border-gray-700"
+          >
+            <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
+            <div class="relative">
+              <button
+                type="button"
+                class="absolute right-0 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 border-l border-gray-200 py-2 pl-2.5 pr-2 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-400"
+                title="Скопировать"
+                @click="copyPublicLink"
+              >
+                <svg class="fill-current h-4 w-4" viewBox="0 0 20 20" fill="none">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M6.58822 4.58398C6.58822 4.30784 6.81207 4.08398 7.08822 4.08398H15.4154C15.6915 4.08398 15.9154 4.30784 15.9154 4.58398L15.9154 12.9128C15.9154 13.189 15.6916 13.4128 15.4154 13.4128H7.08821C6.81207 13.4128 6.58822 13.189 6.58822 12.9128V4.58398ZM7.08822 2.58398C5.98365 2.58398 5.08822 3.47942 5.08822 4.58398V5.09416H4.58496C3.48039 5.09416 2.58496 5.98959 2.58496 7.09416V15.4161C2.58496 16.5207 3.48039 17.4161 4.58496 17.4161H12.9069C14.0115 17.4161 14.9069 16.5207 14.9069 15.4161L14.9069 14.9128H15.4154C16.52 14.9128 17.4154 14.0174 17.4154 12.9128L17.4154 4.58398C17.4154 3.47941 16.52 2.58398 15.4154 2.58398H7.08822ZM13.4069 14.9128H7.08821C5.98364 14.9128 5.08822 14.0174 5.08822 12.9128V6.59416H4.58496C4.30882 6.59416 4.08496 6.81801 4.08496 7.09416V15.4161C4.08496 15.6922 4.30882 15.9161 4.58496 15.9161H12.9069C13.183 15.9161 13.4069 15.6922 13.4069 15.4161L13.4069 14.9128Z" fill="currentColor" />
+                </svg>
+              </button>
+              <input
+                type="url"
+                :value="presentationMeta.publicUrl"
+                readonly
+                class="h-9 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-3 pr-9 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+          </div>
+
+          <!-- Кнопки: настройки и добавить слайд -->
+          <div class="flex items-center gap-2 border-b border-gray-200 p-3 dark:border-gray-700">
+            <div class="relative">
+              <button
+                type="button"
+                class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                title="Настройки отображения"
+                @click="showSettingsMenu = !showSettingsMenu"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <div
+                v-if="showSettingsMenu"
+                ref="settingsMenuRef"
+                class="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                @click.stop
+              >
+                <p class="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Отображение в редакторе / просмотре / PDF</p>
+                <div class="space-y-2">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Шрифт</label>
+                    <select
+                      v-model="presentationSettings.fontFamily"
+                      class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    >
+                      <option v-for="f in FONT_OPTIONS" :key="f.value" :value="f.value">{{ f.label }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Скругление изображений</label>
+                    <select
+                      v-model="presentationSettings.imageBorderRadius"
+                      class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    >
+                      <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="relative flex-1">
+              <button
+                type="button"
+                class="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                @click="showAddSlideMenu = !showAddSlideMenu"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Добавить слайд
+              </button>
+              <div
+                v-if="showAddSlideMenu"
+                ref="addSlideMenuRef"
+                class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                @click.stop
+              >
+                <div class="py-1">
+                  <button
+                    v-for="opt in SLIDE_TYPE_OPTIONS"
+                    :key="opt.type"
+                    type="button"
+                    class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    @click="addSlide(opt.type); showAddSlideMenu = false"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Навигация по слайдам (список) -->
+          <div class="max-h-[60vh] overflow-y-auto p-3">
+            <draggable
+              v-model="slides"
+              item-key="id"
+              handle=".slide-drag-handle"
+              @end="onDragEnd"
+              @move="onDragMove"
+              class="flex flex-col gap-2"
+            >
+              <template #item="{ element: slide, index }">
+                <div
+                  :data-slide-index="index"
+                  :class="[
+                    'slide-item flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 transition',
+                    activeSlideIndex === index
+                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
+                      : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600',
+                    slide.hidden ? 'opacity-60' : '',
+                  ]"
+                >
+                  <span
+                    class="slide-drag-handle flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded text-gray-400 active:cursor-grabbing hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    title="Перетащить"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                    </svg>
+                  </span>
+                  <button
+                    type="button"
+                    class="min-w-0 flex-1 truncate text-left text-sm font-medium"
+                    :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
+                    @click="goToSlide(index)"
+                  >
+                    {{ getSlideLabel(slide) }}
+                  </button>
+                  <div class="flex shrink-0 items-center gap-0.5">
+                    <button
+                      type="button"
+                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
+                      @click.stop="toggleSlideVisibility(index)"
+                    >
+                      <svg v-if="slide.hidden" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      title="Дублировать"
+                      @click.stop="duplicateSlide(index)"
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                    <button
+                      v-if="slides.length > 1"
+                      type="button"
+                      class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                      title="Удалить"
+                      @click.stop="deleteSlide(index)"
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </draggable>
+          </div>
+        </aside>
       </main>
     </div>
   </AdminLayout>
@@ -2192,8 +2374,9 @@ const addSlideWrapRef = ref<HTMLElement | null>(null)
 function handleClickOutside(event: MouseEvent) {
   const target = event.target as HTMLElement
   const inDesktopWrap = addSlideWrapRef.value?.contains(target)
+  const inSidebar = target.closest('.editor-sidebar')
   const inMobileAdd = target.closest('.mob-editor-buttons__add') || target.closest('[data-mob-add-menu]')
-  if (inDesktopWrap || inMobileAdd) return
+  if (inDesktopWrap || inSidebar || inMobileAdd) return
   showAddSlideMenu.value = false
   showSettingsMenu.value = false
 }
