@@ -230,7 +230,6 @@ import {
   GridIcon,
   CalenderIcon,
   UserCircleIcon,
-  ChatIcon,
   DocsIcon,
   ChevronDownIcon,
   HorizontalDots,
@@ -302,11 +301,6 @@ const menuGroups = computed(() => {
     {
       title: "Прочее",
       items: [
-        {
-          icon: ChatIcon,
-          name: "Чат",
-          path: "/dashboard/chat",
-        },
         {
           icon: SupportIcon,
           name: "Поддержка",

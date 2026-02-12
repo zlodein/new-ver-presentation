@@ -14,7 +14,6 @@ import { calendarRoutes } from './routes/calendar.js'
 import { notificationRoutes } from './routes/notifications.js'
 import { taskRoutes } from './routes/tasks.js'
 import { supportRoutes } from './routes/support.js'
-import { chatRoutes } from './routes/chat.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -75,7 +74,6 @@ export async function buildApp() {
   await app.register(notificationRoutes, { prefix: '/' })
   await app.register(taskRoutes, { prefix: '/' })
   await app.register(supportRoutes, { prefix: '/' })
-  await app.register(chatRoutes, { prefix: '/' })
 
   return app
 }

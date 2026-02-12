@@ -223,14 +223,6 @@ const router = createRouter({
       },
     },
     {
-      path: '/chat',
-      name: 'Chat',
-      component: () => import('../views/Others/Chat.vue'),
-      meta: {
-        title: 'Chats',
-      },
-    },
-    {
       path: '/support-tickets',
       name: 'Ticket List',
       component: () => import('../views/Support/SupportList.vue'),

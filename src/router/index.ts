@@ -152,14 +152,6 @@ const router = createRouter({
       },
     },
     {
-      path: '/dashboard/chat',
-      name: 'Chat',
-      component: () => import('../views/Others/Chat.vue'),
-      meta: {
-        title: 'Чат',
-      },
-    },
-    {
       path: '/dashboard/support',
       name: 'Support',
       component: () => import('../views/Support/SupportList.vue'),

@@ -54,7 +54,6 @@ function toUserResponse(r: Record<string, unknown>, presentationsCount = 0) {
     work_phone: r.work_phone ?? null,
     work_website: r.work_website ?? null,
     messengers: messengersData,
-    available_in_chat: r.available_in_chat != null ? Number(r.available_in_chat) : 0,
     created_at: r.created_at,
     last_login_at: r.last_login_at ?? null,
     is_active: r.is_active != null ? Number(r.is_active) : 1,
@@ -103,7 +102,6 @@ export async function adminRoutes(app: FastifyInstance) {
             work_phone: true,
             work_website: true,
             messengers: true,
-            available_in_chat: true,
             created_at: true,
             last_login_at: true,
             is_active: true,
@@ -182,7 +180,6 @@ export async function adminRoutes(app: FastifyInstance) {
             work_phone: true,
             work_website: true,
             messengers: true,
-            available_in_chat: true,
             created_at: true,
             last_login_at: true,
             is_active: true,
@@ -206,7 +203,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.put<{
     Params: { id: string }
-    Body: { name?: string; last_name?: string; middle_name?: string; email?: string; personal_phone?: string; position?: string; work_position?: string; company_name?: string; work_email?: string; work_phone?: string; work_website?: string; messengers?: Record<string, string>; available_in_chat?: boolean }
+    Body: { name?: string; last_name?: string; middle_name?: string; email?: string; personal_phone?: string; position?: string; work_position?: string; company_name?: string; work_email?: string; work_phone?: string; work_website?: string; messengers?: Record<string, string> }
   }>('/api/admin/users/:id', { preHandler: [requireAdmin] }, async (req: FastifyRequest<{ Params: { id: string }; Body: Record<string, unknown> }>, reply: FastifyReply) => {
     try {
       const targetId = req.params.id
@@ -227,7 +224,6 @@ export async function adminRoutes(app: FastifyInstance) {
       if (body.work_phone !== undefined) updateData.work_phone = (body.work_phone as string)?.trim() || null
       if (body.work_website !== undefined) updateData.work_website = (body.work_website as string)?.trim() || null
       if (body.messengers !== undefined) updateData.messengers = JSON.stringify(body.messengers)
-      if (body.available_in_chat !== undefined) updateData.available_in_chat = body.available_in_chat ? 1 : 0
       if (body.email !== undefined) {
         const normalizedEmail = (body.email as string).trim().toLowerCase()
         const existing = await mysqlDb.query.users.findFirst({

@@ -5,7 +5,6 @@ import {
   text,
   timestamp,
   jsonb,
-  boolean,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
@@ -18,7 +17,6 @@ export const users = pgTable(
     passwordHash: varchar('password_hash', { length: 255 }).notNull(),
     firstName: varchar('first_name', { length: 120 }),
     lastName: varchar('last_name', { length: 120 }),
-    availableInChat: boolean('available_in_chat').default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -131,19 +129,6 @@ export const supportReplies = pgTable('support_replies', {
   index('support_replies_request_id_idx').on(table.supportRequestId),
 ])
 
-// Сообщения чата между пользователями
-export const chatMessages = pgTable('chat_messages', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  fromUserId: uuid('from_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  toUserId: uuid('to_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  message: text('message').notNull(),
-  attachmentUrl: text('attachment_url'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  index('chat_messages_from_to_idx').on(table.fromUserId, table.toUserId),
-  index('chat_messages_created_at_idx').on(table.createdAt),
-])
-
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
 export type User = typeof users.$inferSelect
@@ -159,5 +144,3 @@ export type SupportRequest = typeof supportRequests.$inferSelect
 export type NewSupportRequest = typeof supportRequests.$inferInsert
 export type SupportReply = typeof supportReplies.$inferSelect
 export type NewSupportReply = typeof supportReplies.$inferInsert
-export type ChatMessage = typeof chatMessages.$inferSelect
-export type NewChatMessage = typeof chatMessages.$inferInsert
