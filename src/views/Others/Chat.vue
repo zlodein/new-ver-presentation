@@ -37,6 +37,7 @@ const currentPageTitle = ref('Чат')
 const chat = useChat()
 
 onMounted(() => {
+  console.log('[Chat page] onMounted')
   chat.loadConversations()
   chat.loadUsers()
 })

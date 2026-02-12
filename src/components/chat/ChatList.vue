@@ -46,10 +46,10 @@
       <div v-else class="max-h-full space-y-1 overflow-auto custom-scrollbar">
         <chat-list-item
           v-for="chat in conversations"
-          :key="chat.userId || chat.id"
+          :key="toStrId(chat.userId || chat.id)"
           :chat="chat"
-          :selected="selectedUserId === (chat.userId || chat.id)"
-          @click="$emit('select', chat.userId || chat.id)"
+          :selected="toStrId(selectedUserId) === toStrId(chat.userId || chat.id)"
+          @click="onSelectChat(chat)"
         />
       </div>
     </div>
@@ -60,6 +60,19 @@
 import type { ChatConversation } from '@/api/client'
 import ChatListItem from './ChatListItem.vue'
 
+function toStrId(v: unknown): string {
+  if (v == null) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'number') return String(v)
+  return String(v)
+}
+
+const emit = defineEmits<{
+  toggle: []
+  select: [userId: string]
+  load: []
+}>()
+
 defineProps<{
   isOpen: boolean
   conversations: ChatConversation[]
@@ -67,9 +80,9 @@ defineProps<{
   selectedUserId: string | null
 }>()
 
-defineEmits<{
-  toggle: []
-  select: [userId: string]
-  load: []
-}>()
+function onSelectChat(chat: ChatConversation) {
+  const id = toStrId(chat.userId ?? chat.id)
+  console.log('[ChatList] onSelectChat', { chat, id })
+  if (id) emit('select', id)
+}
 </script>
