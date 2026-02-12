@@ -12,14 +12,14 @@
           <img
             v-if="selectedConversation.avatar"
             :src="selectedConversation.avatar"
-            :alt="selectedConversation.name"
+            :alt="selectedConversation.name || 'User'"
             class="object-cover object-center w-full h-full"
           />
           <span
             v-else
             class="flex items-center justify-center w-full h-full text-lg font-medium text-gray-600 dark:text-gray-300"
           >
-            {{ selectedConversation.name.charAt(0).toUpperCase() }}
+            {{ (selectedConversation.name || '?').charAt(0).toUpperCase() }}
           </span>
           <span
             class="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white dark:border-gray-900"
@@ -30,7 +30,7 @@
             }"
           ></span>
         </div>
-        <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ selectedConversation.name }}</h5>
+        <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ selectedConversation.name || 'Пользователь' }}</h5>
       </div>
 
       <div class="flex items-center gap-3">
@@ -91,11 +91,11 @@
               <img
                 v-if="selectedConversation.avatar"
                 :src="selectedConversation.avatar"
-                :alt="selectedConversation.name"
+                :alt="selectedConversation.name || 'User'"
                 class="object-cover object-center w-full h-full"
               />
               <span v-else class="flex items-center justify-center w-full h-full text-sm font-medium text-gray-600 dark:text-gray-300">
-                {{ selectedConversation.name.charAt(0).toUpperCase() }}
+                {{ (selectedConversation.name || '?').charAt(0).toUpperCase() }}
               </span>
             </div>
             <div>
