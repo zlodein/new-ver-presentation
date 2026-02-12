@@ -251,6 +251,44 @@ export async function taskRoutes(app: FastifyInstance) {
     }
   )
 
+  /** Удалить задачу: GET (как у календаря и уведомлений — надёжно работает за прокси) */
+  app.get<{ Params: { id?: string } }>(
+    '/api/tasks/actions/delete/:id',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id?: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+      const idRaw = String(req.params?.id ?? '').trim()
+      if (!idRaw) return reply.status(400).send({ error: 'ID задачи не указан' })
+      try {
+        if (useFileStore) return reply.status(501).send({ error: 'Задачи доступны только при работе с БД' })
+        if (useMysql) {
+          const taskId = parseMysqlId(idRaw)
+          if (taskId === null) return reply.status(400).send({ error: 'Неверный ID задачи' })
+          const userIdNum = Number(userId)
+          if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+          const existing = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.tasks.findFirst({
+            where: and(eq(mysqlSchema.tasks.id, taskId), eq(mysqlSchema.tasks.user_id, userIdNum)),
+          })
+          if (!existing) return reply.status(404).send({ error: 'Задача не найдена' })
+          await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            .delete(mysqlSchema.tasks)
+            .where(and(eq(mysqlSchema.tasks.id, taskId), eq(mysqlSchema.tasks.user_id, userIdNum)))
+          return reply.status(204).send()
+        }
+        const [deleted] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+          .delete(pgSchema.tasks)
+          .where(and(eq(pgSchema.tasks.id, idRaw), eq(pgSchema.tasks.userId, userId)))
+          .returning({ id: pgSchema.tasks.id })
+        if (!deleted) return reply.status(404).send({ error: 'Задача не найдена' })
+        return reply.status(204).send()
+      } catch (err) {
+        console.error('[tasks] Ошибка удаления задачи:', err)
+        return reply.status(500).send({ error: 'Ошибка удаления задачи' })
+      }
+    }
+  )
+
   /** DELETE /api/tasks/:id — удалить задачу */
   app.delete<{ Params: { id: string } }>(
     '/api/tasks/:id',

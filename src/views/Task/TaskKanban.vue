@@ -258,7 +258,7 @@ async function deleteTask(task: ApiTask) {
   if (!confirm(`Удалить задачу «${task.title}»?`)) return
   if (!hasApi()) return
   try {
-    await api.delete(`/api/tasks/${task.id}`)
+    await api.get(`/api/tasks/actions/delete/${encodeURIComponent(task.id)}`)
     const status = task.status as 'todo' | 'in_progress' | 'completed'
     columns.value[status] = columns.value[status].filter((t) => t.id !== task.id)
   } catch (err) {
