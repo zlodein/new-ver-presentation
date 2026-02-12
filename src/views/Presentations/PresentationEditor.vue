@@ -429,22 +429,24 @@
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
                         <div class="booklet-main__content">
-                          <!-- 1. ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ -->
+                          <!-- 1. Подзаголовок (перенос по словам) -->
                           <div class="booklet-main__top">
-                            <input
-                              v-model="slide.data.title"
-                              type="text"
+                            <textarea
+                              :value="String(slide.data?.title ?? '')"
+                              rows="2"
                               placeholder="ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ"
-                              class="w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              class="booklet-main__top-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              @input="(slide.data as Record<string, string>).title = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
-                          <!-- 2. АБСОЛЮТНО НОВЫЙ ТАУНХАУС... -->
+                          <!-- 2. Название презентации (перенос по словам) -->
                           <div class="booklet-main__center">
-                            <input
-                              v-model="slide.data.subtitle"
-                              type="text"
+                            <textarea
+                              :value="String(slide.data?.subtitle ?? '')"
+                              rows="2"
                               placeholder="АБСОЛЮТНО НОВЫЙ ТАУНХАУС НА ПЕРВОЙ ЛИНИИ"
-                              class="w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              class="booklet-main__center-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
                           <!-- 3. Краткое описание + кнопка сгенерировать -->
@@ -464,7 +466,7 @@
                               Сгенерировать описание
                             </button>
                           </div>
-                          <!-- 4. Цены, ниже — валюта -->
+                          <!-- 4. Цены и валюта в одной строке -->
                           <div class="booklet-main__bottom">
                             <div class="flex flex-wrap items-end gap-4">
                               <div class="min-w-[140px]">
@@ -492,10 +494,7 @@
                                   @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
                                 />
                               </div>
-                            </div>
-                            <div class="mt-2">
-                              <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Валюта</label>
-                              <div class="relative z-20 bg-transparent w-24">
+                              <div class="relative z-20 bg-transparent w-24 shrink-0">
                                 <select
                                   :value="slide.data.currency"
                                   class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
@@ -542,10 +541,11 @@
                     <div class="booklet-info__wrap">
                       <div class="booklet-info__block booklet-info__content">
                         <input
-                          v-model="slide.data.heading"
+                          :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
                           type="text"
                           placeholder="ОПИСАНИЕ"
                           class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                          @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
                         />
                         <div class="flex flex-wrap items-center gap-2">
                           <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
