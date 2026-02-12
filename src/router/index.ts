@@ -160,6 +160,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/support',
+      name: 'Support',
+      component: () => import('../views/Support/SupportList.vue'),
+      meta: {
+        title: 'Поддержка',
+      },
+    },
+    {
       path: '/dashboard/admin/users',
       name: 'Admin Users',
       component: () => import('../views/Admin/AdminUsers.vue'),
@@ -183,6 +191,15 @@ const router = createRouter({
       component: () => import('../views/Admin/AdminPayments.vue'),
       meta: {
         title: 'Платежи',
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/dashboard/admin/requests',
+      name: 'Admin Requests',
+      component: () => import('../views/Admin/AdminRequests.vue'),
+      meta: {
+        title: 'Запросы',
         requiresAdmin: true,
       },
     },

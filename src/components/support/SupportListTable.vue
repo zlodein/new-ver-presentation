@@ -94,7 +94,7 @@
                           >
                             <path
                               d="M10 3L4.5 8.5L2 6"
-                              strokeರ
+                              stroke
                               stroke="white"
                               stroke-width="1.6666"
                               stroke-linecap="round"

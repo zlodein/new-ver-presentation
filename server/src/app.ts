@@ -13,6 +13,7 @@ import { uploadRoutes } from './routes/upload.js'
 import { calendarRoutes } from './routes/calendar.js'
 import { notificationRoutes } from './routes/notifications.js'
 import { taskRoutes } from './routes/tasks.js'
+import { supportRoutes } from './routes/support.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -72,6 +73,7 @@ export async function buildApp() {
   await app.register(calendarRoutes, { prefix: '/' })
   await app.register(notificationRoutes, { prefix: '/' })
   await app.register(taskRoutes, { prefix: '/' })
+  await app.register(supportRoutes, { prefix: '/' })
 
   return app
 }

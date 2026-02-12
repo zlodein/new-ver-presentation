@@ -104,6 +104,20 @@ export const notifications = pgTable('notifications', {
   index('notifications_created_at_idx').on(table.createdAt),
 ])
 
+// Запросы в поддержку (тикеты)
+export const supportRequests = pgTable('support_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  subject: varchar('subject', { length: 500 }).notNull(),
+  message: text('message'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending | solved
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('support_requests_user_id_idx').on(table.userId),
+  index('support_requests_created_at_idx').on(table.createdAt),
+])
+
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
 export type User = typeof users.$inferSelect
@@ -115,3 +129,5 @@ export type CalendarEvent = typeof calendarEvents.$inferSelect
 export type NewCalendarEvent = typeof calendarEvents.$inferInsert
 export type Notification = typeof notifications.$inferSelect
 export type NewNotification = typeof notifications.$inferInsert
+export type SupportRequest = typeof supportRequests.$inferSelect
+export type NewSupportRequest = typeof supportRequests.$inferInsert

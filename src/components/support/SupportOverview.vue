@@ -23,8 +23,8 @@
         </svg>
       </div>
       <div class="flex-1">
-        <h3 class="text-title-xs mb-1 font-semibold text-gray-800 dark:text-white/90">5,347</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Total tickets</p>
+        <h3 class="text-title-xs mb-1 font-semibold text-gray-800 dark:text-white/90">{{ total }}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Всего запросов</p>
       </div>
     </article>
     <article
@@ -50,8 +50,8 @@
         </svg>
       </div>
       <div class="flex-1">
-        <h3 class="text-title-xs mb-1 font-semibold text-gray-800 dark:text-white/90">1,230</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Pending tickets</p>
+        <h3 class="text-title-xs mb-1 font-semibold text-gray-800 dark:text-white/90">{{ pending }}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">В ожидании</p>
       </div>
     </article>
     <article
@@ -77,9 +77,17 @@
         </svg>
       </div>
       <div class="flex-1">
-        <h3 class="text-title-xs mb-1 font-semibold text-gray-800 dark:text-white/90">4,117</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Solved tickets</p>
+        <h3 class="text-title-xs mb-1 font-semibold text-gray-800 dark:text-white/90">{{ solved }}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Решено</p>
       </div>
     </article>
   </div>
 </template>
+
+<script setup>
+defineProps({
+  total: { type: Number, default: 0 },
+  pending: { type: Number, default: 0 },
+  solved: { type: Number, default: 0 },
+})
+</script>

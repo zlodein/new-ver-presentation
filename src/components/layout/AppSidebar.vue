@@ -231,17 +231,12 @@ import {
   CalenderIcon,
   UserCircleIcon,
   ChatIcon,
-  MailIcon,
   DocsIcon,
-  PieChartIcon,
   ChevronDownIcon,
   HorizontalDots,
-  PageIcon,
-  TableIcon,
-  ListIcon,
-  PlugInIcon,
   SettingsIcon,
   TaskIcon,
+  SupportIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
@@ -264,7 +259,7 @@ const adminPanelItem = {
   name: "Админ панель",
   subItems: [
     { name: "Пользователи", path: "/dashboard/admin/users" },
-    { name: "Пожелания", disabled: true },
+    { name: "Запросы", path: "/dashboard/admin/requests" },
     { name: "Тарифы", path: "/dashboard/admin/tariffs" },
     { name: "Платежи", path: "/dashboard/admin/payments" },
   ],
@@ -298,31 +293,6 @@ const menuGroups = computed(() => {
       name: "Профиль пользователя",
       path: "/dashboard/profile",
     },
-    {
-      name: "Формы",
-      icon: ListIcon,
-      subItems: [
-        { name: "Элементы формы", path: "/dashboard/form-elements", pro: false },
-        { name: "Макет формы", path: "/dashboard/form-layout", pro: false },
-      ],
-    },
-    {
-      name: "Таблицы",
-      icon: TableIcon,
-      subItems: [
-        { name: "Базовые таблицы", path: "/dashboard/basic-tables", pro: false },
-        { name: "Data Tables", path: "/dashboard/data-tables", pro: false },
-      ],
-    },
-    {
-      name: "Страницы",
-      icon: PageIcon,
-      subItems: [
-        { name: "Пустая страница", path: "/dashboard/blank", pro: false },
-        { name: "FAQ", path: "/dashboard/faq", pro: false },
-        { name: "Страница 404", path: "/dashboard/error-404", pro: false },
-      ],
-    },
   ];
   return [
     {
@@ -332,55 +302,19 @@ const menuGroups = computed(() => {
     {
       title: "Прочее",
       items: [
-      {
-        icon: PieChartIcon,
-        name: "Графики",
-        subItems: [
-          { name: "Линейный график", path: "/dashboard/line-chart", pro: false },
-          { name: "Столбчатая диаграмма", path: "/dashboard/bar-chart", pro: false },
-          { name: "Doughnut Chart", path: "/dashboard/doughnut-chart", pro: false },
-        ],
-      },
-      {
-        icon: ChatIcon,
-        name: "Чат",
-        path: "/dashboard/chat",
-      },
-      {
-        icon: GridIcon,
-        name: "Дашборды",
-        subItems: [
-          { name: "Analytics", path: "/dashboard/analytics", pro: false },
-          { name: "Marketing", path: "/dashboard/marketing", pro: false },
-          { name: "CRM", path: "/dashboard/crm", pro: false },
-        ],
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Элементы интерфейса",
-        subItems: [
-          { name: "Оповещения", path: "/dashboard/alerts", pro: false },
-          { name: "Аватары", path: "/dashboard/avatars", pro: false },
-          { name: "Значки", path: "/dashboard/badge", pro: false },
-          { name: "Кнопки", path: "/dashboard/buttons", pro: false },
-          { name: "Карточки", path: "/dashboard/cards", pro: false },
-          { name: "Breadcrumbs", path: "/dashboard/breadcrumb", pro: false },
-          { name: "Изображения", path: "/dashboard/images", pro: false },
-          { name: "Notifications", path: "/dashboard/notifications-ui", pro: false },
-          { name: "Видео", path: "/dashboard/videos", pro: false },
-        ],
-      },
-      {
-        icon: PlugInIcon,
-        name: "Аутентификация",
-        subItems: [
-          { name: "Вход", path: "/signin", pro: false },
-          { name: "Регистрация", path: "/signup", pro: false },
-        ],
-      },
-    ],
-  },
-];
+        {
+          icon: ChatIcon,
+          name: "Чат",
+          path: "/dashboard/chat",
+        },
+        {
+          icon: SupportIcon,
+          name: "Поддержка",
+          path: "/dashboard/support",
+        },
+      ],
+    },
+  ];
 });
 
 const isActive = (path) => route.path === path;

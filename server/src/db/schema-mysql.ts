@@ -126,6 +126,19 @@ export const notifications = mysqlTable('notifications', {
   createdAtIdx: index('notifications_created_at_idx').on(table.created_at),
 }))
 
+export const supportRequests = mysqlTable('support_requests', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  user_id: int('user_id', { unsigned: true }).notNull(),
+  subject: varchar('subject', { length: 500 }).notNull(),
+  message: longtext('message'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending | solved
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('support_requests_user_id_idx').on(table.user_id),
+  createdAtIdx: index('support_requests_created_at_idx').on(table.created_at),
+}))
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
@@ -139,3 +152,5 @@ export type TaskMySQL = typeof tasks.$inferSelect
 export type NewTaskMySQL = typeof tasks.$inferInsert
 export type NotificationMySQL = typeof notifications.$inferSelect
 export type NewNotificationMySQL = typeof notifications.$inferInsert
+export type SupportRequestMySQL = typeof supportRequests.$inferSelect
+export type NewSupportRequestMySQL = typeof supportRequests.$inferInsert
