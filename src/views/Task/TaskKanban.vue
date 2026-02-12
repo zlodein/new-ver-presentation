@@ -4,190 +4,203 @@
     <div
       class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
     >
-      <TaskHeader />
+      <TaskHeader
+        :selected-task-group="selectedTaskGroup"
+        :task-counts="taskCounts"
+        @update:selected-task-group="selectedTaskGroup = $event"
+        @task-created="loadTasks"
+      />
       <div
         class="grid grid-cols-1 border-t border-gray-200 divide-x divide-gray-200 dark:border-gray-800 mt-7 dark:divide-gray-800 sm:mt-0 sm:grid-cols-2 xl:grid-cols-3"
       >
-        <div v-for="(column, columnIndex) in columns" :key="column.title">
+        <template v-for="(column, columnIndex) in visibleColumns" :key="column.title">
           <div class="overflow-hidden">
             <div class="p-4 xl:p-6">
               <div class="flex items-center justify-between mb-1">
                 <h3
                   class="flex items-center gap-3 text-base font-medium text-gray-800 dark:text-white/90"
                 >
-                  {{ column.title }}
-                  <span :class="getColumnBadgeClass(column.title)">
+                  {{ columnLabels[column.status] }}
+                  <span :class="getColumnBadgeClass(column.status)">
                     {{ column.tasks.length }}
                   </span>
                 </h3>
-                <ColumnMenu />
+                <ColumnMenu :column-status="column.status" @clear-column="clearColumn(column.status)" />
               </div>
               <draggable
                 v-model="column.tasks"
                 :group="{ name: 'tasks', pull: true, put: true }"
                 item-key="id"
                 class="min-h-[200px] space-y-5 mt-5"
-                @change="saveBoard"
+                @change="(evt) => onColumnChange(column.status, evt)"
               >
                 <template #item="{ element }">
-                  <TaskCard :task="element" />
+                  <TaskCard :task="mapTaskForCard(element)" />
                 </template>
               </draggable>
             </div>
           </div>
-        </div>
+        </template>
+      </div>
+      <div v-if="loading" class="p-8 text-center text-gray-500 dark:text-gray-400">
+        Загрузка задач...
+      </div>
+      <div
+        v-else-if="!hasApi()"
+        class="p-8 text-center text-gray-500 dark:text-gray-400"
+      >
+        Для работы с задачами требуется авторизация и подключение к базе данных.
       </div>
     </div>
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import draggable from 'vuedraggable'
-const currentPageTitle = ref('Task Kanban')
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskHeader from './TaskHeader.vue'
 import TaskCard from './kanban/TaskCard.vue'
 import ColumnMenu from './kanban/ColumnMenu.vue'
+import { api, hasApi } from '@/api/client'
 
-interface Task {
-  id: number
+const currentPageTitle = ref('Задачи')
+const selectedTaskGroup = ref('All')
+const loading = ref(false)
+const columns = ref<ColumnState>({
+  todo: [],
+  in_progress: [],
+  completed: [],
+})
+
+interface ApiTask {
+  id: string
   title: string
-  date: string
-  comments?: number
-  attachments?: number
-  tag?: { text: string; color: string }
-  user: string
   description?: string
-  image?: string
+  status: 'todo' | 'in_progress' | 'completed'
+  tag?: string
+  dueDate?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
-interface Column {
-  title: 'To Do' | 'In Progress' | 'Completed'
-  tasks: Task[]
+interface ColumnState {
+  todo: ApiTask[]
+  in_progress: ApiTask[]
+  completed: ApiTask[]
 }
 
-const columns = ref<Column[]>([
-  {
-    title: 'To Do',
-    tasks: [
-      {
-        id: 1,
-        title: 'Finish user onboarding',
-        date: 'Tomorrow',
-        comments: 1,
-        user: '/images/user/user-01.jpg',
-      },
-      {
-        id: 2,
-        title: 'Solve the Dribbble prioritisation issue with the team',
-        date: 'Jan 8, 2027',
-        comments: 2,
-        attachments: 1,
-        tag: { text: 'Marketing', color: 'brand' },
-        user: '/images/user/user-07.jpg',
-      },
-      {
-        id: 3,
-        title: 'Change license and remove products',
-        date: 'Jan 8, 2027',
-        tag: { text: 'Dev', color: 'gray' },
-        user: '/images/user/user-08.jpg',
-      },
-    ],
-  },
-  {
-    title: 'In Progress',
-    tasks: [
-      {
-        id: 4,
-        title: 'Work In Progress (WIP) Dashboard',
-        date: 'Today',
-        comments: 1,
-        user: '/images/user/user-09.jpg',
-      },
-      {
-        id: 5,
-        title: 'Kanban Flow Manager',
-        date: 'Feb 12, 2027',
-        comments: 8,
-        attachments: 2,
-        tag: { text: 'Template', color: 'success' },
-        user: '/images/user/user-10.jpg',
-      },
-      {
-        id: 6,
-        title: 'Product Update - Q4 2024',
-        date: 'Feb 12, 2027',
-        comments: 8,
-        description: 'Dedicated form for a category of users that will perform actions.',
-        image: '/images/task/task.png',
-        user: '/images/user/user-11.jpg',
-      },
-      {
-        id: 7,
-        title: 'Make figbot send comment when ticket is auto-moved back to inbox',
-        date: 'Mar 08, 2027',
-        comments: 1,
-        user: '/images/user/user-12.jpg',
-      },
-    ],
-  },
-  {
-    title: 'Completed',
-    tasks: [
-      {
-        id: 8,
-        title: 'Manage internal feedback',
-        date: 'Tomorrow',
-        comments: 1,
-        user: '/images/user/user-13.jpg',
-      },
-      {
-        id: 9,
-        title: 'Do some projects on React Native with Flutter',
-        date: 'Jan 8, 2027',
-        tag: { text: 'Development', color: 'orange' },
-        user: '/images/user/user-14.jpg',
-      },
-      {
-        id: 10,
-        title: 'Design marketing assets',
-        date: 'Jan 8, 2027',
-        comments: 2,
-        attachments: 1,
-        tag: { text: 'Marketing', color: 'brand' },
-        user: '/images/user/user-15.jpg',
-      },
-      {
-        id: 11,
-        title: 'Kanban Flow Manager',
-        date: 'Feb 12, 2027',
-        comments: 8,
-        tag: { text: 'Template', color: 'success' },
-        user: '/images/user/user-16.jpg',
-      },
-    ],
-  },
-])
+const columnLabels: Record<string, string> = {
+  todo: 'К выполнению',
+  in_progress: 'В работе',
+  completed: 'Выполнено',
+}
 
-const getColumnBadgeClass = (columnTitle: 'To Do' | 'In Progress' | 'Completed') => {
+const taskCounts = computed(() => ({
+  all: columns.value.todo.length + columns.value.in_progress.length + columns.value.completed.length,
+  todo: columns.value.todo.length,
+  inProgress: columns.value.in_progress.length,
+  completed: columns.value.completed.length,
+}))
+
+const visibleColumns = computed(() => {
+  const filter = selectedTaskGroup.value
+  const all = [
+    { status: 'todo' as const, tasks: columns.value.todo },
+    { status: 'in_progress' as const, tasks: columns.value.in_progress },
+    { status: 'completed' as const, tasks: columns.value.completed },
+  ]
+  if (filter === 'All') return all
+  if (filter === 'Todo') return [all[0]]
+  if (filter === 'InProgress') return [all[1]]
+  if (filter === 'Completed') return [all[2]]
+  return all
+})
+
+function getColumnBadgeClass(status: string) {
   const baseClasses = 'inline-flex rounded-full px-2 py-0.5 text-xs font-medium'
-  switch (columnTitle) {
-    case 'To Do':
+  switch (status) {
+    case 'todo':
       return `${baseClasses} bg-gray-100 text-gray-700 dark:bg-white/[0.03] dark:text-white/80`
-    case 'In Progress':
+    case 'in_progress':
       return `${baseClasses} bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-orange-400`
-    case 'Completed':
+    case 'completed':
       return `${baseClasses} bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500`
     default:
       return baseClasses
   }
 }
 
-const saveBoard = () => {
-  // Implement save logic here, e.g., sending data to a server
-  console.log('Board saved', columns.value)
+function mapTaskForCard(task: ApiTask) {
+  const tagColor = task.tag === 'Маркетинг' ? 'brand' : task.tag === 'Разработка' ? 'orange' : task.tag === 'Шаблон' ? 'success' : 'gray'
+  const dueDate = task.dueDate ? formatDueDate(task.dueDate) : ''
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    date: dueDate,
+    tag: task.tag ? { text: task.tag, color: tagColor } : undefined,
+    status: task.status,
+  }
 }
+
+function formatDueDate(iso: string): string {
+  const d = new Date(iso)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const taskDay = new Date(d)
+  taskDay.setHours(0, 0, 0, 0)
+  if (taskDay.getTime() === today.getTime()) return 'Сегодня'
+  if (taskDay.getTime() === tomorrow.getTime()) return 'Завтра'
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+async function loadTasks() {
+  if (!hasApi()) return
+  loading.value = true
+  try {
+    const list = await api.get<ApiTask[]>('/api/tasks')
+    columns.value = {
+      todo: list.filter((t) => t.status === 'todo'),
+      in_progress: list.filter((t) => t.status === 'in_progress'),
+      completed: list.filter((t) => t.status === 'completed'),
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки задач:', err)
+    columns.value = { todo: [], in_progress: [], completed: [] }
+  } finally {
+    loading.value = false
+  }
+}
+
+function onColumnChange(targetStatus: 'todo' | 'in_progress' | 'completed', evt: { added?: { element: ApiTask }; removed?: { element: ApiTask }; moved?: { element: ApiTask } }) {
+  const added = evt?.added?.element ?? evt?.moved?.element
+  if (added && added.status !== targetStatus) {
+    updateTaskStatus(added.id, targetStatus)
+    added.status = targetStatus
+  }
+}
+
+async function updateTaskStatus(taskId: string, status: 'todo' | 'in_progress' | 'completed') {
+  if (!hasApi()) return
+  try {
+    await api.put(`/api/tasks/${taskId}`, { status })
+  } catch (err) {
+    console.error('Ошибка обновления задачи:', err)
+    loadTasks()
+  }
+}
+
+async function clearColumn(status: 'todo' | 'in_progress' | 'completed') {
+  const col = columns.value[status]
+  for (const t of col) {
+    await updateTaskStatus(t.id, 'completed')
+  }
+  loadTasks()
+}
+
+onMounted(() => loadTasks())
 </script>

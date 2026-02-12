@@ -1045,8 +1045,10 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700"
-              title="Сохранить"
+              :class="savedState
+                ? 'inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white dark:bg-green-600'
+                : 'inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700'"
+              :title="savedState ? 'Сохранено' : 'Сохранить'"
               @click="saveToStorage"
             >
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1054,6 +1056,7 @@
               </svg>
             </button>
             <button
+              v-if="savedState"
               type="button"
               class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
               title="Экспорт в PDF"
@@ -1272,25 +1275,30 @@
             </draggable>
           </div>
 
-          <!-- Кнопки Просмотр / Сохранить / Экспорт под навигацией по слайдам -->
-          <div class="flex flex-wrap items-center gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
+          <!-- Кнопки Просмотр / Сохранить (50% каждая), Экспорт в PDF (100%, только после сохранения) -->
+          <div class="flex flex-col gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
+            <div class="flex w-full gap-2">
+              <button
+                type="button"
+                class="h-8 w-1/2 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                @click="openViewPage"
+              >
+                Просмотр
+              </button>
+              <button
+                type="button"
+                :class="savedState
+                  ? 'h-8 w-1/2 flex-1 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white dark:bg-green-600'
+                  : 'h-8 w-1/2 flex-1 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600'"
+                @click="saveToStorage"
+              >
+                {{ savedState ? 'Сохранено' : 'Сохранить' }}
+              </button>
+            </div>
             <button
+              v-if="savedState"
               type="button"
-              class="h-8 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              @click="openViewPage"
-            >
-              Просмотр
-            </button>
-            <button
-              type="button"
-              class="h-8 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600"
-              @click="saveToStorage"
-            >
-              Сохранить
-            </button>
-            <button
-              type="button"
-              class="h-8 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+              class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
               @click="exportToPDF"
               title="Экспортировать презентацию в PDF"
             >
@@ -2340,7 +2348,17 @@ async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index
 const presentationId = computed(() => route.params.id as string)
 
 watch(slides, () => {
-  if (initialLoadDone.value) scheduleAutoSave()
+  if (initialLoadDone.value) {
+    savedState.value = false
+    scheduleAutoSave()
+  }
+}, { deep: true })
+
+watch(presentationSettings, () => {
+  if (initialLoadDone.value) {
+    savedState.value = false
+    scheduleAutoSave()
+  }
 }, { deep: true })
 
 function backupToLocalStorage() {
@@ -2468,7 +2486,7 @@ function loadFromLocalStorage() {
   }
 }
 
-async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
+async function doSave(options?: { status?: string; skipRedirect?: boolean; createNotification?: boolean }) {
   const cover = slides.value.find((s) => s.type === 'cover')
   const title = (cover?.type === 'cover' && cover.data?.title)
     ? String(cover.data.title).trim() || 'Без названия'
@@ -2477,11 +2495,13 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
   const content = { slides: slides.value, settings: { ...presentationSettings.value } }
   const status = options?.status
   const skipRedirect = options?.skipRedirect ?? false
+  const createNotification = options?.createNotification ?? false
 
   if (hasApi() && getToken()) {
     try {
-      const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string } = { title, coverImage, content }
+      const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string; createNotification?: boolean } = { title, coverImage, content }
       if (status !== undefined) body.status = status
+      if (createNotification) body.createNotification = true
       const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${presentationId.value}`, body)
       if (data?.status != null) presentationMeta.value.status = data.status
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
@@ -2498,8 +2518,14 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean }) {
   return true
 }
 
+/** Состояние «сохранено» после ручного сохранения — сбрасывается при изменениях */
+const savedState = ref(false)
+
 async function saveToStorage() {
-  await doSave()
+  const ok = await doSave({ skipRedirect: true, createNotification: true })
+  if (ok) {
+    savedState.value = true
+  }
 }
 
 async function publishPresentation() {

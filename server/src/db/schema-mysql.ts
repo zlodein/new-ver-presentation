@@ -95,6 +95,21 @@ export const calendarEvents = mysqlTable('calendar_events', {
   startIdx: index('calendar_events_start_idx').on(table.start),
 }))
 
+export const tasks = mysqlTable('tasks', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  user_id: int('user_id', { unsigned: true }).notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: longtext('description'),
+  status: varchar('status', { length: 20 }).notNull().default('todo'), // todo | in_progress | completed
+  tag: varchar('tag', { length: 100 }),
+  due_date: datetime('due_date'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('tasks_user_id_idx').on(table.user_id),
+  statusIdx: index('tasks_status_idx').on(table.status),
+}))
+
 export const notifications = mysqlTable('notifications', {
   id: int('id', { unsigned: true }).primaryKey().autoincrement(),
   user_id: int('user_id', { unsigned: true }).notNull(),
@@ -119,5 +134,7 @@ export type PresentationViewMySQL = typeof presentationViews.$inferSelect
 export type NewPresentationViewMySQL = typeof presentationViews.$inferInsert
 export type CalendarEventMySQL = typeof calendarEvents.$inferSelect
 export type NewCalendarEventMySQL = typeof calendarEvents.$inferInsert
+export type TaskMySQL = typeof tasks.$inferSelect
+export type NewTaskMySQL = typeof tasks.$inferInsert
 export type NotificationMySQL = typeof notifications.$inferSelect
 export type NewNotificationMySQL = typeof notifications.$inferInsert

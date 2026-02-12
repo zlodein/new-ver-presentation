@@ -72,6 +72,22 @@ export const calendarEvents = pgTable('calendar_events', {
   index('calendar_events_start_idx').on(table.start),
 ])
 
+// Задачи
+export const tasks = pgTable('tasks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).notNull().default('todo'), // todo | in_progress | completed
+  tag: varchar('tag', { length: 100 }),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('tasks_user_id_idx').on(table.userId),
+  index('tasks_status_idx').on(table.status),
+])
+
 // Уведомления
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -88,6 +104,8 @@ export const notifications = pgTable('notifications', {
   index('notifications_created_at_idx').on(table.createdAt),
 ])
 
+export type Task = typeof tasks.$inferSelect
+export type NewTask = typeof tasks.$inferInsert
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Presentation = typeof presentations.$inferSelect
