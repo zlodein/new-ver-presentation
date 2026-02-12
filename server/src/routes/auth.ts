@@ -419,7 +419,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, role_id: true, created_at: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
         try {
@@ -439,6 +439,9 @@ export async function authRoutes(app: FastifyInstance) {
         if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
         
         const messengersData = user.messengers ? (typeof user.messengers === 'string' ? JSON.parse(user.messengers as string) : user.messengers) : null
+        const prefsData = user.presentation_display_preferences != null && user.presentation_display_preferences !== ''
+          ? (typeof user.presentation_display_preferences === 'string' ? JSON.parse(user.presentation_display_preferences as string) : user.presentation_display_preferences)
+          : null
 
         return reply.send({
           id: String(user.id),
@@ -450,6 +453,7 @@ export async function authRoutes(app: FastifyInstance) {
           personal_phone: user.personal_phone,
           position: user.position,
           messengers: messengersData,
+          presentation_display_preferences: prefsData ?? undefined,
           company_name: user.workplace ?? undefined,
           work_position: user.work_position ?? undefined,
           company_logo: user.company_logo ?? undefined,
@@ -591,11 +595,11 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Обновление профиля пользователя
   app.put<{
-    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string }
-  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string } }>, reply: FastifyReply) => {
+    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> }
+  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> } }>, reply: FastifyReply) => {
     try {
       const payload = req.user as { sub: string; email: string }
-      const { name, last_name, email, personal_phone, position, messengers, company_name, work_position, company_logo, work_email, work_phone, work_website } = req.body
+      const { name, last_name, email, personal_phone, position, messengers, company_name, work_position, company_logo, work_email, work_phone, work_website, presentation_display_preferences } = req.body
 
       if (useFileStore) {
         const user = fileStore.findUserById(payload.sub)
@@ -630,6 +634,7 @@ export async function authRoutes(app: FastifyInstance) {
         if (work_email !== undefined) updateData.work_email = (typeof work_email === 'string' ? work_email.trim() : work_email) || null
         if (work_phone !== undefined) updateData.work_phone = (typeof work_phone === 'string' ? work_phone.trim() : work_phone) || null
         if (work_website !== undefined) updateData.work_website = (typeof work_website === 'string' ? work_website.trim() : work_website) || null
+        if (presentation_display_preferences !== undefined) updateData.presentation_display_preferences = JSON.stringify(presentation_display_preferences)
         updateData.updated_at = new Date()
 
         // При удалении логотипа/аватара — удалить файл на сервере
@@ -666,7 +671,7 @@ export async function authRoutes(app: FastifyInstance) {
           } else throw err
         }
 
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, role_id: true, created_at: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let updatedUser: Record<string, unknown> | null = null
         try {
@@ -685,6 +690,9 @@ export async function authRoutes(app: FastifyInstance) {
         if (!updatedUser) return reply.status(401).send({ error: 'Пользователь не найден' })
 
         const messengersData = updatedUser.messengers ? (typeof updatedUser.messengers === 'string' ? JSON.parse(updatedUser.messengers as string) : updatedUser.messengers) : null
+        const prefsData = updatedUser.presentation_display_preferences != null && updatedUser.presentation_display_preferences !== ''
+          ? (typeof updatedUser.presentation_display_preferences === 'string' ? JSON.parse(updatedUser.presentation_display_preferences as string) : updatedUser.presentation_display_preferences)
+          : null
 
         return reply.send({
           id: String(updatedUser.id),
@@ -696,6 +704,7 @@ export async function authRoutes(app: FastifyInstance) {
           personal_phone: updatedUser.personal_phone,
           position: updatedUser.position,
           messengers: messengersData,
+          presentation_display_preferences: prefsData ?? undefined,
           company_name: updatedUser.workplace ?? undefined,
           work_position: updatedUser.work_position ?? undefined,
           company_logo: updatedUser.company_logo ?? undefined,

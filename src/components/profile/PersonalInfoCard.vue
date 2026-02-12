@@ -177,6 +177,69 @@
                     />
                   </div>
 
+                  <!-- Мессенджеры — перед блоком смены пароля -->
+                  <div class="col-span-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h5 class="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
+                      Мессенджеры
+                    </h5>
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">WhatsApp</label>
+                        <input
+                          v-model="formData.messengers.whatsapp"
+                          type="url"
+                          placeholder="https://wa.me/..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Telegram</label>
+                        <input
+                          v-model="formData.messengers.telegram"
+                          type="url"
+                          placeholder="https://t.me/..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Viber</label>
+                        <input
+                          v-model="formData.messengers.viber"
+                          type="url"
+                          placeholder="viber://chat?number=..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Instagram</label>
+                        <input
+                          v-model="formData.messengers.instagram"
+                          type="url"
+                          placeholder="https://instagram.com/..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Twitter</label>
+                        <input
+                          v-model="formData.messengers.twitter"
+                          type="url"
+                          placeholder="https://twitter.com/..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">X</label>
+                        <input
+                          v-model="formData.messengers.x"
+                          type="url"
+                          placeholder="https://x.com/..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Смена пароля — только для пользователей, зарегистрированных по email -->
                   <template v-if="canChangePassword">
                     <div class="col-span-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -286,6 +349,14 @@ const formData = ref({
   position: '',
   current_password: '',
   new_password: '',
+  messengers: {
+    whatsapp: '',
+    telegram: '',
+    viber: '',
+    instagram: '',
+    twitter: '',
+    x: '',
+  },
 })
 
 // Показывать блок смены пароля только если пользователь зарегистрирован по email (не через соц. сети)
@@ -307,6 +378,14 @@ watch(isProfileInfoModal, (isOpen) => {
       position: currentUser.value.position || '',
       current_password: '',
       new_password: '',
+      messengers: {
+        whatsapp: currentUser.value.messengers?.whatsapp || '',
+        telegram: currentUser.value.messengers?.telegram || '',
+        viber: currentUser.value.messengers?.viber || '',
+        instagram: currentUser.value.messengers?.instagram || '',
+        twitter: currentUser.value.messengers?.twitter || '',
+        x: currentUser.value.messengers?.x || '',
+      },
     }
     error.value = ''
   }
@@ -334,14 +413,17 @@ const saveProfile = async (e: Event) => {
   error.value = ''
   loading.value = true
   try {
-    console.log('Сохранение профиля:', formData.value)
-    // Очистить телефон от форматирования для сохранения
     const cleanPhone = formData.value.personal_phone.replace(/\D/g, '')
+    const messengers: { [key: string]: string } = {}
+    Object.entries(formData.value.messengers).forEach(([key, value]) => {
+      if (value && value.trim()) messengers[key] = value.trim()
+    })
     await api.put('/api/auth/profile', {
       name: formData.value.name.trim() || undefined,
       last_name: formData.value.last_name.trim() || undefined,
       personal_phone: cleanPhone || undefined,
       position: formData.value.position.trim() || undefined,
+      messengers: Object.keys(messengers).length > 0 ? messengers : undefined,
     })
     // Смена пароля (если заполнены оба поля)
     if (formData.value.current_password && formData.value.new_password) {

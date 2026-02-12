@@ -162,8 +162,9 @@
                     <p v-if="slide.data?.contact_name">{{ slide.data.contact_name }}</p>
                     <p v-if="slide.data?.phone ?? slide.data?.contact_phone">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
                     <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
+                    <p v-if="slide.data?.aboutText">{{ slide.data.aboutText }}</p>
                     <p v-if="slide.data?.contact_role">{{ slide.data.contact_role }}</p>
-                    <p v-if="slide.data?.contact_messengers">{{ slide.data.contact_messengers }}</p>
+                    <p v-if="slide.data?.messengersText ?? slide.data?.contact_messengers">{{ slide.data?.messengersText ?? slide.data?.contact_messengers }}</p>
                     <p v-if="slide.data?.address ?? slide.data?.contact_address">{{ slide.data?.address ?? slide.data?.contact_address }}</p>
                   </div>
                 </div>

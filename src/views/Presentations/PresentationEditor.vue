@@ -1008,6 +1008,12 @@
                             placeholder="Адрес"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
+                          <input
+                            v-model="slide.data.aboutText"
+                            type="text"
+                            placeholder="О себе"
+                            class="dark:bg-dark-900 mb-1 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                          />
                         </div>
                       </div>
                       <div class="booklet-contacts__block booklet-contacts__img relative">
@@ -1457,6 +1463,7 @@ import LocationMap from '@/components/presentations/LocationMap.vue'
 import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase, ApiError } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
+import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
 const router = useRouter()
@@ -2141,25 +2148,67 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
     case 'layout':
       return { heading: 'Планировка' }
     case 'contacts':
-      return { heading: 'Контакты', phone: '', email: '', address: '', avatarUrl: '', contactImageUrl: '', images: [] as string[] }
+      return { heading: 'Контакты', phone: '', email: '', address: '', aboutText: '', messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
     default:
       return {}
   }
 }
 
+const { currentUser } = useAuth()
+
+/** Подстановка данных профиля в слайд «Контакты» по настройкам «Выводить в презентации». */
+function applyProfileToContactsSlide(data: Record<string, unknown>) {
+  const user = currentUser.value
+  const prefs = user?.presentation_display_preferences
+  if (!user || !prefs) return
+
+  const toUrl = (v: string | null | undefined) => {
+    if (!v || !String(v).trim()) return ''
+    const s = String(v).trim()
+    return s.startsWith('/') ? s : `/${s}`
+  }
+  const fullName = [user.name, user.middle_name, user.last_name].filter(Boolean).join(' ') || user.email || ''
+
+  if (prefs.avatarOrLogo === 'personal' && user.user_img) {
+    data.avatarUrl = toUrl(user.user_img)
+    data.logoUrl = ''
+  } else if (prefs.avatarOrLogo === 'company' && user.company_logo) {
+    data.logoUrl = toUrl(user.company_logo)
+    data.avatarUrl = ''
+  }
+
+  if (prefs.nameOrOrg === 'personal' && fullName) data.heading = fullName
+  else if (prefs.nameOrOrg === 'company' && user.company_name) data.heading = String(user.company_name).trim()
+
+  if (prefs.showAbout && user.position) data.aboutText = String(user.position).trim()
+
+  if (prefs.phoneType === 'personal' && user.personal_phone) data.phone = String(user.personal_phone).trim()
+  else if (prefs.phoneType === 'work' && user.work_phone) data.phone = String(user.work_phone).trim()
+
+  const email = prefs.nameOrOrg === 'company' && user.work_email ? user.work_email : user.email
+  if (email) data.email = String(email).trim()
+
+  if (prefs.showMessengers && user.messengers && typeof user.messengers === 'object') {
+    const links = Object.entries(user.messengers)
+      .filter(([, v]) => v && String(v).trim())
+      .map(([k, v]) => `${k}: ${String(v).trim()}`)
+    if (links.length) data.messengersText = links.join('\n')
+  }
+}
+
 function addSlide(type: string) {
+  const defaultData = getDefaultDataForType(type)
   const newSlide: SlideItem = {
     id: genSlideId(),
     type,
-    data: getDefaultDataForType(type),
+    data: defaultData,
     hidden: false,
   }
+  if (type === 'contacts') applyProfileToContactsSlide(newSlide.data)
   slides.value.push(newSlide)
   const idx = slides.value.length - 1
-  
-  // Устанавливаем активный слайд
+
   activeSlideIndex.value = idx
-  
   nextTick(() => goToSlide(idx))
 }
 

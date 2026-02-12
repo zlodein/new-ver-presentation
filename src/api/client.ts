@@ -131,6 +131,21 @@ export interface AuthUser {
   work_email?: string | null
   work_phone?: string | null
   work_website?: string | null
+  /** Настройки подстановки данных в блок контактов при создании презентации */
+  presentation_display_preferences?: PresentationDisplayPreferences | null
+}
+
+export interface PresentationDisplayPreferences {
+  /** Фото или логотип: none | personal | company */
+  avatarOrLogo?: 'none' | 'personal' | 'company'
+  /** ФИО или название организации: none | personal | company */
+  nameOrOrg?: 'none' | 'personal' | 'company'
+  /** Выводить данные о себе (position) */
+  showAbout?: boolean
+  /** Телефон: none | personal | work */
+  phoneType?: 'none' | 'personal' | 'work'
+  /** Выводить заполненные мессенджеры */
+  showMessengers?: boolean
 }
 
 export interface AuthResponse {
