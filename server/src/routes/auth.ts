@@ -419,7 +419,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, available_in_chat: true, created_at: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
         try {
@@ -461,6 +461,7 @@ export async function authRoutes(app: FastifyInstance) {
           work_phone: user.work_phone ?? undefined,
           work_website: user.work_website ?? undefined,
           role_id: user.role_id != null ? Number(user.role_id) : undefined,
+          available_in_chat: user.available_in_chat != null ? Number(user.available_in_chat) : 0,
           createdAt: user.created_at,
           firstName: user.name,
           lastName: user.last_name,
@@ -468,10 +469,11 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
         where: eq(pgSchema.users.id, payload.sub),
-        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true },
+        columns: { id: true, email: true, firstName: true, lastName: true, availableInChat: true, createdAt: true },
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
-      return reply.send(user)
+      const u = user as { id: string; email: string; firstName: string | null; lastName: string | null; availableInChat: boolean | null; createdAt: Date }
+      return reply.send({ ...u, available_in_chat: u.availableInChat ?? false })
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
@@ -595,11 +597,11 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Обновление профиля пользователя
   app.put<{
-    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> }
-  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> } }>, reply: FastifyReply) => {
+    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown>; available_in_chat?: boolean }
+  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown>; available_in_chat?: boolean } }>, reply: FastifyReply) => {
     try {
       const payload = req.user as { sub: string; email: string }
-      const { name, last_name, email, personal_phone, position, messengers, company_name, work_position, company_logo, work_email, work_phone, work_website, presentation_display_preferences } = req.body
+      const { name, last_name, email, personal_phone, position, messengers, company_name, work_position, company_logo, work_email, work_phone, work_website, presentation_display_preferences, available_in_chat } = req.body
 
       if (useFileStore) {
         const user = fileStore.findUserById(payload.sub)
@@ -635,6 +637,7 @@ export async function authRoutes(app: FastifyInstance) {
         if (work_phone !== undefined) updateData.work_phone = (typeof work_phone === 'string' ? work_phone.trim() : work_phone) || null
         if (work_website !== undefined) updateData.work_website = (typeof work_website === 'string' ? work_website.trim() : work_website) || null
         if (presentation_display_preferences !== undefined) updateData.presentation_display_preferences = JSON.stringify(presentation_display_preferences)
+        if (available_in_chat !== undefined) updateData.available_in_chat = available_in_chat ? 1 : 0
         updateData.updated_at = new Date()
 
         // При удалении логотипа/аватара — удалить файл на сервере
@@ -671,7 +674,7 @@ export async function authRoutes(app: FastifyInstance) {
           } else throw err
         }
 
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, available_in_chat: true, created_at: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let updatedUser: Record<string, unknown> | null = null
         try {
@@ -681,9 +684,10 @@ export async function authRoutes(app: FastifyInstance) {
           }) as Record<string, unknown> | null
         } catch (err) {
           if (isUnknownColumnError(err)) {
+            const baseNoChat = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true }
             updatedUser = await mysqlDb.query.users.findFirst({
               where: eq(mysqlSchema.users.id, userId),
-              columns: baseColumns,
+              columns: { ...baseNoChat, ...workColumns },
             }) as Record<string, unknown> | null
           } else throw err
         }
@@ -711,6 +715,7 @@ export async function authRoutes(app: FastifyInstance) {
           work_email: updatedUser.work_email ?? undefined,
           work_phone: updatedUser.work_phone ?? undefined,
           work_website: updatedUser.work_website ?? undefined,
+          available_in_chat: updatedUser.available_in_chat != null ? Number(updatedUser.available_in_chat) : 0,
           createdAt: updatedUser.created_at,
           firstName: updatedUser.name,
           lastName: updatedUser.last_name,

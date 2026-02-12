@@ -133,6 +133,8 @@ export interface AuthUser {
   work_website?: string | null
   /** Настройки подстановки данных в блок контактов при создании презентации */
   presentation_display_preferences?: PresentationDisplayPreferences | null
+  /** Доступен в чате: отображается в списке для начала диалога */
+  available_in_chat?: boolean | number | null
 }
 
 export interface PresentationDisplayPreferences {

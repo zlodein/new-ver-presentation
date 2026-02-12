@@ -10,6 +10,11 @@ function getUserId(req: FastifyRequest): string | null {
   return (req.user as { sub?: string })?.sub ?? null
 }
 
+function isUnknownColumnError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err)
+  return /Unknown column|doesn't exist/i.test(msg)
+}
+
 /** In-memory store for chat when using file store (no DB) */
 const fileStoreChat: { fromUserId: string; toUserId: string; message: string; createdAt: string; id: string }[] = []
 function nextFileStoreId(): string {
@@ -170,11 +175,22 @@ export async function chatRoutes(app: FastifyInstance) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const allUsers = await mysqlDb.query.users.findMany({
-          where: ne(mysqlSchema.users.id, userIdNum),
-          columns: { id: true, name: true, last_name: true, user_img: true, position: true },
-        })
-        const others = allUsers as { id: number; name: string; last_name: string | null; user_img: string | null; position: string | null }[]
+        type UserRow = { id: number; name: string; last_name: string | null; user_img: string | null; position: string | null }
+        let allUsers: UserRow[]
+        try {
+          allUsers = await mysqlDb.query.users.findMany({
+            where: and(ne(mysqlSchema.users.id, userIdNum), eq(mysqlSchema.users.available_in_chat, 1)),
+            columns: { id: true, name: true, last_name: true, user_img: true, position: true },
+          }) as UserRow[]
+        } catch (err) {
+          if (isUnknownColumnError(err)) {
+            allUsers = await mysqlDb.query.users.findMany({
+              where: ne(mysqlSchema.users.id, userIdNum),
+              columns: { id: true, name: true, last_name: true, user_img: true, position: true },
+            }) as UserRow[]
+          } else throw err
+        }
+        const others = allUsers
         return reply.send(
           others.map((u) => ({
             id: String(u.id),
@@ -190,10 +206,22 @@ export async function chatRoutes(app: FastifyInstance) {
       }
 
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
-      const allUsers = await pgDb.query.users.findMany({
-        columns: { id: true, firstName: true, lastName: true },
-      }) as { id: string; firstName: string | null; lastName: string | null }[]
-      const others = allUsers.filter((u) => u.id !== userId)
+      type PgUserRow = { id: string; firstName: string | null; lastName: string | null }
+      let allUsers: PgUserRow[]
+      try {
+        allUsers = await pgDb.query.users.findMany({
+          where: and(ne(pgSchema.users.id, userId), eq(pgSchema.users.availableInChat, true)),
+          columns: { id: true, firstName: true, lastName: true },
+        }) as PgUserRow[]
+      } catch (err) {
+        if (isUnknownColumnError(err)) {
+          allUsers = await pgDb.query.users.findMany({
+            where: ne(pgSchema.users.id, userId),
+            columns: { id: true, firstName: true, lastName: true },
+          }) as PgUserRow[]
+        } else throw err
+      }
+      const others = allUsers
       return reply.send(
         others.map((u) => ({
           id: u.id,

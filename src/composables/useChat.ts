@@ -25,12 +25,22 @@ export function useChat() {
     )
   })
 
+  function normalizeConversation(c: ChatConversation): ChatConversation {
+    return {
+      ...c,
+      name: typeof c.name === 'string' ? c.name : (c.name != null ? 'Пользователь' : ''),
+      role: typeof c.role === 'string' ? c.role : '',
+      lastMessage: typeof c.lastMessage === 'string' ? c.lastMessage : '',
+      lastMessageTime: typeof c.lastMessageTime === 'string' ? c.lastMessageTime : '',
+    }
+  }
+
   async function loadConversations() {
     if (!hasApi()) return
     loadingConversations.value = true
     try {
       const list = await api.get<ChatConversation[]>('/api/chat/conversations')
-      conversations.value = list ?? []
+      conversations.value = (list ?? []).map(normalizeConversation)
     } catch {
       conversations.value = []
     } finally {
@@ -47,7 +57,7 @@ export function useChat() {
       const byUserId = new Map<string, ChatConversation>()
       for (const c of conversations.value) byUserId.set(c.userId, c)
       for (const u of list ?? []) {
-        if (!byUserId.has(u.userId)) byUserId.set(u.userId, { ...u, lastMessage: '', lastMessageTime: '' })
+        if (!byUserId.has(u.userId)) byUserId.set(u.userId, normalizeConversation({ ...u, lastMessage: '', lastMessageTime: '' }))
       }
       conversations.value = Array.from(byUserId.values()).sort((a, b) => {
         const at = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0

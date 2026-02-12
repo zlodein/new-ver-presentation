@@ -34,6 +34,7 @@ export const users = mysqlTable('users', {
   role_id: int('role_id').default(1),
   last_login_at: timestamp('last_login_at'),
   is_active: int('is_active', { unsigned: true }).default(1),
+  available_in_chat: int('available_in_chat', { unsigned: true }).notNull().default(0),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

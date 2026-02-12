@@ -8,14 +8,14 @@
       <img
         v-if="chat.avatar"
         :src="chat.avatar"
-        :alt="chat.name"
+        :alt="safeStr(chat.name) || 'User'"
         class="object-cover object-center w-full h-full"
       />
       <span
         v-else
         class="flex items-center justify-center w-full h-full text-lg font-medium text-gray-600 dark:text-gray-300"
       >
-        {{ (chat.name || '?').charAt(0).toUpperCase() }}
+        {{ (safeStr(chat.name) || '?').charAt(0).toUpperCase() }}
       </span>
       <span
         class="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white dark:border-gray-900"
@@ -30,13 +30,13 @@
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <h5 class="text-sm font-medium text-gray-800 dark:text-white/90 truncate">
-            {{ chat.name }}
+            {{ safeStr(chat.name) || 'Пользователь' }}
           </h5>
           <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400 truncate">
-            {{ chat.role || chat.lastMessage || 'Нет сообщений' }}
+            {{ safeStr(chat.role) || safeStr(chat.lastMessage) || 'Нет сообщений' }}
           </p>
         </div>
-        <span class="text-gray-400 text-theme-xs shrink-0">{{ chat.lastMessageTime }}</span>
+        <span class="text-gray-400 text-theme-xs shrink-0">{{ safeStr(chat.lastMessageTime) }}</span>
       </div>
     </div>
   </div>
@@ -44,6 +44,13 @@
 
 <script setup lang="ts">
 import type { ChatConversation } from '@/api/client'
+
+function safeStr(v: unknown): string {
+  if (v == null) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'object') return 'Пользователь'
+  return String(v)
+}
 
 defineProps<{
   chat: ChatConversation

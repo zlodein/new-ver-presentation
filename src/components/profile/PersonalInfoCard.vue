@@ -36,6 +36,12 @@
               <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">О себе</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.position || '—' }}</p>
             </div>
+            <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Доступен в чате</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ (currentUser?.available_in_chat != null && currentUser?.available_in_chat !== 0 && currentUser?.available_in_chat !== false) ? 'Да' : 'Нет' }}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -175,6 +181,18 @@
                       placeholder="Введите описание"
                       class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                     />
+                  </div>
+
+                  <div class="col-span-2 flex items-center gap-3">
+                    <input
+                      v-model="formData.available_in_chat"
+                      type="checkbox"
+                      id="available_in_chat"
+                      class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
+                    />
+                    <label for="available_in_chat" class="text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Доступен в чате — отображаться в списке пользователей для начала диалога
+                    </label>
                   </div>
 
                   <!-- Мессенджеры — перед блоком смены пароля -->
@@ -347,6 +365,7 @@ const formData = ref({
   last_name: '',
   personal_phone: '',
   position: '',
+  available_in_chat: false,
   current_password: '',
   new_password: '',
   messengers: {
@@ -371,11 +390,14 @@ const canChangePassword = computed(() => {
 watch(isProfileInfoModal, (isOpen) => {
   if (isOpen && currentUser.value) {
     const phone = currentUser.value.personal_phone || ''
+    const u = currentUser.value
+    const avail = u?.available_in_chat
     formData.value = {
-      name: currentUser.value.name || '',
-      last_name: currentUser.value.last_name || '',
+      name: u?.name || '',
+      last_name: u?.last_name || '',
       personal_phone: phone ? formatPhone(phone) : '',
-      position: currentUser.value.position || '',
+      position: u?.position || '',
+      available_in_chat: !!avail || (typeof avail === 'number' && avail !== 0),
       current_password: '',
       new_password: '',
       messengers: {
@@ -423,6 +445,7 @@ const saveProfile = async (e: Event) => {
       last_name: formData.value.last_name.trim() || undefined,
       personal_phone: cleanPhone || undefined,
       position: formData.value.position.trim() || undefined,
+      available_in_chat: formData.value.available_in_chat,
       messengers: Object.keys(messengers).length > 0 ? messengers : undefined,
     })
     // Смена пароля (если заполнены оба поля)
