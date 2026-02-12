@@ -283,7 +283,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 
 const currentPageTitle = ref('Календарь')
 import { ref, reactive, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -310,6 +310,7 @@ const flatpickrTimeConfig = {
 }
 
 const route = useRoute()
+const router = useRouter()
 const calendarRef = ref(null)
 const isOpen = ref(false)
 const selectedEvent = ref(null)
@@ -422,6 +423,10 @@ const handleDateSelect = (_selectInfo) => {
 
 const handleEventClick = (clickInfo) => {
   const event = clickInfo.event
+  if (event.extendedProps?.type === 'task' && event.extendedProps?.taskId) {
+    router.push('/dashboard/tasks')
+    return
+  }
   selectedEvent.value = event
   eventTitle.value = event.title
   

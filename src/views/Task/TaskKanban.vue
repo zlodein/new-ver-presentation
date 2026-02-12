@@ -7,35 +7,41 @@
       <TaskHeader
         :selected-task-group="selectedTaskGroup"
         :task-counts="taskCounts"
+        :existing-tags="allTags"
         @update:selected-task-group="selectedTaskGroup = $event"
         @task-created="loadTasks"
       />
       <div
         class="grid grid-cols-1 border-t border-gray-200 divide-x divide-gray-200 dark:border-gray-800 mt-7 dark:divide-gray-800 sm:mt-0 sm:grid-cols-2 xl:grid-cols-3"
       >
-        <template v-for="(column, columnIndex) in visibleColumns" :key="column.title">
-          <div class="overflow-hidden">
+        <template v-for="col in columnConfigs" :key="col.status">
+          <div v-show="isColumnVisible(col.status)" class="overflow-hidden">
             <div class="p-4 xl:p-6">
               <div class="flex items-center justify-between mb-1">
                 <h3
                   class="flex items-center gap-3 text-base font-medium text-gray-800 dark:text-white/90"
                 >
-                  {{ columnLabels[column.status] }}
-                  <span :class="getColumnBadgeClass(column.status)">
-                    {{ column.tasks.length }}
+                  {{ columnLabels[col.status] }}
+                  <span :class="getColumnBadgeClass(col.status)">
+                    {{ getColumnTasks(col.status).length }}
                   </span>
                 </h3>
-                <ColumnMenu :column-status="column.status" @clear-column="clearColumn(column.status)" />
+                <ColumnMenu :column-status="col.status" @clear-column="clearColumn(col.status)" />
               </div>
               <draggable
-                v-model="column.tasks"
+                :model-value="getColumnTasks(col.status)"
                 :group="{ name: 'tasks', pull: true, put: true }"
                 item-key="id"
                 class="min-h-[200px] space-y-5 mt-5"
-                @change="(evt) => onColumnChange(column.status, evt)"
+                @update:model-value="(val) => setColumnTasks(col.status, val)"
+                @change="(evt) => onColumnChange(col.status, evt)"
               >
                 <template #item="{ element }">
-                  <TaskCard :task="mapTaskForCard(element)" />
+                  <TaskCard
+                    :task="mapTaskForCard(element)"
+                    @edit="openEditModal(element)"
+                    @delete="deleteTask(element)"
+                  />
                 </template>
               </draggable>
             </div>
@@ -51,6 +57,16 @@
       >
         Для работы с задачами требуется авторизация и подключение к базе данных.
       </div>
+
+      <!-- Модальное окно редактирования задачи -->
+      <TaskFormModal
+        v-if="showEditModal && editingTask"
+        :task="editingTask"
+        :existing-tags="allTags"
+        mode="edit"
+        @close="closeEditModal"
+        @saved="onTaskSaved"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -63,7 +79,10 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskHeader from './TaskHeader.vue'
 import TaskCard from './kanban/TaskCard.vue'
 import ColumnMenu from './kanban/ColumnMenu.vue'
+import TaskFormModal from './TaskFormModal.vue'
 import { api, hasApi } from '@/api/client'
+
+const allTags = ref<string[]>([])
 
 const currentPageTitle = ref('Задачи')
 const selectedTaskGroup = ref('All')
@@ -104,19 +123,28 @@ const taskCounts = computed(() => ({
   completed: columns.value.completed.length,
 }))
 
-const visibleColumns = computed(() => {
+const columnConfigs = [
+  { status: 'todo' as const },
+  { status: 'in_progress' as const },
+  { status: 'completed' as const },
+]
+
+function getColumnTasks(status: 'todo' | 'in_progress' | 'completed') {
+  return columns.value[status]
+}
+
+function setColumnTasks(status: 'todo' | 'in_progress' | 'completed', newTasks: ApiTask[]) {
+  columns.value[status] = [...newTasks]
+}
+
+function isColumnVisible(status: string) {
   const filter = selectedTaskGroup.value
-  const all = [
-    { status: 'todo' as const, tasks: columns.value.todo },
-    { status: 'in_progress' as const, tasks: columns.value.in_progress },
-    { status: 'completed' as const, tasks: columns.value.completed },
-  ]
-  if (filter === 'All') return all
-  if (filter === 'Todo') return [all[0]]
-  if (filter === 'InProgress') return [all[1]]
-  if (filter === 'Completed') return [all[2]]
-  return all
-})
+  if (filter === 'All') return true
+  if (filter === 'Todo' && status === 'todo') return true
+  if (filter === 'InProgress' && status === 'in_progress') return true
+  if (filter === 'Completed' && status === 'completed') return true
+  return false
+}
 
 function getColumnBadgeClass(status: string) {
   const baseClasses = 'inline-flex rounded-full px-2 py-0.5 text-xs font-medium'
@@ -133,15 +161,15 @@ function getColumnBadgeClass(status: string) {
 }
 
 function mapTaskForCard(task: ApiTask) {
-  const tagColor = task.tag === 'Маркетинг' ? 'brand' : task.tag === 'Разработка' ? 'orange' : task.tag === 'Шаблон' ? 'success' : 'gray'
   const dueDate = task.dueDate ? formatDueDate(task.dueDate) : ''
   return {
     id: task.id,
     title: task.title,
     description: task.description,
     date: dueDate,
-    tag: task.tag ? { text: task.tag, color: tagColor } : undefined,
+    tag: task.tag ? { text: task.tag, color: 'brand' as const } : undefined,
     status: task.status,
+    _raw: task,
   }
 }
 
@@ -168,6 +196,9 @@ async function loadTasks() {
       in_progress: list.filter((t) => t.status === 'in_progress'),
       completed: list.filter((t) => t.status === 'completed'),
     }
+    const tags = new Set<string>()
+    list.forEach((t) => { if (t.tag?.trim()) tags.add(t.tag.trim()) })
+    allTags.value = Array.from(tags).sort()
   } catch (err) {
     console.error('Ошибка загрузки задач:', err)
     columns.value = { todo: [], in_progress: [], completed: [] }
@@ -200,6 +231,37 @@ async function clearColumn(status: 'todo' | 'in_progress' | 'completed') {
     await updateTaskStatus(t.id, 'completed')
   }
   loadTasks()
+}
+
+const editingTask = ref<ApiTask | null>(null)
+const showEditModal = ref(false)
+
+function openEditModal(task: ApiTask) {
+  editingTask.value = task
+  showEditModal.value = true
+}
+
+function closeEditModal() {
+  editingTask.value = null
+  showEditModal.value = false
+}
+
+function onTaskSaved() {
+  closeEditModal()
+  loadTasks()
+}
+
+async function deleteTask(task: ApiTask) {
+  if (!confirm(`Удалить задачу «${task.title}»?`)) return
+  if (!hasApi()) return
+  try {
+    await api.delete(`/api/tasks/${task.id}`)
+    const status = task.status as 'todo' | 'in_progress' | 'completed'
+    columns.value[status] = columns.value[status].filter((t) => t.id !== task.id)
+  } catch (err) {
+    console.error('Ошибка удаления:', err)
+    loadTasks()
+  }
 }
 
 onMounted(() => loadTasks())

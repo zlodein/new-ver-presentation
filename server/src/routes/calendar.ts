@@ -81,16 +81,33 @@ export async function calendarRoutes(app: FastifyInstance) {
           }
         }
 
-        return reply.send(
-          list.map((e: { id: number; title: string; start: Date; end: Date | null; all_day: string; color: string; notes: string | null }) => ({
-            id: String(e.id),
-            title: e.title,
-            start: toIsoDate(e.start),
-            end: e.end ? toIsoDate(e.end) : undefined,
-            allDay: e.all_day === 'true',
-            extendedProps: { calendar: e.color, notes: e.notes ?? '' },
-          }))
-        )
+        const calendarEvents = list.map((e: { id: number; title: string; start: Date; end: Date | null; all_day: string; color: string; notes: string | null }) => ({
+          id: String(e.id),
+          title: e.title,
+          start: toIsoDate(e.start),
+          end: e.end ? toIsoDate(e.end) : undefined,
+          allDay: e.all_day === 'true',
+          extendedProps: { calendar: e.color, notes: e.notes ?? '', type: 'event' },
+        }))
+        const tasksWithDue = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.tasks.findMany({
+          where: and(eq(mysqlSchema.tasks.user_id, userIdNum), isNotNull(mysqlSchema.tasks.due_date)),
+        })
+        const taskEvents = (tasksWithDue as { id: number; title: string; due_date: Date | null }[])
+          .filter((t) => t.due_date)
+          .map((t) => {
+            const d = new Date(t.due_date!)
+            const start = d.toISOString().slice(0, 10) + 'T00:00:00.000Z'
+            const end = d.toISOString().slice(0, 10) + 'T23:59:59.999Z'
+            return {
+              id: `task-${t.id}`,
+              title: `📋 ${t.title}`,
+              start,
+              end,
+              allDay: true,
+              extendedProps: { calendar: 'Primary', notes: '', type: 'task', taskId: String(t.id) },
+            }
+          })
+        return reply.send([...calendarEvents, ...taskEvents])
       }
 
       // PostgreSQL
@@ -128,14 +145,33 @@ export async function calendarRoutes(app: FastifyInstance) {
         }
       }
 
-      return reply.send(events.map((e) => ({
+      const calendarEvents = events.map((e) => ({
         id: e.id,
         title: e.title,
         start: toIsoDate(e.start),
         end: e.end ? toIsoDate(e.end) : undefined,
         allDay: e.allDay === 'true',
-        extendedProps: { calendar: e.color, notes: (e as { notes?: string | null }).notes ?? '' },
-      })))
+        extendedProps: { calendar: e.color, notes: (e as { notes?: string | null }).notes ?? '', type: 'event' },
+      }))
+      const tasksWithDue = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.tasks.findMany({
+        where: and(eq(pgSchema.tasks.userId, userId), isNotNull(pgSchema.tasks.dueDate)),
+      })
+      const taskEvents = tasksWithDue
+        .filter((t) => t.dueDate)
+        .map((t) => {
+          const d = new Date(t.dueDate!)
+          const start = d.toISOString().slice(0, 10) + 'T00:00:00.000Z'
+          const end = d.toISOString().slice(0, 10) + 'T23:59:59.999Z'
+          return {
+            id: `task-${t.id}`,
+            title: `📋 ${t.title}`,
+            start,
+            end,
+            allDay: true,
+            extendedProps: { calendar: 'Primary', notes: '', type: 'task', taskId: t.id },
+          }
+        })
+      return reply.send([...calendarEvents, ...taskEvents])
     } catch (err) {
       console.error('[calendar] Ошибка получения событий:', err)
       return reply.status(500).send({ error: 'Ошибка сервера' })
