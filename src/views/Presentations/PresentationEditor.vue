@@ -298,58 +298,85 @@
               <p class="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Отображение в редакторе / просмотре / PDF</p>
               <div class="space-y-2">
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Шрифт</label>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шрифт</label>
                   <div class="relative z-20 bg-transparent">
                     <select
                       v-model="presentationSettings.fontFamily"
-                      class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                      class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                     >
-                      <option v-for="f in FONT_OPTIONS" :key="f.value" :value="f.value">{{ f.label }}</option>
+                      <option v-for="f in FONT_OPTIONS" :key="f.value" :value="f.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ f.label }}</option>
                     </select>
-                    <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
-                      <svg class="stroke-current h-4 w-4" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </span>
                   </div>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Скругление изображений и карт</label>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Скругление изображений и карт</label>
                   <div class="relative z-20 bg-transparent">
                     <select
                       v-model="presentationSettings.imageBorderRadius"
-                      class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                      class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                     >
-                      <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
+                      <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ r.label }}</option>
                     </select>
-                    <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
-                      <svg class="stroke-current h-4 w-4" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </span>
                   </div>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Название презентации</label>
-                  <select v-model="presentationSettings.fontSizePresentationTitle" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                  </select>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Название презентации</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select v-model="presentationSettings.fontSizePresentationTitle" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                      <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
-                  <select v-model="presentationSettings.fontSizeHeading" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                  </select>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select v-model="presentationSettings.fontSizeHeading" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                      <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Текст</label>
-                  <select v-model="presentationSettings.fontSizeText" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                  </select>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Текст</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select v-model="presentationSettings.fontSizeText" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                      <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Цены</label>
-                  <select v-model="presentationSettings.fontSizePrice" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                  </select>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цены</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select v-model="presentationSettings.fontSizePrice" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                      <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
                 </div>
               </div>
+              <button
+                type="button"
+                class="mt-3 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                @click="resetPresentationSettings"
+              >
+                Сбросить к исходным
+              </button>
             </div>
           </div>
           <div class="relative">
@@ -485,7 +512,7 @@
                                   </span>
                                 </div>
                               </div>
-                              <div class="min-w-0 flex-1 sm:min-w-[180px] booklet-main__price">
+                              <div class="booklet-main__price w-[120px] min-w-[100px] shrink-0">
                                 <input
                                   :value="coverPriceValue(slide)"
                                   type="text"
@@ -1190,48 +1217,85 @@
                 <p class="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Отображение в редакторе / просмотре / PDF</p>
                 <div class="space-y-2">
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Шрифт</label>
-                    <select
-                      v-model="presentationSettings.fontFamily"
-                      class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    >
-                      <option v-for="f in FONT_OPTIONS" :key="f.value" :value="f.value">{{ f.label }}</option>
-                    </select>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шрифт</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select
+                        v-model="presentationSettings.fontFamily"
+                        class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                      >
+                        <option v-for="f in FONT_OPTIONS" :key="f.value" :value="f.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ f.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
                   </div>
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Скругление изображений</label>
-                    <select
-                      v-model="presentationSettings.imageBorderRadius"
-                      class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    >
-                      <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
-                    </select>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Скругление изображений</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select
+                        v-model="presentationSettings.imageBorderRadius"
+                        class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                      >
+                        <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ r.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
                   </div>
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Название презентации</label>
-                    <select v-model="presentationSettings.fontSizePresentationTitle" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                    </select>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Название презентации</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizePresentationTitle" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
                   </div>
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
-                    <select v-model="presentationSettings.fontSizeHeading" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                    </select>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizeHeading" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
                   </div>
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Текст</label>
-                    <select v-model="presentationSettings.fontSizeText" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                    </select>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Текст</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizeText" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
                   </div>
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Цены</label>
-                    <select v-model="presentationSettings.fontSizePrice" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-                    </select>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цены</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizePrice" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  class="mt-3 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  @click="resetPresentationSettings"
+                >
+                  Сбросить к исходным
+                </button>
               </div>
             </div>
             <div class="relative flex-1">
@@ -1537,14 +1601,20 @@ const FONT_SIZE_TEXT_OPTIONS = [
   { value: '20px', label: '20 px' },
   { value: '22px', label: '22 px' },
 ]
-const presentationSettings = ref({
+const DEFAULT_PRESENTATION_SETTINGS = {
   fontFamily: 'system-ui',
   imageBorderRadius: '8px',
   fontSizePresentationTitle: '38px',
   fontSizeHeading: '38px',
   fontSizeText: '22px',
   fontSizePrice: '18px',
-})
+}
+const presentationSettings = ref({ ...DEFAULT_PRESENTATION_SETTINGS })
+
+function resetPresentationSettings() {
+  presentationSettings.value = { ...DEFAULT_PRESENTATION_SETTINGS }
+}
+
 const presentationStyle = computed(() => ({
   fontFamily: presentationSettings.value.fontFamily,
   '--booklet-image-radius': presentationSettings.value.imageBorderRadius,
