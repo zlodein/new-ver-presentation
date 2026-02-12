@@ -328,25 +328,25 @@
                 <div>
                   <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Название презентации</label>
                   <select v-model="presentationSettings.fontSizePresentationTitle" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Заголовки слайдов</label>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
                   <select v-model="presentationSettings.fontSizeHeading" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                   </select>
                 </div>
                 <div>
                   <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Текст</label>
                   <select v-model="presentationSettings.fontSizeText" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                   </select>
                 </div>
                 <div>
                   <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Цены</label>
                   <select v-model="presentationSettings.fontSizePrice" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                   </select>
                 </div>
               </div>
@@ -458,7 +458,7 @@
                             />
                             <button
                               type="button"
-                              class="self-start rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                              class="booklet-btn-generate mt-2 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-violet-500/50 dark:from-violet-600 dark:to-purple-700 dark:hover:from-violet-700 dark:hover:to-purple-800"
                               @click="generateCoverShortDescription(slide)"
                             >
                               Сгенерировать описание
@@ -1210,25 +1210,25 @@
                   <div>
                     <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Название презентации</label>
                     <select v-model="presentationSettings.fontSizePresentationTitle" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                      <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                     </select>
                   </div>
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Заголовки слайдов</label>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
                     <select v-model="presentationSettings.fontSizeHeading" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                      <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                     </select>
                   </div>
                   <div>
                     <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Текст</label>
                     <select v-model="presentationSettings.fontSizeText" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                      <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                     </select>
                   </div>
                   <div>
                     <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Цены</label>
                     <select v-model="presentationSettings.fontSizePrice" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
-                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                      <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
                     </select>
                   </div>
                 </div>
@@ -1524,20 +1524,25 @@ const RADIUS_OPTIONS = [
   { value: '16px', label: '16 px' },
   { value: '9999px', label: 'Круглые' },
 ]
-const FONT_SIZE_OPTIONS = [
-  { value: '12px', label: '12 px' },
-  { value: '14px', label: '14 px' },
+const FONT_SIZE_HEADING_OPTIONS = [
+  { value: '28px', label: '28 px' },
+  { value: '38px', label: '38 px' },
+  { value: '44px', label: '44 px' },
+  { value: '52px', label: '52 px' },
+  { value: '60px', label: '60 px' },
+]
+const FONT_SIZE_TEXT_OPTIONS = [
   { value: '16px', label: '16 px' },
   { value: '18px', label: '18 px' },
   { value: '20px', label: '20 px' },
-  { value: '24px', label: '24 px' },
+  { value: '22px', label: '22 px' },
 ]
 const presentationSettings = ref({
   fontFamily: 'system-ui',
   imageBorderRadius: '8px',
-  fontSizePresentationTitle: '16px',
-  fontSizeHeading: '20px',
-  fontSizeText: '16px',
+  fontSizePresentationTitle: '38px',
+  fontSizeHeading: '38px',
+  fontSizeText: '22px',
   fontSizePrice: '18px',
 })
 const presentationStyle = computed(() => ({
@@ -2856,11 +2861,10 @@ async function exportToPDF() {
     min-height: 44px;
   }
   
-  /* Улучшаем поля ввода в слайдах */
+  /* Улучшаем поля ввода в слайдах (размер шрифта — из настроек презентации) */
   .presentation-slider-wrap.booklet-view .booklet-main__content input,
   .presentation-slider-wrap.booklet-view .booklet-info__text textarea,
   .presentation-slider-wrap.booklet-view .booklet-stroen__text textarea {
-    font-size: 16px;
     min-height: 44px;
   }
   
