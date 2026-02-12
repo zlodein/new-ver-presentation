@@ -196,9 +196,12 @@ async function loadTasks() {
       in_progress: list.filter((t) => t.status === 'in_progress'),
       completed: list.filter((t) => t.status === 'completed'),
     }
-    const tags = new Set<string>()
-    list.forEach((t) => { if (t.tag?.trim()) tags.add(t.tag.trim()) })
-    allTags.value = Array.from(tags).sort()
+    const tags: string[] = []
+    list.forEach((t) => {
+      const tag = t.tag?.trim()
+      if (tag && !tags.includes(tag)) tags.push(tag)
+    })
+    allTags.value = tags
   } catch (err) {
     console.error('Ошибка загрузки задач:', err)
     columns.value = { todo: [], in_progress: [], completed: [] }

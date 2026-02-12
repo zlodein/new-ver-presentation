@@ -81,17 +81,32 @@
                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                   {{ t.tag }}
                 </label>
-                <div class="relative">
-                  <input
-                    v-model="formData.tag"
-                    type="text"
-                    :list="`task-tags-${uid}`"
-                    class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                    :placeholder="t.tagPlaceholder"
-                  />
-                  <datalist :id="`task-tags-${uid}`">
-                    <option v-for="tag in existingTags" :key="tag" :value="tag" />
-                  </datalist>
+                <input
+                  v-model="formData.tag"
+                  type="text"
+                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  :placeholder="t.tagPlaceholder"
+                />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  {{ t.recentTags }}
+                </label>
+                <div class="flex flex-wrap gap-2 min-h-[44px] items-center">
+                  <template v-if="recentTags.length > 0">
+                    <button
+                      v-for="tag in recentTags"
+                      :key="tag"
+                      type="button"
+                      @click="formData.tag = tag"
+                      class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                      {{ tag }}
+                    </button>
+                  </template>
+                  <span v-else class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ t.noRecentTags }}
+                  </span>
                 </div>
               </div>
 
@@ -133,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, computed } from 'vue'
 import Modal from './Modal.vue'
 import flatPickr from 'vue-flatpickr-component'
 import { Russian } from 'flatpickr/dist/l10n/ru.js'
@@ -162,8 +177,8 @@ const emit = defineEmits<{
   (e: 'saved'): void
 }>()
 
-const uid = `modal-${Math.random().toString(36).slice(2, 9)}`
 const loading = ref(false)
+const recentTags = computed(() => props.existingTags.slice(0, 5))
 const formData = reactive({
   title: '',
   description: '',
@@ -206,7 +221,9 @@ const t = {
   inProgress: 'В работе',
   completed: 'Выполнено',
   tag: 'Тег',
-  tagPlaceholder: 'Введите или выберите тег',
+  tagPlaceholder: 'Введите тег',
+  recentTags: 'Последние теги',
+  noRecentTags: 'Нет использованных тегов',
   description: 'Описание',
   descriptionPlaceholder: 'Опишите задачу',
   cancel: 'Отмена',
