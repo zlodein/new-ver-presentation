@@ -21,6 +21,7 @@
           <table class="w-full table-auto">
             <thead>
               <tr class="border-b border-gray-200 dark:border-gray-800">
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-400">ID</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-400">Пользователь</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-400">Тема</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-400">Сообщение</th>
@@ -35,6 +36,9 @@
                 :key="item.id"
                 class="transition hover:bg-gray-50 dark:hover:bg-gray-900"
               >
+                <td class="px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                  {{ item.ticketId || '#' + item.id }}
+                </td>
                 <td class="px-4 py-3">
                   <div class="text-sm font-medium text-gray-800 dark:text-white/90">
                     {{ item.userName || item.userEmail || '—' }}
@@ -46,8 +50,13 @@
                     {{ item.userEmail }}
                   </div>
                 </td>
-                <td class="px-4 py-3 text-sm font-medium text-gray-800 dark:text-white/90">
-                  {{ item.subject }}
+                <td class="px-4 py-3">
+                  <router-link
+                    :to="'/dashboard/support/' + item.id"
+                    class="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
+                  >
+                    {{ item.subject }}
+                  </router-link>
                 </td>
                 <td class="max-w-xs px-4 py-3 text-sm text-gray-600 dark:text-gray-400 truncate">
                   {{ item.message || '—' }}
@@ -77,7 +86,7 @@
                 </td>
               </tr>
               <tr v-if="!requests.length">
-                <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                   Нет запросов
                 </td>
               </tr>

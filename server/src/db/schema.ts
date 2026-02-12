@@ -118,6 +118,17 @@ export const supportRequests = pgTable('support_requests', {
   index('support_requests_created_at_idx').on(table.createdAt),
 ])
 
+// Ответы в тикетах поддержки
+export const supportReplies = pgTable('support_replies', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  supportRequestId: uuid('support_request_id').notNull().references(() => supportRequests.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  message: text('message').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('support_replies_request_id_idx').on(table.supportRequestId),
+])
+
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
 export type User = typeof users.$inferSelect
@@ -131,3 +142,5 @@ export type Notification = typeof notifications.$inferSelect
 export type NewNotification = typeof notifications.$inferInsert
 export type SupportRequest = typeof supportRequests.$inferSelect
 export type NewSupportRequest = typeof supportRequests.$inferInsert
+export type SupportReply = typeof supportReplies.$inferSelect
+export type NewSupportReply = typeof supportReplies.$inferInsert

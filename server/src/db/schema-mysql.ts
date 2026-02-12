@@ -139,6 +139,16 @@ export const supportRequests = mysqlTable('support_requests', {
   createdAtIdx: index('support_requests_created_at_idx').on(table.created_at),
 }))
 
+export const supportReplies = mysqlTable('support_replies', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  support_request_id: int('support_request_id', { unsigned: true }).notNull().references(() => supportRequests.id, { onDelete: 'cascade' }),
+  user_id: int('user_id', { unsigned: true }).notNull(),
+  message: longtext('message').notNull(),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  requestIdIdx: index('support_replies_request_id_idx').on(table.support_request_id),
+}))
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
@@ -154,3 +164,5 @@ export type NotificationMySQL = typeof notifications.$inferSelect
 export type NewNotificationMySQL = typeof notifications.$inferInsert
 export type SupportRequestMySQL = typeof supportRequests.$inferSelect
 export type NewSupportRequestMySQL = typeof supportRequests.$inferInsert
+export type SupportReplyMySQL = typeof supportReplies.$inferSelect
+export type NewSupportReplyMySQL = typeof supportReplies.$inferInsert

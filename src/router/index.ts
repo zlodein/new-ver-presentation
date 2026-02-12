@@ -168,6 +168,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/support/:id',
+      name: 'SupportTicket',
+      component: () => import('../views/Support/SupportTicketView.vue'),
+      meta: {
+        title: 'Тикет',
+      },
+    },
+    {
       path: '/dashboard/admin/users',
       name: 'Admin Users',
       component: () => import('../views/Admin/AdminUsers.vue'),
