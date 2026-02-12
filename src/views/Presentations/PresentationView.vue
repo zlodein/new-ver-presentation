@@ -29,12 +29,14 @@
                 <div class="booklet-main__content">
                   <div class="booklet-main__top" v-html="(slide.data?.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ').toString().replace(/\n/g, '<br>')" />
                   <div class="booklet-main__center" v-html="(slide.data?.subtitle || '').toString().replace(/\n/g, '<br>')" />
+                  <div v-if="slide.data?.shortDescription" class="booklet-main__short-desc booklet-main__short-desc--view text-sm text-gray-600 dark:text-gray-400" v-html="String(slide.data.shortDescription).replace(/\n/g, '<br>')" />
                   <div class="booklet-main__bottom">
                     <p class="text-sm font-medium text-gray-600">{{ slide.data?.deal_type || 'Аренда' }}</p>
-                    <p class="text-lg font-semibold text-gray-800">
-                      {{ formatPrice(Number(slide.data?.price_value) || 0) }} {{ currencySymbol(slide.data?.currency) }}
+                    <p class="booklet-main__price text-lg font-semibold text-gray-800">
+                      {{ formatPrice(Number(slide.data?.price_value) || 0) }}
                       <span v-if="slide.data?.deal_type === 'Аренда'" class="text-sm font-normal">/ месяц</span>
                     </p>
+                    <p class="text-sm font-medium text-gray-600">{{ currencySymbol(slide.data?.currency) }}</p>
                     <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
                       <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                     </div>
@@ -215,13 +217,17 @@ const presentation = ref<{
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string } }
 } | null>(null)
 
-/** Стили отображения (шрифт и скругления) из настроек презентации */
+/** Стили отображения (шрифт, скругления, размеры шрифтов) из настроек презентации */
 const presentationStyle = computed<Record<string, string>>(() => {
-  const s = presentation.value?.content?.settings
+  const s = presentation.value?.content?.settings as Record<string, string> | undefined
   if (!s) return {}
   return {
     ...(s.fontFamily ? { fontFamily: s.fontFamily } : {}),
     ...(s.imageBorderRadius != null ? { '--booklet-image-radius': s.imageBorderRadius } : {}),
+    ...(s.fontSizePresentationTitle != null ? { '--booklet-font-size-presentation-title': s.fontSizePresentationTitle } : {}),
+    ...(s.fontSizeHeading != null ? { '--booklet-font-size-heading': s.fontSizeHeading } : {}),
+    ...(s.fontSizeText != null ? { '--booklet-font-size-text': s.fontSizeText } : {}),
+    ...(s.fontSizePrice != null ? { '--booklet-font-size-price': s.fontSizePrice } : {}),
   }
 })
 

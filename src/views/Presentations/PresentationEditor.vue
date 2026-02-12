@@ -325,6 +325,30 @@
                     </span>
                   </div>
                 </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Название презентации</label>
+                  <select v-model="presentationSettings.fontSizePresentationTitle" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Заголовки слайдов</label>
+                  <select v-model="presentationSettings.fontSizeHeading" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Текст</label>
+                  <select v-model="presentationSettings.fontSizeText" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Цены</label>
+                  <select v-model="presentationSettings.fontSizePrice" class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                    <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -405,6 +429,7 @@
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
                         <div class="booklet-main__content">
+                          <!-- 1. ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ -->
                           <div class="booklet-main__top">
                             <input
                               v-model="slide.data.title"
@@ -413,6 +438,7 @@
                               class="w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                             />
                           </div>
+                          <!-- 2. АБСОЛЮТНО НОВЫЙ ТАУНХАУС... -->
                           <div class="booklet-main__center">
                             <input
                               v-model="slide.data.subtitle"
@@ -421,6 +447,24 @@
                               class="w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                             />
                           </div>
+                          <!-- 3. Краткое описание + кнопка сгенерировать -->
+                          <div class="booklet-main__short-desc flex flex-col gap-1">
+                            <textarea
+                              :value="String(slide.data?.shortDescription ?? '')"
+                              rows="3"
+                              placeholder="Краткое описание объекта..."
+                              class="w-full resize-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-200"
+                              @input="(e) => { if (!slide.data) slide.data = {}; (slide.data as Record<string, unknown>).shortDescription = (e.target as HTMLTextAreaElement).value }"
+                            />
+                            <button
+                              type="button"
+                              class="self-start rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                              @click="generateCoverShortDescription(slide)"
+                            >
+                              Сгенерировать описание
+                            </button>
+                          </div>
+                          <!-- 4. Цены, ниже — валюта -->
                           <div class="booklet-main__bottom">
                             <div class="flex flex-wrap items-end gap-4">
                               <div class="min-w-[140px]">
@@ -439,30 +483,31 @@
                                   </span>
                                 </div>
                               </div>
-                              <div class="min-w-0 flex-1 sm:min-w-[180px]">
-                                <div class="flex gap-2">
-                                  <input
-                                    :value="coverPriceValue(slide)"
-                                    type="text"
-                                    :placeholder="coverPricePlaceholder(slide)"
-                                    class="dark:bg-dark-900 h-11 flex-1 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                                    @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
-                                  />
-                                  <div class="relative z-20 bg-transparent shrink-0 w-20">
-                                    <select
-                                      :value="slide.data.currency"
-                                      class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                                      @change="onCoverCurrencyChange(slide, $event)"
-                                    >
-                                      <option v-for="c in CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
-                                    </select>
-                                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
-                                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                      </svg>
-                                    </span>
-                                  </div>
-                                </div>
+                              <div class="min-w-0 flex-1 sm:min-w-[180px] booklet-main__price">
+                                <input
+                                  :value="coverPriceValue(slide)"
+                                  type="text"
+                                  :placeholder="coverPricePlaceholder(slide)"
+                                  class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                  @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
+                                />
+                              </div>
+                            </div>
+                            <div class="mt-2">
+                              <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Валюта</label>
+                              <div class="relative z-20 bg-transparent w-24">
+                                <select
+                                  :value="slide.data.currency"
+                                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                                  @change="onCoverCurrencyChange(slide, $event)"
+                                >
+                                  <option v-for="c in CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
+                                </select>
+                                <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                                  <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                  </svg>
+                                </span>
                               </div>
                             </div>
                             <label class="mt-3 flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
@@ -1162,6 +1207,30 @@
                       <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
                     </select>
                   </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Название презентации</label>
+                    <select v-model="presentationSettings.fontSizePresentationTitle" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Заголовки слайдов</label>
+                    <select v-model="presentationSettings.fontSizeHeading" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Текст</label>
+                    <select v-model="presentationSettings.fontSizeText" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Цены</label>
+                    <select v-model="presentationSettings.fontSizePrice" class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-9 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                      <option v-for="o in FONT_SIZE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1455,13 +1524,29 @@ const RADIUS_OPTIONS = [
   { value: '16px', label: '16 px' },
   { value: '9999px', label: 'Круглые' },
 ]
+const FONT_SIZE_OPTIONS = [
+  { value: '12px', label: '12 px' },
+  { value: '14px', label: '14 px' },
+  { value: '16px', label: '16 px' },
+  { value: '18px', label: '18 px' },
+  { value: '20px', label: '20 px' },
+  { value: '24px', label: '24 px' },
+]
 const presentationSettings = ref({
   fontFamily: 'system-ui',
   imageBorderRadius: '8px',
+  fontSizePresentationTitle: '16px',
+  fontSizeHeading: '20px',
+  fontSizeText: '16px',
+  fontSizePrice: '18px',
 })
 const presentationStyle = computed(() => ({
   fontFamily: presentationSettings.value.fontFamily,
   '--booklet-image-radius': presentationSettings.value.imageBorderRadius,
+  '--booklet-font-size-presentation-title': presentationSettings.value.fontSizePresentationTitle,
+  '--booklet-font-size-heading': presentationSettings.value.fontSizeHeading,
+  '--booklet-font-size-text': presentationSettings.value.fontSizeText,
+  '--booklet-font-size-price': presentationSettings.value.fontSizePrice,
 } as Record<string, string>))
 
 /** Мета презентации: статус, публичная ссылка (только владелец) */
@@ -1600,6 +1685,17 @@ function onCoverCurrencyChange(slide: SlideItem, event: Event) {
   const converted = Math.round(priceInRUB * newRate)
   slide.data.price_value = converted
   slide.data.currency = newCurrency
+}
+
+/** Генерация краткого описания для обложки (заполняет шаблон по данным слайда) */
+function generateCoverShortDescription(slide: SlideItem) {
+  const subtitle = String(slide.data?.subtitle || '').trim()
+  const title = String(slide.data?.title || '').trim()
+  const dealType = slide.data?.deal_type === 'Продажа' ? 'продаже' : 'аренде'
+  const base = subtitle || title || 'Объект недвижимости'
+  const generated = `Эксклюзивное предложение: ${base}. Уникальный объект на ${dealType}. Подробности в презентации.`
+  if (!slide.data) slide.data = {}
+  slide.data.shortDescription = (slide.data.shortDescription ? String(slide.data.shortDescription).trim() + '\n\n' : '') + generated
 }
 
 /** EXCHANGE_RATES: сколько единиц валюты за 1 RUB (1 RUB = 0.011 USD и т.д.) */
@@ -2425,11 +2521,15 @@ onMounted(async () => {
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
       if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
-      const contentWithSettings = data?.content as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | undefined
+      const contentWithSettings = data?.content as { slides?: unknown[]; settings?: Record<string, string> } | undefined
       if (contentWithSettings?.settings && typeof contentWithSettings.settings === 'object') {
         const s = contentWithSettings.settings
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+        if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
+        if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading
+        if (s.fontSizeText != null) presentationSettings.value.fontSizeText = s.fontSizeText
+        if (s.fontSizePrice != null) presentationSettings.value.fontSizePrice = s.fontSizePrice
       }
     } catch (err) {
       if (editorMounted) {
@@ -2476,9 +2576,13 @@ function loadFromLocalStorage() {
         }))
       }
       if (saved.settings && typeof saved.settings === 'object') {
-        const s = saved.settings as { fontFamily?: string; imageBorderRadius?: string }
+        const s = saved.settings as Record<string, string>
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+        if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
+        if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading
+        if (s.fontSizeText != null) presentationSettings.value.fontSizeText = s.fontSizeText
+        if (s.fontSizePrice != null) presentationSettings.value.fontSizePrice = s.fontSizePrice
       }
     }
   } catch {

@@ -78,6 +78,13 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const visibleSlides = slides.filter((s) => !s.hidden)
   const fontFamilyRaw = (data.content?.settings?.fontFamily || '').trim()
   const fontFamily = fontFamilyRaw && fontFamilyRaw !== 'system-ui' ? fontFamilyRaw : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+  const settings = (data.content?.settings || {}) as Record<string, string>
+  const fontSizeVars = [
+    settings.fontSizePresentationTitle != null ? `--booklet-font-size-presentation-title: ${settings.fontSizePresentationTitle}` : '',
+    settings.fontSizeHeading != null ? `--booklet-font-size-heading: ${settings.fontSizeHeading}` : '',
+    settings.fontSizeText != null ? `--booklet-font-size-text: ${settings.fontSizeText}` : '',
+    settings.fontSizePrice != null ? `--booklet-font-size-price: ${settings.fontSizePrice}` : '',
+  ].filter(Boolean).join('; ')
 
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {
@@ -86,6 +93,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const coverImage = String(dataObj.coverImageUrl || dataObj.background_image || data.coverImage || '')
         const title = String(dataObj.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ')
         const subtitle = String(dataObj.subtitle || '')
+        const shortDescription = String(dataObj.shortDescription || '')
         const dealType = String(dataObj.deal_type || 'Аренда')
         const price = Number(dataObj.price_value || 0)
         const currency = String(dataObj.currency || 'RUB')
@@ -124,12 +132,14 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   <div class="booklet-main__content">
                     <div class="booklet-main__top">${title.replace(/\n/g, '<br>')}</div>
                     <div class="booklet-main__center">${subtitle.replace(/\n/g, '<br>')}</div>
+                    ${shortDescription ? `<div class="booklet-main__short-desc booklet-main__short-desc--view">${shortDescription.replace(/\n/g, '<br>')}</div>` : ''}
                     <div class="booklet-main__bottom">
                       <p class="text-sm font-medium text-gray-600">${dealType}</p>
-                      <p class="text-lg font-semibold text-gray-800">
-                        ${formatPrice(Number(price))} ${symbol}
+                      <p class="booklet-main__price text-lg font-semibold text-gray-800">
+                        ${formatPrice(Number(price))}
                         ${dealType === 'Аренда' ? '<span class="text-sm font-normal">/ месяц</span>' : ''}
                       </p>
+                      <p class="text-sm font-medium text-gray-600">${symbol}</p>
                       ${convertedLines.length ? `<div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">${convertedLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('')}</div>` : ''}
                     </div>
                   </div>
@@ -410,21 +420,23 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-container { width: 100%; margin: 0; background: white; }
     .booklet-page { page-break-after: always; position: relative; width: 100vw; height: 100vh; min-height: 100vh; max-height: 100vh; background-color: #eeeeee; padding: 1rem; overflow: hidden; }
     .booklet-page:last-child { page-break-after: auto; }
-    .presentation-slider-wrap.booklet-view { --theme-main-color: #2c7f8d; }
+    .presentation-slider-wrap.booklet-view { --theme-main-color: #2c7f8d;${fontSizeVars ? ` ${fontSizeVars}` : ''} }
     .presentation-slider-wrap.booklet-view .booklet-page__inner { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; padding: 1rem; box-sizing: border-box; overflow: hidden; background: #fff; }
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-main__wrap { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; }
     .presentation-slider-wrap.booklet-view .booklet-main__img { position: relative; flex: 0 0 55%; min-width: 200px; min-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #C4C4C4; box-sizing: border-box; padding: 40px 0 40px 40px; }
     .presentation-slider-wrap.booklet-view .booklet-main__img img, .presentation-slider-wrap.booklet-view .booklet-img__img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img, .presentation-slider-wrap.booklet-view .booklet-grid__img img, .presentation-slider-wrap.booklet-view .booklet-char__img img, .presentation-slider-wrap.booklet-view .booklet-layout__img img, .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img, .presentation-slider-wrap.booklet-view .booklet-map__grid-img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: cover; object-position: center; display: block; }
     .presentation-slider-wrap.booklet-view .booklet-main__content { flex: 1 1 45%; min-width: 200px; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 40px 25px; }
-    .presentation-slider-wrap.booklet-view .booklet-main__top, .presentation-slider-wrap.booklet-view .booklet-main__center { flex: 0 0 auto; font-size: 1rem; line-height: 1.3; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
-    .presentation-slider-wrap.booklet-view .booklet-main__center { font-size: 1.25rem; margin-top: 0.25rem; }
+    .presentation-slider-wrap.booklet-view .booklet-main__top, .presentation-slider-wrap.booklet-view .booklet-main__center { flex: 0 0 auto; font-size: var(--booklet-font-size-presentation-title, 16px); line-height: 1.3; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
+    .presentation-slider-wrap.booklet-view .booklet-main__center { font-size: var(--booklet-font-size-text, 16px); margin-top: 0.25rem; }
+    .presentation-slider-wrap.booklet-view .booklet-main__short-desc { font-size: var(--booklet-font-size-text, 16px); }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom { flex: 0 0 auto; margin-top: auto; }
+    .presentation-slider-wrap.booklet-view .booklet-main__price { font-size: var(--booklet-font-size-price, 18px) !important; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom .mt-2 { margin-top: 0.5rem; }
     .presentation-slider-wrap.booklet-view .booklet-info__wrap, .presentation-slider-wrap.booklet-view .booklet-stroen__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; height: 100%; min-height: 320px; }
-    .presentation-slider-wrap.booklet-view .booklet-info__title, .presentation-slider-wrap.booklet-view .booklet-stroen__title, .presentation-slider-wrap.booklet-view .booklet-char__title, .presentation-slider-wrap.booklet-view .booklet-layout__title, .presentation-slider-wrap.booklet-view .booklet-galery__title, .presentation-slider-wrap.booklet-view .booklet-contacts__title { margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
-    .presentation-slider-wrap.booklet-view .booklet-map__title { margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; grid-column: 1 / -1; }
-    .presentation-slider-wrap.booklet-view .booklet-info__text, .presentation-slider-wrap.booklet-view .booklet-stroen__text { flex: 1; min-height: 60px; overflow: auto; font-size: 0.9375rem; line-height: 1.5; color: #444; }
+    .presentation-slider-wrap.booklet-view .booklet-info__title, .presentation-slider-wrap.booklet-view .booklet-stroen__title, .presentation-slider-wrap.booklet-view .booklet-char__title, .presentation-slider-wrap.booklet-view .booklet-layout__title, .presentation-slider-wrap.booklet-view .booklet-galery__title, .presentation-slider-wrap.booklet-view .booklet-contacts__title { margin: 0 0 1rem 0; font-size: var(--booklet-font-size-heading, 20px); font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
+    .presentation-slider-wrap.booklet-view .booklet-map__title { margin: 0 0 1rem 0; font-size: var(--booklet-font-size-heading, 20px); font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; grid-column: 1 / -1; }
+    .presentation-slider-wrap.booklet-view .booklet-info__text, .presentation-slider-wrap.booklet-view .booklet-stroen__text { flex: 1; min-height: 60px; overflow: auto; font-size: var(--booklet-font-size-text, 16px); line-height: 1.5; color: #444; }
     .presentation-slider-wrap.booklet-view .booklet-info__grid, .presentation-slider-wrap.booklet-view .booklet-stroen__grid { display: grid; gap: 12px; min-height: 0; flex: 1; }
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="1x1"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="1x1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="2x1"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="2x1"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
@@ -447,8 +459,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-map__left { display: flex; flex-direction: column; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info { flex: none; font-size: 0.9375rem; line-height: 1.5; color: #444; overflow: auto; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info p { margin: 0 0 0.35rem 0; font-size: 0.9375rem; line-height: 1.5; color: #1a1a1a; font-weight: 600; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info { flex: none; font-size: var(--booklet-font-size-text, 16px); line-height: 1.5; color: #444; overflow: auto; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info p { margin: 0 0 0.35rem 0; font-size: var(--booklet-font-size-text, 16px); line-height: 1.5; color: #1a1a1a; font-weight: 600; }
     .presentation-slider-wrap.booklet-view .booklet-map__info p.text-gray-500 { color: #6b7280; font-weight: 600; margin-top: 0.5rem; }
     .presentation-slider-wrap.booklet-view .booklet-map__info ul { margin: 0.25rem 0 0 0; padding-left: 1.25rem; font-size: 0.875rem; line-height: 1.5; color: #4b5563; }
     .presentation-slider-wrap.booklet-view .booklet-map__info li { margin-bottom: 0.125rem; }
