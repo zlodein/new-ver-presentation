@@ -192,10 +192,10 @@ export async function chatRoutes(app: FastifyInstance) {
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
       const allUsers = await pgDb.query.users.findMany({
         columns: { id: true, firstName: true, lastName: true },
-      })
-      const others = (allUsers as { id: string }[]).filter((u) => u.id !== userId)
+      }) as { id: string; firstName: string | null; lastName: string | null }[]
+      const others = allUsers.filter((u) => u.id !== userId)
       return reply.send(
-        others.map((u: { id: string; firstName: string | null; lastName: string | null }) => ({
+        others.map((u) => ({
           id: u.id,
           userId: u.id,
           name: [u.firstName, u.lastName].filter(Boolean).join(' ') || 'Пользователь',
@@ -213,14 +213,11 @@ export async function chatRoutes(app: FastifyInstance) {
   })
 
   /** GET /api/chat/messages?with=userId — сообщения с пользователем */
-  app.get(
-    '/api/chat/messages',
-    { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Querystring: { with?: string } }>, reply: FastifyReply) => {
-      const userId = getUserId(req)
-      const withUserId = req.query?.with
-      if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-      if (!withUserId) return reply.status(400).send({ error: 'Укажите параметр with (id пользователя)' })
+  app.get('/api/chat/messages', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = getUserId(req)
+    const withUserId = (req.query as { with?: string })?.with
+    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+    if (!withUserId) return reply.status(400).send({ error: 'Укажите параметр with (id пользователя)' })
 
       if (useFileStore) {
         const messages = fileStoreChat
