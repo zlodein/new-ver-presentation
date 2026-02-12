@@ -962,45 +962,62 @@
                     </div>
                   </div>
 
-                  <!-- 9. Контакты: 50% слева аватар/лого + список контактов, 50% справа изображение -->
+                  <!-- 9. Контакты: заголовок «Контакты», блок аватар+имя/о себе, мессенджеры, телефон, email -->
                   <div
                     v-else-if="slide.type === 'contacts'"
                     class="booklet-content booklet-contacts"
                   >
                     <div class="booklet-contacts__wrap">
-                      <div class="booklet-contacts__left">
+                      <div class="booklet-contacts__left flex flex-col gap-4">
                         <input
                           v-model="slide.data.heading"
                           type="text"
-                          placeholder="КОНТАКТЫ"
-                          class="booklet-contacts__title mb-2 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
+                          placeholder="Контакты"
+                          class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
                         />
-                        <div class="booklet-contacts__avatar-wrap">
-                          <div class="booklet-contacts__avatar relative">
-                            <label class="booklet-upload-btn cursor-pointer">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                class="hidden"
-                                @change="onContactsAvatarUpload(slide, $event)"
-                              />
-                            </label>
-                            <img v-if="slide.data?.avatarUrl || slide.data?.logoUrl" :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="">
+                        <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
+                          <div class="relative shrink-0">
+                            <div class="booklet-contacts__avatar group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-brand-500 text-2xl font-semibold text-white dark:border-gray-800">
+                              <label class="booklet-upload-btn absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                <input type="file" accept="image/*" class="hidden" @change="onContactsAvatarUpload(slide, $event)" />
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                              </label>
+                              <img v-if="slide.data?.avatarUrl || slide.data?.logoUrl" :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
+                            </div>
                           </div>
-                          <span class="text-xs text-gray-500">Аватар риэлтора / лого компании</span>
+                          <div class="order-3 min-w-0 flex-1 xl:order-2">
+                            <input
+                              v-model="slide.data.contactName"
+                              type="text"
+                              placeholder="ФИО или название организации"
+                              class="mb-2 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-base font-semibold text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            />
+                            <input
+                              v-model="slide.data.aboutText"
+                              type="text"
+                              placeholder="О себе"
+                              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-500 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            />
+                          </div>
                         </div>
-                        <div class="booklet-contacts__block booklet-contacts__content">
+                        <div v-if="slide.data?.messengers && Object.keys(slide.data.messengers as object).length" class="flex items-center gap-2">
+                          <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" />
+                        </div>
+                        <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
                           <input
                             v-model="slide.data.phone"
                             type="text"
                             placeholder="Телефон"
-                            class="dark:bg-dark-900 mb-1 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                           <input
                             v-model="slide.data.email"
                             type="text"
                             placeholder="Email"
-                            class="dark:bg-dark-900 mb-1 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                           <input
                             v-model="slide.data.address"
@@ -1008,22 +1025,11 @@
                             placeholder="Адрес"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
-                          <input
-                            v-model="slide.data.aboutText"
-                            type="text"
-                            placeholder="О себе"
-                            class="dark:bg-dark-900 mb-1 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                          />
                         </div>
                       </div>
                       <div class="booklet-contacts__block booklet-contacts__img relative">
                         <label class="booklet-upload-btn cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                            @change="onContactsImageUpload(slide, $event, 0)"
-                          />
+                          <input type="file" accept="image/*" class="hidden" @change="onContactsImageUpload(slide, $event, 0)" />
                         </label>
                         <img v-if="contactImageUrl(slide)" :src="contactImageUrl(slide)!" alt="">
                       </div>
@@ -1460,6 +1466,7 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
+import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase, ApiError } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
@@ -2148,7 +2155,7 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
     case 'layout':
       return { heading: 'Планировка' }
     case 'contacts':
-      return { heading: 'Контакты', phone: '', email: '', address: '', aboutText: '', messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
+      return { heading: 'Контакты', contactName: '', aboutText: '', phone: '', email: '', address: '', messengers: {} as Record<string, string>, messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
     default:
       return {}
   }
@@ -2177,8 +2184,9 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
     data.avatarUrl = ''
   }
 
-  if (prefs.nameOrOrg === 'personal' && fullName) data.heading = fullName
-  else if (prefs.nameOrOrg === 'company' && user.company_name) data.heading = String(user.company_name).trim()
+  data.heading = 'Контакты'
+  if (prefs.nameOrOrg === 'personal' && fullName) data.contactName = fullName
+  else if (prefs.nameOrOrg === 'company' && user.company_name) data.contactName = String(user.company_name).trim()
 
   if (prefs.showAbout && user.position) data.aboutText = String(user.position).trim()
 
@@ -2189,10 +2197,11 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
   if (email) data.email = String(email).trim()
 
   if (prefs.showMessengers && user.messengers && typeof user.messengers === 'object') {
-    const links = Object.entries(user.messengers)
-      .filter(([, v]) => v && String(v).trim())
-      .map(([k, v]) => `${k}: ${String(v).trim()}`)
-    if (links.length) data.messengersText = links.join('\n')
+    const out: Record<string, string> = {}
+    Object.entries(user.messengers).forEach(([k, v]) => {
+      if (v && String(v).trim()) out[k] = String(v).trim()
+    })
+    if (Object.keys(out).length) data.messengers = out
   }
 }
 
