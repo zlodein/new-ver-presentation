@@ -13,9 +13,25 @@ export function useChat() {
   const selectedConversation = computed(() => {
     const sid = toStrId(selectedUserId.value)
     if (!sid) return null
-    const found = conversations.value.find((c) => toStrId(c.userId) === sid || toStrId(c.id) === sid) ?? null
-    console.log('[Chat] selectedConversation', { selectedUserId: selectedUserId.value, sid, found: !!found, conversationsCount: conversations.value.length })
-    return found
+    const found = conversations.value.find((c) => toStrId(c.userId) === sid || toStrId(c.id) === sid)
+    if (!found) {
+      console.log('[Chat] selectedConversation', { sid, found: false, conversationsCount: conversations.value.length })
+      return null
+    }
+    // Всегда возвращаем объект с гарантированными строковыми полями (защита от undefined)
+    const valid = {
+      ...found,
+      id: toStrId(found.id) || toStrId(found.userId) || sid,
+      userId: toStrId(found.userId) || toStrId(found.id) || sid,
+      name: typeof found.name === 'string' ? found.name : (found.name != null ? String(found.name) : 'Пользователь'),
+      role: typeof found.role === 'string' ? found.role : '',
+      lastMessage: typeof found.lastMessage === 'string' ? found.lastMessage : '',
+      lastMessageTime: typeof found.lastMessageTime === 'string' ? found.lastMessageTime : '',
+      avatar: found.avatar ?? null,
+      status: found.status ?? 'offline',
+    }
+    console.log('[Chat] selectedConversation', { sid, name: valid.name })
+    return valid
   })
 
   const filteredConversations = computed(() => {
@@ -38,12 +54,13 @@ export function useChat() {
   }
 
   function normalizeConversation(c: ChatConversation): ChatConversation {
-    const id = toStrId(c.userId ?? c.id)
+    const id = toStrId(c.userId ?? c.id) || toStrId(c.id)
+    const name = typeof c.name === 'string' ? c.name : (c.name != null ? String(c.name) : 'Пользователь')
     return {
       ...c,
-      id: id || toStrId(c.id),
+      id: id,
       userId: id,
-      name: typeof c.name === 'string' ? c.name : (c.name != null ? 'Пользователь' : ''),
+      name,
       role: typeof c.role === 'string' ? c.role : '',
       lastMessage: typeof c.lastMessage === 'string' ? c.lastMessage : '',
       lastMessageTime: typeof c.lastMessageTime === 'string' ? c.lastMessageTime : '',
