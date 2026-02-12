@@ -4,11 +4,7 @@ import { db, useFileStore, useMysql } from '../db/index.js'
 import { fileStore } from '../db/file-store.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
-
-function toIsoDate(d: Date | string | null): string | undefined {
-  if (d == null) return undefined
-  return typeof d === 'string' ? d : d.toISOString()
-}
+import { toIsoDate } from '../utils/date.js'
 
 /** Отображаемый ID тикета: для MySQL #123, для PG #A1B2C3D4 (первые 8 символов UUID) */
 function formatTicketId(id: string | number, isPg: boolean): string {

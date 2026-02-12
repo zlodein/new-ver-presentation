@@ -8,9 +8,10 @@ import { fileStore } from '../db/file-store.js'
 import { deletePresentationImagesFolder } from './upload.js'
 import { generatePDF } from '../utils/pdf-generator.js'
 import type { ViewSlideItem } from '../utils/types.js'
+import { toIsoDateRequired } from '../utils/date.js'
 
 function toIsoDate(d: Date | string): string {
-  return typeof d === 'string' ? d : d.toISOString()
+  return toIsoDateRequired(d)
 }
 /** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия или первая последовательность цифр). */
 function parseMysqlId(id: string): number | null {

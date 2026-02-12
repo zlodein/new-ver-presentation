@@ -3,11 +3,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
-
-function toIsoDate(d: Date | string | null): string | undefined {
-  if (d == null) return undefined
-  return typeof d === 'string' ? d : d.toISOString()
-}
+import { toIsoDate } from '../utils/date.js'
 
 function parseMysqlId(id: string): number | null {
   if (id == null || typeof id !== 'string') return null
