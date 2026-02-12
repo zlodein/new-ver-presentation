@@ -62,7 +62,7 @@
                   {{ item.message || '—' }}
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                  {{ formatDate(item.createdAt) }}
+                  {{ formatApiDate(item.createdAt) }}
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap">
                   <span
@@ -103,22 +103,13 @@ import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { api } from '@/api/client'
+import { formatApiDate } from '@/composables/useApiDate'
 
 const currentPageTitle = ref('Запросы')
 
 const requests = ref([])
 const loading = ref(true)
 const error = ref('')
-
-function formatDate(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
 
 async function loadRequests() {
   loading.value = true

@@ -63,7 +63,7 @@
                   {{ item.message || '—' }}
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                  {{ formatDate(item.createdAt) }}
+                  {{ formatApiDate(item.createdAt) }}
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap">
                   <span
@@ -161,6 +161,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import SupportOverview from '@/components/support/SupportOverview.vue'
 import PlusIcon from '@/icons/PlusIcon.vue'
 import { api, hasApi, getToken } from '@/api/client'
+import { formatApiDate } from '@/composables/useApiDate'
 
 const currentPageTitle = ref('Поддержка')
 
@@ -174,16 +175,6 @@ const createError = ref('')
 
 const pendingCount = computed(() => requests.value.filter((r) => r.status === 'pending').length)
 const solvedCount = computed(() => requests.value.filter((r) => r.status === 'solved').length)
-
-function formatDate(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
 
 async function loadRequests() {
   if (!hasApi() || !getToken()) {

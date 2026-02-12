@@ -61,7 +61,7 @@
                 </span>
               </div>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Обновлено {{ formatDate(presentation.updatedAt) }}
+                Обновлено {{ formatApiDate(presentation.updatedAt) }}
               </p>
             </div>
           </router-link>
@@ -172,6 +172,7 @@ import PlusIcon from '@/icons/PlusIcon.vue'
 import Modal from '@/components/profile/Modal.vue'
 import { api, hasApi, getToken } from '@/api/client'
 import type { PresentationListItem } from '@/api/client'
+import { formatApiDate } from '@/composables/useApiDate'
 
 const router = useRouter()
 const currentPageTitle = ref('Презентации')
@@ -304,15 +305,6 @@ interface Presentation {
 const presentations = ref<Presentation[]>([])
 const loading = ref(false)
 const error = ref('')
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
 
 /** Оставляем только id презентации: при формате "1:1" (id:user_id) берём часть до двоеточия. */
 function normalizePresentationId(id: string | number | undefined): string {

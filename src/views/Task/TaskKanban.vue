@@ -81,6 +81,7 @@ import TaskCard from './kanban/TaskCard.vue'
 import ColumnMenu from './kanban/ColumnMenu.vue'
 import TaskFormModal from './TaskFormModal.vue'
 import { api, hasApi } from '@/api/client'
+import { formatApiDate } from '@/composables/useApiDate'
 
 const allTags = ref<string[]>([])
 
@@ -175,15 +176,15 @@ function mapTaskForCard(task: ApiTask) {
 
 function formatDueDate(iso: string): string {
   const d = new Date(iso)
+  const tDate = d.getUTCDate()
+  const tMonth = d.getUTCMonth()
+  const tYear = d.getUTCFullYear()
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  if (tYear === today.getFullYear() && tMonth === today.getMonth() && tDate === today.getDate()) return 'Сегодня'
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
-  const taskDay = new Date(d)
-  taskDay.setHours(0, 0, 0, 0)
-  if (taskDay.getTime() === today.getTime()) return 'Сегодня'
-  if (taskDay.getTime() === tomorrow.getTime()) return 'Завтра'
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+  if (tYear === tomorrow.getFullYear() && tMonth === tomorrow.getMonth() && tDate === tomorrow.getDate()) return 'Завтра'
+  return formatApiDate(iso)
 }
 
 async function loadTasks() {

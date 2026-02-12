@@ -235,10 +235,10 @@
                       <p class="text-gray-700 text-theme-sm dark:text-gray-400">{{ user.email }}</p>
                     </td>
                     <td class="px-4 py-3 border border-gray-100 dark:border-gray-800">
-                      <p class="text-gray-700 text-theme-sm dark:text-gray-400">{{ formatDate(user.created_at) }}</p>
+                      <p class="text-gray-700 text-theme-sm dark:text-gray-400">{{ formatApiDate(user.created_at) }}</p>
                     </td>
                     <td class="px-4 py-3 border border-gray-100 dark:border-gray-800">
-                      <p class="text-gray-700 text-theme-sm dark:text-gray-400">{{ formatDateTime(user.last_login_at) }}</p>
+                      <p class="text-gray-700 text-theme-sm dark:text-gray-400">{{ formatApiDateTime(user.last_login_at) }}</p>
                     </td>
                     <td class="px-4 py-3 border border-gray-100 dark:border-gray-800">
                       <span
@@ -382,6 +382,7 @@ import ComponentCard from '@/components/common/ComponentCard.vue'
 import AdminUserDetailModal from './AdminUserDetailModal.vue'
 import { api, getApiBase, setToken, ApiError } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
+import { formatApiDate, formatApiDateTime } from '@/composables/useApiDate'
 
 interface AdminUser {
   id: string
@@ -437,36 +438,6 @@ function getAvatarUrl(userImg: string | null) {
   return base ? `${base.replace(/\/$/, '')}${userImg.startsWith('/') ? '' : '/'}${userImg}` : userImg
 }
 
-function formatDate(val: string | null | undefined): string {
-  if (!val) return '—'
-  try {
-    const d = new Date(val)
-    if (isNaN(d.getTime())) return '—'
-    const day = String(d.getDate()).padStart(2, '0')
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const year = d.getFullYear()
-    return `${day}.${month}.${year}`
-  } catch {
-    return '—'
-  }
-}
-
-function formatDateTime(val: string | null | undefined): string {
-  if (!val) return '—'
-  try {
-    const d = new Date(val)
-    if (isNaN(d.getTime())) return '—'
-    const day = String(d.getDate()).padStart(2, '0')
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const year = d.getFullYear()
-    const h = String(d.getHours()).padStart(2, '0')
-    const m = String(d.getMinutes()).padStart(2, '0')
-    return `${day}.${month}.${year} в ${h}:${m}`
-  } catch {
-    return '—'
-  }
-}
-
 function userToExcelRow(u: AdminUser): Record<string, string> {
   const messengers = u.messengers ? (typeof u.messengers === 'object' ? u.messengers : {}) : {}
   const messengersStr = Object.entries(messengers)
@@ -485,8 +456,8 @@ function userToExcelRow(u: AdminUser): Record<string, string> {
     'Рабочий телефон': u.work_phone || '',
     'Сайт компании': u.work_website || '',
     'Мессенджеры': messengersStr,
-    'Дата регистрации': formatDate(u.created_at),
-    'Последняя авторизация': formatDateTime(u.last_login_at),
+    'Дата регистрации': formatApiDate(u.created_at),
+    'Последняя авторизация': formatApiDateTime(u.last_login_at),
     'Статус': u.is_active ? 'Активен' : 'Не активен',
     'Презентаций': String(u.presentations_count ?? 0),
   }

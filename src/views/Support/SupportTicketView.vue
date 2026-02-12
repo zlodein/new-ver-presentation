@@ -23,7 +23,7 @@
                     {{ ticket.ticketId }} — {{ ticket.subject }}
                   </h3>
                   <p class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ formatDateTime(ticket.createdAt) }}
+                    {{ formatApiDateTime(ticket.createdAt) }}
                   </p>
                 </div>
                 <router-link
@@ -52,7 +52,7 @@
                     :name="ticket.userName || ticket.userEmail || 'Пользователь'"
                     :email="ticket.userEmail || ''"
                     :avatar="''"
-                    :time="formatDateTime(ticket.createdAt)"
+                    :time="formatApiDateTime(ticket.createdAt)"
                     :content="ticket.message || '—'"
                   />
                   <MessageItem
@@ -61,7 +61,7 @@
                     :name="r.userName || r.userEmail || 'Пользователь'"
                     :email="r.userEmail || ''"
                     :avatar="''"
-                    :time="formatDateTime(r.createdAt)"
+                    :time="formatApiDateTime(r.createdAt)"
                     :content="r.message"
                   />
                 </div>
@@ -130,7 +130,7 @@
                 </li>
                 <li class="grid grid-cols-2 gap-5 py-2.5">
                   <span class="text-sm text-gray-500 dark:text-gray-400">Создан</span>
-                  <span class="text-sm text-gray-700 dark:text-gray-400">{{ formatDateTime(ticket.createdAt) }}</span>
+                  <span class="text-sm text-gray-700 dark:text-gray-400">{{ formatApiDateTime(ticket.createdAt) }}</span>
                 </li>
                 <li class="grid grid-cols-2 gap-5 py-2.5">
                   <span class="text-sm text-gray-500 dark:text-gray-400">Статус</span>
@@ -161,6 +161,7 @@ import MessageItem from '@/components/support/MessageItem.vue'
 import StatusRadio from '@/components/support/StatusRadio.vue'
 import { api } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
+import { formatApiDateTime } from '@/composables/useApiDate'
 
 const route = useRoute()
 const { currentUser } = useAuth()
@@ -180,18 +181,6 @@ const pageTitle = computed(() => {
   if (!ticket.value) return 'Тикет'
   return `${ticket.value.ticketId} — ${ticket.value.subject}`
 })
-
-function formatDateTime(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleString('ru-RU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 async function loadTicket() {
   const id = route.params.id
