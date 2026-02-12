@@ -168,3 +168,25 @@ export interface PresentationFull {
   content: { slides: unknown[] }
   updatedAt: string
 }
+
+// Чат
+export interface ChatConversation {
+  id: string
+  userId: string
+  name: string
+  role: string
+  avatar: string | null
+  status: 'online' | 'offline' | 'away'
+  lastMessage: string
+  lastMessageTime: string
+}
+
+export interface ChatMessageItem {
+  id: string
+  fromUserId: string
+  toUserId: string
+  message: string
+  attachmentUrl?: string
+  createdAt: string
+  isOwn: boolean
+}

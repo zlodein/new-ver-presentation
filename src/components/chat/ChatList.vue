@@ -11,7 +11,7 @@
     >
       <div>
         <h3 class="font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl">
-          Chat
+          Чат
         </h3>
       </div>
       <div class="flex items-center gap-1">
@@ -37,116 +37,39 @@
       </div>
     </div>
     <div class="flex flex-col max-h-full px-4 overflow-auto sm:px-5">
-      <div class="max-h-full space-y-1 overflow-auto custom-scrollbar">
-        <chat-list-item v-for="chat in chatList" :key="chat.id" :chat="chat" />
+      <div v-if="loading" class="flex items-center justify-center py-8 text-gray-500">
+        Загрузка...
+      </div>
+      <div v-else-if="conversations.length === 0" class="py-8 text-sm text-center text-gray-500">
+        Нет диалогов. Начните переписку с пользователя из списка.
+      </div>
+      <div v-else class="max-h-full space-y-1 overflow-auto custom-scrollbar">
+        <chat-list-item
+          v-for="chat in conversations"
+          :key="chat.userId || chat.id"
+          :chat="chat"
+          :selected="selectedUserId === (chat.userId || chat.id)"
+          @click="$emit('select', chat.userId || chat.id)"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-
+import type { ChatConversation } from '@/api/client'
 import ChatListItem from './ChatListItem.vue'
-
-interface Chat {
-  id: number
-  name: string
-  role: string
-  avatar: string
-  status: 'online' | 'offline' | 'away'
-  lastMessage: string
-  lastMessageTime: string
-}
-
-const chatList = ref<Chat[]>([
-  {
-    id: 1,
-    name: 'Kaiya George',
-    role: 'Project Manager',
-    avatar: '/images/user/user-18.jpg',
-    status: 'online',
-    lastMessage: 'Hello!',
-    lastMessageTime: '15 mins',
-  },
-  {
-    id: 2,
-    name: 'Lindsey Curtis',
-    role: 'Designer',
-    avatar: '/images/user/user-17.jpg',
-    status: 'online',
-    lastMessage: 'How are you?',
-    lastMessageTime: '30 mins',
-  },
-  {
-    id: 3,
-    name: 'Kaiya George',
-    role: 'Project Manager',
-    avatar: '/images/user/user-19.jpg',
-    status: 'online',
-    lastMessage: 'Hello!',
-    lastMessageTime: '15 mins',
-  },
-  {
-    id: 4,
-    name: 'Lindsey Curtis',
-    role: 'Designer',
-    avatar: '/images/user/user-34.jpg',
-    status: 'online',
-    lastMessage: 'How are you?',
-    lastMessageTime: '30 mins',
-  },
-  {
-    id: 5,
-    name: 'Lindsey Curtis',
-    role: 'Designer',
-    avatar: '/images/user/user-35.jpg',
-    status: 'online',
-    lastMessage: 'How are you?',
-    lastMessageTime: '30 mins',
-  },
-  {
-    id: 6,
-    name: 'Lindsey Curtis',
-    role: 'Designer',
-    avatar: '/images/user/user-36.jpg',
-    status: 'online',
-    lastMessage: 'How are you?',
-    lastMessageTime: '30 mins',
-  },
-  {
-    id: 7,
-    name: 'Lindsey Curtis',
-    role: 'Designer',
-    avatar: '/images/user/user-37.jpg',
-    status: 'online',
-    lastMessage: 'How are you?',
-    lastMessageTime: '30 mins',
-  },
-  {
-    id: 8,
-    name: 'Lindsey Curtis',
-    role: 'Designer',
-    avatar: '/images/user/user-17.jpg',
-    status: 'online',
-    lastMessage: 'How are you?',
-    lastMessageTime: '30 mins',
-  },
-  {
-    id: 9,
-    name: 'Lindsey Curtis',
-    role: 'Designer',
-    avatar: '/images/user/user-18.jpg',
-    status: 'online',
-    lastMessage: 'How are you?',
-    lastMessageTime: '30 mins',
-  },
-  // Add more chat items here
-])
 
 defineProps<{
   isOpen: boolean
+  conversations: ChatConversation[]
+  loading: boolean
+  selectedUserId: string | null
 }>()
 
-defineEmits(['toggle'])
+defineEmits<{
+  toggle: []
+  select: [userId: string]
+  load: []
+}>()
 </script>

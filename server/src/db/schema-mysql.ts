@@ -149,6 +149,18 @@ export const supportReplies = mysqlTable('support_replies', {
   requestIdIdx: index('support_replies_request_id_idx').on(table.support_request_id),
 }))
 
+export const chatMessages = mysqlTable('chat_messages', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  from_user_id: int('from_user_id', { unsigned: true }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  to_user_id: int('to_user_id', { unsigned: true }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  message: longtext('message').notNull(),
+  attachment_url: varchar('attachment_url', { length: 512 }),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  fromToIdx: index('chat_messages_from_to_idx').on(table.from_user_id, table.to_user_id),
+  createdAtIdx: index('chat_messages_created_at_idx').on(table.created_at),
+}))
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
@@ -166,3 +178,5 @@ export type SupportRequestMySQL = typeof supportRequests.$inferSelect
 export type NewSupportRequestMySQL = typeof supportRequests.$inferInsert
 export type SupportReplyMySQL = typeof supportReplies.$inferSelect
 export type NewSupportReplyMySQL = typeof supportReplies.$inferInsert
+export type ChatMessageMySQL = typeof chatMessages.$inferSelect
+export type NewChatMessageMySQL = typeof chatMessages.$inferInsert
