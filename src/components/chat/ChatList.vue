@@ -82,7 +82,7 @@ defineProps<{
 
 function onSelectChat(chat: ChatConversation) {
   const id = toStrId(chat.userId ?? chat.id)
-  console.log('[ChatList] onSelectChat', { chat, id })
+  console.log('[ChatList] onSelectChat', { userId: chat.userId, id, name: chat.name })
   if (id) emit('select', id)
 }
 </script>

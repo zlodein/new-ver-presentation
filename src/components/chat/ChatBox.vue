@@ -159,9 +159,10 @@ const props = defineProps<{
   sending: boolean
 }>()
 
-// Логи при смене выбранного диалога и загрузки
+// Логи при смене выбранного диалога и загрузки (для отладки)
 watch(() => props.selectedConversation, (c) => {
-  console.log('[ChatBox] selectedConversation', c ? { id: c.userId, name: c.name } : null)
+  if (c) console.log('[ChatBox] selectedConversation', c.userId, c.name)
+  else console.log('[ChatBox] selectedConversation', null)
 }, { immediate: true })
 watch(() => props.loadingMessages, (v) => {
   console.log('[ChatBox] loadingMessages', v)

@@ -156,7 +156,7 @@ export function useChat() {
 
   function setSelectedUser(userId: string | number | null) {
     const sid = userId != null ? toStrId(userId) : null
-    console.log('[Chat] setSelectedUser', { userId, sid })
+    console.log('[Chat] setSelectedUser', { raw: userId, normalizedId: sid })
     selectedUserId.value = sid
   }
 
