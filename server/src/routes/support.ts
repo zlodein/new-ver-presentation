@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { eq, and, desc, asc } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import { fileStore } from '../db/file-store.js'
+import { deleteSupportTicketFolder } from './upload.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { toIsoDate } from '../utils/date.js'
@@ -219,19 +220,19 @@ export async function supportRoutes(app: FastifyInstance) {
             orderBy: [asc(mysqlSchema.supportReplies.created_at)],
           })
           const replyUserIds = [...new Set(replies.map((r: { user_id: number }) => r.user_id))]
-          const replyUsersMap = new Map<number, { email?: string; name?: string }>()
+          const replyUsersMap = new Map<number, { email?: string; name?: string; user_img?: string | null }>()
           for (const uid of replyUserIds) {
             const u = await mysqlDb.query.users.findFirst({
               where: eq(mysqlSchema.users.id, uid),
-              columns: { email: true, name: true, last_name: true },
+              columns: { email: true, name: true, last_name: true, user_img: true },
             })
-            if (u) replyUsersMap.set(uid, { email: u.email, name: [u.name, (u as { last_name?: string }).last_name].filter(Boolean).join(' ') })
+            if (u) replyUsersMap.set(uid, { email: u.email, name: [u.name, (u as { last_name?: string }).last_name].filter(Boolean).join(' '), user_img: (u as { user_img?: string | null }).user_img })
           }
           const ticketUser = await mysqlDb.query.users.findFirst({
             where: eq(mysqlSchema.users.id, t.user_id),
-            columns: { email: true, name: true, last_name: true },
+            columns: { email: true, name: true, last_name: true, user_img: true },
           })
-          const ticketUserData = ticketUser ? { userEmail: ticketUser.email, userName: [ticketUser.name, (ticketUser as { last_name?: string }).last_name].filter(Boolean).join(' ') } : {}
+          const ticketUserData = ticketUser ? { userEmail: ticketUser.email, userName: [ticketUser.name, (ticketUser as { last_name?: string }).last_name].filter(Boolean).join(' '), userAvatar: (ticketUser as { user_img?: string | null }).user_img } : {}
 
           return reply.send({
             ticket: {
@@ -254,6 +255,7 @@ export async function supportRoutes(app: FastifyInstance) {
                 createdAt: toIsoDate(r.created_at),
                 userEmail: u?.email,
                 userName: u?.name,
+                userAvatar: u?.user_img,
               }
             }),
           })
@@ -321,8 +323,8 @@ export async function supportRoutes(app: FastifyInstance) {
       const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
       const idRaw = req.params.id.trim()
-      const message = (req.body?.message ?? '').trim()
-      if (!message) return reply.status(400).send({ error: 'Текст ответа не указан' })
+      const message = String(req.body?.message ?? '').trim()
+      if (!message) return reply.status(400).send({ error: 'Текст ответа или вложение обязательны' })
 
       if (useFileStore) return reply.status(501).send({ error: 'Недоступно без БД' })
 
@@ -359,8 +361,42 @@ export async function supportRoutes(app: FastifyInstance) {
           const last = replies[replies.length - 1] as { id: number; user_id: number; message: string; created_at: Date }
           const author = await mysqlDb.query.users.findFirst({
             where: eq(mysqlSchema.users.id, last.user_id),
-            columns: { email: true, name: true, last_name: true },
+            columns: { email: true, name: true, last_name: true, user_img: true },
           })
+          const ticketRow = await mysqlDb.query.supportRequests.findFirst({
+            where: eq(mysqlSchema.supportRequests.id, reqId),
+            columns: { subject: true, user_id: true },
+          })
+          if (ticketRow && !useFileStore) {
+            const ownerId = (ticketRow as { user_id: number }).user_id
+            const subject = (ticketRow as { subject: string }).subject || 'Тикет'
+            if (isAdmin && ownerId !== userIdNum) {
+              await mysqlDb.insert(mysqlSchema.notifications).values({
+                user_id: ownerId,
+                title: 'Новый ответ в поддержке',
+                message: `Новый ответ в тикете «${subject}»`,
+                type: 'support',
+                source_id: String(reqId),
+              })
+            } else if (!isAdmin) {
+              const admins = await mysqlDb.query.users.findMany({
+                where: eq(mysqlSchema.users.role_id, 2),
+                columns: { id: true },
+              })
+              for (const adm of admins) {
+                const aid = (adm as { id: number }).id
+                if (aid !== userIdNum) {
+                  await mysqlDb.insert(mysqlSchema.notifications).values({
+                    user_id: aid,
+                    title: 'Новый ответ в поддержке',
+                    message: `Новый ответ в тикете «${subject}»`,
+                    type: 'support',
+                    source_id: String(reqId),
+                  })
+                }
+              }
+            }
+          }
           return reply.status(201).send({
             id: String(last.id),
             userId: String(last.user_id),
@@ -368,6 +404,7 @@ export async function supportRoutes(app: FastifyInstance) {
             createdAt: toIsoDate(last.created_at),
             userEmail: author?.email,
             userName: author ? [author.name, (author as { last_name?: string }).last_name].filter(Boolean).join(' ') : undefined,
+            userAvatar: (author as { user_img?: string | null })?.user_img,
           })
         }
 
@@ -396,6 +433,15 @@ export async function supportRoutes(app: FastifyInstance) {
           where: eq(pgSchema.users.id, created.userId),
           columns: { email: true, firstName: true, lastName: true },
         })
+        if (ticket && ticketUserId !== userId) {
+          await pgDb.insert(pgSchema.notifications).values({
+            userId: ticketUserId,
+            title: 'Новый ответ в поддержке',
+            message: `Новый ответ в тикете «${ticket.subject || 'Поддержка'}»`,
+            type: 'support',
+            sourceId: idRaw,
+          })
+        }
         return reply.status(201).send({
           id: created.id,
           userId: created.userId,
@@ -428,10 +474,12 @@ export async function supportRoutes(app: FastifyInstance) {
           if (reqId === null) return reply.status(404).send({ error: 'Запрос не найден' })
           const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
           await mysqlDb.update(mysqlSchema.supportRequests).set({ status, updated_at: new Date() }).where(eq(mysqlSchema.supportRequests.id, reqId))
+          if (status === 'solved') deleteSupportTicketFolder(String(reqId)).catch(() => {})
           return reply.send({ success: true, status })
         }
         const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
         await pgDb.update(pgSchema.supportRequests).set({ status, updatedAt: new Date() }).where(eq(pgSchema.supportRequests.id, idRaw))
+        if (status === 'solved') deleteSupportTicketFolder(idRaw).catch(() => {})
         return reply.send({ success: true, status })
       } catch (err) {
         console.error('[support] Ошибка обновления статуса:', err)
@@ -463,6 +511,7 @@ export async function supportRoutes(app: FastifyInstance) {
           await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
             .delete(mysqlSchema.supportRequests)
             .where(and(eq(mysqlSchema.supportRequests.id, reqId), eq(mysqlSchema.supportRequests.user_id, userIdNum)))
+          deleteSupportTicketFolder(String(reqId)).catch(() => {})
           return reply.status(204).send()
         }
         const [deleted] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
@@ -470,6 +519,7 @@ export async function supportRoutes(app: FastifyInstance) {
           .where(and(eq(pgSchema.supportRequests.id, idRaw), eq(pgSchema.supportRequests.userId, userId)))
           .returning({ id: pgSchema.supportRequests.id })
         if (!deleted) return reply.status(404).send({ error: 'Запрос не найден' })
+        deleteSupportTicketFolder(idRaw).catch(() => {})
         return reply.status(204).send()
       } catch (err) {
         console.error('[support] Ошибка удаления запроса:', err)
@@ -561,11 +611,13 @@ export async function supportRoutes(app: FastifyInstance) {
           await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
             .delete(mysqlSchema.supportRequests)
             .where(eq(mysqlSchema.supportRequests.id, reqId))
+          deleteSupportTicketFolder(String(reqId)).catch(() => {})
           return reply.status(204).send()
         }
         await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
           .delete(pgSchema.supportRequests)
           .where(eq(pgSchema.supportRequests.id, idRaw))
+        deleteSupportTicketFolder(idRaw).catch(() => {})
         return reply.status(204).send()
       } catch (err) {
         console.error('[support] Ошибка удаления запроса (админ):', err)

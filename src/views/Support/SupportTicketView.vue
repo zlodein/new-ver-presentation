@@ -45,13 +45,14 @@
               <!-- Messages -->
               <div class="relative px-6 py-7">
                 <div
-                  class="custom-scrollbar max-h-[calc(58vh-162px)] space-y-7 divide-y divide-gray-200 overflow-y-auto pr-2 dark:divide-gray-800"
+                  ref="messagesContainerRef"
+                  class="custom-scrollbar max-h-[calc(58vh-200px)] space-y-7 divide-y divide-gray-200 overflow-y-auto pr-2 dark:divide-gray-800"
                 >
                   <!-- Первое сообщение — исходный запрос -->
                   <MessageItem
                     :name="ticket.userName || ticket.userEmail || 'Пользователь'"
                     :email="ticket.userEmail || ''"
-                    :avatar="''"
+                    :avatar="getAvatarUrl(ticket.userAvatar)"
                     :time="formatApiDateTime(ticket.createdAt)"
                     :content="ticket.message || '—'"
                   />
@@ -60,7 +61,7 @@
                     :key="r.id"
                     :name="r.userName || r.userEmail || 'Пользователь'"
                     :email="r.userEmail || ''"
-                    :avatar="''"
+                    :avatar="getAvatarUrl(r.userAvatar)"
                     :time="formatApiDateTime(r.createdAt)"
                     :content="r.message"
                   />
@@ -69,29 +70,58 @@
                 <!-- Reply Input -->
                 <div class="pt-5">
                   <div
-                    class="mx-auto max-h-[162px] w-full rounded-2xl border border-gray-200 shadow-xs dark:border-gray-800 dark:bg-gray-800"
+                    class="mx-auto w-full rounded-2xl border border-gray-200 shadow-xs dark:border-gray-800 dark:bg-gray-800"
                   >
                     <textarea
+                      ref="replyTextareaRef"
                       v-model="replyText"
-                      placeholder="Введите ваш ответ..."
+                      placeholder="Введите ваш ответ... (Ctrl+V — вставить скриншот)"
                       rows="4"
                       class="w-full resize-none border-none bg-transparent p-5 font-normal text-gray-800 outline-none placeholder:text-gray-400 focus:ring-0 dark:text-white"
+                      @paste="onPaste"
                     />
+                    <div v-if="attachments.length" class="flex flex-wrap gap-2 px-5 pb-2">
+                      <div
+                        v-for="(att, i) in attachments"
+                        :key="i"
+                        class="relative flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-gray-700 dark:bg-gray-800"
+                      >
+                        <img v-if="att.type?.startsWith('image/')" :src="att.preview" class="h-12 w-12 rounded object-cover" alt="" />
+                        <span v-else class="text-xs text-gray-500">{{ att.name || 'Файл' }}</span>
+                        <button
+                          type="button"
+                          @click="removeAttachment(i)"
+                          class="text-gray-400 hover:text-red-500"
+                          title="Удалить"
+                        >
+                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                     <div v-if="replyError" class="px-5 pb-2 text-sm text-red-500">
                       {{ replyError }}
                     </div>
-                    <div class="flex items-center justify-between p-3">
-                      <span class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ replies.length + 1 }} сообщ.</span>
-                      <button
-                        type="button"
-                        :disabled="replyLoading || !replyText.trim()"
-                        @click="sendReply"
-                        class="bg-brand-500 hover:bg-brand-600 shadow-theme-xs inline-flex h-9 items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
-                      >
-                        {{ replyLoading ? 'Отправка...' : 'Ответить' }}
-                      </button>
+                    <div class="flex items-center p-3">
+                      <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                        <input type="file" multiple class="hidden" accept="image/*,.pdf,.doc,.docx" @change="onFileSelect" />
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        Прикрепить файл
+                      </label>
                     </div>
+                  </div>
+                  <div class="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      :disabled="replyLoading || (!replyText.trim() && !attachments.length)"
+                      @click="sendReply"
+                      class="bg-brand-500 hover:bg-brand-600 shadow-theme-xs inline-flex h-9 items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      {{ replyLoading ? 'Отправка...' : 'Ответить' }}
+                    </button>
                   </div>
                 </div>
 
@@ -153,13 +183,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MessageItem from '@/components/support/MessageItem.vue'
 import StatusRadio from '@/components/support/StatusRadio.vue'
-import { api } from '@/api/client'
+import { api, getApiBase } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
 import { formatApiDateTime } from '@/composables/useApiDate'
 
@@ -174,6 +204,9 @@ const replyText = ref('')
 const replyLoading = ref(false)
 const replyError = ref('')
 const status = ref('pending')
+const attachments = ref([])
+const messagesContainerRef = ref(null)
+const replyTextareaRef = ref(null)
 
 const isAdmin = computed(() => currentUser.value?.role_id === 2)
 
@@ -181,6 +214,21 @@ const pageTitle = computed(() => {
   if (!ticket.value) return 'Тикет'
   return `${ticket.value.ticketId} — ${ticket.value.subject}`
 })
+
+function getAvatarUrl(userImg) {
+  if (!userImg || !String(userImg).trim()) return ''
+  const img = String(userImg)
+  if (img.startsWith('http')) return img
+  const base = getApiBase()
+  return base ? `${base.replace(/\/$/, '')}${img.startsWith('/') ? '' : '/'}${img}` : img
+}
+
+function scrollToLastMessage() {
+  nextTick(() => {
+    const el = messagesContainerRef.value
+    if (el) el.scrollTop = el.scrollHeight
+  })
+}
 
 async function loadTicket() {
   const id = route.params.id
@@ -196,6 +244,7 @@ async function loadTicket() {
     ticket.value = data.ticket
     replies.value = data.replies || []
     status.value = data.ticket?.status || 'pending'
+    scrollToLastMessage()
   } catch (e) {
     error.value = e?.message || 'Не удалось загрузить тикет'
     ticket.value = null
@@ -205,15 +254,92 @@ async function loadTicket() {
   }
 }
 
+function onPaste(e) {
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (item.type?.startsWith('image/')) {
+      e.preventDefault()
+      const file = item.getAsFile()
+      if (file) addAttachmentFromFile(file)
+      return
+    }
+  }
+}
+
+function onFileSelect(e) {
+  const files = e.target.files
+  if (!files?.length) return
+  for (let i = 0; i < files.length; i++) addAttachmentFromFile(files[i])
+  e.target.value = ''
+}
+
+function addAttachmentFromFile(file) {
+  const MAX_SIZE = 5 * 1024 * 1024
+  if (file.size > MAX_SIZE) {
+    replyError.value = 'Файл не должен превышать 5 МБ'
+    return
+  }
+  const att = {
+    file,
+    name: file.name,
+    type: file.type,
+    preview: file.type?.startsWith('image/') ? URL.createObjectURL(file) : null,
+  }
+  attachments.value = [...attachments.value, att]
+}
+
+function removeAttachment(index) {
+  const att = attachments.value[index]
+  if (att?.preview) URL.revokeObjectURL(att.preview)
+  attachments.value = attachments.value.filter((_, i) => i !== index)
+}
+
+async function uploadAttachments() {
+  if (!attachments.value.length || !ticket.value) return []
+  const base = getApiBase() || ''
+  const token = localStorage.getItem('auth_token')
+  const uploaded = []
+  for (const att of attachments.value) {
+    const fd = new FormData()
+    fd.append('file', att.file)
+    const url = `${base}/api/upload/support-file?ticketId=${encodeURIComponent(ticket.value.id)}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    })
+    if (!res.ok) throw new Error('Ошибка загрузки файла')
+    const data = await res.json()
+    if (data?.url) uploaded.push({ url: data.url, name: att.name })
+  }
+  return uploaded
+}
+
 async function sendReply() {
   const text = replyText.value.trim()
-  if (!text || !ticket.value) return
+  if ((!text && !attachments.value.length) || !ticket.value) return
   replyError.value = ''
   replyLoading.value = true
   try {
-    const newReply = await api.post(`/api/support/${ticket.value.id}/reply`, { message: text })
+    let message = text || ''
+    if (attachments.value.length) {
+      const urls = await uploadAttachments()
+      attachments.value.forEach((att) => {
+        if (att.preview) URL.revokeObjectURL(att.preview)
+      })
+      attachments.value = []
+      if (urls.length) {
+        const imgLines = urls.filter((u) => /\.(jpe?g|png|gif|webp)$/i.test(u.url)).map((u) => `![${u.name}](${u.url})`).join('\n')
+        const otherLines = urls.filter((u) => !/\.(jpe?g|png|gif|webp)$/i.test(u.url)).map((u) => `[${u.name}](${u.url})`).join('\n')
+        const parts = [message, imgLines, otherLines].filter(Boolean)
+        message = parts.join('\n\n')
+      }
+    }
+    const newReply = await api.post(`/api/support/${ticket.value.id}/reply`, { message: message || ' ' })
     replies.value = [...replies.value, newReply]
     replyText.value = ''
+    scrollToLastMessage()
   } catch (e) {
     replyError.value = e?.message || 'Не удалось отправить ответ'
   } finally {

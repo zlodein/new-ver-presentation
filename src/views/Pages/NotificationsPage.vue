@@ -78,6 +78,7 @@
                 'bg-success-500': notification.type === 'success',
                 'bg-warning-500': notification.type === 'warning',
                 'bg-error-500': notification.type === 'error',
+                'bg-brand-500': notification.type === 'support',
                 'bg-primary-500': notification.type === 'info',
               }"
               class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-white text-lg font-semibold"
@@ -149,6 +150,10 @@ function navigateFromNotification(notification) {
   }
   if (notification.type === 'presentation' && sourceId) {
     router.push({ path: `/dashboard/presentations/${sourceId}/edit` })
+    return
+  }
+  if (notification.type === 'support' && sourceId) {
+    router.push({ path: `/dashboard/support/${sourceId}` })
     return
   }
 }

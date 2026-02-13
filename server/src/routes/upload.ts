@@ -15,12 +15,26 @@ const AVATARS_DIR = path.join(__dirname, '../../uploads/avatars')
 const COMPANY_LOGO_DIR = path.join(__dirname, '../../uploads/company-logo')
 // Папка для изображений презентаций (храним файлы, в БД только URL)
 const PRESENTATIONS_IMAGES_DIR = path.join(__dirname, '../../uploads/presentations')
+// Папка для вложений тикетов поддержки
+const SUPPORT_UPLOADS_DIR = path.join(__dirname, '../../uploads/support')
 
 /** Удаляет папку с загруженными изображениями презентации (по id презентации). */
 export async function deletePresentationImagesFolder(presentationId: string): Promise<void> {
   if (!presentationId || typeof presentationId !== 'string') return
   const safeId = presentationId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
   const dir = path.join(PRESENTATIONS_IMAGES_DIR, safeId)
+  try {
+    await fs.rm(dir, { recursive: true, force: true })
+  } catch {
+    // Папка может отсутствовать — игнорируем
+  }
+}
+
+/** Удаляет папку с вложениями тикета поддержки (при удалении тикета или при статусе "решён"). */
+export async function deleteSupportTicketFolder(ticketId: string): Promise<void> {
+  if (!ticketId || typeof ticketId !== 'string') return
+  const safeId = String(ticketId).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
+  const dir = path.join(SUPPORT_UPLOADS_DIR, safeId)
   try {
     await fs.rm(dir, { recursive: true, force: true })
   } catch {
@@ -64,6 +78,14 @@ ensureCompanyLogoDir().catch((err) => {
 ensurePresentationsImagesDir().catch((err) => {
   console.error('[upload] Ошибка создания папки для изображений презентаций:', err)
 })
+
+async function ensureSupportUploadsDir() {
+  try {
+    await fs.access(SUPPORT_UPLOADS_DIR)
+  } catch {
+    await fs.mkdir(SUPPORT_UPLOADS_DIR, { recursive: true })
+  }
+}
 
 export async function uploadRoutes(app: FastifyInstance) {
   // Загрузка аватара
@@ -236,6 +258,44 @@ export async function uploadRoutes(app: FastifyInstance) {
         req.log.error(err)
         return reply.status(500).send({
           error: err instanceof Error ? err.message : 'Ошибка загрузки изображения',
+        })
+      }
+    }
+  )
+
+  // Загрузка файла для тикета поддержки
+  app.post(
+    '/api/upload/support-file',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const ticketId = (req.query as { ticketId?: string })?.ticketId?.trim()
+        if (!ticketId) {
+          return reply.status(400).send({ error: 'ticketId обязателен' })
+        }
+        const data = await req.file()
+        if (!data) {
+          return reply.status(400).send({ error: 'Файл не загружен' })
+        }
+        const maxSize = 5 * 1024 * 1024
+        const buffer = await data.toBuffer()
+        if (buffer.length > maxSize) {
+          return reply.status(400).send({ error: 'Размер файла не должен превышать 8MB' })
+        }
+        const safeId = ticketId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
+        const dir = path.join(SUPPORT_UPLOADS_DIR, safeId)
+        await fs.mkdir(dir, { recursive: true })
+        const ext = path.extname(data.filename || '') || '.bin'
+        const safeExt = ext.toLowerCase().replace(/[^a-z0-9.]/g, '')
+        const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}${safeExt || '.bin'}`
+        const filepath = path.join(dir, filename)
+        await fs.writeFile(filepath, buffer)
+        const dbPath = `/uploads/support/${safeId}/${filename}`
+        return reply.send({ success: true, url: dbPath })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({
+          error: err instanceof Error ? err.message : 'Ошибка загрузки файла',
         })
       }
     }
