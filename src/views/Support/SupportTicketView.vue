@@ -65,6 +65,7 @@
                     :time="formatApiDateTime(r.createdAt)"
                     :content="r.message"
                   />
+                  <div ref="messagesEndRef" class="h-0 shrink-0" aria-hidden="true"></div>
                 </div>
 
                 <!-- Reply Input -->
@@ -113,7 +114,18 @@
                       </label>
                     </div>
                   </div>
-                  <div class="mt-3 flex justify-end">
+                  <div
+                    class="mt-3 flex flex-wrap items-center gap-3"
+                    :class="isAdmin ? 'justify-between' : 'justify-end'"
+                  >
+                    <div v-if="isAdmin" class="flex items-center gap-4">
+                      <span class="text-sm text-gray-500 dark:text-gray-400">Статус:</span>
+                      <div class="flex items-center gap-4">
+                        <StatusRadio label="В ожидании" value="pending" v-model="status" @update:modelValue="updateStatus" />
+                        <StatusRadio label="В работе" value="in_progress" v-model="status" @update:modelValue="updateStatus" />
+                        <StatusRadio label="Решён" value="solved" v-model="status" @update:modelValue="updateStatus" />
+                      </div>
+                    </div>
                     <button
                       type="button"
                       :disabled="replyLoading || (!replyText.trim() && !attachments.length)"
@@ -122,15 +134,6 @@
                     >
                       {{ replyLoading ? 'Отправка...' : 'Ответить' }}
                     </button>
-                  </div>
-                </div>
-
-                <!-- Status (для админа) -->
-                <div v-if="isAdmin" class="mt-6 flex items-center gap-4">
-                  <span class="text-gray-500 dark:text-gray-400">Статус:</span>
-                  <div class="flex items-center gap-4">
-                    <StatusRadio label="В ожидании" value="pending" v-model="status" @update:modelValue="updateStatus" />
-                    <StatusRadio label="Решён" value="solved" v-model="status" @update:modelValue="updateStatus" />
                   </div>
                 </div>
               </div>
@@ -165,12 +168,10 @@
                 <li class="grid grid-cols-2 gap-5 py-2.5">
                   <span class="text-sm text-gray-500 dark:text-gray-400">Статус</span>
                   <span
-                    :class="ticket.status === 'solved'
-                      ? 'bg-success-50 dark:bg-success-500/15 text-success-700 dark:text-success-500'
-                      : 'bg-warning-50 dark:bg-warning-500/15 text-warning-600 dark:text-warning-500'"
+                    :class="statusBadgeClass(ticket.status)"
                     class="text-theme-xs rounded-full px-2 py-0.5 font-medium"
                   >
-                    {{ ticket.status === 'solved' ? 'Решён' : 'В ожидании' }}
+                    {{ statusLabel(ticket.status) }}
                   </span>
                 </li>
               </ul>
@@ -206,6 +207,7 @@ const replyError = ref('')
 const status = ref('pending')
 const attachments = ref([])
 const messagesContainerRef = ref(null)
+const messagesEndRef = ref(null)
 const replyTextareaRef = ref(null)
 
 const isAdmin = computed(() => currentUser.value?.role_id === 2)
@@ -214,6 +216,18 @@ const pageTitle = computed(() => {
   if (!ticket.value) return 'Тикет'
   return `${ticket.value.ticketId} — ${ticket.value.subject}`
 })
+
+function statusLabel(s) {
+  if (s === 'solved') return 'Решён'
+  if (s === 'in_progress') return 'В работе'
+  return 'В ожидании'
+}
+
+function statusBadgeClass(s) {
+  if (s === 'solved') return 'bg-success-50 dark:bg-success-500/15 text-success-700 dark:text-success-500'
+  if (s === 'in_progress') return 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-500'
+  return 'bg-warning-50 dark:bg-warning-500/15 text-warning-600 dark:text-warning-500'
+}
 
 function getAvatarUrl(userImg) {
   if (!userImg || !String(userImg).trim()) return ''
@@ -225,8 +239,15 @@ function getAvatarUrl(userImg) {
 
 function scrollToLastMessage() {
   nextTick(() => {
-    const el = messagesContainerRef.value
-    if (el) el.scrollTop = el.scrollHeight
+    requestAnimationFrame(() => {
+      const end = messagesEndRef.value
+      if (end) {
+        end.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      } else {
+        const el = messagesContainerRef.value
+        if (el) el.scrollTop = el.scrollHeight
+      }
+    })
   })
 }
 

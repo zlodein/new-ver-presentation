@@ -464,7 +464,7 @@ export async function supportRoutes(app: FastifyInstance) {
     async (req: FastifyRequest<{ Params: { id: string }; Body: { status?: string } }>, reply: FastifyReply) => {
       const idRaw = req.params.id.trim()
       const status = req.body?.status
-      if (!status || !['pending', 'solved'].includes(status)) return reply.status(400).send({ error: 'Укажите status: pending или solved' })
+      if (!status || !['pending', 'in_progress', 'solved'].includes(status)) return reply.status(400).send({ error: 'Укажите status: pending, in_progress или solved' })
 
       if (useFileStore) return reply.status(501).send({ error: 'Недоступно без БД' })
 

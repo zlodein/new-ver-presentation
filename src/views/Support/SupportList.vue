@@ -69,10 +69,12 @@
                   <span
                     :class="item.status === 'solved'
                       ? 'bg-success-50 dark:bg-success-500/15 text-success-700 dark:text-success-500'
-                      : 'bg-warning-50 dark:bg-warning-500/15 text-warning-600 dark:text-warning-500'"
+                      : item.status === 'in_progress'
+                        ? 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-500'
+                        : 'bg-warning-50 dark:bg-warning-500/15 text-warning-600 dark:text-warning-500'"
                     class="text-theme-xs rounded-full px-2 py-0.5 font-medium"
                   >
-                    {{ item.status === 'solved' ? 'Решён' : 'В ожидании' }}
+                    {{ item.status === 'solved' ? 'Решён' : item.status === 'in_progress' ? 'В работе' : 'В ожидании' }}
                   </span>
                 </td>
                 <td class="px-4 py-3">
