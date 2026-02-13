@@ -7,12 +7,12 @@
         <router-link to="/" class="inline-block mb-8">
           <img
             class="h-10 mx-auto dark:hidden"
-            src="/images/logo/logo.svg"
+            :src="logoUrl('logo.svg')"
             alt="E-Presentation"
           />
           <img
             class="hidden h-10 mx-auto dark:block"
-            src="/images/logo/logo-dark.svg"
+            :src="logoUrl('logo-dark.svg')"
             alt="E-Presentation"
           />
         </router-link>
@@ -39,4 +39,5 @@
 
 <script setup lang="ts">
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
+import { logoUrl } from '@/config/logos'
 </script>

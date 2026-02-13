@@ -234,7 +234,7 @@
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
               <router-link to="/" class="block mb-4">
-                <img width="{231}" height="{48}" src="/images/logo/auth-logo.svg" alt="Logo" />
+                <img width="{231}" height="{48}" :src="logoUrl('auth-logo.svg')" alt="Logo" />
               </router-link>
               <p class="text-center text-gray-400 dark:text-white/60">
                 Бесплатный шаблон админ-панели на Tailwind CSS
@@ -254,6 +254,7 @@ import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import { useAuth } from '@/composables/useAuth'
 import { ApiError, getApiBase, setToken } from '@/api/client'
+import { logoUrl } from '@/config/logos'
 
 const router = useRouter()
 const route = useRoute()

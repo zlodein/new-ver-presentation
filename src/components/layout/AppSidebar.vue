@@ -23,7 +23,7 @@
         <img
           v-if="isExpanded || isHovered || isMobileOpen"
           class="dark:hidden"
-          src="/images/logo/logo.svg"
+          :src="logoUrl('logo.svg')"
           alt="Logo"
           width="150"
           height="40"
@@ -31,14 +31,14 @@
         <img
           v-if="isExpanded || isHovered || isMobileOpen"
           class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
+          :src="logoUrl('logo-dark.svg')"
           alt="Logo"
           width="150"
           height="40"
         />
         <img
           v-else
-          src="/images/logo/logo-icon.svg"
+          :src="logoUrl('logo-icon.svg')"
           alt="Logo"
           width="32"
           height="32"
@@ -241,6 +241,7 @@ import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 import { useAuth } from "@/composables/useAuth";
+import { logoUrl } from "@/config/logos";
 
 const route = useRoute();
 const { currentUser, fetchUser } = useAuth();
