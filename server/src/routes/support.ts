@@ -457,7 +457,7 @@ export async function supportRoutes(app: FastifyInstance) {
     }
   )
 
-  /** PATCH /api/support/:id — обновить статус тикета (только админ) */
+  /** PATCH /api/support/:id — обновить статус тикета (только админ). Body: { status: 'pending' | 'in_progress' | 'solved' } */
   app.patch<{ Params: { id: string }; Body: { status?: string } }>(
     '/api/support/:id',
     { preHandler: [app.authenticate, requireAdmin] },

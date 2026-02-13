@@ -225,7 +225,7 @@ function statusLabel(s) {
 
 function statusBadgeClass(s) {
   if (s === 'solved') return 'bg-success-50 dark:bg-success-500/15 text-success-700 dark:text-success-500'
-  if (s === 'in_progress') return 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-500'
+  if (s === 'in_progress') return 'bg-blue-light-50 text-blue-light-500 dark:bg-blue-light-500/15 dark:text-blue-light-500'
   return 'bg-warning-50 dark:bg-warning-500/15 text-warning-600 dark:text-warning-500'
 }
 

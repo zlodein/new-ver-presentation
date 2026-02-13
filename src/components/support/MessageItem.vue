@@ -19,14 +19,14 @@
     <div class="pb-6 text-sm text-gray-500 dark:text-gray-400">
       <div class="message-content whitespace-pre-wrap" v-html="renderedContent" @click="onContentClick"></div>
     </div>
-    <!-- Lightbox -->
+    <!-- Lightbox: отступ сверху, чтобы не уходить под шапку -->
     <Teleport to="body">
       <div
         v-if="lightboxSrc"
-        class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4"
+        class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 pt-24 pb-6 px-4"
         @click.self="lightboxSrc = null"
       >
-        <img :src="lightboxSrc" alt="" class="max-h-[90vh] max-w-full rounded-lg object-contain" @click.stop />
+        <img :src="lightboxSrc" alt="" class="max-h-full max-w-full rounded-lg object-contain" @click.stop />
       </div>
     </Teleport>
   </article>
