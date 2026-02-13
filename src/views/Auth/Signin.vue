@@ -45,7 +45,8 @@
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
                   <a
                     :href="oauthUrl('yandex')"
-                    class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
+                    class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-white transition-colors rounded-lg px-7 hover:opacity-90"
+                    style="background-color: #F8604A"
                   >
                     <!-- Иконка Яндекса (официальные цвета) -->
                     <svg class="oauth-icon" viewBox="0 0 80 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M58.7858 16.1938H49.4688C32.3877 16.1938 23.4034 24.8453 23.4034 37.6007C23.4034 52.0199 29.6148 58.7757 42.3702 67.4373L52.9073 74.536L22.627 119.78H0L27.1746 79.3054C11.5454 68.1028 2.77292 57.2229 2.77292 38.8208C2.77292 15.7502 18.8558 0 49.3579 0H79.6382V119.669H58.7858V16.1938Z"></path></svg>
@@ -53,7 +54,8 @@
                   </a>
                   <a
                     :href="oauthUrl('vk')"
-                    class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
+                    class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-white transition-colors rounded-lg px-7 hover:opacity-90"
+                    style="background-color: #0073F6"
                   >
                     <!-- Иконка ВКонтакте (логотип VK, синий #07F) -->
                     <svg class="oauth-icon" viewBox="0 0 192 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M104.574 120C38.9751 120 1.55903 74.9549 0 0H32.8595C33.9388 55.015 58.1631 78.3183 77.3511 83.1231V0H108.293V47.4474C127.241 45.4054 147.146 23.7838 153.862 0H184.803C179.647 29.3093 158.06 50.9309 142.71 59.8198C158.06 67.027 182.646 85.8859 192 120H157.94C150.625 97.1772 132.398 79.5195 108.293 77.1171V120H104.574Z"></path></svg>

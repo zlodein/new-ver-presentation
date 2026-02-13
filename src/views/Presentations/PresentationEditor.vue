@@ -130,29 +130,29 @@
               <div
                 :data-slide-index="index"
                 :class="[
-                  'slide-item-mob flex items-center gap-3 rounded-lg border px-3 py-2.5 transition',
+                  'slide-item-mob flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition',
                   activeSlideIndex === index
                     ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
                     : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
                   slide.hidden ? 'opacity-60' : '',
                 ]"
+                @click="goToSlide(index)"
               >
                 <span
                   class="slide-drag-handle flex h-10 w-10 shrink-0 cursor-grab touch-none items-center justify-center rounded text-gray-400 active:cursor-grabbing hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                   title="Перетащить"
+                  @click.stop
                 >
                   <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                   </svg>
                 </span>
-                <button
-                  type="button"
+                <span
                   class="min-w-0 flex-1 truncate text-left text-lg font-medium"
                   :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
-                  @click="goToSlide(index)"
                 >
                   {{ getSlideLabel(slide) }}
-                </button>
+                </span>
                 <div class="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
@@ -209,29 +209,29 @@
                 <div
                   :data-slide-index="index"
                   :class="[
-                    'flex items-center gap-1.5 rounded-lg border px-2 py-1.5 transition shrink-0',
+                    'flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1.5 transition shrink-0',
                     activeSlideIndex === index
                       ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
                       : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
                     slide.hidden ? 'opacity-60' : '',
                   ]"
+                  @click="goToSlide(index)"
                 >
                   <span
                     class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     title="Перетащить"
+                    @click.stop
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                     </svg>
                   </span>
-                  <button
-                    type="button"
+                  <span
                     class="min-w-0 truncate text-sm font-medium transition whitespace-nowrap"
                     :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
-                    @click="goToSlide(index)"
                   >
                     {{ getSlideLabel(slide) }}
-                  </button>
+                  </span>
                   <div class="flex shrink-0 items-center gap-0.5">
                     <button
                       type="button"
@@ -1362,23 +1362,23 @@
                       : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600',
                     slide.hidden ? 'opacity-60' : '',
                   ]"
+                  @click="goToSlide(index)"
                 >
                   <span
                     class="slide-drag-handle flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded text-gray-400 active:cursor-grabbing hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                     title="Перетащить"
+                    @click.stop
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                     </svg>
                   </span>
-                  <button
-                    type="button"
+                  <span
                     class="min-w-0 flex-1 truncate text-left text-sm font-medium"
                     :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
-                    @click="goToSlide(index)"
                   >
                     {{ getSlideLabel(slide) }}
-                  </button>
+                  </span>
                   <div class="flex shrink-0 items-center gap-0.5">
                     <button
                       type="button"
