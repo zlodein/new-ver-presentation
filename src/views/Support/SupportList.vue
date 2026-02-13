@@ -107,7 +107,7 @@
         @click.self="showCreateModal = false"
       >
         <div
-          class="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-800 dark:bg-gray-900"
+          class="w-full max-w-xl rounded-xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-800 dark:bg-gray-900 max-h-[90vh] overflow-y-auto"
           @click.stop
         >
           <h4 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Новый запрос</h4>
@@ -126,24 +126,55 @@
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Сообщение</label>
               <textarea
+                ref="createMessageTextareaRef"
                 v-model="createForm.message"
-                rows="4"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="Опишите ваш вопрос или проблему"
+                rows="5"
+                class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="Опишите ваш вопрос или проблему (Ctrl+V — вставить скриншот)"
+                @paste="onCreatePaste"
               />
             </div>
+            <div v-if="createAttachments.length" class="flex flex-wrap gap-2">
+              <div
+                v-for="(att, i) in createAttachments"
+                :key="i"
+                class="relative flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-gray-700 dark:bg-gray-800"
+              >
+                <img v-if="att.type?.startsWith('image/')" :src="att.preview" class="h-12 w-12 rounded object-cover" alt="" />
+                <span v-else class="text-xs text-gray-500">{{ att.name || 'Файл' }}</span>
+                <button
+                  type="button"
+                  @click="removeCreateAttachment(i)"
+                  class="text-gray-400 hover:text-red-500"
+                  title="Удалить"
+                >
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                <input type="file" multiple class="hidden" accept="image/*,.pdf,.doc,.docx" @change="onCreateFileSelect" />
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                Прикрепить файл
+              </label>
+            </div>
             <div v-if="createError" class="text-sm text-red-500">{{ createError }}</div>
-            <div class="flex justify-end gap-2">
+            <div class="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                @click="showCreateModal = false"
+                @click="closeCreateModal"
                 class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Отмена
               </button>
               <button
                 type="submit"
-                :disabled="createLoading"
+                :disabled="createLoading || !createForm.subject.trim()"
                 class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
               >
                 {{ createLoading ? 'Отправка...' : 'Отправить' }}
@@ -162,7 +193,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import SupportOverview from '@/components/support/SupportOverview.vue'
 import PlusIcon from '@/icons/PlusIcon.vue'
-import { api, hasApi, getToken } from '@/api/client'
+import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { formatApiDate } from '@/composables/useApiDate'
 
 const currentPageTitle = ref('Поддержка')
@@ -172,8 +203,10 @@ const loading = ref(true)
 const error = ref('')
 const showCreateModal = ref(false)
 const createForm = ref({ subject: '', message: '' })
+const createAttachments = ref([])
 const createLoading = ref(false)
 const createError = ref('')
+const createMessageTextareaRef = ref(null)
 
 const pendingCount = computed(() => requests.value.filter((r) => r.status === 'pending').length)
 const solvedCount = computed(() => requests.value.filter((r) => r.status === 'solved').length)
@@ -213,13 +246,103 @@ async function deleteRequest(item) {
   }
 }
 
+function onCreatePaste(e) {
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (item.type?.startsWith('image/')) {
+      e.preventDefault()
+      const file = item.getAsFile()
+      if (file) addCreateAttachment(file)
+      return
+    }
+  }
+}
+
+function onCreateFileSelect(e) {
+  const files = e.target.files
+  if (!files?.length) return
+  for (let i = 0; i < files.length; i++) addCreateAttachment(files[i])
+  e.target.value = ''
+}
+
+function addCreateAttachment(file) {
+  const MAX_SIZE = 5 * 1024 * 1024
+  if (file.size > MAX_SIZE) {
+    createError.value = 'Файл не должен превышать 5 МБ'
+    return
+  }
+  createAttachments.value = [
+    ...createAttachments.value,
+    {
+      file,
+      name: file.name,
+      type: file.type,
+      preview: file.type?.startsWith('image/') ? URL.createObjectURL(file) : null,
+    },
+  ]
+}
+
+function removeCreateAttachment(index) {
+  const att = createAttachments.value[index]
+  if (att?.preview) URL.revokeObjectURL(att.preview)
+  createAttachments.value = createAttachments.value.filter((_, i) => i !== index)
+}
+
+async function uploadCreateAttachments() {
+  if (!createAttachments.value.length) return []
+  const base = getApiBase() || ''
+  const token = getToken()
+  const uploaded = []
+  for (const att of createAttachments.value) {
+    const fd = new FormData()
+    fd.append('file', att.file)
+    const url = `${base}/api/upload/support-file?ticketId=new`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    })
+    if (!res.ok) throw new Error('Ошибка загрузки файла')
+    const data = await res.json()
+    if (data?.url) uploaded.push({ url: data.url, name: att.name })
+  }
+  return uploaded
+}
+
+function closeCreateModal() {
+  showCreateModal.value = false
+  createAttachments.value.forEach((att) => {
+    if (att.preview) URL.revokeObjectURL(att.preview)
+  })
+  createAttachments.value = []
+  createForm.value = { subject: '', message: '' }
+  createError.value = ''
+}
+
 async function submitCreate() {
+  const subject = createForm.value.subject.trim() || 'Без темы'
+  let message = (createForm.value.message || '').trim()
+  if (!subject && !message && !createAttachments.value.length) return
   createError.value = ''
   createLoading.value = true
   try {
+    if (createAttachments.value.length) {
+      const urls = await uploadCreateAttachments()
+      createAttachments.value.forEach((att) => {
+        if (att.preview) URL.revokeObjectURL(att.preview)
+      })
+      createAttachments.value = []
+      if (urls.length) {
+        const imgLines = urls.filter((u) => /\.(jpe?g|png|gif|webp)$/i.test(u.url)).map((u) => `![${u.name}](${u.url})`).join('\n')
+        const otherLines = urls.filter((u) => !/\.(jpe?g|png|gif|webp)$/i.test(u.url)).map((u) => `[${u.name}](${u.url})`).join('\n')
+        const parts = [message, imgLines, otherLines].filter(Boolean)
+        message = parts.join('\n\n')
+      }
+    }
     await api.post('/api/support', {
-      subject: createForm.value.subject.trim() || 'Без темы',
-      message: (createForm.value.message || '').trim(),
+      subject,
+      message: message || ' ',
     })
     showCreateModal.value = false
     createForm.value = { subject: '', message: '' }

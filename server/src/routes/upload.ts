@@ -263,16 +263,17 @@ export async function uploadRoutes(app: FastifyInstance) {
     }
   )
 
-  // Загрузка файла для тикета поддержки
+  // Загрузка файла для тикета поддержки (ticketId опционален: при создании заявки передать "new" или не передавать)
   app.post(
     '/api/upload/support-file',
     { preHandler: [app.authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        const ticketId = (req.query as { ticketId?: string })?.ticketId?.trim()
-        if (!ticketId) {
-          return reply.status(400).send({ error: 'ticketId обязателен' })
-        }
+        const ticketIdRaw = (req.query as { ticketId?: string })?.ticketId?.trim()
+        const payload = req.user as { sub: string }
+        const userId = payload?.sub ?? 'anon'
+        const safeUserId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32)
+        const ticketId = ticketIdRaw && ticketIdRaw !== 'new' ? ticketIdRaw : `_new_${safeUserId}_${Date.now()}`
         const data = await req.file()
         if (!data) {
           return reply.status(400).send({ error: 'Файл не загружен' })
@@ -280,9 +281,9 @@ export async function uploadRoutes(app: FastifyInstance) {
         const maxSize = 5 * 1024 * 1024
         const buffer = await data.toBuffer()
         if (buffer.length > maxSize) {
-          return reply.status(400).send({ error: 'Размер файла не должен превышать 8MB' })
+          return reply.status(400).send({ error: 'Размер файла не должен превышать 5MB' })
         }
-        const safeId = ticketId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
+        const safeId = ticketId.replace(/[^a-zA-Z0-9_.-]/g, '_').slice(0, 96)
         const dir = path.join(SUPPORT_UPLOADS_DIR, safeId)
         await fs.mkdir(dir, { recursive: true })
         const ext = path.extname(data.filename || '') || '.bin'
