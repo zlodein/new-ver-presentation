@@ -34,19 +34,28 @@ function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>
   const match = /\/api\/presentations\/([^/?#]+)/.exec(path)
   return match ? decodeURIComponent(match[1]) : ''
 }
-function normContent(c: unknown): { slides: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } {
+type ContentSettings = {
+  fontFamily?: string
+  imageBorderRadius?: string
+  fontSizePresentationTitle?: string
+  fontSizeHeading?: string
+  fontSizeText?: string
+  fontSizePrice?: string
+}
+
+function normContent(c: unknown): { slides: unknown[]; settings?: ContentSettings } {
   let slides: unknown[] = []
-  let rawObj: { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | undefined
+  let rawObj: { slides?: unknown[]; settings?: Record<string, unknown> } | undefined
   if (typeof c === 'string') {
     try {
-      const parsed = JSON.parse(c) as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | unknown[]
-      rawObj = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? (parsed as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } }) : undefined
+      const parsed = JSON.parse(c) as { slides?: unknown[]; settings?: Record<string, unknown> } | unknown[]
+      rawObj = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? (parsed as { slides?: unknown[]; settings?: Record<string, unknown> }) : undefined
       slides = Array.isArray(parsed) ? parsed : Array.isArray(rawObj?.slides) ? rawObj!.slides : []
     } catch {
       slides = []
     }
   } else {
-    const obj = c as { slides?: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } | undefined
+    const obj = c as { slides?: unknown[]; settings?: Record<string, unknown> } | undefined
     rawObj = obj
     slides = Array.isArray(obj) ? obj : Array.isArray(obj?.slides) ? obj!.slides : []
   }
@@ -66,25 +75,38 @@ function normContent(c: unknown): { slides: unknown[]; settings?: { fontFamily?:
     }
     return { type, data, hidden, id: raw.id }
   })
-  const result: { slides: unknown[]; settings?: { fontFamily?: string; imageBorderRadius?: string } } = { slides: normalized }
+  const result: { slides: unknown[]; settings?: ContentSettings } = { slides: normalized }
   const settings = getContentSettings(rawObj ?? c)
-  if (settings && (settings.fontFamily != null || settings.imageBorderRadius != null)) {
+  if (settings && Object.keys(settings).length > 0) {
     result.settings = settings
   }
   return result
 }
 
-function getContentSettings(c: unknown): { fontFamily?: string; imageBorderRadius?: string } | undefined {
+function getContentSettings(c: unknown): ContentSettings | undefined {
   if (c == null || typeof c !== 'object') return undefined
-  const obj = c as { settings?: { fontFamily?: string; imageBorderRadius?: string } }
+  const obj = c as { settings?: Record<string, unknown> }
   if (!obj.settings || typeof obj.settings !== 'object') return undefined
   const s = obj.settings
-  const hasFont = typeof s.fontFamily === 'string'
-  const hasRadius = s.imageBorderRadius !== undefined && s.imageBorderRadius !== null
-  if (!hasFont && !hasRadius) return undefined
+  const fontFamily = typeof s.fontFamily === 'string' ? s.fontFamily : undefined
+  const imageBorderRadius = s.imageBorderRadius !== undefined && s.imageBorderRadius !== null ? String(s.imageBorderRadius) : undefined
+  const fontSizePresentationTitle = s.fontSizePresentationTitle !== undefined && s.fontSizePresentationTitle !== null ? String(s.fontSizePresentationTitle) : undefined
+  const fontSizeHeading = s.fontSizeHeading !== undefined && s.fontSizeHeading !== null ? String(s.fontSizeHeading) : undefined
+  const fontSizeText = s.fontSizeText !== undefined && s.fontSizeText !== null ? String(s.fontSizeText) : undefined
+  const fontSizePrice = s.fontSizePrice !== undefined && s.fontSizePrice !== null ? String(s.fontSizePrice) : undefined
+  if (
+    fontFamily == null && imageBorderRadius == null &&
+    fontSizePresentationTitle == null && fontSizeHeading == null && fontSizeText == null && fontSizePrice == null
+  ) {
+    return undefined
+  }
   return {
-    ...(hasFont ? { fontFamily: s.fontFamily! } : {}),
-    ...(hasRadius ? { imageBorderRadius: String(s.imageBorderRadius) } : {}),
+    ...(fontFamily != null ? { fontFamily } : {}),
+    ...(imageBorderRadius != null ? { imageBorderRadius } : {}),
+    ...(fontSizePresentationTitle != null ? { fontSizePresentationTitle } : {}),
+    ...(fontSizeHeading != null ? { fontSizeHeading } : {}),
+    ...(fontSizeText != null ? { fontSizeText } : {}),
+    ...(fontSizePrice != null ? { fontSizePrice } : {}),
   }
 }
 
