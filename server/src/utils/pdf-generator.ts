@@ -134,7 +134,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-main__center">${subtitle.replace(/\n/g, '<br>')}</div>
                     ${shortDescription ? `<div class="booklet-main__short-desc booklet-main__short-desc--view">${shortDescription.replace(/\n/g, '<br>')}</div>` : ''}
                     <div class="booklet-main__bottom">
-                      <p class="booklet-main__price booklet-main__price-line font-semibold text-gray-800">
+                      <p class="booklet-main__price booklet-main__price-line font-semibold text-gray-800" style="font-size: ${escapeHtml(settings.fontSizePrice || '18px')} !important;">
                         <span class="booklet-main__deal-type">${escapeHtml(dealType)}</span> ${formatPrice(Number(price))} ${symbol}
                         ${dealType === 'Аренда' ? '<span class="booklet-main__price-suffix font-normal">/ месяц</span>' : ''}
                       </p>

@@ -31,7 +31,10 @@
                   <div class="booklet-main__center" v-html="(slide.data?.subtitle || '').toString().replace(/\n/g, '<br>')" />
                   <div v-if="slide.data?.shortDescription" class="booklet-main__short-desc booklet-main__short-desc--view text-sm text-gray-600 dark:text-gray-400" v-html="String(slide.data.shortDescription).replace(/\n/g, '<br>')" />
                   <div class="booklet-main__bottom">
-                    <p class="booklet-main__price booklet-main__price-line font-semibold text-gray-800">
+                    <p
+                      class="booklet-main__price booklet-main__price-line font-semibold text-gray-800"
+                      :style="priceLineStyle"
+                    >
                       <span class="booklet-main__deal-type">{{ slide.data?.deal_type || 'Аренда' }}</span>
                       {{ formatPrice(Number(slide.data?.price_value) || 0) }}
                       {{ currencySymbol(slide.data?.currency) }}
@@ -236,6 +239,12 @@ const presentationStyle = computed<Record<string, string>>(() => {
     ...(s.fontSizeText != null ? { '--booklet-font-size-text': s.fontSizeText } : {}),
     ...(s.fontSizePrice != null ? { '--booklet-font-size-price': s.fontSizePrice } : {}),
   }
+})
+
+/** Размер шрифта для строки «тип сделки и цена» — задаём инлайном, чтобы гарантированно перекрыть другие стили */
+const priceLineStyle = computed<{ fontSize: string } | undefined>(() => {
+  const size = (presentation.value?.content?.settings as Record<string, string> | undefined)?.fontSizePrice
+  return size ? { fontSize: size } : undefined
 })
 
 /** Нормализуем слайды: сохраняем все поля, добавляем алиасы для совместимости редактора и PHP */
