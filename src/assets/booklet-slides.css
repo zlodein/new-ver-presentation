@@ -237,6 +237,11 @@
   font-size: var(--booklet-font-size-price, 18px) !important;
 }
 
+.presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__deal-type,
+.presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__price-suffix {
+  font-size: var(--booklet-font-size-price, 18px) !important;
+}
+
 /* Обложка: текст в стиле публичного просмотра */
 .presentation-slider-wrap.booklet-view .booklet-main__top input,
 .presentation-slider-wrap.booklet-view .booklet-main__top textarea,
@@ -678,6 +683,17 @@
   overflow: auto;
   overflow-wrap: break-word;
   word-break: break-word;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-map__metro-label {
+  color: #1a1a1a;
+  font-size: var(--booklet-font-size-text, 22px);
+  font-weight: 600;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-map__metro-list {
+  font-size: var(--booklet-font-size-text, 22px);
+  color: #1a1a1a;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-map__grid {

@@ -359,10 +359,10 @@
                   </div>
                 </div>
                 <div>
-                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цены</label>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Тип сделки и цена</label>
                   <div class="relative z-20 bg-transparent">
                     <select v-model="presentationSettings.fontSizePrice" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
-                      <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      <option v-for="o in FONT_SIZE_PRICE_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
                     </select>
                     <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
                       <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -493,7 +493,7 @@
                               Сгенерировать описание
                             </button>
                           </div>
-                          <!-- 4. Цены и валюта в одной строке -->
+                          <!-- 4. Тип сделки и цена и валюта в одной строке -->
                           <div class="booklet-main__bottom">
                             <div class="flex flex-wrap items-end gap-4">
                               <div class="min-w-[140px]">
@@ -919,7 +919,7 @@
                             </button>
                           </div>
                           <button
-                            v-if="charItems(slide).length < 8"
+                            v-if="charItems(slide).length < 13"
                             type="button"
                             class="add-row mt-2 flex w-full items-center justify-center gap-1 rounded border border-dashed border-gray-300 py-1.5 text-xs text-gray-600 hover:border-brand-500 hover:text-brand-600"
                             @click="addCharacteristicItem(slide)"
@@ -1290,10 +1290,10 @@
                     </div>
                   </div>
                   <div>
-                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цены</label>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Тип сделки и цена</label>
                     <div class="relative z-20 bg-transparent">
                       <select v-model="presentationSettings.fontSizePrice" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
-                        <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                        <option v-for="o in FONT_SIZE_PRICE_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
                       </select>
                       <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
                         <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -1614,6 +1614,15 @@ const FONT_SIZE_TEXT_OPTIONS = [
   { value: '18px', label: '18 px' },
   { value: '20px', label: '20 px' },
   { value: '22px', label: '22 px' },
+]
+const FONT_SIZE_PRICE_OPTIONS = [
+  { value: '16px', label: '16 px' },
+  { value: '18px', label: '18 px' },
+  { value: '20px', label: '20 px' },
+  { value: '22px', label: '22 px' },
+  { value: '24px', label: '24 px' },
+  { value: '26px', label: '26 px' },
+  { value: '28px', label: '28 px' },
 ]
 const DEFAULT_PRESENTATION_SETTINGS = {
   fontFamily: 'system-ui',
@@ -2259,7 +2268,7 @@ function onDragMove(_event: { relatedContext: { index: number } }) {
   // Прокрутка отключена — слайды выводятся плиткой
 }
 
-const MAX_CHARACTERISTICS = 12
+const MAX_CHARACTERISTICS = 13
 
 function charItems(slide: SlideItem): Array<{ label: string; value: string }> {
   const items = slide.data?.items

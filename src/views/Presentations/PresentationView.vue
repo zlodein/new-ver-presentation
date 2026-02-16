@@ -31,12 +31,12 @@
                   <div class="booklet-main__center" v-html="(slide.data?.subtitle || '').toString().replace(/\n/g, '<br>')" />
                   <div v-if="slide.data?.shortDescription" class="booklet-main__short-desc booklet-main__short-desc--view text-sm text-gray-600 dark:text-gray-400" v-html="String(slide.data.shortDescription).replace(/\n/g, '<br>')" />
                   <div class="booklet-main__bottom">
-                    <p class="text-sm font-medium text-gray-600">{{ slide.data?.deal_type || 'Аренда' }}</p>
-                    <p class="booklet-main__price text-lg font-semibold text-gray-800">
+                    <p class="booklet-main__price booklet-main__price-line font-semibold text-gray-800">
+                      <span class="booklet-main__deal-type">{{ slide.data?.deal_type || 'Аренда' }}</span>
                       {{ formatPrice(Number(slide.data?.price_value) || 0) }}
-                      <span v-if="slide.data?.deal_type === 'Аренда'" class="text-sm font-normal">/ месяц</span>
+                      {{ currencySymbol(slide.data?.currency) }}
+                      <span v-if="slide.data?.deal_type === 'Аренда'" class="booklet-main__price-suffix font-normal">/ месяц</span>
                     </p>
-                    <p class="text-sm font-medium text-gray-600">{{ currencySymbol(slide.data?.currency) }}</p>
                     <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
                       <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                     </div>
@@ -85,9 +85,9 @@
                   <div class="booklet-map__info">
                     <p v-if="slide.data?.location_name" class="font-medium">{{ slide.data.location_name }}</p>
                     <p class="font-medium">{{ slide.data?.address ?? slide.data?.location_address }}</p>
-                    <div v-if="(slide.data?.metro_stations as Array<unknown>)?.length" class="mt-2 text-sm text-gray-600">
-                      <p class="font-medium text-gray-500">Ближайшие станции метро</p>
-                      <ul class="mt-1 space-y-0.5">
+                    <div v-if="(slide.data?.metro_stations as Array<unknown>)?.length" class="booklet-map__metro-block mt-2">
+                      <p class="booklet-map__metro-label font-medium">Ближайшие станции метро</p>
+                      <ul class="booklet-map__metro-list mt-1 space-y-0.5">
                         <li v-for="(st, idx) in (slide.data?.metro_stations as Array<{ name?: string; walk_time_text?: string }>)" :key="idx">
                           {{ st.name }}{{ st.walk_time_text ? ` — ${st.walk_time_text}` : '' }}
                         </li>

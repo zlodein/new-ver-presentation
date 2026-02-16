@@ -134,12 +134,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-main__center">${subtitle.replace(/\n/g, '<br>')}</div>
                     ${shortDescription ? `<div class="booklet-main__short-desc booklet-main__short-desc--view">${shortDescription.replace(/\n/g, '<br>')}</div>` : ''}
                     <div class="booklet-main__bottom">
-                      <p class="text-sm font-medium text-gray-600">${dealType}</p>
-                      <p class="booklet-main__price text-lg font-semibold text-gray-800">
-                        ${formatPrice(Number(price))}
-                        ${dealType === 'Аренда' ? '<span class="text-sm font-normal">/ месяц</span>' : ''}
+                      <p class="booklet-main__price booklet-main__price-line font-semibold text-gray-800">
+                        <span class="booklet-main__deal-type">${escapeHtml(dealType)}</span> ${formatPrice(Number(price))} ${symbol}
+                        ${dealType === 'Аренда' ? '<span class="booklet-main__price-suffix font-normal">/ месяц</span>' : ''}
                       </p>
-                      <p class="text-sm font-medium text-gray-600">${symbol}</p>
                       ${convertedLines.length ? `<div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">${convertedLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('')}</div>` : ''}
                     </div>
                   </div>
@@ -231,8 +229,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                       ${locationName ? `<p class="font-medium">${escapeHtml(locationName)}</p>` : ''}
                       ${address ? `<p class="font-medium">${escapeHtml(address)}</p>` : ''}
                       ${metroStations.length ? `
-                        <p class="font-medium text-gray-500 mt-2">Ближайшие станции метро</p>
-                        <ul class="mt-1 space-y-0.5 text-sm text-gray-600">
+                        <p class="booklet-map__metro-label font-medium mt-2">Ближайшие станции метро</p>
+                        <ul class="booklet-map__metro-list mt-1 space-y-0.5">
                           ${metroStations.map((st) => `<li>${escapeHtml(st.name || '')}${st.walk_time_text ? ` — ${escapeHtml(st.walk_time_text)}` : ''}</li>`).join('')}
                         </ul>
                       ` : ''}
@@ -433,6 +431,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-main__short-desc { font-size: var(--booklet-font-size-text, 22px); overflow-wrap: break-word; word-break: break-word; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom { flex: 0 0 auto; margin-top: auto; }
     .presentation-slider-wrap.booklet-view .booklet-main__price { font-size: var(--booklet-font-size-price, 18px) !important; }
+    .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__deal-type,
+    .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__price-suffix { font-size: var(--booklet-font-size-price, 18px) !important; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom .mt-2 { margin-top: 0.5rem; }
     .presentation-slider-wrap.booklet-view .booklet-info__wrap, .presentation-slider-wrap.booklet-view .booklet-stroen__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-info__title, .presentation-slider-wrap.booklet-view .booklet-stroen__title, .presentation-slider-wrap.booklet-view .booklet-char__title, .presentation-slider-wrap.booklet-view .booklet-layout__title, .presentation-slider-wrap.booklet-view .booklet-galery__title, .presentation-slider-wrap.booklet-view .booklet-contacts__title { margin: 0 0 1rem 0; font-size: var(--booklet-font-size-heading, 38px); font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
@@ -462,9 +462,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__content { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__info { flex: none; font-size: var(--booklet-font-size-text, 22px); line-height: 1.5; color: #444; overflow: auto; overflow-wrap: break-word; word-break: break-word; }
     .presentation-slider-wrap.booklet-view .booklet-map__info p { margin: 0 0 0.35rem 0; font-size: var(--booklet-font-size-text, 22px); line-height: 1.5; color: #1a1a1a; font-weight: 600; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info p.text-gray-500 { color: #6b7280; font-weight: 600; margin-top: 0.5rem; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info ul { margin: 0.25rem 0 0 0; padding-left: 1.25rem; font-size: 0.875rem; line-height: 1.5; color: #4b5563; }
-    .presentation-slider-wrap.booklet-view .booklet-map__info li { margin-bottom: 0.125rem; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info .booklet-map__metro-label { color: #1a1a1a; font-size: var(--booklet-font-size-text, 22px); font-weight: 600; margin-top: 0.5rem; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info .booklet-map__metro-list { margin: 0.25rem 0 0 0; padding-left: 1.25rem; font-size: var(--booklet-font-size-text, 22px); line-height: 1.5; color: #1a1a1a; }
+    .presentation-slider-wrap.booklet-view .booklet-map__info .booklet-map__metro-list li { margin-bottom: 0.125rem; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid { display: grid; gap: 8px; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="1x1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="2x1"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
