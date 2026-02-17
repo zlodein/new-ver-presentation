@@ -152,6 +152,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/docs',
+      name: 'Documentation',
+      component: () => import('../views/Documentation/Documentation.vue'),
+      meta: {
+        title: 'Документация',
+      },
+    },
+    {
       path: '/dashboard/support',
       name: 'Support',
       component: () => import('../views/Support/SupportList.vue'),

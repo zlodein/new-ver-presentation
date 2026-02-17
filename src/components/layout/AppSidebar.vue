@@ -236,6 +236,7 @@ import {
   SettingsIcon,
   TaskIcon,
   SupportIcon,
+  PageIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
@@ -302,6 +303,11 @@ const menuGroups = computed(() => {
     {
       title: "Прочее",
       items: [
+        {
+          icon: PageIcon,
+          name: "Документация",
+          path: "/dashboard/docs",
+        },
         {
           icon: SupportIcon,
           name: "Поддержка",
