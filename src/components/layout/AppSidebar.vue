@@ -237,6 +237,7 @@ import {
   TaskIcon,
   SupportIcon,
   PageIcon,
+  PieChartIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
@@ -303,6 +304,11 @@ const menuGroups = computed(() => {
     {
       title: "Прочее",
       items: [
+        {
+          icon: PieChartIcon,
+          name: "Тарифы",
+          path: "/dashboard/tariffs",
+        },
         {
           icon: PageIcon,
           name: "Документация",

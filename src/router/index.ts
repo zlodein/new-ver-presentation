@@ -152,6 +152,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/tariffs',
+      name: 'Tariffs',
+      component: () => import('../views/Tariffs/Tariffs.vue'),
+      meta: {
+        title: 'Тарифы',
+      },
+    },
+    {
       path: '/dashboard/docs',
       name: 'Documentation',
       component: () => import('../views/Documentation/Documentation.vue'),
