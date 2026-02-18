@@ -260,9 +260,10 @@ export async function presentationRoutes(app: FastifyInstance) {
             columns: { tariff: true, test_drive_used: true },
           })
           userTariff = userRow?.tariff ?? null
-          testDriveUsed = (userRow as { test_drive_used?: string } | undefined)?.test_drive_used === 'true'
+          const tdu = (userRow as { test_drive_used?: string | boolean } | undefined)?.test_drive_used
+          testDriveUsed = tdu === 'true' || tdu === true
         } catch {
-          // колонка tariff может отсутствовать до миграции
+          // колонка tariff/test_drive_used может отсутствовать до миграции
         }
         if (userTariff === 'test_drive' && testDriveUsed) {
           return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
@@ -313,7 +314,8 @@ export async function presentationRoutes(app: FastifyInstance) {
         where: eq(pgSchema.users.id, userId),
         columns: { tariff: true, testDriveUsed: true },
       })
-      if (userRow?.tariff === 'test_drive' && userRow.testDriveUsed === 'true') {
+      const pgTestDriveUsed = userRow?.testDriveUsed === 'true' || userRow?.testDriveUsed === true
+      if (userRow?.tariff === 'test_drive' && pgTestDriveUsed) {
         return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
       }
       if (userRow?.tariff === 'test_drive') {
