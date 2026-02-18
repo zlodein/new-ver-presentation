@@ -563,7 +563,10 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const existing = await findPresentationForUser(mysqlDb, mysqlId, userIdNum)
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
-        if (content?.slides != null && Array.isArray(content.slides) && content.slides.length > 4) {
+        const isAdmin = await getIsAdmin(String(userIdNum))
+        const ownerId = (existing as { user_id: number }).user_id
+        const isOwner = userIdNum === ownerId
+        if (!isAdmin && isOwner && content?.slides != null && Array.isArray(content.slides) && content.slides.length > 4) {
           try {
             const userRow = await mysqlDb.query.users.findFirst({
               where: eq(mysqlSchema.users.id, userIdNum),

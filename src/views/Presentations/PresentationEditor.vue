@@ -18,8 +18,8 @@
         </RouterLink>
       </div>
 
-      <!-- Идентификатор презентации (для тех. поддержки) -->
-      <div class="rounded-lg md:hidden flex flex-col gap-1.5">
+      <!-- Идентификатор презентации (для тех. поддержки), скрыт для администратора -->
+      <div v-if="!isAdmin" class="rounded-lg md:hidden flex flex-col gap-1.5">
         <div class="flex items-center gap-2">
           <p class="text-sm font-mono font-semibold text-gray-800 dark:text-white/90">
             {{ presentationMeta.shortId ? `ID=${presentationMeta.shortId}` : '—' }}
@@ -1170,7 +1170,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
             </button>
-            <template v-if="presentationMeta.status === 'published'">
+            <template v-if="presentationMeta.status === 'published' && !isAdmin">
               <button
                 type="button"
                 class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
@@ -1183,7 +1183,7 @@
               </button>
             </template>
             <button
-              v-else
+              v-else-if="presentationMeta.status !== 'published'"
               type="button"
               class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
               title="Опубликовать"
@@ -1198,8 +1198,8 @@
 
         <!-- Сайдбар справа от слайдера (только десктоп) -->
         <aside class="editor-sidebar hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:block">
-          <!-- Идентификатор презентации (для тех. поддержки) -->
-          <div class="border-b border-gray-200 p-3 dark:border-gray-700 flex flex-col gap-1.5">
+          <!-- Идентификатор презентации (для тех. поддержки), скрыт для администратора -->
+          <div v-if="!isAdmin" class="border-b border-gray-200 p-3 dark:border-gray-700 flex flex-col gap-1.5">
             <div class="flex items-center justify-between gap-2">
               <p class="text-xs font-mono font-semibold text-gray-800 dark:text-white/90 min-w-0 truncate">
                 {{ presentationMeta.shortId ? `ID=${presentationMeta.shortId}` : '—' }}
@@ -1506,7 +1506,7 @@
               >
                 Сохранить
               </button>
-              <template v-if="presentationMeta.status === 'published'">
+              <template v-if="presentationMeta.status === 'published' && !isAdmin">
                 <button
                   type="button"
                   class="h-8 flex-1 min-w-0 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
@@ -1517,7 +1517,7 @@
                 </button>
               </template>
               <button
-                v-else
+                v-else-if="presentationMeta.status !== 'published'"
                 type="button"
                 class="h-8 flex-1 min-w-0 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
                 @click="publishPresentation"
