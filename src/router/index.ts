@@ -56,6 +56,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/view/:shortId/:slug',
+      name: 'PresentationViewPublicSlug',
+      component: () => import('../views/Presentations/PresentationView.vue'),
+      meta: {
+        title: 'Презентация',
+      },
+    },
+    {
       path: '/view/:hash',
       name: 'PresentationViewPublic',
       component: () => import('../views/Presentations/PresentationView.vue'),

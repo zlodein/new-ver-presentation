@@ -22,6 +22,30 @@ function generatePresentationShortId(): string {
   for (let i = 0; i < 6; i++) id += SHORT_ID_CHARS[bytes[i]! % SHORT_ID_CHARS.length]
   return id
 }
+
+/** Транслитерация заголовка в slug для URL (кириллица → латиница, lowercase, пробелы в дефисы). */
+function translitSlug(title: string): string {
+  const map: Record<string, string> = {
+    а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z',
+    и: 'i', й: 'j', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
+    с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch',
+    ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+  }
+  let out = ''
+  const s = String(title ?? '').toLowerCase().trim()
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]!
+    const mapped = map[c]
+    if (mapped !== undefined) {
+      out += mapped
+    } else if (/[a-z0-9]/.test(c)) {
+      out += c
+    } else if (c === ' ' || c === '-' || c === '_') {
+      if (out.length > 0 && out[out.length - 1] !== '-') out += '-'
+    }
+  }
+  return out.replace(/-+/g, '-').replace(/^-|-$/g, '') || 'presentation'
+}
 /** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия или первая последовательность цифр). */
 function parseMysqlId(id: string): number | null {
   if (id == null || typeof id !== 'string') return null
@@ -672,8 +696,9 @@ export async function presentationRoutes(app: FastifyInstance) {
           // колонка tariff может отсутствовать
         }
       }
-      const baseUrl = (process.env.PUBLIC_APP_URL || `${req.protocol}://${req.hostname}`).replace(/\/$/, '')
-      const updates: { updated_at: Date; is_public: number; public_hash?: string | null; public_url?: string | null } = {
+      let baseUrl = (process.env.PUBLIC_APP_URL || `${req.protocol}://${req.hostname}`).replace(/\/$/, '')
+      if (baseUrl.startsWith('http://')) baseUrl = 'https://' + baseUrl.slice(7)
+      const updates: { updated_at: Date; is_public: number; public_hash?: string | null; public_url?: string | null; short_id?: string | null } = {
         updated_at: new Date(),
         is_public: isPublic ? 1 : 0,
       }
@@ -681,11 +706,18 @@ export async function presentationRoutes(app: FastifyInstance) {
         updates.public_hash = null
         updates.public_url = null
       } else {
+        const row = existing as { short_id?: string | null; title?: string }
+        let shortId = row.short_id ?? null
+        if (!shortId) {
+          shortId = generatePresentationShortId()
+          updates.short_id = shortId
+        }
+        const slug = translitSlug(row.title ?? '')
         const hash = Array.from(crypto.getRandomValues(new Uint8Array(16)))
           .map((b) => b.toString(16).padStart(2, '0'))
           .join('')
         updates.public_hash = hash
-        updates.public_url = `${baseUrl}/view/${hash}`
+        updates.public_url = `${baseUrl}/view/${shortId}/${slug}`
       }
       await mysqlDb.update(mysqlSchema.presentations).set(updates).where(eq(mysqlSchema.presentations.id, idNum))
       const [updated] = await mysqlDb.query.presentations.findMany({
@@ -701,7 +733,40 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
   )
 
-  /** Публичный просмотр по хешу (без авторизации) */
+  /** Публичный просмотр по shortId и slug (без авторизации), например /view/3F23SD/obekty-nedvizhimosti */
+  app.get<{ Params: { shortId: string; slug: string } }>(
+    '/api/presentations/public/:shortId/:slug',
+    async (req: FastifyRequest<{ Params: { shortId: string; slug: string } }>, reply: FastifyReply) => {
+      const { shortId } = req.params
+      if (!useMysql) return reply.status(404).send({ error: 'Презентация не найдена' })
+      const row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
+        where: and(eq(mysqlSchema.presentations.short_id, shortId), eq(mysqlSchema.presentations.is_public, 1)),
+      })
+      if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+      const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
+      try {
+        const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || null
+        const userAgent = req.headers['user-agent'] || null
+        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .insert(mysqlSchema.presentationViews)
+          .values({
+            presentation_id: r.id,
+            ip_address: ipAddress ? String(ipAddress).split(',')[0].trim() : null,
+            user_agent: userAgent ? String(userAgent).substring(0, 512) : null,
+          })
+      } catch (err) {
+        req.log.warn(err, 'Ошибка при записи просмотра')
+      }
+      return reply.send({
+        id: String(r.id),
+        title: r.title,
+        coverImage: r.cover_image ?? undefined,
+        content: normContent(r.slides_data),
+      })
+    }
+  )
+
+  /** Публичный просмотр по хешу (без авторизации), для обратной совместимости */
   app.get<{ Params: { hash: string } }>(
     '/api/presentations/public/:hash',
     async (req: FastifyRequest<{ Params: { hash: string } }>, reply: FastifyReply) => {

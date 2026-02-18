@@ -387,10 +387,15 @@ function viewSlideImages(slide: ViewSlideItem, limit: number): string[] {
 }
 
 onMounted(async () => {
+  const shortId = route.params.shortId as string
+  const slug = route.params.slug as string
   const hash = route.params.hash as string
   const id = route.params.id as string
   try {
-    if (hash) {
+    if (shortId && slug) {
+      const data = await api.get<{ id: string; title: string; content: { slides: ViewSlideItem[] } }>(`/api/presentations/public/${shortId}/${slug}`)
+      presentation.value = data
+    } else if (hash) {
       const data = await api.get<{ id: string; title: string; content: { slides: ViewSlideItem[] } }>(`/api/presentations/public/${hash}`)
       presentation.value = data
     } else if (id && hasApi() && getToken()) {
