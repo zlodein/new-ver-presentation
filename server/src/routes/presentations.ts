@@ -286,6 +286,16 @@ export async function presentationRoutes(app: FastifyInstance) {
         }
         const mysqlExpertPlan = expertPlanQty ?? 1
         if (userTariff === 'expert' && expertUsed != null && expertUsed >= mysqlExpertPlan) {
+          try {
+            await mysqlDb.insert(mysqlSchema.notifications).values({
+              user_id: userIdNum,
+              title: 'Лимит презентаций исчерпан',
+              message: 'Для увеличения лимита выберите в разделе «Тарифы» дополнительное количество презентаций.',
+              type: 'presentation',
+            })
+          } catch (notifErr) {
+            req.log.warn(notifErr, 'Ошибка создания уведомления о лимите')
+          }
           return reply.status(403).send({ error: `Достигнут лимит презентаций по тарифу (${mysqlExpertPlan}). Удалённые презентации тоже учитываются. Увеличьте пакет в разделе «Тарифы» или дождитесь обновления лимита.` })
         }
         if (userTariff === 'test_drive') {
@@ -350,6 +360,18 @@ export async function presentationRoutes(app: FastifyInstance) {
       const pgExpertPlan = userRow?.expertPlanQuantity != null && userRow.expertPlanQuantity !== '' ? Math.max(1, Math.min(100, Number(userRow.expertPlanQuantity) || 1)) : 1
       const pgExpertUsed = userRow?.expertPresentationsUsed != null && userRow.expertPresentationsUsed !== '' ? Math.max(0, Number(userRow.expertPresentationsUsed) || 0) : 0
       if (userRow?.tariff === 'expert' && pgExpertUsed >= pgExpertPlan) {
+        try {
+          await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+            .insert(pgSchema.notifications)
+            .values({
+              userId: userId!,
+              title: 'Лимит презентаций исчерпан',
+              message: 'Для увеличения лимита выберите в разделе «Тарифы» дополнительное количество презентаций.',
+              type: 'presentation',
+            })
+        } catch (notifErr) {
+          req.log.warn(notifErr, 'Ошибка создания уведомления о лимите')
+        }
         return reply.status(403).send({ error: `Достигнут лимит презентаций по тарифу (${pgExpertPlan}). Удалённые презентации тоже учитываются. Увеличьте пакет в разделе «Тарифы» или дождитесь обновления лимита.` })
       }
       if (userRow?.tariff === 'test_drive') {

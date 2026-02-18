@@ -5,6 +5,20 @@
       <div v-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
         {{ error }}
       </div>
+      <div
+        v-if="isExpert && expertPresentationsUsed >= expertPlanQuantity"
+        class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+      >
+        <p class="flex-1">
+          Лимит презентаций исчерпан ({{ expertPresentationsUsed }} из {{ expertPlanQuantity }}). Для увеличения лимита выберите в разделе «Тарифы» дополнительное количество презентаций.
+        </p>
+        <router-link
+          to="/dashboard/tariffs"
+          class="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700"
+        >
+          Перейти к тарифам
+        </router-link>
+      </div>
       <div class="flex flex-wrap items-center justify-between gap-4">
         <p class="text-sm text-gray-500 dark:text-gray-400">
           {{ loading ? 'Загрузка...' : 'Создавайте и редактируйте презентации' }}
