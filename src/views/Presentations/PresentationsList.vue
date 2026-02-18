@@ -1,6 +1,16 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
+    <PageBreadcrumb :pageTitle="currentPageTitle">
+      <template #append>
+        <span
+          v-if="presentationsLimitText"
+          class="text-sm font-medium"
+          :style="{ color: presentationsLimitColor }"
+        >
+          {{ presentationsLimitText }}
+        </span>
+      </template>
+    </PageBreadcrumb>
     <div class="space-y-6">
       <div v-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
         {{ error }}
@@ -218,6 +228,52 @@ const cannotCreateReason = computed(() => {
   if (isTestDrive.value) return 'На тарифе «Тест драйв» доступна только одна презентация.'
   if (isExpert.value && expertPresentationsUsed.value >= expertPlanQuantity.value) return `Достигнут лимит презентаций (${expertPlanQuantity.value}). Удалённые тоже учитываются. Увеличьте пакет в разделе «Тарифы».`
   return ''
+})
+
+/** Склонение: 1 презентация, 2–4 презентации, 0/5–20 презентаций */
+function pluralizePresentations(n: number): string {
+  const abs = Math.abs(n) % 100
+  const n10 = abs % 10
+  if (abs >= 11 && abs <= 19) return 'презентаций'
+  if (n10 === 1) return 'презентация'
+  if (n10 >= 2 && n10 <= 4) return 'презентации'
+  return 'презентаций'
+}
+
+/** Лимит: всего по тарифу (1 для тест-драйва, N для эксперта); null если лимит не показываем */
+const presentationsLimitTotal = computed(() => {
+  if (isTestDrive.value) return 1
+  if (isExpert.value) return expertPlanQuantity.value
+  return null
+})
+/** Сколько ещё презентаций можно создать */
+const presentationsLimitRemaining = computed(() => {
+  const total = presentationsLimitTotal.value
+  if (total == null) return null
+  if (isTestDrive.value) return testDriveUsed.value ? 0 : 1
+  if (isExpert.value) return Math.max(0, expertPlanQuantity.value - expertPresentationsUsed.value)
+  return null
+})
+/** Текст рядом с заголовком: «доступна 1 презентация», «доступно 3 из 5 презентаций» и т.д. */
+const presentationsLimitText = computed(() => {
+  const total = presentationsLimitTotal.value
+  const remaining = presentationsLimitRemaining.value
+  if (total == null || remaining == null) return ''
+  const word = pluralizePresentations(total)
+  if (total === 1 && remaining === 1) return 'доступна 1 презентация'
+  const wordForTotal = total === 1 ? 'презентации' : word // из 1 презентации, из 5 презентаций
+  if (total === 1 && remaining === 0) return 'доступно 0 из 1 презентации'
+  if (remaining === 0) return `доступно 0 из ${total} ${wordForTotal}`
+  return `доступно ${remaining} из ${total} ${wordForTotal}`
+})
+/** Цвет счётчика: много — success, половина или меньше — warning, закончились — error */
+const presentationsLimitColor = computed(() => {
+  const total = presentationsLimitTotal.value
+  const remaining = presentationsLimitRemaining.value
+  if (total == null || remaining == null) return 'var(--color-gray-500)'
+  if (remaining === 0) return 'var(--color-error-500)'
+  if (remaining <= total / 2) return 'var(--color-warning-500)'
+  return 'var(--color-success-500)'
 })
 
 const currentPageTitle = ref('Презентации')
