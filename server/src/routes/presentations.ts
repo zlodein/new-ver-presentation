@@ -298,6 +298,7 @@ export async function presentationRoutes(app: FastifyInstance) {
             // колонка может отсутствовать
           }
         }
+        const presentationTitle = title?.trim() || 'Без названия'
         const now = new Date()
         return reply.status(201).send({
           id: String(createdId),
