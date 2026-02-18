@@ -255,6 +255,7 @@ onMounted(() => {
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 const isAdmin = computed(() => currentUser.value?.role_id === 2);
+const isTestDrive = computed(() => currentUser.value?.tariff === 'test_drive');
 
 const adminPanelItem = {
   icon: SettingsIcon,
@@ -280,16 +281,10 @@ const menuGroups = computed(() => {
       name: "Презентации",
       path: "/dashboard/presentations",
     },
-    {
-      icon: CalenderIcon,
-      name: "Календарь",
-      path: "/dashboard/calendar",
-    },
-    {
-      icon: TaskIcon,
-      name: "Задачи",
-      path: "/dashboard/tasks",
-    },
+    ...(isTestDrive.value ? [] : [
+      { icon: CalenderIcon, name: "Календарь", path: "/dashboard/calendar" },
+      { icon: TaskIcon, name: "Задачи", path: "/dashboard/tasks" },
+    ]),
     {
       icon: UserCircleIcon,
       name: "Профиль пользователя",

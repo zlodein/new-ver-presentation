@@ -258,7 +258,7 @@ import { logoUrl } from '@/config/logos'
 
 const router = useRouter()
 const route = useRoute()
-const { login, hasApi, fetchUser } = useAuth()
+const { login, hasApi, fetchUser, currentUser } = useAuth()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -298,7 +298,8 @@ onMounted(async () => {
     try {
       await fetchUser()
       const redirect = (route.query.redirect as string) || '/dashboard'
-      router.replace(redirect)
+      const u = currentUser.value as { tariff?: string } | null
+      router.replace(u && (u.tariff == null || u.tariff === '') ? '/dashboard/tariffs' : redirect)
     } catch {
       error.value = 'Не удалось войти по ссылке. Попробуйте снова.'
     }
@@ -324,7 +325,12 @@ const handleSubmit = async () => {
     await login(email.value.trim(), password.value)
     await fetchUser()
     const redirect = (route.query.redirect as string) || '/dashboard'
-    router.push(redirect)
+    const u = currentUser.value as { tariff?: string } | null
+    if (u && (u.tariff == null || u.tariff === '')) {
+      router.push('/dashboard/tariffs')
+    } else {
+      router.push(redirect)
+    }
   } catch (e) {
     if (e instanceof ApiError) {
       error.value = e.message || 'Ошибка входа'

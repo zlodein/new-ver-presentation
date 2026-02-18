@@ -18,8 +18,8 @@
         </RouterLink>
       </div>
 
-      <!-- Публичная ссылка — всегда видна на мобильных, с переключателем -->
-      <div class="rounded-lg md:hidden">
+      <!-- Публичная ссылка — скрыта на тарифе «Тест драйв» -->
+      <div v-if="!isTestDrive" class="rounded-lg md:hidden">
         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
         <div class="flex items-center gap-3">
           <button
@@ -1155,8 +1155,8 @@
 
         <!-- Сайдбар справа от слайдера (только десктоп) -->
         <aside class="editor-sidebar hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:block">
-          <!-- Публичная ссылка — всегда видна, с переключателем -->
-          <div class="border-b border-gray-200 p-3 dark:border-gray-700">
+          <!-- Публичная ссылка — скрыта на тарифе «Тест драйв» -->
+          <div v-if="!isTestDrive" class="border-b border-gray-200 p-3 dark:border-gray-700">
             <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
             <div class="flex items-center gap-3">
               <button
@@ -2171,6 +2171,7 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
 }
 
 const { currentUser } = useAuth()
+const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 
 /** Подстановка данных профиля в слайд «Контакты» по настройкам «Выводить в презентации». */
 function applyProfileToContactsSlide(data: Record<string, unknown>) {
@@ -2215,6 +2216,10 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
 }
 
 function addSlide(type: string) {
+  if (isTestDrive.value && slides.value.length >= 4) {
+    alert('На тарифе «Тест драйв» допускается не более 4 слайдов. Перейдите на тариф «Эксперт» для расширенных возможностей.')
+    return
+  }
   const defaultData = getDefaultDataForType(type)
   const newSlide: SlideItem = {
     id: genSlideId(),
@@ -2231,6 +2236,10 @@ function addSlide(type: string) {
 }
 
 function duplicateSlide(index: number) {
+  if (isTestDrive.value && slides.value.length >= 4) {
+    alert('На тарифе «Тест драйв» допускается не более 4 слайдов.')
+    return
+  }
   const slide = slides.value[index]
   const copy: SlideItem = {
     id: genSlideId(),

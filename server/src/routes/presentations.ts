@@ -284,7 +284,21 @@ export async function presentationRoutes(app: FastifyInstance) {
           updatedAt: toIsoDate(now),
         })
       }
-      const [created] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const userRow = await pgDb.query.users.findFirst({
+        where: eq(pgSchema.users.id, userId),
+        columns: { tariff: true },
+      })
+      if (userRow?.tariff === 'test_drive') {
+        const existingList = await pgDb.query.presentations.findMany({
+          where: eq(pgSchema.presentations.userId, userId),
+          columns: { id: true },
+        })
+        if (existingList.length >= 1) {
+          return reply.status(403).send({ error: 'На тарифе «Тест драйв» доступна только одна презентация. Перейдите на тариф «Эксперт» для создания новых.' })
+        }
+      }
+      const [created] = await pgDb
         .insert(pgSchema.presentations)
         .values({
           userId,
@@ -293,9 +307,12 @@ export async function presentationRoutes(app: FastifyInstance) {
           content: contentVal,
         })
         .returning()
+      if (userRow?.tariff === 'test_drive') {
+        await pgDb.update(pgSchema.users).set({ testDriveUsed: 'true' }).where(eq(pgSchema.users.id, userId))
+      }
       const presentationTitle = created.title
       try {
-        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        await pgDb
           .insert(pgSchema.notifications)
           .values({
             userId,
@@ -388,6 +405,14 @@ export async function presentationRoutes(app: FastifyInstance) {
           publicUrl: u.public_url ?? undefined,
         })
       }
+      const pgDbForUpdate = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const userForUpdate = await pgDbForUpdate.query.users.findFirst({
+        where: eq(pgSchema.users.id, userId!),
+        columns: { tariff: true },
+      })
+      if (userForUpdate?.tariff === 'test_drive' && content?.slides != null && Array.isArray(content.slides) && content.slides.length > 4) {
+        return reply.status(400).send({ error: 'На тарифе «Тест драйв» допускается не более 4 слайдов суммарно.' })
+      }
       const updates: {
         updatedAt: Date
         title?: string
@@ -399,7 +424,7 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (title !== undefined) updates.title = title.trim() || 'Без названия'
       if (coverImage !== undefined) updates.coverImage = coverImage || null
       if (content !== undefined) updates.content = content
-      const [updated] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+      const [updated] = await pgDbForUpdate
         .update(pgSchema.presentations)
         .set(updates)
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))

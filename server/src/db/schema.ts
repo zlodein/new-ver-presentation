@@ -17,6 +17,8 @@ export const users = pgTable(
     passwordHash: varchar('password_hash', { length: 255 }).notNull(),
     firstName: varchar('first_name', { length: 120 }),
     lastName: varchar('last_name', { length: 120 }),
+    tariff: varchar('tariff', { length: 20 }), // null | 'test_drive' | 'expert'
+    testDriveUsed: varchar('test_drive_used', { length: 10 }).notNull().default('false'), // 'true' | 'false' для совместимости
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

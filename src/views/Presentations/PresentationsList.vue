@@ -11,7 +11,9 @@
         </p>
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          :disabled="!canCreatePresentation"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          :title="!canCreatePresentation ? 'На тарифе «Тест драйв» доступна только одна презентация' : ''"
           @click="showCreateModal = true"
         >
           <PlusIcon />
@@ -87,7 +89,8 @@
         </p>
         <button
           type="button"
-          class="mt-4 inline-flex items-center gap-2 text-brand-500 hover:text-brand-600"
+          :disabled="!canCreatePresentation"
+          class="mt-4 inline-flex items-center gap-2 text-brand-500 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
           @click="showCreateModal = true"
         >
           <PlusIcon />
@@ -164,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -173,8 +176,13 @@ import Modal from '@/components/profile/Modal.vue'
 import { api, hasApi, getToken } from '@/api/client'
 import type { PresentationListItem } from '@/api/client'
 import { formatApiDate } from '@/composables/useApiDate'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const { currentUser } = useAuth()
+const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
+const canCreatePresentation = computed(() => !isTestDrive.value || presentations.value.length < 1)
+
 const currentPageTitle = ref('Презентации')
 
 const showCreateModal = ref(false)

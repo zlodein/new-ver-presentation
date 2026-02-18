@@ -15,9 +15,25 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import { useSidebar } from '@/composables/useSidebar'
+import { useAuth } from '@/composables/useAuth'
 import Backdrop from './Backdrop.vue'
+
 const { isExpanded, isHovered } = useSidebar()
+const route = useRoute()
+const router = useRouter()
+const { currentUser, fetchUser } = useAuth()
+
+onMounted(async () => {
+  await fetchUser()
+  const u = currentUser.value
+  const noTariff = u && (u.tariff == null || u.tariff === '')
+  if (noTariff && route.path !== '/dashboard/tariffs') {
+    router.replace('/dashboard/tariffs')
+  }
+})
 </script>

@@ -292,7 +292,7 @@ import { ApiError, getApiBase } from '@/api/client'
 import { logoUrl } from '@/config/logos'
 
 const router = useRouter()
-const { register, hasApi, fetchUser } = useAuth()
+const { register, hasApi, fetchUser, currentUser } = useAuth()
 const name = ref('')
 const last_name = ref('')
 const email = ref('')
@@ -334,9 +334,13 @@ const handleSubmit = async () => {
       name: name.value.trim() || undefined,
       last_name: last_name.value.trim() || undefined,
     })
-    // Загрузить полные данные пользователя после регистрации
     await fetchUser()
-    router.push('/dashboard')
+    const u = currentUser.value as { tariff?: string } | null
+    if (u && (u.tariff == null || u.tariff === '')) {
+      router.push('/dashboard/tariffs')
+    } else {
+      router.push('/dashboard')
+    }
   } catch (e) {
     if (e instanceof ApiError) {
       error.value = e.message || 'Ошибка регистрации'

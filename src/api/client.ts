@@ -118,6 +118,8 @@ export interface AuthUser {
   position?: string | null
   messengers?: Record<string, string> | null
   createdAt?: string
+  tariff?: string | null
+  testDriveUsed?: boolean
   // Для обратной совместимости
   firstName?: string | null
   lastName?: string | null

@@ -468,14 +468,55 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
         where: eq(pgSchema.users.id, payload.sub),
-        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true },
+        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true, tariff: true, testDriveUsed: true },
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
-      return reply.send(user)
+      const { testDriveUsed: tdu, ...rest } = user
+      return reply.send({
+        ...rest,
+        tariff: user.tariff ?? undefined,
+        testDriveUsed: tdu === 'true',
+      })
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
         error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
+      })
+    }
+  })
+
+  app.patch<{ Body: { tariff: string } }>('/api/auth/tariff', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { tariff: string } }>, reply: FastifyReply) => {
+    try {
+      const payload = req.user as { sub: string }
+      const tariff = req.body?.tariff
+      if (tariff !== 'test_drive' && tariff !== 'expert') {
+        return reply.status(400).send({ error: 'Укажите тариф: test_drive или expert' })
+      }
+      if (useFileStore) {
+        return reply.status(501).send({ error: 'Выбор тарифа при файловом хранилище не реализован' })
+      }
+      if (useMysql) {
+        return reply.status(501).send({ error: 'Выбор тарифа для MySQL не реализован' })
+      }
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const user = await pgDb.query.users.findFirst({
+        where: eq(pgSchema.users.id, payload.sub),
+        columns: { id: true, tariff: true, testDriveUsed: true },
+      })
+      if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
+      if (tariff === 'test_drive' && user.testDriveUsed === 'true') {
+        return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
+      }
+      const updates: { tariff: string; testDriveUsed?: string } = { tariff }
+      if (tariff === 'expert' && user.tariff === 'test_drive') {
+        updates.testDriveUsed = 'true'
+      }
+      await pgDb.update(pgSchema.users).set(updates).where(eq(pgSchema.users.id, payload.sub))
+      return reply.send({ tariff, testDriveUsed: updates.testDriveUsed === 'true' || user.testDriveUsed === 'true' })
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({
+        error: process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : 'Ошибка сервера',
       })
     }
   })
