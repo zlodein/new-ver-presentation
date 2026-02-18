@@ -277,12 +277,14 @@ const menuGroups = computed(() => {
       path: "/dashboard",
     },
     ...(isAdmin.value ? [adminPanelItem] : []),
-    {
-      icon: DocsIcon,
-      name: "Презентации",
-      path: "/dashboard/presentations",
-    },
-    ...(isTestDrive.value ? [] : [
+    ...(isAdmin.value ? [] : [
+      {
+        icon: DocsIcon,
+        name: "Презентации",
+        path: "/dashboard/presentations",
+      },
+    ]),
+    ...(isTestDrive.value && !isAdmin.value ? [] : [
       { icon: CalenderIcon, name: "Календарь", path: "/dashboard/calendar" },
       { icon: TaskIcon, name: "Задачи", path: "/dashboard/tasks" },
     ]),
@@ -292,31 +294,22 @@ const menuGroups = computed(() => {
       path: "/dashboard/profile",
     },
   ];
+  const otherItems = [
+    ...(isAdmin.value ? [] : [
+      { icon: PieChartIcon, name: "Тарифы", path: "/dashboard/tariffs" },
+    ]),
+    {
+      icon: PageIcon,
+      name: "Документация",
+      path: "/dashboard/docs",
+    },
+    ...(isAdmin.value ? [] : [
+      { icon: SupportIcon, name: "Поддержка", path: "/dashboard/support" },
+    ]),
+  ];
   return [
-    {
-      title: "Меню",
-      items: menuItems,
-    },
-    {
-      title: "Прочее",
-      items: [
-        {
-          icon: PieChartIcon,
-          name: "Тарифы",
-          path: "/dashboard/tariffs",
-        },
-        {
-          icon: PageIcon,
-          name: "Документация",
-          path: "/dashboard/docs",
-        },
-        {
-          icon: SupportIcon,
-          name: "Поддержка",
-          path: "/dashboard/support",
-        },
-      ],
-    },
+    { title: "Меню", items: menuItems },
+    { title: "Прочее", items: otherItems },
   ];
 });
 

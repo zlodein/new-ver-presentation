@@ -111,6 +111,11 @@ export async function adminRoutes(app: FastifyInstance) {
             last_login_at: true,
             is_active: true,
             role_id: true,
+            tariff: true,
+            test_drive_used: true,
+            expert_plan_quantity: true,
+            expert_presentations_used: true,
+            updated_at: true,
           },
         })
         const countRows = await mysqlDb
@@ -126,7 +131,18 @@ export async function adminRoutes(app: FastifyInstance) {
           countMap.set(row.user_id, Number(row.count))
         }
         return reply.send(
-          rows.map((r) => toUserResponse(r as Record<string, unknown>, countMap.get(r.id) ?? 0))
+          rows.map((r) => {
+            const base = toUserResponse(r as Record<string, unknown>, countMap.get(r.id) ?? 0)
+            const row = r as Record<string, unknown>
+            return {
+              ...base,
+              tariff: row.tariff ?? null,
+              test_drive_used: row.test_drive_used ?? null,
+              expert_plan_quantity: row.expert_plan_quantity != null ? Number(row.expert_plan_quantity) : null,
+              expert_presentations_used: row.expert_presentations_used != null ? Number(row.expert_presentations_used) : null,
+              tariff_updated_at: row.updated_at ?? null,
+            }
+          })
         )
       }
       return reply.send([])
@@ -392,6 +408,34 @@ export async function adminRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({ error: 'Ошибка входа под пользователем' })
+    }
+  })
+
+  /** Добавить количество презентаций пользователю на тарифе «Эксперт» */
+  app.patch<{ Params: { id: string }; Body: { addPresentations?: number } }>('/api/admin/users/:id/tariff', { preHandler: [requireAdmin] }, async (req: FastifyRequest<{ Params: { id: string }; Body: { addPresentations?: number } }>, reply: FastifyReply) => {
+    try {
+      const targetId = req.params.id
+      const { addPresentations } = req.body ?? {}
+      if (!useMysql) return reply.status(501).send({ error: 'Не поддерживается для файлового хранилища' })
+      const uid = Number(targetId)
+      if (Number.isNaN(uid)) return reply.status(400).send({ error: 'Неверный id пользователя' })
+      const num = typeof addPresentations === 'number' && addPresentations > 0 ? Math.min(100, addPresentations) : 0
+      if (num === 0) return reply.status(400).send({ error: 'Укажите addPresentations (положительное число)' })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const user = await mysqlDb.query.users.findFirst({
+        where: eq(mysqlSchema.users.id, uid),
+        columns: { role_id: true, tariff: true, expert_plan_quantity: true },
+      }) as { role_id?: number; tariff?: string | null; expert_plan_quantity?: number | null } | undefined
+      if (!user) return reply.status(404).send({ error: 'Пользователь не найден' })
+      if (user.role_id === 2) return reply.status(400).send({ error: 'Нельзя изменить тариф администратору' })
+      if (user.tariff !== 'expert') return reply.status(400).send({ error: 'Добавление презентаций доступно только для тарифа «Эксперт»' })
+      const current = Math.max(0, user.expert_plan_quantity ?? 0)
+      const newQty = Math.min(100, current + num)
+      await mysqlDb.update(mysqlSchema.users).set({ expert_plan_quantity: newQty, updated_at: new Date() }).where(eq(mysqlSchema.users.id, uid))
+      return reply.send({ success: true, expert_plan_quantity: newQty })
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({ error: 'Ошибка обновления тарифа' })
     }
   })
 }
