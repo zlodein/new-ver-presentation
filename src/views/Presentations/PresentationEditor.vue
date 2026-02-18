@@ -457,14 +457,16 @@
                     >
                       <div class="booklet-main__wrap">
                         <div class="booklet-main__img">
-                          <label class="booklet-upload-btn cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              class="hidden"
-                              @change="onSingleImageUpload(slide, $event, 'coverImageUrl')"
-                            />
-                          </label>
+                          <template v-if="!isPublished">
+                            <label class="booklet-upload-btn cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onSingleImageUpload(slide, $event, 'coverImageUrl')"
+                              />
+                            </label>
+                          </template>
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
                         <div class="booklet-main__content">
@@ -628,14 +630,16 @@
                           :key="i"
                           class="booklet-info__block booklet-info__img relative"
                         >
-                          <label class="booklet-upload-btn cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              class="hidden"
-                              @change="onDescriptionImageUpload(slide, $event, i)"
-                            />
-                          </label>
+                          <template v-if="!isPublished">
+                            <label class="booklet-upload-btn cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onDescriptionImageUpload(slide, $event, i)"
+                              />
+                            </label>
+                          </template>
                           <img v-if="img" :src="img" alt="">
                         </div>
                       </div>
@@ -697,14 +701,16 @@
                           :key="i"
                           class="booklet-stroen__block booklet-stroen__img relative"
                         >
-                          <label class="booklet-upload-btn cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              class="hidden"
-                              @change="onInfrastructureImageUpload(slide, $event, i)"
-                            />
-                          </label>
+                          <template v-if="!isPublished">
+                            <label class="booklet-upload-btn cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onInfrastructureImageUpload(slide, $event, i)"
+                              />
+                            </label>
+                          </template>
                           <img v-if="img" :src="img" alt="">
                         </div>
                       </div>
@@ -858,15 +864,17 @@
                           :key="i"
                           class="booklet-galery__img relative"
                         >
-                        <label class="booklet-upload-btn cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                            @change="onGalleryImageUpload(slide, $event, i)"
-                          />
-                        </label>
-                        <img v-if="img" :src="img" alt="">
+                          <template v-if="!isPublished">
+                            <label class="booklet-upload-btn cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onGalleryImageUpload(slide, $event, i)"
+                              />
+                            </label>
+                          </template>
+                          <img v-if="img" :src="img" alt="">
                         </div>
                       </div>
                     </div>
@@ -885,14 +893,16 @@
                         class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
                       <div class="booklet-char__img relative">
-                        <label class="booklet-upload-btn cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                            @change="onSingleImageUpload(slide, $event, 'charImageUrl')"
-                          />
-                        </label>
+                        <template v-if="!isPublished">
+                          <label class="booklet-upload-btn cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              class="hidden"
+                              @change="onSingleImageUpload(slide, $event, 'charImageUrl')"
+                            />
+                          </label>
+                        </template>
                         <img v-if="slide.data?.charImageUrl" :src="String(slide.data.charImageUrl)" alt="">
                       </div>
                       <div class="booklet-char__content">
@@ -961,14 +971,16 @@
                         />
                       </div>
                       <div class="booklet-layout__img relative flex-1 min-h-0">
-                        <label class="booklet-upload-btn cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                            @change="onSingleImageUpload(slide, $event, 'layoutImageUrl')"
-                          />
-                        </label>
+                        <template v-if="!isPublished">
+                          <label class="booklet-upload-btn cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              class="hidden"
+                              @change="onSingleImageUpload(slide, $event, 'layoutImageUrl')"
+                            />
+                          </label>
+                        </template>
                         <img v-if="slide.data?.layoutImageUrl" :src="String(slide.data.layoutImageUrl)" alt="">
                       </div>
                     </div>
@@ -990,13 +1002,15 @@
                         <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
                           <div class="relative shrink-0">
                             <div class="booklet-contacts__avatar group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-brand-500 text-2xl font-semibold text-white dark:border-gray-800">
-                              <label class="booklet-upload-btn absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                <input type="file" accept="image/*" class="hidden" @change="onContactsAvatarUpload(slide, $event)" />
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                              </label>
+                              <template v-if="!isPublished">
+                                <label class="booklet-upload-btn absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                  <input type="file" accept="image/*" class="hidden" @change="onContactsAvatarUpload(slide, $event)" />
+                                  <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                </label>
+                              </template>
                               <img v-if="slide.data?.avatarUrl || slide.data?.logoUrl" :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
                             </div>
                           </div>
@@ -1040,9 +1054,11 @@
                         </div>
                       </div>
                       <div class="booklet-contacts__block booklet-contacts__img relative">
-                        <label class="booklet-upload-btn cursor-pointer">
-                          <input type="file" accept="image/*" class="hidden" @change="onContactsImageUpload(slide, $event, 0)" />
-                        </label>
+                        <template v-if="!isPublished">
+                          <label class="booklet-upload-btn cursor-pointer">
+                            <input type="file" accept="image/*" class="hidden" @change="onContactsImageUpload(slide, $event, 0)" />
+                          </label>
+                        </template>
                         <img v-if="contactImageUrl(slide)" :src="contactImageUrl(slide)!" alt="">
                       </div>
                     </div>
@@ -1675,6 +1691,9 @@ const presentationMeta = ref<{
   publicHash: '',
   shortId: '',
 })
+
+/** Презентация опубликована — замена изображений недоступна (только через тех. поддержку) */
+const isPublished = computed(() => presentationMeta.value.status === 'published')
 
 /** Текст кнопки «Копировать» у публичной ссылки */
 const copyPublicLinkLabel = ref('Копировать')
