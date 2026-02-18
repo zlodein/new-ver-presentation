@@ -218,6 +218,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         coverImage: row.coverImage ?? undefined,
         content: normContent(row.content),
         updatedAt: toIsoDate(row.updatedAt as Date | string),
+        status: (row as { status?: string }).status ?? 'draft',
       })
     }
   )
@@ -252,14 +253,19 @@ export async function presentationRoutes(app: FastifyInstance) {
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         let userTariff: string | null = null
+        let testDriveUsed = false
         try {
           const userRow = await mysqlDb.query.users.findFirst({
             where: eq(mysqlSchema.users.id, userIdNum),
-            columns: { tariff: true },
+            columns: { tariff: true, test_drive_used: true },
           })
           userTariff = userRow?.tariff ?? null
+          testDriveUsed = (userRow as { test_drive_used?: string } | undefined)?.test_drive_used === 'true'
         } catch {
           // колонка tariff может отсутствовать до миграции
+        }
+        if (userTariff === 'test_drive' && testDriveUsed) {
+          return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
         }
         if (userTariff === 'test_drive') {
           const existingList = await mysqlDb.query.presentations.findMany({
@@ -292,20 +298,6 @@ export async function presentationRoutes(app: FastifyInstance) {
             // колонка может отсутствовать
           }
         }
-        const presentationTitle = title?.trim() || 'Без названия'
-        try {
-          await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-            .insert(mysqlSchema.notifications)
-            .values({
-              user_id: userIdNum,
-              title: `Презентация «${presentationTitle}» создана`,
-              message: `Черновик презентации «${presentationTitle}» создан.`,
-              type: 'presentation',
-              source_id: String(createdId),
-            })
-        } catch (notifErr) {
-          console.error('[presentations] Ошибка создания уведомления:', notifErr)
-        }
         const now = new Date()
         return reply.status(201).send({
           id: String(createdId),
@@ -318,8 +310,11 @@ export async function presentationRoutes(app: FastifyInstance) {
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
       const userRow = await pgDb.query.users.findFirst({
         where: eq(pgSchema.users.id, userId),
-        columns: { tariff: true },
+        columns: { tariff: true, testDriveUsed: true },
       })
+      if (userRow?.tariff === 'test_drive' && userRow.testDriveUsed === 'true') {
+        return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
+      }
       if (userRow?.tariff === 'test_drive') {
         const existingList = await pgDb.query.presentations.findMany({
           where: eq(pgSchema.presentations.userId, userId),
@@ -345,20 +340,6 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (userRow?.tariff === 'test_drive') {
         await pgDb.update(pgSchema.users).set({ testDriveUsed: 'true' }).where(eq(pgSchema.users.id, userId))
       }
-      const presentationTitle = created.title
-      try {
-        await pgDb
-          .insert(pgSchema.notifications)
-          .values({
-            userId,
-            title: `Презентация «${presentationTitle}» создана`,
-            message: `Черновик презентации «${presentationTitle}» создан.`,
-            type: 'presentation',
-            sourceId: created.id,
-          })
-      } catch (notifErr) {
-        console.error('[presentations] Ошибка создания уведомления:', notifErr)
-      }
       return reply.status(201).send({
         id: created.id,
         title: created.title,
@@ -371,14 +352,14 @@ export async function presentationRoutes(app: FastifyInstance) {
 
   app.put<{
     Params: { id: string }
-    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; createNotification?: boolean }
+    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean }
   }>(
     '/api/presentations/:id',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Params: { id: string }; Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; createNotification?: boolean } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { id: string }; Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       const { id } = req.params
-      const { title, coverImage, content, createNotification } = req.body ?? {}
+      const { title, coverImage, content, status: bodyStatus, createNotification } = req.body ?? {}
       if (useFileStore) {
         const updates: { title?: string; coverImage?: string | null; content?: string; updatedAt?: string } = { updatedAt: new Date().toISOString() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
@@ -432,13 +413,13 @@ export async function presentationRoutes(app: FastifyInstance) {
               .insert(mysqlSchema.notifications)
               .values({
                 user_id: userIdNum,
-                title: `Презентация «${u.title}» сохранена`,
-                message: `Презентация «${u.title}» сохранена.`,
+                title: 'Опубликование',
+                message: `Презентация «${u.title}» опубликована.`,
                 type: 'presentation',
                 source_id: String(u.id),
               })
           } catch (notifErr) {
-            console.error('[presentations] Ошибка создания уведомления о сохранении:', notifErr)
+            console.error('[presentations] Ошибка создания уведомления об публикации:', notifErr)
           }
         }
         return reply.send({
@@ -466,12 +447,14 @@ export async function presentationRoutes(app: FastifyInstance) {
         title?: string
         coverImage?: string | null
         content?: { slides: unknown[] }
+        status?: string
       } = {
         updatedAt: new Date(),
       }
       if (title !== undefined) updates.title = title.trim() || 'Без названия'
       if (coverImage !== undefined) updates.coverImage = coverImage || null
       if (content !== undefined) updates.content = content
+      if (bodyStatus !== undefined) updates.status = bodyStatus
       const [updated] = await pgDbForUpdate
         .update(pgSchema.presentations)
         .set(updates)
@@ -484,13 +467,13 @@ export async function presentationRoutes(app: FastifyInstance) {
             .insert(pgSchema.notifications)
             .values({
               userId: userId!,
-              title: `Презентация «${updated.title}» сохранена`,
-              message: `Презентация «${updated.title}» сохранена.`,
+              title: 'Опубликование',
+              message: `Презентация «${updated.title}» опубликована.`,
               type: 'presentation',
               sourceId: updated.id,
             })
         } catch (notifErr) {
-          console.error('[presentations] Ошибка создания уведомления о сохранении:', notifErr)
+          console.error('[presentations] Ошибка создания уведомления об публикации:', notifErr)
         }
       }
       return reply.send({
@@ -499,6 +482,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         coverImage: updated.coverImage ?? undefined,
         content: normContent(updated.content),
         updatedAt: toIsoDate(updated.updatedAt as Date | string),
+        status: (updated as { status?: string }).status ?? 'draft',
       })
     }
   )

@@ -1050,16 +1050,6 @@
             </Swiper>
           </div>
 
-          <div v-if="presentationMeta.status !== 'published'" class="editor-actions mt-4">
-            <button
-              type="button"
-              class="rounded-lg border border-green-600 bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-              @click="publishPresentation"
-            >
-              Опубликовать
-            </button>
-          </div>
-
           <!-- Мобильная нижняя панель: навигация, добавить, просмотр, сохранение, публичная ссылка -->
           <div class="mob-editor-buttons fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800 md:hidden">
             <button
@@ -1132,27 +1122,27 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </button>
+            <template v-if="presentationMeta.status === 'published'">
+              <button
+                type="button"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                title="Экспорт в PDF"
+                @click="exportToPDF"
+              >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </template>
             <button
+              v-else
               type="button"
-              :class="savedState
-                ? 'inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white dark:bg-green-600'
-                : 'inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700'"
-              :title="savedState ? 'Сохранено' : 'Сохранить'"
-              @click="saveToStorage"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+              title="Опубликовать"
+              @click="publishPresentation"
             >
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-4 0l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </button>
-            <button
-              v-if="savedState"
-              type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
-              title="Экспорт в PDF"
-              @click="exportToPDF"
-            >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </button>
           </div>
@@ -1428,35 +1418,35 @@
             </draggable>
           </div>
 
-          <!-- Кнопки Просмотр / Сохранить (50% каждая), Экспорт в PDF (100%, только после сохранения) -->
+          <!-- Кнопки Просмотр, Опубликовать / Экспорт в PDF -->
           <div class="flex flex-col gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
             <div class="flex w-full gap-2">
               <button
                 type="button"
-                class="h-8 w-1/2 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                class="h-8 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 @click="openViewPage"
               >
                 Просмотр
               </button>
+              <template v-if="presentationMeta.status === 'published'">
+                <button
+                  type="button"
+                  class="h-8 flex-1 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                  @click="exportToPDF"
+                  title="Экспортировать презентацию в PDF"
+                >
+                  Экспорт в PDF
+                </button>
+              </template>
               <button
+                v-else
                 type="button"
-                :class="savedState
-                  ? 'h-8 w-1/2 flex-1 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white dark:bg-green-600'
-                  : 'h-8 w-1/2 flex-1 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600'"
-                @click="saveToStorage"
+                class="h-8 flex-1 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                @click="publishPresentation"
               >
-                {{ savedState ? 'Сохранено' : 'Сохранить' }}
+                Опубликовать
               </button>
             </div>
-            <button
-              v-if="savedState"
-              type="button"
-              class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-              @click="exportToPDF"
-              title="Экспортировать презентацию в PDF"
-            >
-              Экспорт в PDF
-            </button>
           </div>
         </aside>
       </main>
@@ -2604,17 +2594,11 @@ async function onInfrastructureImageUpload(slide: SlideItem, event: Event, index
 const presentationId = computed(() => route.params.id as string)
 
 watch(slides, () => {
-  if (initialLoadDone.value) {
-    savedState.value = false
-    scheduleAutoSave()
-  }
+  if (initialLoadDone.value) scheduleAutoSave()
 }, { deep: true })
 
 watch(presentationSettings, () => {
-  if (initialLoadDone.value) {
-    savedState.value = false
-    scheduleAutoSave()
-  }
+  if (initialLoadDone.value) scheduleAutoSave()
 }, { deep: true })
 
 function backupToLocalStorage() {
@@ -2782,19 +2766,9 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
   return true
 }
 
-/** Состояние «сохранено» после ручного сохранения — сбрасывается при изменениях */
-const savedState = ref(false)
-
-async function saveToStorage() {
-  const ok = await doSave({ skipRedirect: true, createNotification: true })
-  if (ok) {
-    savedState.value = true
-  }
-}
-
 async function publishPresentation() {
   autoSaveStatus.value = 'Публикация...'
-  const ok = await doSave({ status: 'published', skipRedirect: true })
+  const ok = await doSave({ status: 'published', skipRedirect: true, createNotification: true })
   autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
   if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
 }
@@ -2802,10 +2776,7 @@ async function publishPresentation() {
 function scheduleAutoSave() {
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   autoSaveTimer = setTimeout(async () => {
-    autoSaveStatus.value = 'Сохранение...'
-    const ok = await doSave({ skipRedirect: true })
-    autoSaveStatus.value = ok ? 'Сохранено' : ''
-    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    await doSave({ skipRedirect: true, createNotification: false })
   }, AUTO_SAVE_INTERVAL_MS)
 }
 
