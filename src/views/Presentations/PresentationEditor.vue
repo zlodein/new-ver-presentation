@@ -470,7 +470,7 @@
                     >
                       <div class="booklet-main__wrap">
                         <div class="booklet-main__img">
-                          <template v-if="!isPublished">
+                          <template v-if="canEditImages">
                             <label class="booklet-upload-btn cursor-pointer">
                               <input
                                 type="file"
@@ -601,7 +601,7 @@
                           class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                           @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
                         />
-                        <div v-if="!isPublished" class="flex flex-wrap items-center gap-2">
+                        <div v-if="canEditImages" class="flex flex-wrap items-center gap-2">
                           <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
                           <div class="relative z-20 bg-transparent">
                             <select
@@ -643,7 +643,7 @@
                           :key="i"
                           class="booklet-info__block booklet-info__img relative"
                         >
-                          <template v-if="!isPublished">
+                          <template v-if="canEditImages">
                             <label class="booklet-upload-btn cursor-pointer">
                               <input
                                 type="file"
@@ -672,7 +672,7 @@
                           placeholder="ИНФРАСТРУКТУРА"
                           class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <div v-if="!isPublished" class="flex flex-wrap items-center gap-2">
+                        <div v-if="canEditImages" class="flex flex-wrap items-center gap-2">
                           <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
                           <div class="relative z-20 bg-transparent">
                             <select
@@ -714,7 +714,7 @@
                           :key="i"
                           class="booklet-stroen__block booklet-stroen__img relative"
                         >
-                          <template v-if="!isPublished">
+                          <template v-if="canEditImages">
                             <label class="booklet-upload-btn cursor-pointer">
                               <input
                                 type="file"
@@ -854,7 +854,7 @@
                         placeholder="ГАЛЕРЕЯ"
                         class="booklet-galery__title w-full flex-shrink-0 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
-                      <div v-if="!isPublished" class="flex items-center gap-2 px-2 py-1 col-span-full">
+                      <div v-if="canEditImages" class="flex items-center gap-2 px-2 py-1 col-span-full">
                         <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
                         <div class="relative z-20 bg-transparent">
                           <select
@@ -877,7 +877,7 @@
                           :key="i"
                           class="booklet-galery__img relative"
                         >
-                          <template v-if="!isPublished">
+                          <template v-if="canEditImages">
                             <label class="booklet-upload-btn cursor-pointer">
                               <input
                                 type="file"
@@ -906,7 +906,7 @@
                         class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
                       <div class="booklet-char__img relative">
-                        <template v-if="!isPublished">
+                        <template v-if="canEditImages">
                           <label class="booklet-upload-btn cursor-pointer">
                             <input
                               type="file"
@@ -984,7 +984,7 @@
                         />
                       </div>
                       <div class="booklet-layout__img relative flex-1 min-h-0">
-                        <template v-if="!isPublished">
+                        <template v-if="canEditImages">
                           <label class="booklet-upload-btn cursor-pointer">
                             <input
                               type="file"
@@ -1015,7 +1015,7 @@
                         <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
                           <div class="relative shrink-0">
                             <div class="booklet-contacts__avatar group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-brand-500 text-2xl font-semibold text-white dark:border-gray-800">
-                              <template v-if="!isPublished">
+                              <template v-if="canEditImages">
                                 <label class="booklet-upload-btn absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                                   <input type="file" accept="image/*" class="hidden" @change="onContactsAvatarUpload(slide, $event)" />
                                   <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1067,7 +1067,7 @@
                         </div>
                       </div>
                       <div class="booklet-contacts__block booklet-contacts__img relative">
-                        <template v-if="!isPublished">
+                        <template v-if="canEditImages">
                           <label class="booklet-upload-btn cursor-pointer">
                             <input type="file" accept="image/*" class="hidden" @change="onContactsImageUpload(slide, $event, 0)" />
                           </label>
@@ -1719,7 +1719,7 @@ const presentationMeta = ref<{
   shortId: '',
 })
 
-/** Презентация опубликована — замена изображений недоступна (только через тех. поддержку) */
+/** Презентация опубликована — замена изображений недоступна владельцу (администратор может менять) */
 const isPublished = computed(() => presentationMeta.value.status === 'published')
 
 /** Успешное копирование: подсветка кнопки (публичная ссылка / ID) */
@@ -2234,6 +2234,9 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
 }
 
 const { currentUser } = useAuth()
+const isAdmin = computed(() => (currentUser.value as { role_id?: number } | undefined)?.role_id === 2)
+/** Редактирование изображений: либо черновик, либо зашёл администратор */
+const canEditImages = computed(() => !isPublished.value || isAdmin.value)
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
 
