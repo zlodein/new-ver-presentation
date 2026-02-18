@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, ne } from 'drizzle-orm'
+import { eq, and, ne, desc, inArray } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
 function isUnknownColumnError(err: unknown): boolean {
@@ -9,6 +9,11 @@ function isUnknownColumnError(err: unknown): boolean {
 import { db, useMysql, useFileStore } from '../db/index.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
+
+function toIsoDate(d: Date | string): string {
+  if (d instanceof Date) return d.toISOString().slice(0, 19).replace('T', ' ')
+  return String(d).slice(0, 19).replace('T', ' ')
+}
 
 /** Middleware: только для пользователей с role_id === 2 (admin) */
 async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
@@ -128,6 +133,52 @@ export async function adminRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({ error: 'Ошибка загрузки пользователей' })
+    }
+  })
+
+  /** Список всех презентаций для админа: id, title, shortId, user (name, email), updated_at */
+  app.get('/api/admin/presentations', { preHandler: [requireAdmin] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      if (useFileStore) {
+        return reply.send([])
+      }
+      if (useMysql) {
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const rows = await mysqlDb.query.presentations.findMany({
+          columns: { id: true, user_id: true, title: true, short_id: true, updated_at: true, status: true },
+          orderBy: [desc(mysqlSchema.presentations.updated_at)],
+        })
+        const userIds = [...new Set((rows as { user_id: number }[]).map((r) => r.user_id))]
+        const users = userIds.length
+          ? await mysqlDb.query.users.findMany({
+              where: inArray(mysqlSchema.users.id, userIds),
+              columns: { id: true, name: true, last_name: true, email: true },
+            })
+          : []
+        const userMap = new Map<number, { name: string; email: string }>()
+        for (const u of users as { id: number; name: string; last_name: string | null; email: string }[]) {
+          const name = [u.name, u.last_name].filter(Boolean).join(' ').trim() || '—'
+          userMap.set(u.id, { name, email: u.email })
+        }
+        return reply.send(
+          (rows as { id: number; user_id: number; title: string; short_id: string | null; updated_at: Date; status: string | null }[]).map((p) => {
+            const user = userMap.get(p.user_id)
+            return {
+              id: String(p.id),
+              title: p.title,
+              shortId: p.short_id ?? undefined,
+              userName: user?.name ?? '—',
+              userEmail: user?.email ?? '—',
+              updatedAt: toIsoDate(p.updated_at),
+              status: p.status ?? 'draft',
+            }
+          })
+        )
+      }
+      return reply.send([])
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({ error: 'Ошибка загрузки списка презентаций' })
     }
   })
 

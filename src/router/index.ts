@@ -193,6 +193,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/admin/presentations',
+      name: 'Admin Presentations',
+      component: () => import('../views/Admin/AdminPresentations.vue'),
+      meta: {
+        title: 'Презентации',
+        requiresAdmin: true,
+      },
+    },
+    {
       path: '/dashboard/admin/tariffs',
       name: 'Admin Tariffs',
       component: () => import('../views/Admin/AdminTariffs.vue'),

@@ -13,6 +13,15 @@ import { toIsoDateRequired } from '../utils/date.js'
 function toIsoDate(d: Date | string): string {
   return toIsoDateRequired(d)
 }
+
+const SHORT_ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+/** Генерирует короткий идентификатор презентации из 6 цифро-буквенных символов (для тех. поддержки). */
+function generatePresentationShortId(): string {
+  const bytes = crypto.randomBytes(6)
+  let id = ''
+  for (let i = 0; i < 6; i++) id += SHORT_ID_CHARS[bytes[i]! % SHORT_ID_CHARS.length]
+  return id
+}
 /** Для MySQL: id может прийти как "1", "1.0" или "1:1" (артефакт) — берём целое число (до двоеточия или первая последовательность цифр). */
 function parseMysqlId(id: string): number | null {
   if (id == null || typeof id !== 'string') return null
@@ -133,11 +142,11 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
       const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
         where: eq(mysqlSchema.presentations.user_id, userIdNum),
-        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true },
+        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true, short_id: true },
         orderBy: [desc(mysqlSchema.presentations.updated_at)],
       })
       return reply.send(
-        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null; is_public?: number | null; public_url?: string | null }) => ({
+        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null; is_public?: number | null; public_url?: string | null; short_id?: string | null }) => ({
           id: String(p.id),
           title: p.title,
           coverImage: p.cover_image ?? undefined,
@@ -145,6 +154,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           status: p.status ?? 'draft',
           isPublic: Boolean(p.is_public),
           publicUrl: p.public_url ?? undefined,
+          shortId: p.short_id ?? undefined,
         }))
       )
     }
@@ -191,11 +201,23 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
+        let row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
           where: and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)),
         })
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null }
+        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null; short_id?: string | null }
+        let shortId = r.short_id ?? undefined
+        if (!shortId) {
+          try {
+            shortId = generatePresentationShortId()
+            await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+              .update(mysqlSchema.presentations)
+              .set({ short_id: shortId, updated_at: new Date() })
+              .where(and(eq(mysqlSchema.presentations.id, r.id), eq(mysqlSchema.presentations.user_id, userIdNum)))
+          } catch {
+            shortId = undefined
+          }
+        }
         return reply.send({
           id: String(r.id),
           title: r.title,
@@ -206,6 +228,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           publicHash: r.public_hash ?? undefined,
           isPublic: Boolean(r.is_public),
           publicUrl: r.public_url ?? undefined,
+          shortId: shortId ?? undefined,
         })
       }
       const row = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findFirst({
@@ -311,16 +334,33 @@ export async function presentationRoutes(app: FastifyInstance) {
             return reply.status(400).send({ error: 'На тарифе «Тест драйв» допускается не более 4 слайдов. Создайте презентацию с 4 слайдами или перейдите на тариф «Эксперт».' })
           }
         }
-        const inserted = await mysqlDb
-          .insert(mysqlSchema.presentations)
-          .values({
-            user_id: userIdNum,
-            title: title?.trim() || 'Без названия',
-            cover_image: coverImage || null,
-            slides_data: JSON.stringify(contentVal),
-          })
-          .$returningId()
-        const createdId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
+        let shortId = generatePresentationShortId()
+        for (let attempt = 0; attempt < 5; attempt++) {
+          try {
+            await mysqlDb
+              .insert(mysqlSchema.presentations)
+              .values({
+                user_id: userIdNum,
+                title: title?.trim() || 'Без названия',
+                cover_image: coverImage || null,
+                slides_data: JSON.stringify(contentVal),
+                short_id: shortId,
+              })
+            break
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err)
+            if (attempt < 4 && /Duplicate entry|unique constraint|unique index/i.test(msg)) {
+              shortId = generatePresentationShortId()
+              continue
+            }
+            throw err
+          }
+        }
+        const inserted = await mysqlDb.query.presentations.findFirst({
+          where: and(eq(mysqlSchema.presentations.user_id, userIdNum), eq(mysqlSchema.presentations.short_id, shortId)),
+          columns: { id: true },
+        })
+        const createdId = (inserted as { id: number } | undefined)?.id
         if (createdId == null) return reply.status(500).send({ error: 'Ошибка при создании презентации' })
         if (userTariff === 'test_drive') {
           try {
@@ -500,6 +540,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           publicHash: u.public_hash ?? undefined,
           isPublic: Boolean(u.is_public),
           publicUrl: u.public_url ?? undefined,
+          shortId: (u as { short_id?: string | null }).short_id ?? undefined,
         })
       }
       const pgDbForUpdate = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
@@ -679,6 +720,21 @@ export async function presentationRoutes(app: FastifyInstance) {
         const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
         const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
         if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+        try {
+          const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userIdNum),
+            columns: { tariff: true, expert_presentations_used: true },
+          })
+          const u = userRow as { tariff?: string | null; expert_presentations_used?: number | null } | undefined
+          if (u?.tariff === 'expert' && (u?.expert_presentations_used ?? 0) > 0) {
+            await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+              .update(mysqlSchema.users)
+              .set({ expert_presentations_used: Math.max(0, (u.expert_presentations_used ?? 0) - 1) })
+              .where(eq(mysqlSchema.users.id, userIdNum))
+          }
+        } catch {
+          // колонка может отсутствовать
+        }
         await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
@@ -687,6 +743,21 @@ export async function presentationRoutes(app: FastifyInstance) {
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
       if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+      try {
+        const userRow = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+          where: eq(pgSchema.users.id, userId!),
+          columns: { tariff: true, expertPresentationsUsed: true },
+        })
+        const used = userRow?.expertPresentationsUsed != null && userRow.expertPresentationsUsed !== '' ? Math.max(0, Number(userRow.expertPresentationsUsed) || 0) : 0
+        if (userRow?.tariff === 'expert' && used > 0) {
+          await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+            .update(pgSchema.users)
+            .set({ expertPresentationsUsed: String(used - 1) })
+            .where(eq(pgSchema.users.id, userId!))
+        }
+      } catch {
+        // колонка может отсутствовать
+      }
       await deletePresentationImagesFolder(id)
       return reply.status(204).send()
     }
@@ -725,6 +796,21 @@ export async function presentationRoutes(app: FastifyInstance) {
         const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
         const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
         if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+        try {
+          const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userIdNum),
+            columns: { tariff: true, expert_presentations_used: true },
+          })
+          const u = userRow as { tariff?: string | null; expert_presentations_used?: number | null } | undefined
+          if (u?.tariff === 'expert' && (u?.expert_presentations_used ?? 0) > 0) {
+            await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+              .update(mysqlSchema.users)
+              .set({ expert_presentations_used: Math.max(0, (u.expert_presentations_used ?? 0) - 1) })
+              .where(eq(mysqlSchema.users.id, userIdNum))
+          }
+        } catch {
+          // колонка может отсутствовать
+        }
         await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
@@ -733,6 +819,21 @@ export async function presentationRoutes(app: FastifyInstance) {
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
       if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+      try {
+        const userRow = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+          where: eq(pgSchema.users.id, userId!),
+          columns: { tariff: true, expertPresentationsUsed: true },
+        })
+        const used = userRow?.expertPresentationsUsed != null && userRow.expertPresentationsUsed !== '' ? Math.max(0, Number(userRow.expertPresentationsUsed) || 0) : 0
+        if (userRow?.tariff === 'expert' && used > 0) {
+          await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+            .update(pgSchema.users)
+            .set({ expertPresentationsUsed: String(used - 1) })
+            .where(eq(pgSchema.users.id, userId!))
+        }
+      } catch {
+        // колонка может отсутствовать
+      }
       await deletePresentationImagesFolder(id)
       return reply.status(204).send()
     }

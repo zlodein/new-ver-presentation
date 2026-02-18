@@ -54,12 +54,14 @@ export const presentations = mysqlTable('presentations', {
   public_hash: varchar('public_hash', { length: 32 }),
   is_public: int('is_public', { unsigned: true }).notNull().default(0),
   public_url: varchar('public_url', { length: 255 }),
+  short_id: varchar('short_id', { length: 6 }), // 6 символов A-Z0-9 для тех. поддержки
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   userIdx: index('presentations_user_id_idx').on(table.user_id),
   updatedIdx: index('presentations_updated_at_idx').on(table.updated_at),
   publicHashIdx: uniqueIndex('idx_public_hash').on(table.public_hash),
+  shortIdIdx: uniqueIndex('idx_presentations_short_id').on(table.short_id),
 }))
 
 export const passwordResetTokens = mysqlTable('password_reset_tokens', {

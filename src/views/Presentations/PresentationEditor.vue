@@ -18,6 +18,14 @@
         </RouterLink>
       </div>
 
+      <!-- Идентификатор презентации (для тех. поддержки) -->
+      <div class="rounded-lg md:hidden">
+        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">ID презентации</label>
+        <p class="text-sm font-mono font-semibold text-gray-800 dark:text-white/90">
+          {{ presentationMeta.shortId ? `ID=${presentationMeta.shortId}` : '—' }}
+        </p>
+        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Для обращения в тех. поддержку</p>
+      </div>
       <!-- Публичная ссылка — скрыта на тарифе «Тест драйв» -->
       <div v-if="!isTestDrive" class="rounded-lg md:hidden">
         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
@@ -1150,6 +1158,14 @@
 
         <!-- Сайдбар справа от слайдера (только десктоп) -->
         <aside class="editor-sidebar hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:block">
+          <!-- Идентификатор презентации (для тех. поддержки) -->
+          <div class="border-b border-gray-200 p-3 dark:border-gray-700">
+            <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">ID презентации</label>
+            <p class="text-xs font-mono font-semibold text-gray-800 dark:text-white/90">
+              {{ presentationMeta.shortId ? `ID=${presentationMeta.shortId}` : '—' }}
+            </p>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Для обращения в тех. поддержку</p>
+          </div>
           <!-- Публичная ссылка — скрыта на тарифе «Тест драйв» -->
           <div v-if="!isTestDrive" class="border-b border-gray-200 p-3 dark:border-gray-700">
             <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
@@ -1645,17 +1661,19 @@ const presentationStyle = computed(() => ({
   '--booklet-font-size-price': presentationSettings.value.fontSizePrice,
 } as Record<string, string>))
 
-/** Мета презентации: статус, публичная ссылка (только владелец) */
+/** Мета презентации: статус, публичная ссылка, shortId (только владелец) */
 const presentationMeta = ref<{
   status: string
   isPublic: boolean
   publicUrl: string
   publicHash: string
+  shortId: string
 }>({
   status: 'draft',
   isPublic: false,
   publicUrl: '',
   publicHash: '',
+  shortId: '',
 })
 
 /** Текст кнопки «Копировать» у публичной ссылки */
@@ -2647,7 +2665,7 @@ onMounted(async () => {
   const id = presentationId.value
   if (hasApi() && getToken()) {
     try {
-      const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${id}`)
+      const data = await api.get<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string; shortId?: string }>(`/api/presentations/${id}`)
       if (!editorMounted) return
       if (data?.content?.slides && Array.isArray(data.content.slides) && data.content.slides.length) {
         slides.value = (data.content.slides as SlideItem[]).map((s) => ({
@@ -2665,6 +2683,7 @@ onMounted(async () => {
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
       if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
+      if (data?.shortId != null) presentationMeta.value.shortId = data.shortId
       const contentWithSettings = data?.content as { slides?: unknown[]; settings?: Record<string, string> } | undefined
       if (contentWithSettings?.settings && typeof contentWithSettings.settings === 'object') {
         const s = contentWithSettings.settings
@@ -2750,11 +2769,12 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
       const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string; createNotification?: boolean } = { title, coverImage, content }
       if (status !== undefined) body.status = status
       if (createNotification) body.createNotification = true
-      const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string }>(`/api/presentations/${presentationId.value}`, body)
+      const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string; shortId?: string }>(`/api/presentations/${presentationId.value}`, body)
       if (data?.status != null) presentationMeta.value.status = data.status
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
       if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
+      if (data?.shortId != null) presentationMeta.value.shortId = data.shortId
       if (!skipRedirect) router.push('/dashboard/presentations')
       return true
     } catch {
@@ -2766,7 +2786,10 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
   return true
 }
 
+const PUBLISH_WARNING = 'После нажатия кнопки публикации невозможно будет заменить изображения в презентации. Презентация будет опубликована. Замена изображений возможна только через техническую поддержку.\n\nПродолжить публикацию?'
+
 async function publishPresentation() {
+  if (!confirm(PUBLISH_WARNING)) return
   autoSaveStatus.value = 'Публикация...'
   const ok = await doSave({ status: 'published', skipRedirect: true, createNotification: true })
   autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'

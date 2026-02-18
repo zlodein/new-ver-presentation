@@ -519,12 +519,12 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        let user: { id: number; tariff: string | null; test_drive_used: string } | null = null
+        let user: { id: number; tariff: string | null; test_drive_used: string; expert_plan_quantity?: number | null } | null = null
         try {
           user = await mysqlDb.query.users.findFirst({
             where: eq(mysqlSchema.users.id, userId),
-            columns: { id: true, tariff: true, test_drive_used: true },
-          }) as { id: number; tariff: string | null; test_drive_used: string } | null
+            columns: { id: true, tariff: true, test_drive_used: true, expert_plan_quantity: true },
+          }) as { id: number; tariff: string | null; test_drive_used: string; expert_plan_quantity?: number | null } | null
         } catch (err) {
           if (isUnknownColumnError(err)) {
             return reply.status(501).send({ error: 'Таблица users не содержит колонок tariff/test_drive_used. Выполните миграцию server/sql/migrate_user_tariff.sql' })
@@ -540,7 +540,8 @@ export async function authRoutes(app: FastifyInstance) {
           updates.test_drive_used = 'true'
         }
         if (tariff === 'expert' && quantity != null) {
-          updates.expert_plan_quantity = quantity
+          const current = Math.max(0, user.expert_plan_quantity ?? 0)
+          updates.expert_plan_quantity = Math.min(100, current + quantity)
         }
         await mysqlDb.update(mysqlSchema.users).set(updates).where(eq(mysqlSchema.users.id, userId))
         const nextTestDriveUsed = updates.test_drive_used === 'true' || user.test_drive_used === 'true'
@@ -562,7 +563,8 @@ export async function authRoutes(app: FastifyInstance) {
         updates.testDriveUsed = 'true'
       }
       if (tariff === 'expert' && quantity != null) {
-        updates.expertPlanQuantity = String(quantity)
+        const current = Math.max(0, Number(user.expertPlanQuantity) || 0)
+        updates.expertPlanQuantity = String(Math.min(100, current + quantity))
       }
       await pgDb.update(pgSchema.users).set(updates).where(eq(pgSchema.users.id, payload.sub))
       const nextTestDriveUsed = updates.testDriveUsed === 'true' || user.testDriveUsed === 'true'
