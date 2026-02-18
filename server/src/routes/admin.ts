@@ -145,7 +145,7 @@ export async function adminRoutes(app: FastifyInstance) {
       if (useMysql) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const rows = await mysqlDb.query.presentations.findMany({
-          columns: { id: true, user_id: true, title: true, short_id: true, updated_at: true, status: true },
+          columns: { id: true, user_id: true, title: true, short_id: true, cover_image: true, updated_at: true, status: true },
           orderBy: [desc(mysqlSchema.presentations.updated_at)],
         })
         const userIds = [...new Set((rows as { user_id: number }[]).map((r) => r.user_id))]
@@ -161,12 +161,13 @@ export async function adminRoutes(app: FastifyInstance) {
           userMap.set(u.id, { name, email: u.email })
         }
         return reply.send(
-          (rows as { id: number; user_id: number; title: string; short_id: string | null; updated_at: Date; status: string | null }[]).map((p) => {
+          (rows as { id: number; user_id: number; title: string; short_id: string | null; cover_image: string | null; updated_at: Date; status: string | null }[]).map((p) => {
             const user = userMap.get(p.user_id)
             return {
               id: String(p.id),
               title: p.title,
               shortId: p.short_id ?? undefined,
+              coverImage: p.cover_image ?? undefined,
               userName: user?.name ?? '—',
               userEmail: user?.email ?? '—',
               updatedAt: toIsoDate(p.updated_at),

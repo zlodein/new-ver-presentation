@@ -122,6 +122,42 @@ function getContentSettings(c: unknown): ContentSettings | undefined {
 export async function presentationRoutes(app: FastifyInstance) {
   const getUserId = (req: FastifyRequest) => (req.user as { sub: string })?.sub
 
+  /** Проверка, что текущий пользователь — администратор (доступ к чужим презентациям). */
+  async function getIsAdmin(userId: string): Promise<boolean> {
+    if (!userId) return false
+    if (useFileStore) {
+      const allUsers = fileStore.load().users
+      return allUsers[0]?.id === userId
+    }
+    if (useMysql) {
+      const uid = Number(userId)
+      if (Number.isNaN(uid)) return false
+      try {
+        const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          where: eq(mysqlSchema.users.id, uid),
+          columns: { role_id: true },
+        })
+        return (user as { role_id?: number })?.role_id === 2
+      } catch {
+        return false
+      }
+    }
+    return false
+  }
+
+  /** Найти презентацию по id: владелец или админ (только MySQL). */
+  async function findPresentationForUser(mysqlDb: import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>, idNum: number, userIdNum: number) {
+    let row = await mysqlDb.query.presentations.findFirst({
+      where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
+    })
+    if (!row && (await getIsAdmin(String(userIdNum)))) {
+      row = await mysqlDb.query.presentations.findFirst({
+        where: eq(mysqlSchema.presentations.id, idNum),
+      })
+    }
+    return row
+  }
+
   app.get('/api/presentations', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
@@ -204,16 +240,28 @@ export async function presentationRoutes(app: FastifyInstance) {
         let row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
           where: and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)),
         })
+        if (!row) {
+          const isAdmin = await getIsAdmin(userId!)
+          if (isAdmin) {
+            row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
+              where: eq(mysqlSchema.presentations.id, idNum!),
+            })
+          }
+        }
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null; short_id?: string | null }
+        const r = row as { id: number; user_id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null; short_id?: string | null }
+        const isOwner = r.user_id === userIdNum
         let shortId = r.short_id ?? undefined
         if (!shortId) {
           try {
             shortId = generatePresentationShortId()
+            const whereClause = isOwner
+              ? and(eq(mysqlSchema.presentations.id, r.id), eq(mysqlSchema.presentations.user_id, userIdNum))
+              : eq(mysqlSchema.presentations.id, r.id)
             await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
               .update(mysqlSchema.presentations)
               .set({ short_id: shortId, updated_at: new Date() })
-              .where(and(eq(mysqlSchema.presentations.id, r.id), eq(mysqlSchema.presentations.user_id, userIdNum)))
+              .where(whereClause)
           } catch {
             shortId = undefined
           }
@@ -488,9 +536,12 @@ export async function presentationRoutes(app: FastifyInstance) {
         if (mysqlId === null) return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const existing = await findPresentationForUser(mysqlDb, mysqlId, userIdNum)
+        if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
         if (content?.slides != null && Array.isArray(content.slides) && content.slides.length > 4) {
           try {
-            const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+            const userRow = await mysqlDb.query.users.findFirst({
               where: eq(mysqlSchema.users.id, userIdNum),
               columns: { tariff: true },
             })
@@ -506,26 +557,22 @@ export async function presentationRoutes(app: FastifyInstance) {
         if (coverImage !== undefined) updates.cover_image = coverImage || null
         if (content !== undefined) updates.slides_data = JSON.stringify(content)
         if ((req.body as { status?: string }).status !== undefined) updates.status = (req.body as { status: string }).status
-        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-          .update(mysqlSchema.presentations)
-          .set(updates)
-          .where(and(eq(mysqlSchema.presentations.id, mysqlId), eq(mysqlSchema.presentations.user_id, userIdNum)))
-        const [updated] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
-          where: and(eq(mysqlSchema.presentations.id, mysqlId), eq(mysqlSchema.presentations.user_id, userIdNum)),
+        await mysqlDb.update(mysqlSchema.presentations).set(updates).where(eq(mysqlSchema.presentations.id, mysqlId))
+        const [updated] = await mysqlDb.query.presentations.findMany({
+          where: eq(mysqlSchema.presentations.id, mysqlId),
         })
         if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
         const u = updated as { id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null }
         if (createNotification === true) {
+          const ownerId = (existing as { user_id: number }).user_id
           try {
-            await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-              .insert(mysqlSchema.notifications)
-              .values({
-                user_id: userIdNum,
-                title: 'Опубликование',
-                message: `Презентация «${u.title}» опубликована.`,
-                type: 'presentation',
-                source_id: String(u.id),
-              })
+            await mysqlDb.insert(mysqlSchema.notifications).values({
+              user_id: ownerId,
+              title: 'Опубликование',
+              message: `Презентация «${u.title}» опубликована.`,
+              type: 'presentation',
+              source_id: String(u.id),
+            })
           } catch (notifErr) {
             console.error('[presentations] Ошибка создания уведомления об публикации:', notifErr)
           }
@@ -609,9 +656,12 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (idNum === null) return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       const userIdNum = Number(userId)
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const existing = await findPresentationForUser(mysqlDb, idNum, userIdNum)
+      if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
       if (isPublic) {
         try {
-          const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          const userRow = await mysqlDb.query.users.findFirst({
             where: eq(mysqlSchema.users.id, userIdNum),
             columns: { tariff: true },
           })
@@ -637,12 +687,9 @@ export async function presentationRoutes(app: FastifyInstance) {
         updates.public_hash = hash
         updates.public_url = `${baseUrl}/view/${hash}`
       }
-      await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-        .update(mysqlSchema.presentations)
-        .set(updates)
-        .where(and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)))
-      const [updated] = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
-        where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
+      await mysqlDb.update(mysqlSchema.presentations).set(updates).where(eq(mysqlSchema.presentations.id, idNum))
+      const [updated] = await mysqlDb.query.presentations.findMany({
+        where: eq(mysqlSchema.presentations.id, idNum),
       })
       if (!updated) return reply.status(404).send({ error: 'Презентация не найдена' })
       const u = updated as { public_hash?: string | null; is_public?: number; public_url?: string | null }
@@ -714,23 +761,22 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-          .delete(mysqlSchema.presentations)
-          .where(and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)))
-        const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
-        const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
-        if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const existing = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
+        if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const ownerId = (existing as { user_id: number }).user_id
+        await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
         try {
-          const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
-            where: eq(mysqlSchema.users.id, userIdNum),
+          const userRow = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, ownerId),
             columns: { tariff: true, expert_presentations_used: true },
           })
           const u = userRow as { tariff?: string | null; expert_presentations_used?: number | null } | undefined
           if (u?.tariff === 'expert' && (u?.expert_presentations_used ?? 0) > 0) {
-            await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            await mysqlDb
               .update(mysqlSchema.users)
               .set({ expert_presentations_used: Math.max(0, (u.expert_presentations_used ?? 0) - 1) })
-              .where(eq(mysqlSchema.users.id, userIdNum))
+              .where(eq(mysqlSchema.users.id, ownerId))
           }
         } catch {
           // колонка может отсутствовать
@@ -790,23 +836,22 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const result = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
-          .delete(mysqlSchema.presentations)
-          .where(and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)))
-        const raw = result as unknown as { affectedRows?: number } | [{ affectedRows?: number }]
-        const affected = Array.isArray(raw) ? (raw[0]?.affectedRows ?? 0) : (raw?.affectedRows ?? 0)
-        if (affected === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const existing = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
+        if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const ownerId = (existing as { user_id: number }).user_id
+        await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
         try {
-          const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
-            where: eq(mysqlSchema.users.id, userIdNum),
+          const userRow = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, ownerId),
             columns: { tariff: true, expert_presentations_used: true },
           })
           const u = userRow as { tariff?: string | null; expert_presentations_used?: number | null } | undefined
           if (u?.tariff === 'expert' && (u?.expert_presentations_used ?? 0) > 0) {
-            await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+            await mysqlDb
               .update(mysqlSchema.users)
               .set({ expert_presentations_used: Math.max(0, (u.expert_presentations_used ?? 0) - 1) })
-              .where(eq(mysqlSchema.users.id, userIdNum))
+              .where(eq(mysqlSchema.users.id, ownerId))
           }
         } catch {
           // колонка может отсутствовать
@@ -870,9 +915,8 @@ export async function presentationRoutes(app: FastifyInstance) {
       } else if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const row = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
-          where: and(eq(mysqlSchema.presentations.id, idNum!), eq(mysqlSchema.presentations.user_id, userIdNum)),
-        })
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const row = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
         const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
         const rawContent = typeof r.slides_data === 'string' ? (() => { try { return JSON.parse(r.slides_data) } catch { return null } })() : r.slides_data
@@ -929,15 +973,11 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (idNum === null) return reply.status(400).send({ error: 'Неверный формат id презентации' })
       const userIdNum = Number(userId)
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-      
-      // Проверяем, что презентация принадлежит пользователю
-      const presentation = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findFirst({
-        where: and(eq(mysqlSchema.presentations.id, idNum), eq(mysqlSchema.presentations.user_id, userIdNum)),
-      })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const presentation = await findPresentationForUser(mysqlDb, idNum, userIdNum)
       if (!presentation) return reply.status(404).send({ error: 'Презентация не найдена' })
       
       // Получаем просмотры
-      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
       const conditions = [eq(mysqlSchema.presentationViews.presentation_id, idNum)]
       
       if (startDate) {

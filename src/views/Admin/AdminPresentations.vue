@@ -13,12 +13,28 @@
         <div
           v-for="presentation in presentations"
           :key="presentation.id"
-          class="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-brand-800"
+          class="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-brand-800"
         >
           <router-link
             :to="`/dashboard/presentations/${presentation.id}/edit`"
             class="flex flex-1 flex-col"
           >
+            <div
+              class="aspect-video w-full flex items-center justify-center overflow-hidden bg-gray-100 dark:bg-gray-800"
+            >
+              <img
+                v-if="presentation.coverImage"
+                :src="presentation.coverImage"
+                :alt="presentation.title"
+                class="h-full w-full object-cover transition group-hover:scale-105"
+              />
+              <span
+                v-else
+                class="text-4xl text-gray-400 dark:text-gray-500"
+              >
+                {{ presentation.title?.charAt(0) || 'П' }}
+              </span>
+            </div>
             <div class="flex flex-1 flex-col p-4">
               <div class="flex items-center gap-2">
                 <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
@@ -67,6 +83,7 @@ interface AdminPresentation {
   id: string
   title: string
   shortId?: string
+  coverImage?: string
   userName: string
   userEmail: string
   updatedAt: string
