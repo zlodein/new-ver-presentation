@@ -42,7 +42,7 @@ const route = useRoute()
 const router = useRouter()
 const { currentUser, fetchUser } = useAuth()
 
-const isAdmin = computed(() => (currentUser.value && (currentUser.value as { role_id?: number }).role_id === 2))
+const isAdmin = computed(() => currentUser.value?.role_id === 2)
 
 onMounted(async () => {
   await fetchUser()
