@@ -419,7 +419,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
         try {
@@ -442,6 +442,7 @@ export async function authRoutes(app: FastifyInstance) {
         const prefsData = user.presentation_display_preferences != null && user.presentation_display_preferences !== ''
           ? (typeof user.presentation_display_preferences === 'string' ? JSON.parse(user.presentation_display_preferences as string) : user.presentation_display_preferences)
           : null
+        const testDriveUsed = (user.test_drive_used === 'true' || user.test_drive_used === true) ?? false
 
         return reply.send({
           id: String(user.id),
@@ -461,6 +462,8 @@ export async function authRoutes(app: FastifyInstance) {
           work_phone: user.work_phone ?? undefined,
           work_website: user.work_website ?? undefined,
           role_id: user.role_id != null ? Number(user.role_id) : undefined,
+          tariff: user.tariff != null && user.tariff !== '' ? user.tariff : undefined,
+          testDriveUsed,
           createdAt: user.created_at,
           firstName: user.name,
           lastName: user.last_name,
@@ -496,7 +499,31 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.status(501).send({ error: 'Выбор тарифа при файловом хранилище не реализован' })
       }
       if (useMysql) {
-        return reply.status(501).send({ error: 'Выбор тарифа для MySQL не реализован' })
+        const userId = Number(payload.sub)
+        if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        let user: { id: number; tariff: string | null; test_drive_used: string } | null = null
+        try {
+          user = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userId),
+            columns: { id: true, tariff: true, test_drive_used: true },
+          }) as { id: number; tariff: string | null; test_drive_used: string } | null
+        } catch (err) {
+          if (isUnknownColumnError(err)) {
+            return reply.status(501).send({ error: 'Таблица users не содержит колонок tariff/test_drive_used. Выполните миграцию server/sql/migrate_user_tariff.sql' })
+          }
+          throw err
+        }
+        if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
+        if (tariff === 'test_drive' && user.test_drive_used === 'true') {
+          return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
+        }
+        const updates: { tariff: string; test_drive_used?: string } = { tariff }
+        if (tariff === 'expert' && user.tariff === 'test_drive') {
+          updates.test_drive_used = 'true'
+        }
+        await mysqlDb.update(mysqlSchema.users).set(updates).where(eq(mysqlSchema.users.id, userId))
+        return reply.send({ tariff, testDriveUsed: updates.test_drive_used === 'true' || user.test_drive_used === 'true' })
       }
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
       const user = await pgDb.query.users.findFirst({

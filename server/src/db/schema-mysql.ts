@@ -34,6 +34,8 @@ export const users = mysqlTable('users', {
   role_id: int('role_id').default(1),
   last_login_at: timestamp('last_login_at'),
   is_active: int('is_active', { unsigned: true }).default(1),
+  tariff: varchar('tariff', { length: 20 }), // null | test_drive | expert
+  test_drive_used: varchar('test_drive_used', { length: 10 }).notNull().default('false'), // 'true' | 'false'
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

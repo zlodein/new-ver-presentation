@@ -250,7 +250,27 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const inserted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        let userTariff: string | null = null
+        try {
+          const userRow = await mysqlDb.query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userIdNum),
+            columns: { tariff: true },
+          })
+          userTariff = userRow?.tariff ?? null
+        } catch {
+          // колонка tariff может отсутствовать до миграции
+        }
+        if (userTariff === 'test_drive') {
+          const existingList = await mysqlDb.query.presentations.findMany({
+            where: eq(mysqlSchema.presentations.user_id, userIdNum),
+            columns: { id: true },
+          })
+          if (existingList.length >= 1) {
+            return reply.status(403).send({ error: 'На тарифе «Тест драйв» доступна только одна презентация. Перейдите на тариф «Эксперт» для создания новых.' })
+          }
+        }
+        const inserted = await mysqlDb
           .insert(mysqlSchema.presentations)
           .values({
             user_id: userIdNum,
@@ -261,6 +281,13 @@ export async function presentationRoutes(app: FastifyInstance) {
           .$returningId()
         const createdId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
         if (createdId == null) return reply.status(500).send({ error: 'Ошибка при создании презентации' })
+        if (userTariff === 'test_drive') {
+          try {
+            await mysqlDb.update(mysqlSchema.users).set({ test_drive_used: 'true' }).where(eq(mysqlSchema.users.id, userIdNum))
+          } catch {
+            // колонка может отсутствовать
+          }
+        }
         const presentationTitle = title?.trim() || 'Без названия'
         try {
           await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
@@ -364,6 +391,19 @@ export async function presentationRoutes(app: FastifyInstance) {
         if (mysqlId === null) return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        if (content?.slides != null && Array.isArray(content.slides) && content.slides.length > 4) {
+          try {
+            const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+              where: eq(mysqlSchema.users.id, userIdNum),
+              columns: { tariff: true },
+            })
+            if (userRow?.tariff === 'test_drive') {
+              return reply.status(400).send({ error: 'На тарифе «Тест драйв» допускается не более 4 слайдов суммарно.' })
+            }
+          } catch {
+            // колонка tariff может отсутствовать
+          }
+        }
         const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string; status?: string } = { updated_at: new Date() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
         if (coverImage !== undefined) updates.cover_image = coverImage || null
