@@ -1159,6 +1159,17 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </button>
+            <button
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              title="Сохранить"
+              :disabled="saving"
+              @click="savePresentation"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+            </button>
             <template v-if="presentationMeta.status === 'published'">
               <button
                 type="button"
@@ -1477,20 +1488,28 @@
             </draggable>
           </div>
 
-          <!-- Кнопки Просмотр, Опубликовать / Экспорт в PDF -->
+          <!-- Кнопки Просмотр, Сохранить, Опубликовать / Экспорт в PDF -->
           <div class="flex flex-col gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
-            <div class="flex w-full gap-2">
+            <div class="flex w-full flex-wrap gap-2">
               <button
                 type="button"
-                class="h-8 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 @click="openViewPage"
               >
                 Просмотр
               </button>
+              <button
+                type="button"
+                class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                :disabled="saving"
+                @click="savePresentation"
+              >
+                Сохранить
+              </button>
               <template v-if="presentationMeta.status === 'published'">
                 <button
                   type="button"
-                  class="h-8 flex-1 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                  class="h-8 flex-1 min-w-0 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
                   @click="exportToPDF"
                   title="Экспортировать презентацию в PDF"
                 >
@@ -1500,7 +1519,7 @@
               <button
                 v-else
                 type="button"
-                class="h-8 flex-1 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                class="h-8 flex-1 min-w-0 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
                 @click="publishPresentation"
               >
                 Опубликовать
@@ -1725,6 +1744,9 @@ const isPublished = computed(() => presentationMeta.value.status === 'published'
 /** Успешное копирование: подсветка кнопки (публичная ссылка / ID) */
 const copyLinkCopied = ref(false)
 const copyIdCopied = ref(false)
+
+/** Идёт сохранение по кнопке «Сохранить» */
+const saving = ref(false)
 
 /** Статус автосохранения */
 const autoSaveStatus = ref('')
@@ -2837,6 +2859,19 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
 }
 
 const PUBLISH_WARNING = 'После нажатия кнопки публикации невозможно будет заменить изображения в презентации. Презентация будет опубликована. Замена изображений возможна только через техническую поддержку.\n\nПродолжить публикацию?'
+
+async function savePresentation() {
+  if (saving.value) return
+  saving.value = true
+  autoSaveStatus.value = 'Сохранение...'
+  try {
+    const ok = await doSave({ skipRedirect: true, createNotification: false })
+    autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
+    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+  } finally {
+    saving.value = false
+  }
+}
 
 async function publishPresentation() {
   if (!confirm(PUBLISH_WARNING)) return
