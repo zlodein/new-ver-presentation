@@ -254,19 +254,39 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         let userTariff: string | null = null
         let testDriveUsed = false
+        let expertPlanQty: number | null = null
+        let expertUsed: number | null = null
         try {
           const userRow = await mysqlDb.query.users.findFirst({
             where: eq(mysqlSchema.users.id, userIdNum),
-            columns: { tariff: true, test_drive_used: true },
+            columns: { tariff: true, test_drive_used: true, expert_plan_quantity: true, expert_presentations_used: true },
           })
-          userTariff = userRow?.tariff ?? null
-          const tdu = (userRow as { test_drive_used?: string | boolean } | undefined)?.test_drive_used
+          const u = userRow as { tariff?: string | null; test_drive_used?: string | boolean; expert_plan_quantity?: number | null; expert_presentations_used?: number | null } | undefined
+          userTariff = u?.tariff ?? null
+          const tdu = u?.test_drive_used
           testDriveUsed = tdu === 'true' || tdu === true
+          expertPlanQty = u?.expert_plan_quantity != null ? Number(u.expert_plan_quantity) : null
+          expertUsed = u?.expert_presentations_used != null ? Number(u.expert_presentations_used) : null
         } catch {
-          // колонка tariff/test_drive_used может отсутствовать до миграции
+          try {
+            const userRow = await mysqlDb.query.users.findFirst({
+              where: eq(mysqlSchema.users.id, userIdNum),
+              columns: { tariff: true, test_drive_used: true },
+            })
+            const u = userRow as { tariff?: string | null; test_drive_used?: string | boolean } | undefined
+            userTariff = u?.tariff ?? null
+            const tdu = u?.test_drive_used
+            testDriveUsed = tdu === 'true' || tdu === true
+          } catch {
+            // колонка tariff/test_drive_used может отсутствовать до миграции
+          }
         }
         if (userTariff === 'test_drive' && testDriveUsed) {
           return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
+        }
+        const mysqlExpertPlan = expertPlanQty ?? 1
+        if (userTariff === 'expert' && expertUsed != null && expertUsed >= mysqlExpertPlan) {
+          return reply.status(403).send({ error: `Достигнут лимит презентаций по тарифу (${mysqlExpertPlan}). Удалённые презентации тоже учитываются. Увеличьте пакет в разделе «Тарифы» или дождитесь обновления лимита.` })
         }
         if (userTariff === 'test_drive') {
           const existingList = await mysqlDb.query.presentations.findMany({
@@ -299,6 +319,15 @@ export async function presentationRoutes(app: FastifyInstance) {
             // колонка может отсутствовать
           }
         }
+        if (userTariff === 'expert' && expertUsed != null) {
+          try {
+            await mysqlDb.update(mysqlSchema.users)
+              .set({ expert_presentations_used: expertUsed + 1 })
+              .where(eq(mysqlSchema.users.id, userIdNum))
+          } catch {
+            // колонка может отсутствовать
+          }
+        }
         const presentationTitle = title?.trim() || 'Без названия'
         const now = new Date()
         return reply.status(201).send({
@@ -312,11 +341,16 @@ export async function presentationRoutes(app: FastifyInstance) {
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
       const userRow = await pgDb.query.users.findFirst({
         where: eq(pgSchema.users.id, userId),
-        columns: { tariff: true, testDriveUsed: true },
+        columns: { tariff: true, testDriveUsed: true, expertPlanQuantity: true, expertPresentationsUsed: true },
       })
       const pgTestDriveUsed = userRow?.testDriveUsed === 'true'
       if (userRow?.tariff === 'test_drive' && pgTestDriveUsed) {
         return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
+      }
+      const pgExpertPlan = userRow?.expertPlanQuantity != null && userRow.expertPlanQuantity !== '' ? Math.max(1, Math.min(100, Number(userRow.expertPlanQuantity) || 1)) : 1
+      const pgExpertUsed = userRow?.expertPresentationsUsed != null && userRow.expertPresentationsUsed !== '' ? Math.max(0, Number(userRow.expertPresentationsUsed) || 0) : 0
+      if (userRow?.tariff === 'expert' && pgExpertUsed >= pgExpertPlan) {
+        return reply.status(403).send({ error: `Достигнут лимит презентаций по тарифу (${pgExpertPlan}). Удалённые презентации тоже учитываются. Увеличьте пакет в разделе «Тарифы» или дождитесь обновления лимита.` })
       }
       if (userRow?.tariff === 'test_drive') {
         const existingList = await pgDb.query.presentations.findMany({
@@ -342,6 +376,15 @@ export async function presentationRoutes(app: FastifyInstance) {
         .returning()
       if (userRow?.tariff === 'test_drive') {
         await pgDb.update(pgSchema.users).set({ testDriveUsed: 'true' }).where(eq(pgSchema.users.id, userId))
+      }
+      if (userRow?.tariff === 'expert' && pgExpertUsed != null) {
+        try {
+          await pgDb.update(pgSchema.users)
+            .set({ expertPresentationsUsed: String(pgExpertUsed + 1) })
+            .where(eq(pgSchema.users.id, userId))
+        } catch {
+          // колонка может отсутствовать
+        }
       }
       return reply.status(201).send({
         id: created.id,

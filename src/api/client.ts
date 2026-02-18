@@ -120,6 +120,10 @@ export interface AuthUser {
   createdAt?: string
   tariff?: string | null
   testDriveUsed?: boolean
+  /** Лимит презентаций на тарифе Эксперт (1–100) */
+  expertPlanQuantity?: number
+  /** Сколько презентаций уже создано (удалённые тоже считаются) */
+  expertPresentationsUsed?: number
   // Для обратной совместимости
   firstName?: string | null
   lastName?: string | null

@@ -19,6 +19,8 @@ export const users = pgTable(
     lastName: varchar('last_name', { length: 120 }),
     tariff: varchar('tariff', { length: 20 }), // null | 'test_drive' | 'expert'
     testDriveUsed: varchar('test_drive_used', { length: 10 }).notNull().default('false'), // 'true' | 'false' для совместимости
+    expertPlanQuantity: varchar('expert_plan_quantity', { length: 5 }).default('1'), // лимит презентаций на тарифе Эксперт (1–100), varchar для совместимости
+    expertPresentationsUsed: varchar('expert_presentations_used', { length: 10 }).notNull().default('0'), // сколько уже создано
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

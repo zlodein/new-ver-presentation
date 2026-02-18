@@ -36,6 +36,8 @@ export const users = mysqlTable('users', {
   is_active: int('is_active', { unsigned: true }).default(1),
   tariff: varchar('tariff', { length: 20 }), // null | test_drive | expert
   test_drive_used: varchar('test_drive_used', { length: 10 }).notNull().default('false'), // 'true' | 'false'
+  expert_plan_quantity: int('expert_plan_quantity', { unsigned: true }).default(1), // лимит презентаций на тарифе Эксперт (1–100)
+  expert_presentations_used: int('expert_presentations_used', { unsigned: true }).notNull().default(0), // сколько уже создано (удалённые тоже считаются)
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

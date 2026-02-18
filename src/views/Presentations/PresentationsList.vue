@@ -13,7 +13,7 @@
           type="button"
           :disabled="!canCreatePresentation"
           class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-          :title="!canCreatePresentation ? (testDriveUsed ? 'Вы уже использовали тест драйв. Перейдите на тариф «Эксперт» для создания новых презентаций.' : 'На тарифе «Тест драйв» доступна только одна презентация.') : ''"
+          :title="cannotCreateReason"
           @click="showCreateModal = true"
         >
           <PlusIcon />
@@ -90,6 +90,7 @@
         <button
           type="button"
           :disabled="!canCreatePresentation"
+          :title="cannotCreateReason"
           class="mt-4 inline-flex items-center gap-2 text-brand-500 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
           @click="showCreateModal = true"
         >
@@ -180,13 +181,29 @@ import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const { currentUser, fetchUser } = useAuth()
-const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
+const userTariff = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff)
+const isTestDrive = computed(() => userTariff.value === 'test_drive')
+const isExpert = computed(() => userTariff.value === 'expert')
 /** На тест-драйве можно создать только одну презентацию за всё время (даже после удаления). */
 const testDriveUsed = computed(() => (currentUser.value as { testDriveUsed?: boolean } | undefined)?.testDriveUsed === true)
+const expertPlanQuantity = computed(() => Math.max(1, (currentUser.value as { expertPlanQuantity?: number } | undefined)?.expertPlanQuantity ?? 1))
+const expertPresentationsUsed = computed(() => Math.max(0, (currentUser.value as { expertPresentationsUsed?: number } | undefined)?.expertPresentationsUsed ?? 0))
 const canCreatePresentation = computed(() => {
-  if (!isTestDrive.value) return true
-  if (testDriveUsed.value) return false
-  return presentations.value.length < 1
+  if (isTestDrive.value) {
+    if (testDriveUsed.value) return false
+    return presentations.value.length < 1
+  }
+  if (isExpert.value) {
+    return expertPresentationsUsed.value < expertPlanQuantity.value
+  }
+  return true
+})
+/** Текст подсказки, почему нельзя создать презентацию */
+const cannotCreateReason = computed(() => {
+  if (isTestDrive.value && testDriveUsed.value) return 'Вы уже использовали тест драйв. Перейдите на тариф «Эксперт» для создания новых презентаций.'
+  if (isTestDrive.value) return 'На тарифе «Тест драйв» доступна только одна презентация.'
+  if (isExpert.value && expertPresentationsUsed.value >= expertPlanQuantity.value) return `Достигнут лимит презентаций (${expertPlanQuantity.value}). Удалённые тоже учитываются. Увеличьте пакет в разделе «Тарифы».`
+  return ''
 })
 
 const currentPageTitle = ref('Презентации')

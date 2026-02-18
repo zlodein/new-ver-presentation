@@ -208,7 +208,7 @@ async function chooseTariff(tariff: 'test_drive' | 'expert') {
   if (tariff === 'test_drive' && !canChooseTestDrive.value) return
   choosing.value = true
   try {
-    await api.patch('/api/auth/tariff', { tariff })
+    await api.patch('/api/auth/tariff', tariff === 'expert' ? { tariff, quantity: expertQuantityBounded.value } : { tariff })
     await fetchUser()
     router.push('/dashboard')
   } catch (e) {

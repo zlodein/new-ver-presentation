@@ -420,20 +420,30 @@ export async function authRoutes(app: FastifyInstance) {
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
+        const expertColumns = { expert_plan_quantity: true, expert_presentations_used: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
         try {
           user = await mysqlDb.query.users.findFirst({
             where: eq(mysqlSchema.users.id, userId),
-            columns: { ...baseColumns, ...workColumns },
+            columns: { ...baseColumns, ...expertColumns, ...workColumns },
           }) as Record<string, unknown> | null
         } catch (err) {
           if (isUnknownColumnError(err)) {
-            const baseColumnsNoRole = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
-            user = await mysqlDb.query.users.findFirst({
-              where: eq(mysqlSchema.users.id, userId),
-              columns: { ...baseColumnsNoRole, ...workColumns },
-            }) as Record<string, unknown> | null
+            try {
+              user = await mysqlDb.query.users.findFirst({
+                where: eq(mysqlSchema.users.id, userId),
+                columns: { ...baseColumns, ...workColumns },
+              }) as Record<string, unknown> | null
+            } catch (err2) {
+              if (isUnknownColumnError(err2)) {
+                const baseColumnsNoRole = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
+                user = await mysqlDb.query.users.findFirst({
+                  where: eq(mysqlSchema.users.id, userId),
+                  columns: { ...baseColumnsNoRole, ...workColumns },
+                }) as Record<string, unknown> | null
+              } else throw err2
+            }
           } else throw err
         }
         if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
@@ -464,6 +474,8 @@ export async function authRoutes(app: FastifyInstance) {
           role_id: user.role_id != null ? Number(user.role_id) : undefined,
           tariff: user.tariff != null && user.tariff !== '' ? user.tariff : undefined,
           testDriveUsed,
+          expertPlanQuantity: user.expert_plan_quantity != null ? Number(user.expert_plan_quantity) : 1,
+          expertPresentationsUsed: user.expert_presentations_used != null ? Number(user.expert_presentations_used) : 0,
           createdAt: user.created_at,
           firstName: user.name,
           lastName: user.last_name,
@@ -471,14 +483,18 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
         where: eq(pgSchema.users.id, payload.sub),
-        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true, tariff: true, testDriveUsed: true },
+        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true, tariff: true, testDriveUsed: true, expertPlanQuantity: true, expertPresentationsUsed: true },
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
-      const { testDriveUsed: tdu, ...rest } = user
+      const { testDriveUsed: tdu, expertPlanQuantity: eqty, expertPresentationsUsed: eused, ...rest } = user
+      const planQty = eqty != null && eqty !== '' ? Math.max(1, Math.min(100, Number(eqty) || 1)) : 1
+      const usedCount = eused != null && eused !== '' ? Math.max(0, Number(eused) || 0) : 0
       return reply.send({
         ...rest,
         tariff: user.tariff ?? undefined,
         testDriveUsed: tdu === 'true',
+        expertPlanQuantity: planQty,
+        expertPresentationsUsed: usedCount,
       })
     } catch (err) {
       req.log.error(err)
@@ -488,10 +504,11 @@ export async function authRoutes(app: FastifyInstance) {
     }
   })
 
-  app.patch<{ Body: { tariff: string } }>('/api/auth/tariff', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { tariff: string } }>, reply: FastifyReply) => {
+  app.patch<{ Body: { tariff: string; quantity?: number } }>('/api/auth/tariff', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { tariff: string; quantity?: number } }>, reply: FastifyReply) => {
     try {
       const payload = req.user as { sub: string }
       const tariff = req.body?.tariff
+      const quantity = req.body?.quantity != null ? Math.max(1, Math.min(100, Math.floor(Number(req.body.quantity)) || 1)) : undefined
       if (tariff !== 'test_drive' && tariff !== 'expert') {
         return reply.status(400).send({ error: 'Укажите тариф: test_drive или expert' })
       }
@@ -518,28 +535,40 @@ export async function authRoutes(app: FastifyInstance) {
         if (tariff === 'test_drive' && user.test_drive_used === 'true') {
           return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
         }
-        const updates: { tariff: string; test_drive_used?: string } = { tariff }
+        const updates: { tariff: string; test_drive_used?: string; expert_plan_quantity?: number } = { tariff }
         if (tariff === 'expert' && user.tariff === 'test_drive') {
           updates.test_drive_used = 'true'
         }
+        if (tariff === 'expert' && quantity != null) {
+          updates.expert_plan_quantity = quantity
+        }
         await mysqlDb.update(mysqlSchema.users).set(updates).where(eq(mysqlSchema.users.id, userId))
-        return reply.send({ tariff, testDriveUsed: updates.test_drive_used === 'true' || user.test_drive_used === 'true' })
+        const nextTestDriveUsed = updates.test_drive_used === 'true' || user.test_drive_used === 'true'
+        const res: { tariff: string; testDriveUsed: boolean; expertPlanQuantity?: number } = { tariff, testDriveUsed: nextTestDriveUsed }
+        if (updates.expert_plan_quantity != null) res.expertPlanQuantity = updates.expert_plan_quantity
+        return reply.send(res)
       }
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
       const user = await pgDb.query.users.findFirst({
         where: eq(pgSchema.users.id, payload.sub),
-        columns: { id: true, tariff: true, testDriveUsed: true },
+        columns: { id: true, tariff: true, testDriveUsed: true, expertPlanQuantity: true, expertPresentationsUsed: true },
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
       if (tariff === 'test_drive' && user.testDriveUsed === 'true') {
         return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
       }
-      const updates: { tariff: string; testDriveUsed?: string } = { tariff }
+      const updates: { tariff: string; testDriveUsed?: string; expertPlanQuantity?: string } = { tariff }
       if (tariff === 'expert' && user.tariff === 'test_drive') {
         updates.testDriveUsed = 'true'
       }
+      if (tariff === 'expert' && quantity != null) {
+        updates.expertPlanQuantity = String(quantity)
+      }
       await pgDb.update(pgSchema.users).set(updates).where(eq(pgSchema.users.id, payload.sub))
-      return reply.send({ tariff, testDriveUsed: updates.testDriveUsed === 'true' || user.testDriveUsed === 'true' })
+      const nextTestDriveUsed = updates.testDriveUsed === 'true' || user.testDriveUsed === 'true'
+      const res: { tariff: string; testDriveUsed: boolean; expertPlanQuantity?: number } = { tariff, testDriveUsed: nextTestDriveUsed }
+      if (updates.expertPlanQuantity != null) res.expertPlanQuantity = Number(updates.expertPlanQuantity)
+      return reply.send(res)
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
