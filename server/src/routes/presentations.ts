@@ -314,7 +314,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         where: eq(pgSchema.users.id, userId),
         columns: { tariff: true, testDriveUsed: true },
       })
-      const pgTestDriveUsed = userRow?.testDriveUsed === 'true' || userRow?.testDriveUsed === true
+      const pgTestDriveUsed = userRow?.testDriveUsed === 'true'
       if (userRow?.tariff === 'test_drive' && pgTestDriveUsed) {
         return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
       }
