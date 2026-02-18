@@ -540,8 +540,10 @@ export async function authRoutes(app: FastifyInstance) {
           updates.test_drive_used = 'true'
         }
         if (tariff === 'expert' && quantity != null) {
+          // При первом выборе тарифа «Эксперт» — задаём лимит; при докупке — добавляем к текущему
           const current = Math.max(0, user.expert_plan_quantity ?? 0)
-          updates.expert_plan_quantity = Math.min(100, current + quantity)
+          updates.expert_plan_quantity =
+            user.tariff === 'expert' ? Math.min(100, current + quantity) : Math.min(100, quantity)
         }
         await mysqlDb.update(mysqlSchema.users).set(updates).where(eq(mysqlSchema.users.id, userId))
         const nextTestDriveUsed = updates.test_drive_used === 'true' || user.test_drive_used === 'true'
@@ -563,8 +565,10 @@ export async function authRoutes(app: FastifyInstance) {
         updates.testDriveUsed = 'true'
       }
       if (tariff === 'expert' && quantity != null) {
+        // При первом выборе тарифа «Эксперт» — задаём лимит; при докупке — добавляем к текущему
         const current = Math.max(0, Number(user.expertPlanQuantity) || 0)
-        updates.expertPlanQuantity = String(Math.min(100, current + quantity))
+        updates.expertPlanQuantity =
+          user.tariff === 'expert' ? String(Math.min(100, current + quantity)) : String(Math.min(100, quantity))
       }
       await pgDb.update(pgSchema.users).set(updates).where(eq(pgSchema.users.id, payload.sub))
       const nextTestDriveUsed = updates.testDriveUsed === 'true' || user.testDriveUsed === 'true'
