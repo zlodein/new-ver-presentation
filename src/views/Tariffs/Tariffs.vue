@@ -64,38 +64,36 @@
         <span class="mb-3 block text-theme-xl font-semibold text-white">
           Эксперт
         </span>
-        <div class="mb-1 flex items-end">
-          <h2 class="text-title-md font-bold text-white">
-            {{ expertPriceFormatted }}
-          </h2>
-          <span class="mb-1 ml-1 inline-block text-sm text-white/70">
-            за {{ expertQuantityBounded }} {{ pluralize(expertQuantityBounded, 'презентацию', 'презентации', 'презентаций') }}
-          </span>
+        <div class="mb-1 flex flex-wrap items-end justify-between gap-3">
+          <div class="flex items-end">
+            <h2 class="text-title-md font-bold text-white">
+              {{ expertPriceFormatted }}
+            </h2>
+            <span class="mb-1 ml-1 inline-block text-sm text-white/70">
+              за {{ expertQuantityBounded }} {{ pluralize(expertQuantityBounded, 'презентацию', 'презентации', 'презентаций') }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <label class="sr-only">Количество презентаций</label>
+            <input
+              v-model.number="expertQuantity"
+              type="number"
+              min="1"
+              max="100"
+              class="h-11 w-20 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center text-sm font-medium text-white shadow-theme-xs placeholder:text-white/40 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+              placeholder="1–100"
+              aria-label="Количество презентаций"
+            />
+          </div>
         </div>
-        <p v-if="expertDiscountPercent > 0" class="text-sm text-success-400">
-          Скидка {{ expertDiscountPercent }}%
-        </p>
-        <p class="text-sm text-white/70">
-          900 ₽ за презентацию. Скидки: от 2 до 5 — 5%, от 5 до 10 — 10%, от 10 до 20 — 15%, от 20 до 100 — 20%.
+        <p class="mt-2 text-sm text-white/70">
+          {{ expertDiscountDescription }}
         </p>
         <div class="my-6 h-px w-full bg-white/20" />
-        <div class="mb-4">
-          <label class="mb-2 block text-sm text-white/80">
-            Количество презентаций
-          </label>
-          <input
-            v-model.number="expertQuantity"
-            type="number"
-            min="1"
-            max="100"
-            class="h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-            placeholder="1–100"
-          />
-        </div>
         <ul class="mb-8 space-y-3 text-sm text-white/80">
           <li class="flex items-center gap-3">
             <CheckIcon class="text-success-500" />
-            Неограниченно презентаций
+            Неограниченное количество слайдов
           </li>
           <li class="flex items-center gap-3">
             <CheckIcon class="text-success-500" />
@@ -176,6 +174,16 @@ const expertDiscountPercent = computed(() =>
 const expertPriceFormatted = computed(() => {
   const total = expertTotal(expertQuantityBounded.value)
   return `${total.toLocaleString('ru-RU')} ₽`
+})
+
+const expertDiscountDescription = computed(() => {
+  const q = expertQuantityBounded.value
+  const pct = expertDiscountPercent.value
+  if (pct === 0) {
+    return '900 ₽ за презентацию. Динамическая система скидок в зависимости от количества, максимальная скидка 20%.'
+  }
+  const word = q === 1 ? 'презентации' : 'презентациях'
+  return `Динамическая система скидок: при ${q} ${word} — скидка ${pct}%. Максимальный процент скидки 20%.`
 })
 
 async function chooseTariff(tariff: 'test_drive' | 'expert') {
