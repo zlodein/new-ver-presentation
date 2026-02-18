@@ -250,8 +250,12 @@ function getDefaultDataForType(type: string, title: string, subtitle: string): R
   }
 }
 
+/** На тест драйве — только 4 слайда (обложка, описание, галерея, контакты). */
+const DEFAULT_SLIDES_TEST_DRIVE = ['cover', 'description', 'gallery', 'contacts']
+
 function buildDefaultSlides(title: string, subtitle: string) {
-  return SLIDE_TYPES.map(({ type }) => ({
+  const types = isTestDrive.value ? DEFAULT_SLIDES_TEST_DRIVE : SLIDE_TYPES.map((s) => s.type)
+  return types.map((type: string) => ({
     id: genSlideId(),
     type,
     data: getDefaultDataForType(type, title, subtitle),

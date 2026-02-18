@@ -269,6 +269,10 @@ export async function presentationRoutes(app: FastifyInstance) {
           if (existingList.length >= 1) {
             return reply.status(403).send({ error: 'На тарифе «Тест драйв» доступна только одна презентация. Перейдите на тариф «Эксперт» для создания новых.' })
           }
+          const slidesCount = Array.isArray(contentVal?.slides) ? contentVal.slides.length : 0
+          if (slidesCount > 4) {
+            return reply.status(400).send({ error: 'На тарифе «Тест драйв» допускается не более 4 слайдов. Создайте презентацию с 4 слайдами или перейдите на тариф «Эксперт».' })
+          }
         }
         const inserted = await mysqlDb
           .insert(mysqlSchema.presentations)
@@ -323,6 +327,10 @@ export async function presentationRoutes(app: FastifyInstance) {
         })
         if (existingList.length >= 1) {
           return reply.status(403).send({ error: 'На тарифе «Тест драйв» доступна только одна презентация. Перейдите на тариф «Эксперт» для создания новых.' })
+        }
+        const slidesCount = Array.isArray(contentVal?.slides) ? contentVal.slides.length : 0
+        if (slidesCount > 4) {
+          return reply.status(400).send({ error: 'На тарифе «Тест драйв» допускается не более 4 слайдов. Создайте презентацию с 4 слайдами или перейдите на тариф «Эксперт».' })
         }
       }
       const [created] = await pgDb
@@ -508,6 +516,19 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (idNum === null) return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       const userIdNum = Number(userId)
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+      if (isPublic) {
+        try {
+          const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+            where: eq(mysqlSchema.users.id, userIdNum),
+            columns: { tariff: true },
+          })
+          if (userRow?.tariff === 'test_drive') {
+            return reply.status(403).send({ error: 'Публичная ссылка недоступна на тарифе «Тест драйв». Перейдите на тариф «Эксперт» в разделе «Тарифы».' })
+          }
+        } catch {
+          // колонка tariff может отсутствовать
+        }
+      }
       const baseUrl = (process.env.PUBLIC_APP_URL || `${req.protocol}://${req.hostname}`).replace(/\/$/, '')
       const updates: { updated_at: Date; is_public: number; public_hash?: string | null; public_url?: string | null } = {
         updated_at: new Date(),

@@ -169,9 +169,10 @@
                   </button>
                   <button
                     type="button"
-                    class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                    title="Дублировать"
-                    @click.stop="duplicateSlide(index)"
+                    :disabled="!canAddSlide"
+                    :title="!canAddSlide ? 'На тарифе «Тест драйв» не более 4 слайдов' : 'Дублировать'"
+                    class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    @click.stop="canAddSlide && duplicateSlide(index)"
                   >
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -248,9 +249,10 @@
                     </button>
                     <button
                       type="button"
-                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                      title="Дублировать"
-                      @click.stop="duplicateSlide(index)"
+                      :disabled="!canAddSlide"
+                      :title="!canAddSlide ? 'На тарифе «Тест драйв» не более 4 слайдов' : 'Дублировать'"
+                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      @click.stop="canAddSlide && duplicateSlide(index)"
                     >
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -382,8 +384,10 @@
           <div class="relative">
             <button
               type="button"
-              class="flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              @click="showAddSlideMenu = !showAddSlideMenu"
+              :disabled="!canAddSlide"
+              :title="!canAddSlide ? 'На тарифе «Тест драйв» допускается не более 4 слайдов' : 'Добавить слайд'"
+              class="flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="canAddSlide && (showAddSlideMenu = !showAddSlideMenu)"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -394,7 +398,7 @@
               </svg>
             </button>
             <div
-              v-if="showAddSlideMenu"
+              v-if="showAddSlideMenu && canAddSlide"
               ref="addSlideMenuRef"
               class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
               @click.stop
@@ -1089,16 +1093,17 @@
             <div class="relative">
               <button
                 type="button"
-                class="mob-editor-buttons__add flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700"
-                title="Добавить слайд"
-                @click.stop="showAddSlideMenu = !showAddSlideMenu"
+                :disabled="!canAddSlide"
+                :title="!canAddSlide ? 'На тарифе «Тест драйв» допускается не более 4 слайдов' : 'Добавить слайд'"
+                class="mob-editor-buttons__add flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-700"
+                @click.stop="canAddSlide && (showAddSlideMenu = !showAddSlideMenu)"
               >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
               </button>
               <div
-                v-if="showAddSlideMenu"
+                v-if="showAddSlideMenu && canAddSlide"
                 ref="mobAddSlideMenuRef"
                 data-mob-add-menu
                 class="absolute bottom-full left-1/2 z-[110] mb-2 w-48 -translate-x-1/2 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
@@ -1313,8 +1318,10 @@
             <div class="relative flex-1">
               <button
                 type="button"
-                class="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                @click="showAddSlideMenu = !showAddSlideMenu"
+                :disabled="!canAddSlide"
+                :title="!canAddSlide ? 'На тарифе «Тест драйв» допускается не более 4 слайдов' : 'Добавить слайд'"
+                class="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                @click="canAddSlide && (showAddSlideMenu = !showAddSlideMenu)"
               >
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -1322,7 +1329,7 @@
                 Добавить слайд
               </button>
               <div
-                v-if="showAddSlideMenu"
+                v-if="showAddSlideMenu && canAddSlide"
                 ref="addSlideMenuRef"
                 class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
                 @click.stop
@@ -1395,9 +1402,10 @@
                     </button>
                     <button
                       type="button"
-                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                      title="Дублировать"
-                      @click.stop="duplicateSlide(index)"
+                      :disabled="!canAddSlide"
+                      :title="!canAddSlide ? 'На тарифе «Тест драйв» не более 4 слайдов' : 'Дублировать'"
+                      class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                      @click.stop="canAddSlide && duplicateSlide(index)"
                     >
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -2172,6 +2180,7 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
 
 const { currentUser } = useAuth()
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
+const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
 
 /** Подстановка данных профиля в слайд «Контакты» по настройкам «Выводить в презентации». */
 function applyProfileToContactsSlide(data: Record<string, unknown>) {

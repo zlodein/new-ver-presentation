@@ -3,10 +3,19 @@
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="mx-auto w-full max-w-[480px]">
       <h2
-        class="mb-7 text-center text-title-sm font-bold text-gray-800 dark:text-white/90"
+        class="mb-2 text-center text-title-sm font-bold text-gray-800 dark:text-white/90"
       >
         Тарифы: максимум возможностей для каждого!
       </h2>
+      <p v-if="currentTariffLabel" class="mb-7 text-center text-sm text-gray-500 dark:text-gray-400">
+        Текущий тариф: <strong class="text-gray-700 dark:text-gray-300">{{ currentTariffLabel }}</strong>
+        <span v-if="currentTariff === 'test_drive'" class="block mt-1">
+          Сменить тариф на «Эксперт» можно ниже для снятия ограничений.
+        </span>
+      </p>
+      <p v-else class="mb-7 text-center text-sm text-gray-500 dark:text-gray-400">
+        Выберите тариф для начала работы
+      </p>
     </div>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:gap-6">
@@ -109,7 +118,7 @@
           class="flex w-full items-center justify-center rounded-lg bg-brand-500 p-3.5 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-600"
           @click="chooseTariff('expert')"
         >
-          Выбрать Эксперт
+          {{ currentTariff === 'test_drive' ? 'Сменить на Эксперт' : 'Выбрать Эксперт' }}
         </button>
       </div>
     </div>
@@ -161,6 +170,14 @@ const choosing = ref(false)
 const canChooseTestDrive = computed(() => {
   const u = currentUser.value
   return !!u && !u.testDriveUsed
+})
+
+const currentTariff = computed(() => currentUser.value?.tariff ?? null)
+const currentTariffLabel = computed(() => {
+  const t = currentTariff.value
+  if (t === 'test_drive') return 'Тест драйв'
+  if (t === 'expert') return 'Эксперт'
+  return ''
 })
 
 const expertQuantityBounded = computed(() =>
