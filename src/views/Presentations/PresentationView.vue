@@ -182,9 +182,9 @@
                 <div class="booklet-contacts__left flex flex-col gap-4">
                   <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
                   <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
-                    <div v-if="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" class="shrink-0">
+                    <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" class="shrink-0">
                       <div class="flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">
-                        <img :src="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
+                        <img :src="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" alt="" class="h-full w-full object-cover">
                       </div>
                     </div>
                     <div class="min-w-0 flex-1">
@@ -433,6 +433,13 @@ function contactImageUrl(slide: ViewSlideItem): string | undefined {
   const images = slide.data?.images
   if (Array.isArray(images) && images[0]) return String(images[0])
   return undefined
+}
+
+/** Значение avatarUrl или logoUrl из слайда контактов (тип для resolveImageUrl) */
+function contactsAvatarOrLogoUrl(slide: ViewSlideItem): string | null | undefined {
+  const v = slide.data?.avatarUrl ?? slide.data?.logoUrl
+  if (v == null) return undefined
+  return typeof v === 'string' ? v : String(v)
 }
 
 /** URL для отображения изображения: относительные пути дополняются базовым URL API при необходимости */

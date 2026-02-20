@@ -2776,7 +2776,8 @@ function profileContactsAvatarUrl(): string {
 /** Итоговый URL аватара/лого в блоке контактов: из слайда или из профиля */
 function contactsAvatarDisplayUrl(slide: SlideItem): string {
   const fromSlide = slide.data?.avatarUrl ?? slide.data?.logoUrl
-  if (fromSlide && String(fromSlide).trim()) return resolveImageUrl(fromSlide)
+  const url = typeof fromSlide === 'string' ? fromSlide : (fromSlide != null ? String(fromSlide) : '')
+  if (url.trim()) return resolveImageUrl(url)
   return resolveImageUrl(profileContactsAvatarUrl())
 }
 
