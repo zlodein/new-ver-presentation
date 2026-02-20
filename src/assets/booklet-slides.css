@@ -853,6 +853,18 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-page,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-page__inner,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-content {
+    min-height: 0;
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-content {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
   .presentation-slider-wrap.booklet-view .booklet-main__wrap {
     flex-direction: column;
   }
@@ -865,6 +877,12 @@
 
   .presentation-slider-wrap.booklet-view .booklet-main__content {
     padding: 30px 20px;
+  }
+
+  /* Обложка в мобильном редакторе: без боковых отступов */
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-main .booklet-main__content {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .presentation-slider-wrap.booklet-view .booklet-galery__wrap {

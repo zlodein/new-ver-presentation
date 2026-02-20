@@ -21,7 +21,7 @@
     >
       <router-link to="/dashboard">
         <img
-          v-if="isExpanded || isHovered || isMobileOpen"
+          v-if="(isExpanded || isHovered) && !isMobileOpen"
           class="dark:hidden"
           :src="logoUrl('logo.svg')"
           alt="Logo"
@@ -29,7 +29,7 @@
           height="40"
         />
         <img
-          v-if="isExpanded || isHovered || isMobileOpen"
+          v-if="(isExpanded || isHovered) && !isMobileOpen"
           class="hidden dark:block"
           :src="logoUrl('logo-dark.svg')"
           alt="Logo"
@@ -37,7 +37,7 @@
           height="40"
         />
         <img
-          v-else
+          v-else-if="!isMobileOpen"
           :src="logoUrl('logo-icon.svg')"
           alt="Logo"
           width="32"

@@ -600,10 +600,10 @@
                         />
                         <div v-if="canEditImages" class="flex flex-wrap items-center gap-2">
                           <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
-                          <div class="relative z-20 bg-transparent">
+                          <div class="relative z-20 min-w-[5.5rem] bg-transparent">
                             <select
                               :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-11 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                              class="dark:bg-dark-900 h-11 w-full min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                               @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
                             >
                               <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
@@ -671,10 +671,10 @@
                         />
                         <div v-if="canEditImages" class="flex flex-wrap items-center gap-2">
                           <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
-                          <div class="relative z-20 bg-transparent">
+                          <div class="relative z-20 min-w-[5.5rem] bg-transparent">
                             <select
                               :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-11 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                              class="dark:bg-dark-900 h-11 w-full min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                               @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
                             >
                               <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
@@ -871,10 +871,10 @@
                       />
                       <div v-if="canEditImages" class="flex items-center gap-2 px-2 py-1 col-span-full">
                         <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
-                        <div class="relative z-20 bg-transparent">
+                        <div class="relative z-20 min-w-[5.5rem] bg-transparent">
                           <select
                             :value="getImageGrid(slide)"
-                            class="dark:bg-dark-900 h-11 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                            class="dark:bg-dark-900 h-11 w-full min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                             @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
                           >
                             <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
@@ -1163,6 +1163,109 @@
                     {{ opt.label }}
                   </button>
                 </div>
+              </div>
+            </div>
+            <!-- Настройки отображения (шрифты, скругления) в мобильной нижней панели -->
+            <div class="relative" data-mob-settings-menu>
+              <button
+                type="button"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                title="Настройки отображения"
+                @click="showSettingsMenu = !showSettingsMenu"
+              >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <div
+                v-if="showSettingsMenu"
+                ref="mobSettingsMenuRef"
+                class="absolute right-0 bottom-full z-[110] mb-2 max-h-[70vh] w-64 overflow-y-auto rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                @click.stop
+              >
+                <p class="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Отображение в редакторе / просмотре / PDF</p>
+                <div class="space-y-2">
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шрифт</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select
+                        v-model="presentationSettings.fontFamily"
+                        class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                      >
+                        <option v-for="f in FONT_OPTIONS" :key="f.value" :value="f.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ f.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Скругление изображений</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select
+                        v-model="presentationSettings.imageBorderRadius"
+                        class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                      >
+                        <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ r.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Название презентации</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizePresentationTitle" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizeHeading" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_HEADING_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Текст</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizeText" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_TEXT_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Тип сделки и цена</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select v-model="presentationSettings.fontSizePrice" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                        <option v-for="o in FONT_SIZE_PRICE_OPTIONS" :key="o.value" :value="o.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ o.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="mt-3 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  @click="resetPresentationSettings"
+                >
+                  Сбросить к исходным
+                </button>
               </div>
             </div>
             <button
@@ -2872,7 +2975,8 @@ function handleClickOutside(event: MouseEvent) {
   const inDesktopWrap = addSlideWrapRef.value?.contains(target)
   const inSidebar = target.closest('.editor-sidebar')
   const inMobileAdd = target.closest('.mob-editor-buttons__add') || target.closest('[data-mob-add-menu]')
-  if (inDesktopWrap || inSidebar || inMobileAdd) return
+  const inMobSettings = target.closest('[data-mob-settings-menu]')
+  if (inDesktopWrap || inSidebar || inMobileAdd || inMobSettings) return
   showAddSlideMenu.value = false
   showSettingsMenu.value = false
 }
