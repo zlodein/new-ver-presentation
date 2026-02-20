@@ -8,7 +8,7 @@ import crypto from 'node:crypto'
 
 const __filenameAuth = fileURLToPath(import.meta.url)
 const __dirnameAuth = path.dirname(__filenameAuth)
-import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
+import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
@@ -183,7 +183,7 @@ export async function authRoutes(app: FastifyInstance) {
       userId = user.id
     } else if (useMysql && db) {
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-      let user = await mysqlDb.query.users.findFirst({
+      const user = await mysqlDb.query.users.findFirst({
         where: eq(mysqlSchema.users.email, normalizedEmail),
         columns: { id: true },
       })
@@ -206,7 +206,7 @@ export async function authRoutes(app: FastifyInstance) {
       }
     } else if (db) {
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
-      let user = await pgDb.query.users.findFirst({
+      const user = await pgDb.query.users.findFirst({
         where: eq(pgSchema.users.email, normalizedEmail),
         columns: { id: true },
       })
@@ -239,8 +239,9 @@ export async function authRoutes(app: FastifyInstance) {
     try {
       const { email, password, name, last_name, middle_name, user_img } = req.body
       // Для обратной совместимости
-      const firstName = name || (req.body as any).firstName
-      const lastName = last_name || (req.body as any).lastName
+      const body = req.body as { firstName?: string; lastName?: string; name?: string; last_name?: string }
+      const firstName = name ?? body.firstName
+      const lastName = last_name ?? body.lastName
       if (!email?.trim() || !password) {
         return reply.status(400).send({ error: 'Email и пароль обязательны' })
       }
@@ -397,7 +398,8 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.status(401).send({ error: 'Неверный email или пароль' })
       }
       const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
-      const { passwordHash: _, ...safe } = user
+      const { passwordHash: _drop, ...safe } = user
+      void _drop
       return reply.send({ user: safe, token })
     } catch (err) {
       req.log.error(err)

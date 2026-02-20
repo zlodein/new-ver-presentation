@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { eq, and, or, desc, gte, lte, like, sql } from 'drizzle-orm'
-import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
+import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
@@ -879,7 +879,7 @@ export async function presentationRoutes(app: FastifyInstance) {
     { preHandler: [app.authenticate] },
     async (req: FastifyRequest<{ Body: { id?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
-      let id = req.body?.id != null ? String(req.body.id).trim() : ''
+      const id = req.body?.id != null ? String(req.body.id).trim() : ''
       if (!id) {
         return reply.status(400).send({ error: 'Не указан id презентации' })
       }
@@ -899,7 +899,6 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const existing = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const ownerId = (existing as { user_id: number }).user_id
         await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
         // Удалённые презентации по-прежнему учитываются в лимите (expert_presentations_used не уменьшаем)
         await deletePresentationImagesFolder(id)
@@ -946,7 +945,6 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const existing = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const ownerId = (existing as { user_id: number }).user_id
         await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
         // Удалённые презентации по-прежнему учитываются в лимите (expert_presentations_used не уменьшаем)
         await deletePresentationImagesFolder(id)

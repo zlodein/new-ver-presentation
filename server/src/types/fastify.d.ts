@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- FastifyRequest используется в типе authenticate */
 import type { FastifyRequest } from 'fastify'
 
 declare module 'fastify' {

@@ -1,8 +1,6 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import bcrypt from 'bcryptjs'
-
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const STORE_PATH = process.env.STORE_PATH || join(__dirname, '..', '..', 'data', 'store.json')
 

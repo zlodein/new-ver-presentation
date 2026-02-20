@@ -1,9 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, desc, gte, lte, and, lt, isNotNull, isNull } from 'drizzle-orm'
-import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
+import { eq, desc, gte, and, lt, isNotNull, isNull } from 'drizzle-orm'
+import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
-import { fileStore } from '../db/file-store.js'
 import { toIsoDateRequired } from '../utils/date.js'
 
 function toIsoDate(d: Date | string): string {

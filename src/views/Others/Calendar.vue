@@ -360,7 +360,7 @@ const loadEvents = async () => {
     const data = await api.get('/api/calendar/events')
     events.value = data.map((e) => {
       const allDay = !!e.allDay
-      let start = e.start
+      const start = e.start
       let end = e.end
       if (!allDay && start) {
         const startDate = new Date(start)

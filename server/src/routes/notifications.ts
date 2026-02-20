@@ -1,9 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { eq, desc, and } from 'drizzle-orm'
-import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
+import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
-import { fileStore } from '../db/file-store.js'
 
 import { toIsoDateRequired } from '../utils/date.js'
 
@@ -22,15 +21,6 @@ function parseMysqlId(id: string): number | null {
     num = digits ? Math.floor(Number(digits[0])) : 0
   }
   return num >= 1 ? num : null
-}
-
-/** Извлекает id уведомления из path (на случай, если прокси не передаёт :id в params). */
-function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>): string {
-  const fromParams = req.params?.id
-  if (fromParams != null && String(fromParams).trim() !== '') return String(fromParams).trim()
-  const path = (req as { url?: string }).url ?? (req as { raw?: { url?: string } }).raw?.url ?? ''
-  const match = /\/api\/notifications\/([^/?#]+)/.exec(path)
-  return match ? decodeURIComponent(match[1]) : ''
 }
 
 export async function notificationRoutes(app: FastifyInstance) {
@@ -52,7 +42,7 @@ export async function notificationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const whereConditions: any[] = [eq(mysqlSchema.notifications.user_id, userIdNum)]
+        const whereConditions: unknown[] = [eq(mysqlSchema.notifications.user_id, userIdNum)]
         if (read !== undefined) {
           whereConditions.push(eq(mysqlSchema.notifications.read, read === 'true' ? 'true' : 'false'))
         }

@@ -11,7 +11,7 @@
 import 'dotenv/config'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
-import { db, schema, isSqlite, useFileStore, useMysql } from './index.js'
+import { db, isSqlite, useFileStore, useMysql } from './index.js'
 import * as pgSchema from './schema.js'
 import * as mysqlSchema from './schema-mysql.js'
 import { fileStore } from './file-store.js'

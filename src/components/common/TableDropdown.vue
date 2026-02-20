@@ -57,7 +57,7 @@ export default {
       ],
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     document.removeEventListener('click', this.close)
 
     if (this.popperInstance) {

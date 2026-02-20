@@ -79,17 +79,9 @@ ensurePresentationsImagesDir().catch((err) => {
   console.error('[upload] Ошибка создания папки для изображений презентаций:', err)
 })
 
-async function ensureSupportUploadsDir() {
-  try {
-    await fs.access(SUPPORT_UPLOADS_DIR)
-  } catch {
-    await fs.mkdir(SUPPORT_UPLOADS_DIR, { recursive: true })
-  }
-}
-
 export async function uploadRoutes(app: FastifyInstance) {
   // Загрузка аватара
-  app.post<{ Body: { file: any } }>(
+  app.post<{ Body: { file?: unknown } }>(
     '/api/upload/avatar',
     { preHandler: [app.authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
@@ -160,7 +152,7 @@ export async function uploadRoutes(app: FastifyInstance) {
   )
 
   // Загрузка логотипа компании
-  app.post<{ Body: { file: any } }>(
+  app.post<{ Body: { file?: unknown } }>(
     '/api/upload/company-logo',
     { preHandler: [app.authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
