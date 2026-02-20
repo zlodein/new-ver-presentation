@@ -110,21 +110,31 @@
                   </label>
                 </div>
               </div>
-              <div>
-                <label class="flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
-                  <div class="relative">
-                    <input type="checkbox" v-model="prefsForm.showAbout" class="sr-only" />
-                    <div class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]" :class="prefsForm.showAbout ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span :class="{ 'opacity-0': !prefsForm.showAbout }">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </span>
-                    </div>
-                  </div>
-                  О себе
-                </label>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Выводить данные о себе?</p>
+              <div class="flex flex-col gap-3">
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Данные о себе / должность</p>
+                <div class="flex flex-col gap-2">
+                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.aboutType === 'none' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
+                    <input class="sr-only" type="radio" value="none" v-model="prefsForm.aboutType" />
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.aboutType === 'none' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
+                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.aboutType === 'none' ? 'block' : 'hidden'"></span>
+                    </span>
+                    Не выбрано
+                  </label>
+                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.aboutType === 'about' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
+                    <input class="sr-only" type="radio" value="about" v-model="prefsForm.aboutType" />
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.aboutType === 'about' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
+                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.aboutType === 'about' ? 'block' : 'hidden'"></span>
+                    </span>
+                    Данные о себе
+                  </label>
+                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.aboutType === 'position' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
+                    <input class="sr-only" type="radio" value="position" v-model="prefsForm.aboutType" />
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.aboutType === 'position' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
+                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.aboutType === 'position' ? 'block' : 'hidden'"></span>
+                    </span>
+                    Должность
+                  </label>
+                </div>
               </div>
               <div class="flex flex-col gap-3">
                 <p class="text-sm font-medium text-gray-800 dark:text-white/90">Телефон</p>
@@ -193,10 +203,10 @@ const isPresentationPrefsModal = ref(false)
 const prefsLoading = ref(false)
 const prefsError = ref('')
 
-const prefsForm = ref<PresentationDisplayPreferences & { avatarOrLogo?: string; nameOrOrg?: string; phoneType?: string }>({
+const prefsForm = ref<PresentationDisplayPreferences & { avatarOrLogo?: string; nameOrOrg?: string; phoneType?: string; aboutType?: string }>({
   avatarOrLogo: 'none',
   nameOrOrg: 'none',
-  showAbout: false,
+  aboutType: 'none',
   phoneType: 'none',
   showMessengers: false,
 })
@@ -208,16 +218,17 @@ const handleAvatarUploaded = async () => {
 watch(isPresentationPrefsModal, (isOpen) => {
   if (isOpen && currentUser.value?.presentation_display_preferences) {
     const p = currentUser.value.presentation_display_preferences
+    const aboutType = p.aboutType ?? (p.showAbout ? 'about' : 'none')
     prefsForm.value = {
       avatarOrLogo: p.avatarOrLogo ?? 'none',
       nameOrOrg: p.nameOrOrg ?? 'none',
-      showAbout: p.showAbout ?? false,
+      aboutType,
       phoneType: p.phoneType ?? 'none',
       showMessengers: p.showMessengers ?? false,
     }
     prefsError.value = ''
   } else if (isOpen) {
-    prefsForm.value = { avatarOrLogo: 'none', nameOrOrg: 'none', showAbout: false, phoneType: 'none', showMessengers: false }
+    prefsForm.value = { avatarOrLogo: 'none', nameOrOrg: 'none', aboutType: 'none', phoneType: 'none', showMessengers: false }
     prefsError.value = ''
   }
 })
@@ -261,7 +272,7 @@ async function savePresentationPrefs() {
     const payload: PresentationDisplayPreferences = {
       avatarOrLogo: prefsForm.value.avatarOrLogo === 'none' ? undefined : (prefsForm.value.avatarOrLogo as 'personal' | 'company'),
       nameOrOrg: prefsForm.value.nameOrOrg === 'none' ? undefined : (prefsForm.value.nameOrOrg as 'personal' | 'company'),
-      showAbout: prefsForm.value.showAbout || undefined,
+      aboutType: prefsForm.value.aboutType === 'none' ? undefined : (prefsForm.value.aboutType as 'about' | 'position'),
       phoneType: prefsForm.value.phoneType === 'none' ? undefined : (prefsForm.value.phoneType as 'personal' | 'work'),
       showMessengers: prefsForm.value.showMessengers || undefined,
     }

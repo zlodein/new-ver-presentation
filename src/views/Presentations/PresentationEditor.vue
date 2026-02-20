@@ -2377,21 +2377,31 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
   const fullName = [user.name, user.middle_name, user.last_name].filter(Boolean).join(' ') || user.email || ''
 
   if (prefs.avatarOrLogo === 'personal' && user.user_img) {
-    data.avatarUrl = toUrl(user.user_img)
+    const url = toUrl(user.user_img)
+    data.avatarUrl = url
     data.logoUrl = ''
+    data.contactImageUrl = url
+    if (!Array.isArray(data.images)) data.images = []
+    ;(data.images as string[])[0] = url
   } else if (prefs.avatarOrLogo === 'company' && user.company_logo) {
-    data.logoUrl = toUrl(user.company_logo)
+    const url = toUrl(user.company_logo)
+    data.logoUrl = url
     data.avatarUrl = ''
+    data.contactImageUrl = url
+    if (!Array.isArray(data.images)) data.images = []
+    ;(data.images as string[])[0] = url
   }
 
   data.heading = 'Контакты'
   if (prefs.nameOrOrg === 'personal' && fullName) data.contactName = fullName
   else if (prefs.nameOrOrg === 'company' && user.company_name) data.contactName = String(user.company_name).trim()
 
-  if (prefs.showAbout && user.position) data.aboutText = String(user.position).trim()
+  const aboutType = prefs.aboutType ?? (prefs.showAbout ? 'about' : 'none')
+  if (aboutType === 'about' && user.position) data.aboutText = String(user.position).trim()
+  else if (aboutType === 'position' && user.work_position) data.aboutText = String(user.work_position).trim()
 
-  if (prefs.phoneType === 'personal' && user.personal_phone) data.phone = String(user.personal_phone).trim()
-  else if (prefs.phoneType === 'work' && user.work_phone) data.phone = String(user.work_phone).trim()
+  if (prefs.phoneType === 'personal' && user.personal_phone) data.phone = formatPhone(String(user.personal_phone).trim())
+  else if (prefs.phoneType === 'work' && user.work_phone) data.phone = formatPhone(String(user.work_phone).trim())
 
   const email = prefs.nameOrOrg === 'company' && user.work_email ? user.work_email : user.email
   if (email) data.email = String(email).trim()

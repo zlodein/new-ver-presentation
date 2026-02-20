@@ -901,21 +901,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
         const ownerId = (existing as { user_id: number }).user_id
         await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
-        try {
-          const userRow = await mysqlDb.query.users.findFirst({
-            where: eq(mysqlSchema.users.id, ownerId),
-            columns: { tariff: true, expert_presentations_used: true },
-          })
-          const u = userRow as { tariff?: string | null; expert_presentations_used?: number | null } | undefined
-          if (u?.tariff === 'expert' && (u?.expert_presentations_used ?? 0) > 0) {
-            await mysqlDb
-              .update(mysqlSchema.users)
-              .set({ expert_presentations_used: Math.max(0, (u.expert_presentations_used ?? 0) - 1) })
-              .where(eq(mysqlSchema.users.id, ownerId))
-          }
-        } catch {
-          // колонка может отсутствовать
-        }
+        // Удалённые презентации по-прежнему учитываются в лимите (expert_presentations_used не уменьшаем)
         await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
@@ -924,21 +910,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
       if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
-      try {
-        const userRow = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
-          where: eq(pgSchema.users.id, userId!),
-          columns: { tariff: true, expertPresentationsUsed: true },
-        })
-        const used = userRow?.expertPresentationsUsed != null && userRow.expertPresentationsUsed !== '' ? Math.max(0, Number(userRow.expertPresentationsUsed) || 0) : 0
-        if (userRow?.tariff === 'expert' && used > 0) {
-          await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-            .update(pgSchema.users)
-            .set({ expertPresentationsUsed: String(used - 1) })
-            .where(eq(pgSchema.users.id, userId!))
-        }
-      } catch {
-        // колонка может отсутствовать
-      }
+      // Удалённые презентации по-прежнему учитываются в лимите (expertPresentationsUsed не уменьшаем)
       await deletePresentationImagesFolder(id)
       return reply.status(204).send()
     }
@@ -976,21 +948,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
         const ownerId = (existing as { user_id: number }).user_id
         await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
-        try {
-          const userRow = await mysqlDb.query.users.findFirst({
-            where: eq(mysqlSchema.users.id, ownerId),
-            columns: { tariff: true, expert_presentations_used: true },
-          })
-          const u = userRow as { tariff?: string | null; expert_presentations_used?: number | null } | undefined
-          if (u?.tariff === 'expert' && (u?.expert_presentations_used ?? 0) > 0) {
-            await mysqlDb
-              .update(mysqlSchema.users)
-              .set({ expert_presentations_used: Math.max(0, (u.expert_presentations_used ?? 0) - 1) })
-              .where(eq(mysqlSchema.users.id, ownerId))
-          }
-        } catch {
-          // колонка может отсутствовать
-        }
+        // Удалённые презентации по-прежнему учитываются в лимите (expert_presentations_used не уменьшаем)
         await deletePresentationImagesFolder(id)
         return reply.status(204).send()
       }
@@ -999,21 +957,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
       if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
-      try {
-        const userRow = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
-          where: eq(pgSchema.users.id, userId!),
-          columns: { tariff: true, expertPresentationsUsed: true },
-        })
-        const used = userRow?.expertPresentationsUsed != null && userRow.expertPresentationsUsed !== '' ? Math.max(0, Number(userRow.expertPresentationsUsed) || 0) : 0
-        if (userRow?.tariff === 'expert' && used > 0) {
-          await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-            .update(pgSchema.users)
-            .set({ expertPresentationsUsed: String(used - 1) })
-            .where(eq(pgSchema.users.id, userId!))
-        }
-      } catch {
-        // колонка может отсутствовать
-      }
+      // Удалённые презентации по-прежнему учитываются в лимите (expertPresentationsUsed не уменьшаем)
       await deletePresentationImagesFolder(id)
       return reply.status(204).send()
     }

@@ -254,7 +254,15 @@ const presentationsLimitRemaining = computed(() => {
   if (isExpert.value) return Math.max(0, expertPlanQuantity.value - expertPresentationsUsed.value)
   return null
 })
-/** Текст рядом с заголовком: «доступна 1 презентация», «доступно 3 из 5 презентаций» и т.д. */
+/** Количество удалённых презентаций (учитываются в лимите, но не в списке) — только для тарифа Эксперт */
+const presentationsDeletedCount = computed(() => {
+  if (!isExpert.value) return 0
+  const used = expertPresentationsUsed.value
+  const current = presentations.value.length
+  return Math.max(0, used - current)
+})
+
+/** Текст рядом с заголовком: «доступна 1 презентация», «доступно 3 из 5 презентаций (из них удалено 2)» и т.д. */
 const presentationsLimitText = computed(() => {
   const total = presentationsLimitTotal.value
   const remaining = presentationsLimitRemaining.value
@@ -262,9 +270,13 @@ const presentationsLimitText = computed(() => {
   const word = pluralizePresentations(total)
   if (total === 1 && remaining === 1) return 'доступна 1 презентация'
   const wordForTotal = total === 1 ? 'презентации' : word // из 1 презентации, из 5 презентаций
-  if (total === 1 && remaining === 0) return 'доступно 0 из 1 презентации'
-  if (remaining === 0) return `доступно 0 из ${total} ${wordForTotal}`
-  return `доступно ${remaining} из ${total} ${wordForTotal}`
+  let base = ''
+  if (total === 1 && remaining === 0) base = 'доступно 0 из 1 презентации'
+  else if (remaining === 0) base = `доступно 0 из ${total} ${wordForTotal}`
+  else base = `доступно ${remaining} из ${total} ${wordForTotal}`
+  const deleted = presentationsDeletedCount.value
+  if (deleted > 0) return `${base} (из них удалено ${deleted})`
+  return base
 })
 /** Цвет счётчика: много — success, половина или меньше — warning, закончились — error */
 const presentationsLimitColor = computed(() => {

@@ -146,8 +146,10 @@ export interface PresentationDisplayPreferences {
   avatarOrLogo?: 'none' | 'personal' | 'company'
   /** ФИО или название организации: none | personal | company */
   nameOrOrg?: 'none' | 'personal' | 'company'
-  /** Выводить данные о себе (position) */
+  /** Выводить данные о себе (position) — устарело, использовать aboutType */
   showAbout?: boolean
+  /** Что выводить в блоке «О себе»: none | about (position) | position (work_position) */
+  aboutType?: 'none' | 'about' | 'position'
   /** Телефон: none | personal | work */
   phoneType?: 'none' | 'personal' | 'work'
   /** Выводить заполненные мессенджеры */

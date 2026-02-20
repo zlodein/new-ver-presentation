@@ -336,7 +336,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'contacts': {
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.contact_title || 'КОНТАКТЫ')
-        const contactName = String(dataObj.contact_name || '')
+        const contactName = String(dataObj.contactName || dataObj.contact_name || '')
+        const aboutText = String(dataObj.aboutText || '')
         const phone = String(dataObj.phone || dataObj.contact_phone || '')
         const email = String(dataObj.email || dataObj.contact_email || '')
         const role = String(dataObj.contact_role || '')
@@ -353,11 +354,12 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <h2 class="booklet-contacts__title">${escapeHtml(heading)}</h2>
                     ${avatarUrl ? `<div class="booklet-contacts__avatar-wrap"><div class="booklet-contacts__avatar"><img src="${toAbsoluteImageUrl(avatarUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div></div>` : ''}
                     <div class="booklet-contacts__block booklet-contacts__content">
-                      ${contactName ? `<p>${contactName}</p>` : ''}
-                      ${phone ? `<p>${phone}</p>` : ''}
-                      ${email ? `<p>${email}</p>` : ''}
-                      ${role ? `<p>${role}</p>` : ''}
-                      ${address ? `<p>${address}</p>` : ''}
+                      ${contactName ? `<p>${escapeHtml(contactName)}</p>` : ''}
+                      ${aboutText ? `<p>${escapeHtml(aboutText)}</p>` : ''}
+                      ${phone ? `<p>${escapeHtml(phone)}</p>` : ''}
+                      ${email ? `<p>${escapeHtml(email)}</p>` : ''}
+                      ${role ? `<p>${escapeHtml(role)}</p>` : ''}
+                      ${address ? `<p>${escapeHtml(address)}</p>` : ''}
                     </div>
                   </div>
                   ${contactImageUrl ? `<div class="booklet-contacts__block booklet-contacts__img"><img src="${toAbsoluteImageUrl(contactImageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
