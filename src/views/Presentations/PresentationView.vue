@@ -214,6 +214,7 @@ import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { api, hasApi, getToken } from '@/api/client'
+import { metroLineColor } from '@/data/metroLineColors'
 
 interface ViewSlideItem {
   type: string
@@ -373,15 +374,6 @@ function contactImageUrl(slide: ViewSlideItem): string | undefined {
   const images = slide.data?.images
   if (Array.isArray(images) && images[0]) return String(images[0])
   return undefined
-}
-
-/** Цвет точки по названию станции метро (палитра линий) */
-const METRO_LINE_COLORS = ['#EF4135', '#44B85C', '#0078BF', '#19CECE', '#8E4798', '#F58631', '#FFCB00', '#A1A1A4', '#79CDCD', '#B4D445', '#E0A0C8', '#84C2CE']
-function metroLineColor(stationName: string | undefined): string {
-  if (!stationName || typeof stationName !== 'string') return METRO_LINE_COLORS[0]
-  let h = 0
-  for (let i = 0; i < stationName.length; i++) h = (h * 31 + stationName.charCodeAt(i)) >>> 0
-  return METRO_LINE_COLORS[h % METRO_LINE_COLORS.length]
 }
 
 /** Извлечь URL изображений из слайда (поддержка строк и { url }), limit — максимум штук */

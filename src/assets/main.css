@@ -692,12 +692,22 @@ span.flatpickr-weekday,
   @apply text-sm font-medium text-gray-500 dark:text-gray-400;
 }
 /* Колонка «Весь день» и время — шире, чтобы время в одну строку (неделя/день) */
+.custom-calendar .fc-timegrid .fc-scrollgrid-shrink {
+  min-width: 6rem !important;
+  width: 6rem !important;
+}
 .custom-calendar .fc-timegrid-axis,
 .custom-calendar .fc-timegrid-slot-label {
-  min-width: 5rem;
+  min-width: 6rem !important;
+  width: 6rem !important;
 }
 .custom-calendar .fc-timegrid-slot-label-frame {
   white-space: nowrap;
+}
+.custom-calendar .fc-timegrid .fc-scrollgrid section > td:first-child,
+.custom-calendar .fc-timegrid .fc-scrollgrid section > th:first-child {
+  min-width: 6rem !important;
+  width: 6rem !important;
 }
 
 .input-date-icon::-webkit-inner-spin-button,

@@ -1498,43 +1498,81 @@
             </draggable>
           </div>
 
-          <!-- Кнопки Просмотр, Сохранить, Опубликовать / Экспорт в PDF -->
+          <!-- Кнопки Просмотр, Сохранить, Опубликовать / Экспорт в PDF (для не-админа: 2 в ряд + полная ширина снизу) -->
           <div class="flex flex-col gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
-            <div class="flex w-full flex-wrap gap-2">
-              <button
-                type="button"
-                class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                @click="openViewPage"
-              >
-                Просмотр
-              </button>
-              <button
-                type="button"
-                class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                :disabled="saving"
-                @click="savePresentation"
-              >
-                Сохранить
-              </button>
-              <template v-if="presentationMeta.status === 'published' && !isAdmin">
+            <template v-if="!isAdmin">
+              <div class="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  class="h-8 flex-1 min-w-0 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-                  @click="exportToPDF"
-                  title="Экспортировать презентацию в PDF"
+                  class="h-8 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  @click="openViewPage"
                 >
-                  Экспорт в PDF
+                  Просмотр
                 </button>
-              </template>
+                <button
+                  type="button"
+                  class="h-8 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  :disabled="saving"
+                  @click="savePresentation"
+                >
+                  Сохранить
+                </button>
+              </div>
+              <button
+                v-if="presentationMeta.status === 'published'"
+                type="button"
+                class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                @click="exportToPDF"
+                title="Экспортировать презентацию в PDF"
+              >
+                Экспорт в PDF
+              </button>
               <button
                 v-else-if="presentationMeta.status !== 'published'"
                 type="button"
-                class="h-8 flex-1 min-w-0 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
                 @click="publishPresentation"
               >
                 Опубликовать
               </button>
-            </div>
+            </template>
+            <template v-else>
+              <div class="flex w-full flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  @click="openViewPage"
+                >
+                  Просмотр
+                </button>
+                <button
+                  type="button"
+                  class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  :disabled="saving"
+                  @click="savePresentation"
+                >
+                  Сохранить
+                </button>
+                <template v-if="presentationMeta.status === 'published'">
+                  <button
+                    type="button"
+                    class="h-8 flex-1 min-w-0 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                    @click="exportToPDF"
+                    title="Экспортировать презентацию в PDF"
+                  >
+                    Экспорт в PDF
+                  </button>
+                </template>
+                <button
+                  v-else-if="presentationMeta.status !== 'published'"
+                  type="button"
+                  class="h-8 flex-1 min-w-0 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                  @click="publishPresentation"
+                >
+                  Опубликовать
+                </button>
+              </div>
+            </template>
           </div>
         </aside>
       </main>
@@ -1557,6 +1595,7 @@ import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase, ApiError } from '@/api/client'
 import type { PresentationFull } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
+import { metroLineColor } from '@/data/metroLineColors'
 
 const route = useRoute()
 const router = useRouter()
@@ -2145,14 +2184,6 @@ async function findNearestMetro(slide: SlideItem) {
   }
 }
 
-/** Цвета линий метро (палитра), по хэшу названия станции — стабильный цвет для одной станции */
-const METRO_LINE_COLORS = ['#EF4135', '#44B85C', '#0078BF', '#19CECE', '#8E4798', '#F58631', '#FFCB00', '#A1A1A4', '#79CDCD', '#B4D445', '#E0A0C8', '#84C2CE']
-function metroLineColor(stationName: string | undefined): string {
-  if (!stationName || typeof stationName !== 'string') return METRO_LINE_COLORS[0]
-  let h = 0
-  for (let i = 0; i < stationName.length; i++) h = (h * 31 + stationName.charCodeAt(i)) >>> 0
-  return METRO_LINE_COLORS[h % METRO_LINE_COLORS.length]
-}
 
 // Генерация текста (GigaChat)
 const generateTextLoading = ref<string | null>(null)

@@ -103,7 +103,7 @@
                       v-model.number="eventStartMinute"
                       class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                     >
-                      <option v-for="m in [0, 15, 30, 45]" :key="m" :value="m">{{ String(m).padStart(2, '0') }}</option>
+                      <option v-for="m in minutesOptions" :key="m" :value="m">{{ String(m).padStart(2, '0') }}</option>
                     </select>
                     <span class="absolute z-30 text-gray-500 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
                       <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -147,7 +147,7 @@
                       v-model.number="eventEndMinute"
                       class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                     >
-                      <option v-for="m in [0, 15, 30, 45]" :key="m" :value="m">{{ String(m).padStart(2, '0') }}</option>
+                      <option v-for="m in minutesOptions" :key="m" :value="m">{{ String(m).padStart(2, '0') }}</option>
                     </select>
                     <span class="absolute z-30 text-gray-500 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
                       <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -339,6 +339,7 @@ const eventNotes = ref('')
 const events = ref([])
 const loading = ref(false)
 
+const minutesOptions = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
 function timeFromHourMin(h, m) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
@@ -406,11 +407,11 @@ const openModal = () => {
     const now = new Date()
     eventStartDate.value = now.toISOString().split('T')[0]
     eventStartHour.value = now.getHours()
-    eventStartMinute.value = [0, 15, 30, 45][Math.round(now.getMinutes() / 15) % 4]
+    eventStartMinute.value = Math.min(55, Math.round(now.getMinutes() / 5) * 5)
     const end = new Date(now.getTime() + 3600000)
     eventEndDate.value = end.toISOString().split('T')[0]
     eventEndHour.value = end.getHours()
-    eventEndMinute.value = [0, 15, 30, 45][Math.round(end.getMinutes() / 15) % 4]
+    eventEndMinute.value = Math.min(55, Math.round(end.getMinutes() / 5) * 5)
   }
   isOpen.value = true
 }
@@ -438,11 +439,11 @@ const handleDateSelect = (_selectInfo) => {
   const now = new Date()
   eventStartDate.value = now.toISOString().split('T')[0]
   eventStartHour.value = now.getHours()
-  eventStartMinute.value = [0, 15, 30, 45][Math.round(now.getMinutes() / 15) % 4]
+  eventStartMinute.value = Math.min(55, Math.round(now.getMinutes() / 5) * 5)
   const end = new Date(now.getTime() + 3600000)
   eventEndDate.value = end.toISOString().split('T')[0]
   eventEndHour.value = end.getHours()
-  eventEndMinute.value = [0, 15, 30, 45][Math.round(end.getMinutes() / 15) % 4]
+  eventEndMinute.value = Math.min(55, Math.round(end.getMinutes() / 5) * 5)
   openModal()
 }
 
@@ -458,12 +459,12 @@ const handleEventClick = (clickInfo) => {
   const startDate = event.start ? new Date(event.start) : new Date()
   eventStartDate.value = startDate.toISOString().split('T')[0]
   eventStartHour.value = startDate.getHours()
-  eventStartMinute.value = [0, 15, 30, 45][Math.round(startDate.getMinutes() / 15) % 4]
+  eventStartMinute.value = Math.min(55, Math.round(startDate.getMinutes() / 5) * 5)
 
   const endDate = event.end ? new Date(event.end) : new Date(startDate.getTime() + 3600000)
   eventEndDate.value = endDate.toISOString().split('T')[0]
   eventEndHour.value = endDate.getHours()
-  eventEndMinute.value = [0, 15, 30, 45][Math.round(endDate.getMinutes() / 15) % 4]
+  eventEndMinute.value = Math.min(55, Math.round(endDate.getMinutes() / 5) * 5)
 
   eventLevel.value = colorValueToLabel[event.extendedProps?.calendar] ?? 'Синий'
   eventNotes.value = event.extendedProps?.notes ?? ''

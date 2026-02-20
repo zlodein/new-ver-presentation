@@ -27,8 +27,12 @@ const props = defineProps<{
 const mapEl = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let marker: L.Marker | null = null
+let yandexMap: unknown = null
 
 const hasValidCoords = ref(false)
+const useYandex = ref(false)
+
+const yandexMapsApiKey = (import.meta as ImportMeta & { env: { VITE_YANDEX_MAPS_API_KEY?: string } }).env?.VITE_YANDEX_MAPS_API_KEY ?? ''
 
 function isValidCoord(n: number): boolean {
   return typeof n === 'number' && !Number.isNaN(n) && n !== 0
@@ -38,8 +42,41 @@ function checkValid() {
   hasValidCoords.value = isValidCoord(props.lat) && isValidCoord(props.lng)
 }
 
+function loadYandexMaps(): Promise<boolean> {
+  if (typeof window === 'undefined' || (window as unknown as { ymaps?: unknown }).ymaps) {
+    return Promise.resolve(!!(window as unknown as { ymaps?: unknown }).ymaps)
+  }
+  if (!yandexMapsApiKey) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    const script = document.createElement('script')
+    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${encodeURIComponent(yandexMapsApiKey)}&lang=ru_RU`
+    script.async = true
+    script.onload = () => {
+      const ym = (window as unknown as { ymaps?: { ready: (cb: () => void) => void } }).ymaps
+      if (ym?.ready) {
+        ym.ready(() => resolve(true))
+      } else {
+        resolve(false)
+      }
+    }
+    script.onerror = () => resolve(false)
+    document.head.appendChild(script)
+  })
+}
+
 function initMap() {
   if (!mapEl.value || !hasValidCoords.value || map) return
+  if (useYandex.value && (window as unknown as { ymaps?: unknown }).ymaps) {
+    const ymaps = (window as unknown as { ymaps: { Map: new (el: HTMLElement, opts: { center: number[]; zoom: number; type?: string }) => unknown; Placemark: new (center: number[], opts?: unknown) => unknown } }).ymaps
+    yandexMap = new ymaps.Map(mapEl.value, {
+      center: [props.lat, props.lng],
+      zoom: 16,
+      type: 'yandex#map',
+    })
+    const placemark = new ymaps.Placemark([props.lat, props.lng])
+    ;(yandexMap as { geoObjects: { add: (p: unknown) => void } }).geoObjects.add(placemark)
+    return
+  }
   map = L.map(mapEl.value, { attributionControl: false }).setView([props.lat, props.lng], 16)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -55,6 +92,16 @@ function initMap() {
 }
 
 function updateMap() {
+  if (yandexMap) {
+    const y = yandexMap as { setCenter: (c: number[]) => void; geoObjects: { removeAll: () => void; add: (p: unknown) => void } }
+    y.setCenter([props.lat, props.lng])
+    const ymaps = (window as unknown as { ymaps: { Placemark: new (center: number[]) => unknown } }).ymaps
+    if (ymaps) {
+      y.geoObjects.removeAll()
+      y.geoObjects.add(new ymaps.Placemark([props.lat, props.lng]))
+    }
+    return
+  }
   if (!map || !marker) return
   const { lat, lng } = props
   if (!isValidCoord(lat) || !isValidCoord(lng)) return
@@ -63,6 +110,14 @@ function updateMap() {
 }
 
 function destroyMap() {
+  if (yandexMap) {
+    try {
+      (yandexMap as { destroy: () => void }).destroy()
+    } catch {
+      /* ignore */
+    }
+    yandexMap = null
+  }
   if (map) {
     map.remove()
     map = null
@@ -73,7 +128,13 @@ function destroyMap() {
 checkValid()
 
 onMounted(() => {
-  if (hasValidCoords.value) {
+  if (!hasValidCoords.value) return
+  if (yandexMapsApiKey) {
+    loadYandexMaps().then((ok) => {
+      useYandex.value = ok
+      nextTick(() => initMap())
+    })
+  } else {
     nextTick(() => initMap())
   }
 })
@@ -83,7 +144,7 @@ watch(
   () => {
     checkValid()
     if (hasValidCoords.value) {
-      if (!map) nextTick(() => initMap())
+      if (!map && !yandexMap) nextTick(() => initMap())
       else updateMap()
     } else {
       destroyMap()
