@@ -1,16 +1,16 @@
 <template>
   <admin-layout>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
-      <!-- Первый ряд: Клиенты + Заказы (EcommerceMetrics) и Месячная цель -->
+      <!-- Левая колонка, ряд 1: Клиенты / Заказы -->
       <div class="col-span-12 xl:col-span-7">
         <ecommerce-metrics />
       </div>
-      <div class="col-span-12 xl:col-span-5">
+      <!-- Правая колонка: Месячная цель на высоту двух рядов (Клиенты+Заказы и Продажи за месяц) -->
+      <div class="col-span-12 xl:col-span-5 xl:row-span-2">
         <monthly-target />
       </div>
-
-      <!-- Продажи за месяц — сразу под блоками Клиенты и Заказы, как в TailAdmin -->
-      <div class="col-span-12">
+      <!-- Левая колонка, ряд 2: Продажи за месяц -->
+      <div class="col-span-12 xl:col-span-7">
         <monthly-sale />
       </div>
 
