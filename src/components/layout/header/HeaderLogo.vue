@@ -1,5 +1,5 @@
 <template>
-  <router-link to="/dashboard" class="lg:hidden inline-block origin-left scale-50">
+  <router-link to="/dashboard" class="lg:hidden inline-block origin-center scale-50">
     <img class="dark:hidden block" :src="logoUrl('logo.svg')" alt="Logo" />
     <img class="hidden dark:block" :src="logoUrl('logo-dark.svg')" alt="Logo" />
   </router-link>

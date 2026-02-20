@@ -950,6 +950,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
     margin-top: 8px;
   }
