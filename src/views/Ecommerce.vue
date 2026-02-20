@@ -9,8 +9,8 @@
       <div class="col-span-12 xl:col-span-5 xl:row-span-2">
         <monthly-target />
       </div>
-      <!-- Левая колонка, ряд 2: Продажи за месяц -->
-      <div class="col-span-12 xl:col-span-7">
+      <!-- Второй ряд: Продажи за месяц на всю ширину контейнера -->
+      <div class="col-span-12 xl:col-span-7 w-full">
         <monthly-sale />
       </div>
 
