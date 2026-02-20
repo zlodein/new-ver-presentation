@@ -185,6 +185,14 @@
   word-break: break-word;
 }
 
+/* Обложка в режиме просмотра/PDF: размер шрифта заголовка и подзаголовка на самих блоках (v-html) */
+.presentation-slider-wrap.booklet-view .booklet-main__top {
+  font-size: var(--booklet-font-size-heading, 38px);
+}
+.presentation-slider-wrap.booklet-view .booklet-main__center {
+  font-size: var(--booklet-font-size-presentation-title, 38px);
+}
+
 .presentation-slider-wrap.booklet-view .booklet-main__top input,
 .presentation-slider-wrap.booklet-view .booklet-main__top .booklet-main__top-input,
 .presentation-slider-wrap.booklet-view .booklet-main__top textarea {

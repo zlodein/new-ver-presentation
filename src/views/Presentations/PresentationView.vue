@@ -10,6 +10,20 @@
       v-else
       class="w-full p-4 pb-20 md:mx-auto md:max-w-(--breakpoint-2xl) md:p-6 md:pb-6"
     >
+      <!-- Навигационная шапка по блокам -->
+      <nav
+        v-if="visibleSlides.length"
+        class="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95"
+      >
+        <a
+          v-for="(slide, index) in visibleSlides"
+          :key="index"
+          :href="'#block-' + index"
+          class="rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+        >
+          {{ getBlockName(slide, index) }}
+        </a>
+      </nav>
       <div
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
@@ -17,6 +31,7 @@
       <div
         v-for="(slide, index) in visibleSlides"
         :key="index"
+        :id="'block-' + index"
         class="booklet-page booklet-page--stacked"
       >
         <div class="booklet-page__inner">
@@ -24,7 +39,13 @@
             <div v-if="slide.type === 'cover'" class="booklet-content booklet-main">
               <div class="booklet-main__wrap">
                 <div class="booklet-main__img">
-                  <img v-if="coverImageUrl(slide)" :src="coverImageUrl(slide)!" alt="">
+                  <img
+                    v-if="coverImageUrl(slide)"
+                    :src="coverImageUrl(slide)!"
+                    alt=""
+                    class="cursor-pointer"
+                    @click="openGallery(getGalleryGlobalIndex(index, 0))"
+                  >
                 </div>
                 <div class="booklet-main__content">
                   <div class="booklet-main__top" v-html="(slide.data?.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ').toString().replace(/\n/g, '<br>')" />
@@ -56,7 +77,7 @@
                 </div>
                 <div class="booklet-info__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                   <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-info__block booklet-info__img">
-                    <img v-if="url" :src="url" alt="">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                   </div>
                 </div>
               </div>
@@ -70,7 +91,7 @@
                 </div>
                 <div class="booklet-stroen__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                   <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-stroen__block booklet-stroen__img">
-                    <img v-if="url" :src="url" alt="">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                   </div>
                 </div>
               </div>
@@ -103,7 +124,7 @@
                   </div>
                   <div class="booklet-map__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                     <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-map__grid-img">
-                      <img v-if="url" :src="url" alt="">
+                      <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                     </div>
                   </div>
                 </div>
@@ -114,7 +135,7 @@
               <div class="booklet-img__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2">{{ slide.data?.heading ?? slide.data?.title }}</h2>
                 <div v-if="slide.data?.imageUrl ?? slide.data?.image" class="booklet-img__img">
-                  <img :src="String(slide.data?.imageUrl ?? slide.data?.image)" alt="">
+                  <img :src="String(slide.data?.imageUrl ?? slide.data?.image)" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
                 </div>
               </div>
             </div>
@@ -124,7 +145,7 @@
                 <h2 class="booklet-galery__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ГАЛЕРЕЯ' }}</h2>
                 <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                   <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-galery__img">
-                    <img v-if="url" :src="url" alt="">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                   </div>
                 </div>
               </div>
@@ -134,7 +155,7 @@
               <div class="booklet-char__wrap">
                 <h2 class="booklet-char__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ХАРАКТЕРИСТИКИ' }}</h2>
                 <div v-if="slide.data?.charImageUrl || slide.data?.image" class="booklet-char__img">
-                  <img :src="String(slide.data?.charImageUrl ?? slide.data?.image)" alt="">
+                  <img :src="String(slide.data?.charImageUrl ?? slide.data?.image)" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
                 </div>
                 <div class="booklet-char__content">
                   <div v-if="Array.isArray(slide.data?.items)" class="booklet-char__table">
@@ -151,7 +172,7 @@
               <div class="booklet-layout__wrap">
                 <h2 class="booklet-layout__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ПЛАНИРОВКА' }}</h2>
                 <div v-if="slide.data?.layoutImageUrl || slide.data?.image" class="booklet-layout__img">
-                  <img :src="String(slide.data?.layoutImageUrl ?? slide.data?.image)" alt="">
+                  <img :src="String(slide.data?.layoutImageUrl ?? slide.data?.image)" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
                 </div>
               </div>
             </div>
@@ -181,7 +202,7 @@
                   </div>
                 </div>
                 <div v-if="contactImageUrl(slide)" class="booklet-contacts__block booklet-contacts__img">
-                  <img :src="contactImageUrl(slide)!" alt="">
+                  <img :src="contactImageUrl(slide)!" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
                 </div>
               </div>
             </div>
@@ -197,12 +218,32 @@
                 </div>
               </div>
               <div v-if="Array.isArray(slide.data?.images) && (slide.data.images as unknown[]).length" class="mt-4 grid grid-cols-2 gap-2">
-                <img v-for="(url, i) in viewSlideImages(slide, 4)" :key="i" :src="url" alt="" class="h-24 w-full object-cover rounded" v-show="url">
+                <img v-for="(url, i) in viewSlideImages(slide, 4)" :key="i" :src="url" alt="" class="h-24 w-full cursor-pointer object-cover rounded" v-show="url" @click="url && openGallery(getGalleryGlobalIndex(index, i))">
               </div>
             </div>
           </div>
         </div>
       </div>
+      <!-- Галерея изображений по клику -->
+      <Teleport to="body">
+        <div
+          v-if="galleryOpen && allImageUrls.length"
+          class="fixed inset-0 z-[100000] flex items-center justify-center bg-black/80 p-4"
+          @click.self="galleryOpen = false"
+        >
+          <button type="button" class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 disabled:opacity-30" :disabled="galleryIndex <= 0" aria-label="Предыдущее" @click.stop="galleryPrev">
+            <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <img :src="allImageUrls[galleryIndex]" alt="" class="max-h-full max-w-full object-contain" @click.stop>
+          <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 disabled:opacity-30" :disabled="galleryIndex >= allImageUrls.length - 1" aria-label="Следующее" @click.stop="galleryNext">
+            <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <button type="button" class="absolute right-4 top-4 rounded-full bg-white/20 p-2 text-white hover:bg-white/30" aria-label="Закрыть" @click.stop="galleryOpen = false">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <span class="absolute bottom-4 left-1/2 -translate-x-1/2 rounded bg-black/50 px-3 py-1 text-sm text-white">{{ galleryIndex + 1 }} / {{ allImageUrls.length }}</span>
+        </div>
+      </Teleport>
     </div>
   </div>
 </template>
@@ -340,6 +381,24 @@ function coverConvertedPrices(slide: ViewSlideItem): string[] {
   })
 }
 
+/** Название блока для навигации (из заголовка слайда или тип по умолчанию) */
+function getBlockName(slide: ViewSlideItem, index: number): string {
+  const byType: Record<string, string> = {
+    cover: 'Обложка',
+    description: 'Описание',
+    infrastructure: 'Инфраструктура',
+    location: 'Местоположение',
+    image: 'Изображение',
+    gallery: 'Галерея',
+    characteristics: 'Характеристики',
+    layout: 'Планировка',
+    contacts: 'Контакты',
+  }
+  const heading = slide.data?.heading ?? slide.data?.title ?? slide.data?.contact_title
+  if (heading && String(heading).trim()) return String(heading).trim()
+  return byType[slide.type] ?? slide.type || String(index + 1)
+}
+
 /** Обложка: редактор хранит coverImageUrl, PHP — background_image */
 function coverImageUrl(slide: ViewSlideItem): string | undefined {
   const url = slide.data?.coverImageUrl ?? slide.data?.background_image
@@ -389,6 +448,79 @@ function viewSlideImages(slide: ViewSlideItem, limit: number): string[] {
   }
   while (out.length < limit) out.push('')
   return out.slice(0, limit)
+}
+
+/** URL всех изображений презентации по порядку слайдов (для галереи по клику) */
+function getSlideImageUrls(slide: ViewSlideItem): string[] {
+  switch (slide.type) {
+    case 'cover': {
+      const u = coverImageUrl(slide)
+      return u ? [u] : []
+    }
+    case 'description':
+    case 'infrastructure':
+    case 'location':
+    case 'gallery':
+      return viewSlideImages(slide, getViewImageLimit(slide)).filter(Boolean)
+    case 'image': {
+      const u = slide.data?.imageUrl ?? slide.data?.image
+      return u ? [String(u)] : []
+    }
+    case 'characteristics': {
+      const u = slide.data?.charImageUrl ?? slide.data?.image
+      return u ? [String(u)] : []
+    }
+    case 'layout': {
+      const u = slide.data?.layoutImageUrl ?? slide.data?.image
+      return u ? [String(u)] : []
+    }
+    case 'contacts': {
+      const u = contactImageUrl(slide)
+      return u ? [String(u)] : []
+    }
+    default:
+      return viewSlideImages(slide, 4).filter(Boolean)
+  }
+}
+
+const allImageUrls = computed<string[]>(() => {
+  const slides = visibleSlides.value
+  return slides.flatMap((s) => getSlideImageUrls(s))
+})
+
+/** Стартовый индекс в allImageUrls для каждого слайда (для галереи по клику) */
+const galleryStartIndexBySlide = computed<number[]>(() => {
+  const slides = visibleSlides.value
+  const out: number[] = []
+  let acc = 0
+  for (let i = 0; i < slides.length; i++) {
+    out.push(acc)
+    acc += getSlideImageUrls(slides[i]).length
+  }
+  return out
+})
+
+function getGalleryGlobalIndex(slideIndex: number, imageIndexInSlide: number): number {
+  const starts = galleryStartIndexBySlide.value
+  return (starts[slideIndex] ?? 0) + imageIndexInSlide
+}
+
+const galleryOpen = ref(false)
+const galleryIndex = ref(0)
+
+function openGallery(globalIndex: number) {
+  const urls = allImageUrls.value
+  if (globalIndex < 0 || globalIndex >= urls.length) return
+  galleryIndex.value = globalIndex
+  galleryOpen.value = true
+}
+
+function galleryPrev() {
+  if (galleryIndex.value > 0) galleryIndex.value--
+}
+
+function galleryNext() {
+  if (galleryIndex.value < allImageUrls.value.length - 1) galleryIndex.value++
 }
 
 onMounted(async () => {
