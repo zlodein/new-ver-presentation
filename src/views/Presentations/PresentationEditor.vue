@@ -1268,6 +1268,7 @@
             </button>
           </div>
         </div>
+        </div>
 
         <!-- Сайдбар справа от слайдера (только десктоп) -->
         <aside class="editor-sidebar hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:block">
