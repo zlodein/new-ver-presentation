@@ -42,12 +42,15 @@ export async function notificationRoutes(app: FastifyInstance) {
       if (useMysql) {
         const userIdNum = Number(userId)
         if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
-        const whereConditions: unknown[] = [eq(mysqlSchema.notifications.user_id, userIdNum)]
-        if (read !== undefined) {
-          whereConditions.push(eq(mysqlSchema.notifications.read, read === 'true' ? 'true' : 'false'))
-        }
+        const whereClause =
+          read !== undefined
+            ? and(
+                eq(mysqlSchema.notifications.user_id, userIdNum),
+                eq(mysqlSchema.notifications.read, read === 'true' ? 'true' : 'false')
+              )
+            : eq(mysqlSchema.notifications.user_id, userIdNum)
         const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.notifications.findMany({
-          where: and(...whereConditions),
+          where: whereClause,
           orderBy: [desc(mysqlSchema.notifications.created_at)],
         })
         return reply.send(
