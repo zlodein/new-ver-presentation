@@ -69,16 +69,14 @@ export function useGlobalSearch() {
       }
 
       const [presentationsRes, calendarRes, tasksRes] = await Promise.allSettled([
-        api.get<PresentationListItem[]>('/api/presentations'),
+        api.get<PresentationListItem[]>(`/api/presentations${q ? `?q=${encodeURIComponent(q)}` : ''}`),
         api.get<Array<{ id: string; title: string; start?: string; end?: string; extendedProps?: { notes?: string } }>>('/api/calendar/events'),
         api.get<Array<{ id: string; title: string; description?: string; status?: string; tag?: string }>>('/api/tasks'),
       ])
 
       if (presentationsRes.status === 'fulfilled') {
         const list = presentationsRes.value
-        results.presentations = list
-          .filter((p) => matchQuery(p.title, q))
-          .map((p) => ({
+        results.presentations = list.map((p) => ({
             id: String(p.id),
             title: p.title || 'Без названия',
             subtitle: p.updatedAt ? `Обновлено: ${new Date(p.updatedAt).toLocaleDateString('ru-RU')}` : undefined,

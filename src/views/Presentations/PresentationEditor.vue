@@ -757,6 +757,7 @@
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Поиск по адресу</label>
                             <div v-if="dadataToken" class="relative">
                               <input
+                                :ref="(el) => setLocationInputRef(slide.id, el as HTMLInputElement | null)"
                                 :value="String(slide.data?.address ?? '')"
                                 type="text"
                                 placeholder="ЖК «Успешная продажа»"
@@ -772,20 +773,29 @@
                               >
                                 Поиск...
                               </div>
-                              <ul
-                                v-if="(dadataSuggestionsBySlideId[slide.id]?.length ?? 0) > 0"
-                                class="location-dadata-suggestions absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
-                              >
-                                <li
-                                  v-for="(item, idx) in dadataSuggestionsBySlideId[slide.id]"
-                                  :key="idx"
-                                  class="cursor-pointer px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                                  @mousedown.prevent
-                                  @click="applyDadataSuggestion(slide, item)"
+                              <!-- Выпадающий список в body — прокрутка только внутри списка, без двойного скролла -->
+                              <Teleport to="body">
+                                <div
+                                  v-if="(dadataSuggestionsBySlideId[slide.id]?.length ?? 0) > 0 && activeDadataSlideId === slide.id"
+                                  class="location-dadata-suggestions-fixed z-[9999] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                                  :style="dadataDropdownStyle"
                                 >
-                                  {{ item.value }}
-                                </li>
-                              </ul>
+                                  <ul
+                                    class="max-h-60 overflow-y-auto overflow-x-hidden py-1"
+                                    style="overscroll-behavior: contain;"
+                                  >
+                                    <li
+                                      v-for="(item, idx) in dadataSuggestionsBySlideId[slide.id]"
+                                      :key="idx"
+                                      class="cursor-pointer px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                                      @mousedown.prevent
+                                      @click="applyDadataSuggestion(slide, item)"
+                                    >
+                                      {{ item.value }}
+                                    </li>
+                                  </ul>
+                                </div>
+                              </Teleport>
                             </div>
                             <template v-else>
                               <input
@@ -1914,6 +1924,43 @@ const dadataSuggestionsBySlideId = ref<Record<string, DadataSuggestionItem[]>>({
 const dadataLoadingBySlideId = ref<Record<string, boolean>>({})
 const dadataDebounceBySlideId = ref<Record<string, ReturnType<typeof setTimeout>>>({})
 const dadataBlurTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+const locationInputRefs = ref<Record<string, HTMLInputElement | null>>({})
+const dadataDropdownStyle = ref<Record<string, string>>({})
+
+function setLocationInputRef(slideId: string, el: HTMLInputElement | null) {
+  if (el) locationInputRefs.value[slideId] = el
+  else delete locationInputRefs.value[slideId]
+}
+
+const activeDadataSlideId = computed(() => {
+  const r = dadataSuggestionsBySlideId.value
+  for (const id of Object.keys(r)) {
+    if ((r[id]?.length ?? 0) > 0) return id
+  }
+  return null
+})
+
+function updateDadataDropdownPosition() {
+  const id = activeDadataSlideId.value
+  if (!id) {
+    dadataDropdownStyle.value = {}
+    return
+  }
+  const input = locationInputRefs.value[id]
+  if (!input) return
+  const rect = input.getBoundingClientRect()
+  dadataDropdownStyle.value = {
+    position: 'fixed',
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+    width: `${Math.max(rect.width, 200)}px`,
+    minWidth: `${Math.max(rect.width, 200)}px`,
+  }
+}
+
+watch(activeDadataSlideId, () => {
+  nextTick(updateDadataDropdownPosition)
+})
 
 const DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address'
 

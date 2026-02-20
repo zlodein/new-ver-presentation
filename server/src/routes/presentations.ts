@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, desc, gte, lte } from 'drizzle-orm'
+import { eq, and, or, desc, gte, lte, like, sql } from 'drizzle-orm'
 import { db, schema, isSqlite, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -182,11 +182,28 @@ export async function presentationRoutes(app: FastifyInstance) {
     return row
   }
 
+  /** Экранирование строки для LIKE: % и _ не должны быть подстановками. */
+  function escapeLike(s: string): string {
+    return String(s)
+      .replace(/\\/g, '\\\\')
+      .replace(/%/g, '\\%')
+      .replace(/_/g, '\\_')
+  }
+
   app.get('/api/presentations', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+    const q = (req.query as { q?: string })?.q?.trim()
     if (useFileStore) {
-      const list = fileStore.getPresentationsByUserId(userId)
+      let list = fileStore.getPresentationsByUserId(userId)
+      if (q) {
+        const qLower = q.toLowerCase()
+        list = list.filter(
+          (p) =>
+            (p.title && p.title.toLowerCase().includes(qLower)) ||
+            (p.id && String(p.id).toLowerCase().includes(qLower))
+        )
+      }
       return reply.send(
         list.map((p) => ({
           id: p.id,
@@ -200,8 +217,21 @@ export async function presentationRoutes(app: FastifyInstance) {
     if (useMysql) {
       const userIdNum = Number(userId)
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+      const conditions = [eq(mysqlSchema.presentations.user_id, userIdNum)]
+      if (q && q.length > 0) {
+        const likePattern = `%${escapeLike(q)}%`
+        const idNum = parseMysqlId(q)
+        conditions.push(
+          or(
+            like(mysqlSchema.presentations.title, likePattern),
+            like(mysqlSchema.presentations.slides_data, likePattern),
+            eq(mysqlSchema.presentations.short_id, q),
+            ...(idNum !== null ? [eq(mysqlSchema.presentations.id, idNum)] : [])
+          )!
+        )
+      }
       const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
-        where: eq(mysqlSchema.presentations.user_id, userIdNum),
+        where: and(...conditions),
         columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true, short_id: true },
         orderBy: [desc(mysqlSchema.presentations.updated_at)],
       })
@@ -218,8 +248,19 @@ export async function presentationRoutes(app: FastifyInstance) {
         }))
       )
     }
+    const conditions = [eq(pgSchema.presentations.userId, userId)]
+    if (q && q.length > 0) {
+      const likePattern = `%${escapeLike(q)}%`
+      conditions.push(
+        or(
+          like(pgSchema.presentations.title, likePattern),
+          sql`${pgSchema.presentations.content}::text ILIKE ${likePattern}`,
+          eq(pgSchema.presentations.id, q)
+        )!
+      )
+    }
     const list = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findMany({
-      where: eq(pgSchema.presentations.userId, userId),
+      where: and(...conditions),
       columns: { id: true, title: true, coverImage: true, updatedAt: true, status: true },
       orderBy: [desc(pgSchema.presentations.updatedAt)],
     })
