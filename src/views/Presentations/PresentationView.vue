@@ -182,9 +182,9 @@
                 <div class="booklet-contacts__left flex flex-col gap-4">
                   <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
                   <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
-                    <div v-if="slide.data?.avatarUrl || slide.data?.logoUrl" class="shrink-0">
+                    <div v-if="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" class="shrink-0">
                       <div class="flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">
-                        <img :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
+                        <img :src="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
                       </div>
                     </div>
                     <div class="min-w-0 flex-1">
@@ -202,7 +202,7 @@
                   </div>
                 </div>
                 <div v-if="contactImageUrl(slide)" class="booklet-contacts__block booklet-contacts__img">
-                  <img :src="contactImageUrl(slide)!" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
+                  <img :src="resolveImageUrl(contactImageUrl(slide))" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
                 </div>
               </div>
             </div>
@@ -254,7 +254,7 @@ import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
-import { api, hasApi, getToken } from '@/api/client'
+import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
 
 interface ViewSlideItem {
@@ -433,6 +433,16 @@ function contactImageUrl(slide: ViewSlideItem): string | undefined {
   const images = slide.data?.images
   if (Array.isArray(images) && images[0]) return String(images[0])
   return undefined
+}
+
+/** URL для отображения изображения: относительные пути дополняются базовым URL API при необходимости */
+function resolveImageUrl(url: string | null | undefined): string {
+  if (!url || !String(url).trim()) return ''
+  const s = String(url).trim()
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  const base = getApiBase()
+  const path = s.startsWith('/') ? s : `/${s}`
+  return base ? `${base.replace(/\/$/, '')}${path}` : path
 }
 
 /** Извлечь URL изображений из слайда (поддержка строк и { url }), limit — максимум штук */

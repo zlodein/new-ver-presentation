@@ -1039,7 +1039,7 @@
                                   </svg>
                                 </label>
                               </template>
-                              <img v-if="slide.data?.avatarUrl || slide.data?.logoUrl" :src="String(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
+                              <img v-if="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" :src="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
                             </div>
                           </div>
                           <div class="order-3 min-w-0 flex-1 xl:order-2">
@@ -1088,7 +1088,7 @@
                             <input type="file" accept="image/*" class="hidden" @change="onContactsImageUpload(slide, $event, 0)" />
                           </label>
                         </template>
-                        <img v-if="contactImageUrl(slide)" :src="contactImageUrl(slide)!" alt="">
+                        <img v-if="contactImageUrl(slide)" :src="resolveImageUrl(contactImageUrl(slide))" alt="">
                       </div>
                     </div>
                   </div>
@@ -2369,10 +2369,12 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
   const prefs = user?.presentation_display_preferences
   if (!user || !prefs) return
 
+  const apiBase = getApiBase()
   const toUrl = (v: string | null | undefined) => {
     if (!v || !String(v).trim()) return ''
     const s = String(v).trim()
-    return s.startsWith('/') ? s : `/${s}`
+    const path = s.startsWith('/') ? s : `/${s}`
+    return apiBase ? `${apiBase.replace(/\/$/, '')}${path}` : path
   }
   const fullName = [user.name, user.middle_name, user.last_name].filter(Boolean).join(' ') || user.email || ''
 
@@ -2745,6 +2747,16 @@ function contactImageUrl(slide: SlideItem): string | undefined {
   const images = slide.data?.images
   if (Array.isArray(images) && images[0]) return String(images[0])
   return undefined
+}
+
+/** URL для отображения изображения: относительные пути дополняются базовым URL API при необходимости */
+function resolveImageUrl(url: string | null | undefined): string {
+  if (!url || !String(url).trim()) return ''
+  const s = String(url).trim()
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  const base = getApiBase()
+  const path = s.startsWith('/') ? s : `/${s}`
+  return base ? `${base.replace(/\/$/, '')}${path}` : path
 }
 
 async function onContactsAvatarUpload(slide: SlideItem, event: Event) {
