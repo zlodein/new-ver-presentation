@@ -1039,7 +1039,7 @@
                                   </svg>
                                 </label>
                               </template>
-                              <img v-if="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" :src="resolveImageUrl(slide.data?.avatarUrl ?? slide.data?.logoUrl)" alt="" class="h-full w-full object-cover">
+                              <img v-if="contactsAvatarDisplayUrl(slide)" :src="contactsAvatarDisplayUrl(slide)" alt="" class="h-full w-full object-cover">
                             </div>
                           </div>
                           <div class="order-3 min-w-0 flex-1 xl:order-2">
@@ -1088,7 +1088,7 @@
                             <input type="file" accept="image/*" class="hidden" @change="onContactsImageUpload(slide, $event, 0)" />
                           </label>
                         </template>
-                        <img v-if="contactImageUrl(slide)" :src="resolveImageUrl(contactImageUrl(slide))" alt="">
+                        <img v-if="contactsImageDisplayUrl(slide)" :src="contactsImageDisplayUrl(slide)" alt="">
                       </div>
                     </div>
                   </div>
@@ -2369,12 +2369,12 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
   const prefs = user?.presentation_display_preferences
   if (!user || !prefs) return
 
-  const apiBase = getApiBase()
+  // Тот же формат пути, что и в профиле (ProfileCard): относительный путь с ведущим /
   const toUrl = (v: string | null | undefined) => {
     if (!v || !String(v).trim()) return ''
     const s = String(v).trim()
-    const path = s.startsWith('/') ? s : `/${s}`
-    return apiBase ? `${apiBase.replace(/\/$/, '')}${path}` : path
+    if (s.startsWith('/uploads/')) return s
+    return s.startsWith('/') ? s : `/${s}`
   }
   const fullName = [user.name, user.middle_name, user.last_name].filter(Boolean).join(' ') || user.email || ''
 
@@ -2757,6 +2757,34 @@ function resolveImageUrl(url: string | null | undefined): string {
   const base = getApiBase()
   const path = s.startsWith('/') ? s : `/${s}`
   return base ? `${base.replace(/\/$/, '')}${path}` : path
+}
+
+/** URL аватара/лого для блока контактов из профиля — та же логика, что в ProfileCard (userImage) */
+function profileContactsAvatarUrl(): string {
+  const user = currentUser.value
+  const prefs = user?.presentation_display_preferences
+  if (!user || !prefs) return ''
+  let img: string | null | undefined = ''
+  if (prefs.avatarOrLogo === 'personal') img = user.user_img
+  else if (prefs.avatarOrLogo === 'company') img = user.company_logo
+  if (!img || !String(img).trim()) return ''
+  const s = String(img).trim()
+  if (s.startsWith('/uploads/')) return s
+  return s.startsWith('/') ? s : `/${s}`
+}
+
+/** Итоговый URL аватара/лого в блоке контактов: из слайда или из профиля */
+function contactsAvatarDisplayUrl(slide: SlideItem): string {
+  const fromSlide = slide.data?.avatarUrl ?? slide.data?.logoUrl
+  if (fromSlide && String(fromSlide).trim()) return resolveImageUrl(fromSlide)
+  return resolveImageUrl(profileContactsAvatarUrl())
+}
+
+/** Итоговый URL большого изображения справа в контактах: из слайда или из профиля */
+function contactsImageDisplayUrl(slide: SlideItem): string {
+  const fromSlide = contactImageUrl(slide)
+  if (fromSlide) return resolveImageUrl(fromSlide)
+  return resolveImageUrl(profileContactsAvatarUrl())
 }
 
 async function onContactsAvatarUpload(slide: SlideItem, event: Event) {
