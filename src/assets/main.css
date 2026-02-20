@@ -691,6 +691,14 @@ span.flatpickr-weekday,
 .fc .fc-timegrid-axis-cushion {
   @apply text-sm font-medium text-gray-500 dark:text-gray-400;
 }
+/* Колонка «Весь день» и время — шире, чтобы время в одну строку (неделя/день) */
+.custom-calendar .fc-timegrid-axis,
+.custom-calendar .fc-timegrid-slot-label {
+  min-width: 5rem;
+}
+.custom-calendar .fc-timegrid-slot-label-frame {
+  white-space: nowrap;
+}
 
 .input-date-icon::-webkit-inner-spin-button,
 .input-date-icon::-webkit-calendar-picker-indicator {

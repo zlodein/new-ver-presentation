@@ -310,7 +310,7 @@ function getDefaultDataForType(type: string, title: string, subtitle: string): R
         show_all_currencies: false,
       }
     case 'description':
-      return { heading: '', text: '' }
+      return { heading: 'Описание', text: '' }
     case 'infrastructure':
       return { heading: 'Инфраструктура', content: '', items: ['Пункт 1', 'Пункт 2', 'Пункт 3'] }
     case 'location':

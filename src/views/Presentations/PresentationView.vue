@@ -91,8 +91,12 @@
                     <div v-if="(slide.data?.metro_stations as Array<unknown>)?.length" class="booklet-map__metro-block mt-2">
                       <p class="booklet-map__metro-label font-medium">Ближайшие станции метро</p>
                       <ul class="booklet-map__metro-list mt-1 space-y-0.5">
-                        <li v-for="(st, idx) in (slide.data?.metro_stations as Array<{ name?: string; walk_time_text?: string }>)" :key="idx">
-                          {{ st.name }}{{ st.walk_time_text ? ` — ${st.walk_time_text}` : '' }}
+                        <li v-for="(st, idx) in (slide.data?.metro_stations as Array<{ name?: string; walk_time_text?: string }>)" :key="idx" class="flex items-center gap-2">
+                          <span
+                            class="h-2.5 w-2.5 shrink-0 rounded-full"
+                            :style="{ backgroundColor: metroLineColor(st.name) }"
+                          />
+                          <span>{{ st.name }}{{ st.walk_time_text ? ` — ${st.walk_time_text}` : '' }}</span>
                         </li>
                       </ul>
                     </div>
@@ -369,6 +373,15 @@ function contactImageUrl(slide: ViewSlideItem): string | undefined {
   const images = slide.data?.images
   if (Array.isArray(images) && images[0]) return String(images[0])
   return undefined
+}
+
+/** Цвет точки по названию станции метро (палитра линий) */
+const METRO_LINE_COLORS = ['#EF4135', '#44B85C', '#0078BF', '#19CECE', '#8E4798', '#F58631', '#FFCB00', '#A1A1A4', '#79CDCD', '#B4D445', '#E0A0C8', '#84C2CE']
+function metroLineColor(stationName: string | undefined): string {
+  if (!stationName || typeof stationName !== 'string') return METRO_LINE_COLORS[0]
+  let h = 0
+  for (let i = 0; i < stationName.length; i++) h = (h * 31 + stationName.charCodeAt(i)) >>> 0
+  return METRO_LINE_COLORS[h % METRO_LINE_COLORS.length]
 }
 
 /** Извлечь URL изображений из слайда (поддержка строк и { url }), limit — максимум штук */

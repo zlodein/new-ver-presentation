@@ -76,6 +76,22 @@ type ContentSettings = {
   fontSizePrice?: string
 }
 
+/** Для списка: заголовок карточки берём из booklet-main__center (первый слайд, data.subtitle), иначе — переданный title. */
+function displayTitleFromContent(content: unknown, fallbackTitle: string): string {
+  try {
+    const parsed = typeof content === 'string' ? JSON.parse(content) : content
+    const slides = Array.isArray(parsed?.slides) ? parsed.slides : []
+    const first = slides[0]
+    if (first?.type === 'cover' && first.data != null && typeof first.data === 'object' && (first.data as Record<string, unknown>).subtitle != null) {
+      const t = String((first.data as Record<string, unknown>).subtitle).trim()
+      if (t) return t
+    }
+  } catch {
+    /* ignore */
+  }
+  return fallbackTitle
+}
+
 function normContent(c: unknown): { slides: unknown[]; settings?: ContentSettings } {
   let slides: unknown[] = []
   let rawObj: { slides?: unknown[]; settings?: Record<string, unknown> } | undefined
@@ -205,13 +221,17 @@ export async function presentationRoutes(app: FastifyInstance) {
         )
       }
       return reply.send(
-        list.map((p) => ({
-          id: p.id,
-          title: p.title,
-          coverImage: p.coverImage ?? undefined,
-          updatedAt: toIsoDate(p.updatedAt as string | Date),
-          status: (p as { status?: string }).status ?? 'draft',
-        }))
+        list.map((p) => {
+          const content = (p as { content?: string }).content
+          const title = displayTitleFromContent(content, p.title ?? '')
+          return {
+            id: p.id,
+            title,
+            coverImage: p.coverImage ?? undefined,
+            updatedAt: toIsoDate(p.updatedAt as string | Date),
+            status: (p as { status?: string }).status ?? 'draft',
+          }
+        })
       )
     }
     if (useMysql) {
@@ -232,20 +252,23 @@ export async function presentationRoutes(app: FastifyInstance) {
       }
       const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
         where: and(...conditions),
-        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true, short_id: true },
+        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true, short_id: true, slides_data: true },
         orderBy: [desc(mysqlSchema.presentations.updated_at)],
       })
       return reply.send(
-        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null; is_public?: number | null; public_url?: string | null; short_id?: string | null }) => ({
-          id: String(p.id),
-          title: p.title,
-          coverImage: p.cover_image ?? undefined,
-          updatedAt: toIsoDate(p.updated_at),
-          status: p.status ?? 'draft',
-          isPublic: Boolean(p.is_public),
-          publicUrl: p.public_url ?? undefined,
-          shortId: p.short_id ?? undefined,
-        }))
+        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null; is_public?: number | null; public_url?: string | null; short_id?: string | null; slides_data?: string | null }) => {
+          const title = displayTitleFromContent(p.slides_data ?? null, p.title)
+          return {
+            id: String(p.id),
+            title,
+            coverImage: p.cover_image ?? undefined,
+            updatedAt: toIsoDate(p.updated_at),
+            status: p.status ?? 'draft',
+            isPublic: Boolean(p.is_public),
+            publicUrl: p.public_url ?? undefined,
+            shortId: p.short_id ?? undefined,
+          }
+        })
       )
     }
     const conditions = [eq(pgSchema.presentations.userId, userId)]
@@ -261,17 +284,20 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
     const list = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findMany({
       where: and(...conditions),
-      columns: { id: true, title: true, coverImage: true, updatedAt: true, status: true },
+      columns: { id: true, title: true, coverImage: true, updatedAt: true, status: true, content: true },
       orderBy: [desc(pgSchema.presentations.updatedAt)],
     })
     return reply.send(
-      list.map((p: { id: string; title: string; coverImage: string | null; updatedAt: Date | string; status?: string | null }) => ({
-        id: p.id,
-        title: p.title,
-        coverImage: p.coverImage ?? undefined,
-        updatedAt: toIsoDate(p.updatedAt),
-        status: p.status ?? 'draft',
-      }))
+      list.map((p: { id: string; title: string; coverImage: string | null; updatedAt: Date | string; status?: string | null; content?: unknown }) => {
+        const title = displayTitleFromContent(p.content ?? null, p.title)
+        return {
+          id: p.id,
+          title,
+          coverImage: p.coverImage ?? undefined,
+          updatedAt: toIsoDate(p.updatedAt),
+          status: p.status ?? 'draft',
+        }
+      })
     )
   })
 

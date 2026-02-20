@@ -47,18 +47,14 @@
             type="button"
             role="switch"
             :aria-checked="presentationMeta.isPublic"
-            :class="[
-              'relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors',
-              presentationMeta.isPublic
-                ? 'border-green-500 bg-green-500'
-                : 'border-red-400 bg-red-400 dark:border-red-500 dark:bg-red-500',
-            ]"
+            class="relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ease-linear"
+            :class="presentationMeta.isPublic ? 'bg-brand-500 dark:bg-brand-500' : 'bg-gray-200 dark:bg-white/10'"
             @click="toggleShare"
           >
             <span
               :class="[
-                'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
-                presentationMeta.isPublic ? 'left-6' : 'left-0.5',
+                'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-theme-sm transition-transform duration-200 ease-linear',
+                presentationMeta.isPublic ? 'translate-x-full' : 'translate-x-0',
               ]"
             />
           </button>
@@ -840,10 +836,18 @@
                               <li
                                 v-for="(station, idx) in (slide.data.metro_stations as Array<{ name?: string; walk_time_text?: string; distance_text?: string }>)"
                                 :key="idx"
+                                class="flex items-center gap-2"
                               >
-                                <strong>{{ station.name }}</strong>
-                                <span v-if="station.walk_time_text" class="text-gray-500"> — {{ station.walk_time_text }}</span>
-                                <span v-if="station.distance_text" class="text-gray-500">, {{ station.distance_text }}</span>
+                                <span
+                                  class="h-2.5 w-2.5 shrink-0 rounded-full"
+                                  :style="{ backgroundColor: metroLineColor(station.name) }"
+                                  :title="station.name"
+                                />
+                                <span>
+                                  <strong>{{ station.name }}</strong>
+                                  <span v-if="station.walk_time_text" class="text-gray-500"> — {{ station.walk_time_text }}</span>
+                                  <span v-if="station.distance_text" class="text-gray-500">, {{ station.distance_text }}</span>
+                                </span>
                               </li>
                             </ul>
                           </div>
@@ -1237,18 +1241,14 @@
                 type="button"
                 role="switch"
                 :aria-checked="presentationMeta.isPublic"
-                :class="[
-                  'relative h-6 w-10 shrink-0 rounded-full border-2 transition-colors',
-                  presentationMeta.isPublic
-                    ? 'border-green-500 bg-green-500'
-                    : 'border-red-400 bg-red-400 dark:border-red-500 dark:bg-red-500',
-                ]"
+                class="relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ease-linear"
+                :class="presentationMeta.isPublic ? 'bg-brand-500 dark:bg-brand-500' : 'bg-gray-200 dark:bg-white/10'"
                 @click="toggleShare"
               >
                 <span
                   :class="[
-                    'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
-                    presentationMeta.isPublic ? 'left-5' : 'left-0.5',
+                    'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-theme-sm transition-transform duration-200 ease-linear',
+                    presentationMeta.isPublic ? 'translate-x-full' : 'translate-x-0',
                   ]"
                 />
               </button>
@@ -2143,6 +2143,15 @@ async function findNearestMetro(slide: SlideItem) {
   } finally {
     metroLoadingBySlideId.value[slide.id] = false
   }
+}
+
+/** Цвета линий метро (палитра), по хэшу названия станции — стабильный цвет для одной станции */
+const METRO_LINE_COLORS = ['#EF4135', '#44B85C', '#0078BF', '#19CECE', '#8E4798', '#F58631', '#FFCB00', '#A1A1A4', '#79CDCD', '#B4D445', '#E0A0C8', '#84C2CE']
+function metroLineColor(stationName: string | undefined): string {
+  if (!stationName || typeof stationName !== 'string') return METRO_LINE_COLORS[0]
+  let h = 0
+  for (let i = 0; i < stationName.length; i++) h = (h * 31 + stationName.charCodeAt(i)) >>> 0
+  return METRO_LINE_COLORS[h % METRO_LINE_COLORS.length]
 }
 
 // Генерация текста (GigaChat)
