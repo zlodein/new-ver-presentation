@@ -1,5 +1,5 @@
 <template>
-  <div class="hidden lg:block relative">
+  <div class="hidden lg:block relative flex-1 min-w-0">
     <form @submit.prevent="onSubmit">
       <div class="relative">
         <button type="button" class="absolute -translate-y-1/2 left-4 top-1/2 pointer-events-none">
@@ -24,7 +24,7 @@
           v-model="query"
           type="text"
           placeholder="Поиск (Enter — результаты)..."
-          class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
+          class="dark:bg-dark-900 h-11 w-full min-w-0 rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
           autocomplete="off"
           @focus="showDropdown = true"
           @input="onInput"
@@ -37,7 +37,7 @@
       <div
         v-if="showDropdown && (query.trim() || lastResults)"
         ref="dropdownRef"
-        class="absolute left-0 right-0 top-full z-50 mt-1 max-h-[min(70vh,420px)] w-full min-w-[320px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900 xl:min-w-[430px]"
+        class="absolute left-0 right-0 top-full z-50 mt-1 max-h-[min(70vh,420px)] w-full min-w-[320px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900"
       >
         <div class="max-h-[min(70vh,420px)] overflow-y-auto py-2">
           <template v-if="loading">

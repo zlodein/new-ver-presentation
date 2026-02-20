@@ -68,17 +68,21 @@
 
       <!-- Эксперт -->
       <div
-        class="rounded-2xl border border-gray-800 bg-gray-800 p-6 dark:border-white/10 dark:bg-white/10"
+        class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
       >
-        <span class="mb-3 block text-theme-xl font-semibold text-white">
+        <span class="mb-3 block text-theme-xl font-semibold text-gray-800 dark:text-white/90">
           Эксперт
         </span>
         <div class="mb-1 flex flex-wrap items-end justify-between gap-3">
-          <div class="flex items-end">
-            <h2 class="text-title-md font-bold text-white">
+          <div class="flex flex-wrap items-baseline gap-2">
+            <h2 class="text-title-md font-bold text-gray-800 dark:text-white/90">
               {{ expertPriceFormatted }}
             </h2>
-            <span class="mb-1 ml-1 inline-block text-sm text-white/70">
+            <template v-if="expertDiscountPercent > 0">
+              <span class="text-sm font-medium text-success-600 dark:text-success-400">−{{ expertDiscountPercent }}%</span>
+              <span class="text-sm text-gray-500 line-through dark:text-gray-400">{{ expertOldPriceFormatted }}</span>
+            </template>
+            <span class="mb-1 inline-block text-sm text-gray-500 dark:text-gray-400">
               за {{ expertQuantityBounded }} {{ pluralize(expertQuantityBounded, 'презентацию', 'презентации', 'презентаций') }}
             </span>
           </div>
@@ -89,33 +93,37 @@
               type="number"
               min="1"
               max="100"
-              class="h-11 w-20 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center text-sm font-medium text-white shadow-theme-xs placeholder:text-white/40 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+              class="h-11 w-20 rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-center text-sm font-medium text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
               placeholder="1–100"
               aria-label="Количество презентаций"
             />
           </div>
         </div>
-        <p class="mt-2 text-sm text-white/70">
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
           {{ expertDiscountDescription }}
         </p>
-        <div class="my-6 h-px w-full bg-white/20" />
-        <ul class="mb-8 space-y-3 text-sm text-white/80">
+        <div class="my-6 h-px w-full bg-gray-200 dark:bg-gray-800" />
+        <ul class="mb-8 space-y-3 text-sm text-gray-500 dark:text-gray-400">
           <li class="flex items-center gap-3">
-            <CheckIcon class="text-success-500" />
+            <CheckIcon />
+            Выбранное количество презентаций: {{ expertQuantityBounded }}
+          </li>
+          <li class="flex items-center gap-3">
+            <CheckIcon />
             Неограниченное количество слайдов
           </li>
           <li class="flex items-center gap-3">
-            <CheckIcon class="text-success-500" />
+            <CheckIcon />
             Публичная ссылка на презентацию
           </li>
           <li class="flex items-center gap-3">
-            <CheckIcon class="text-success-500" />
+            <CheckIcon />
             Задачи и календарь
           </li>
         </ul>
         <button
           type="button"
-          class="flex w-full items-center justify-center rounded-lg bg-brand-500 p-3.5 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-600"
+          class="flex w-full items-center justify-center rounded-lg bg-gray-800 p-3.5 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/10 dark:hover:bg-brand-600"
           @click="chooseTariff('expert')"
         >
           {{ currentTariff === 'test_drive' ? 'Сменить на Эксперт' : 'Выбрать Эксперт' }}
@@ -190,6 +198,12 @@ const expertDiscountPercent = computed(() =>
 
 const expertPriceFormatted = computed(() => {
   const total = expertTotal(expertQuantityBounded.value)
+  return `${total.toLocaleString('ru-RU')} ₽`
+})
+
+const expertOldPriceFormatted = computed(() => {
+  const q = expertQuantityBounded.value
+  const total = q * EXPERT_BASE_PRICE
   return `${total.toLocaleString('ru-RU')} ₽`
 })
 
