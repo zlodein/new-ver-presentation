@@ -396,7 +396,7 @@ function getBlockName(slide: ViewSlideItem, index: number): string {
   }
   const heading = slide.data?.heading ?? slide.data?.title ?? slide.data?.contact_title
   if (heading && String(heading).trim()) return String(heading).trim()
-  return byType[slide.type] ?? slide.type || String(index + 1)
+  return byType[slide.type] ?? (slide.type || String(index + 1))
 }
 
 /** Обложка: редактор хранит coverImageUrl, PHP — background_image */
