@@ -91,77 +91,11 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ChevronRightIcon from '@/icons/ChevronRightIcon.vue'
+import { docSections } from '@/data/documentationSections'
 
 const currentPageTitle = ref('Документация')
 const appVersion = '2.0.x'
 const activeSection = ref('introduction')
-
-const docSections = [
-  {
-    id: 'introduction',
-    title: 'Введение',
-    content: `
-      <p>Платформа E-Presentation предоставляет единый интерфейс для работы с презентациями, календарём и задачами. После входа в систему вы попадаете на <strong>Панель управления</strong>.</p>
-    `,
-  },
-  {
-    id: 'panel',
-    title: 'Панель управления',
-    content: `
-      <p>Главная страница дашборда с обзором метрик, целей и последних активностей. Здесь отображаются ключевые показатели и быстрый доступ к основным разделам.</p>
-    `,
-  },
-  {
-    id: 'presentations',
-    title: 'Презентации',
-    content: `
-      <p><strong>Список презентаций</strong> — все ваши презентации в виде карточек. Можно создать новую презентацию или открыть существующую для редактирования.</p>
-      <p><strong>Редактор</strong> — добавление слайдов, текста, изображений и настройка внешнего вида. Презентации можно сохранять как черновик или публиковать и делиться ссылкой для просмотра.</p>
-      <p><strong>Просмотр</strong> — режим просмотра презентации (для себя или по публичной ссылке <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm dark:bg-gray-800">/view/:hash</code>).</p>
-    `,
-  },
-  {
-    id: 'calendar',
-    title: 'Календарь',
-    content: `
-      <p>Раздел <strong>Календарь</strong> позволяет планировать события по дням, неделям и месяцам. События можно создавать, редактировать и удалять.</p>
-    `,
-  },
-  {
-    id: 'tasks',
-    title: 'Задачи',
-    content: `
-      <p><strong>Задачи</strong> представлены в виде канбан-доски: колонки по статусам (например, «К выполнению», «В работе», «Готово»). Карточки можно перетаскивать между колонками.</p>
-    `,
-  },
-  {
-    id: 'profile',
-    title: 'Профиль пользователя',
-    content: `
-      <p>В разделе <strong>Профиль</strong> можно изменить личные данные, аватар, контакты и настройки учётной записи.</p>
-    `,
-  },
-  {
-    id: 'support',
-    title: 'Поддержка',
-    content: `
-      <p>Раздел <strong>Поддержка</strong> — создание и просмотр обращений в техподдержку. Каждое обращение имеет тему, сообщение и статус (в ожидании, в работе, решён). Ответы приходят в интерфейсе тикета.</p>
-    `,
-  },
-  {
-    id: 'admin',
-    title: 'Админ-панель',
-    content: `
-      <p>Доступна только пользователям с ролью администратора. Включает:</p>
-      <ul class="list-disc pl-6 space-y-1">
-        <li><strong>Пользователи</strong> — управление учётными записями</li>
-        <li><strong>Запросы</strong> — просмотр и обработка запросов пользователей</li>
-        <li><strong>Тарифы</strong> — настройка тарифных планов</li>
-        <li><strong>Платежи</strong> — история платежей</li>
-      </ul>
-    `,
-  },
-]
 
 function scrollTo(id) {
   const el = document.getElementById(id)

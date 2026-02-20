@@ -176,6 +176,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/search',
+      name: 'Search',
+      component: () => import('../views/Search/SearchResults.vue'),
+      meta: {
+        title: 'Поиск',
+      },
+    },
+    {
       path: '/dashboard/support',
       name: 'Support',
       component: () => import('../views/Support/SupportList.vue'),
