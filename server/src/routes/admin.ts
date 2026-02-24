@@ -372,29 +372,14 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ success: true })
   }
 
-  /** Полное удаление пользователя (DELETE). Прокси на проде может блокировать DELETE — используйте POST /api/admin/users/:id/delete. */
-  app.delete<{ Params: { id: string } }>('/api/admin/users/:id', { preHandler: [requireAdmin] }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  /** Удаление пользователя: POST /api/admin/users/delete с телом { id } — как у презентаций (без id в URL, чтобы прокси не резал). */
+  app.post<{ Body: { id?: string } }>('/api/admin/users/delete', { preHandler: [requireAdmin] }, async (req: FastifyRequest<{ Body: { id?: string } }>, reply: FastifyReply) => {
     try {
-      const targetId = req.params.id
+      const targetId = req.body?.id != null ? String(req.body.id).trim() : ''
+      if (!targetId) return reply.status(400).send({ error: 'Не указан id пользователя' })
       if (useFileStore) return reply.status(501).send({ error: 'Удаление пользователей поддерживается только при работе с MySQL' })
       const uid = Number(targetId)
-      if (Number.isNaN(uid)) return reply.status(404).send({ error: 'Пользователь не найден' })
-      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-      const adminId = Number((req.user as { sub: string }).sub)
-      return deleteUserById(uid, adminId, reply, mysqlDb)
-    } catch (err) {
-      req.log.error(err)
-      return reply.status(500).send({ error: 'Ошибка удаления пользователя' })
-    }
-  })
-
-  /** Удаление пользователя через POST (если прокси возвращает 400 на DELETE). */
-  app.post<{ Params: { id: string } }>('/api/admin/users/:id/delete', { preHandler: [requireAdmin] }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    try {
-      const targetId = req.params.id
-      if (useFileStore) return reply.status(501).send({ error: 'Удаление пользователей поддерживается только при работе с MySQL' })
-      const uid = Number(targetId)
-      if (Number.isNaN(uid)) return reply.status(404).send({ error: 'Пользователь не найден' })
+      if (Number.isNaN(uid)) return reply.status(400).send({ error: 'Неверный формат id пользователя' })
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
       const adminId = Number((req.user as { sub: string }).sub)
       return deleteUserById(uid, adminId, reply, mysqlDb)
