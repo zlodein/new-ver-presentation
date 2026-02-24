@@ -221,6 +221,31 @@ jobs:
           fi
           rm -f /tmp/backend.tar.gz
 
+      # Подмешиваем SMTP в server/.env на сервере из GitHub Secrets (файл .env в git не попадает).
+      # В настройках репозитория: Settings → Secrets and variables → Actions → добавить SMTP_HOST, SMTP_USER, SMTP_PASS.
+      - name: Ensure server .env has SMTP (from GitHub Secrets)
+        if: ${{ secrets.SMTP_HOST != '' && secrets.SMTP_USER != '' && secrets.SMTP_PASS != '' }}
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          SMTP_BLOCK="MAIL_TO=info@e-presentation.ru
+          MAIL_FROM=info@e-presentation.ru
+          SMTP_HOST=${SMTP_HOST}
+          SMTP_PORT=587
+          SMTP_SECURE=false
+          SMTP_USER=${SMTP_USER}
+          SMTP_PASS=${SMTP_PASS}
+          SMTP_INSECURE_TLS=1"
+          REMOTE_CMD="cd ${{ env.DEPLOY_DIR }}/server && touch .env && (grep -q '^SMTP_HOST=' .env || cat >> .env)"
+          if [ -n "$SSH_PASSWORD" ]; then
+            echo "$SMTP_BLOCK" | sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+          else
+            echo "$SMTP_BLOCK" | ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+          fi
+
       - name: Install dependencies and restart
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
