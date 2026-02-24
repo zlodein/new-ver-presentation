@@ -259,6 +259,7 @@ export async function authRoutes(app: FastifyInstance) {
           firstName: firstName?.trim() || null,
           lastName: lastName?.trim() || null,
         })
+        console.log('[auth] Регистрация (fileStore), отправка уведомления на почту:', user.email)
         sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch((err) => {
           console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
         })
@@ -295,6 +296,7 @@ export async function authRoutes(app: FastifyInstance) {
         }).$returningId()
         const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
         if (newId == null) return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
+        console.log('[auth] Регистрация (MySQL), отправка уведомления на почту:', normalizedEmail)
         sendRegistrationNotification({
           email: normalizedEmail,
           name: name?.trim() || firstName?.trim() || null,
@@ -330,6 +332,7 @@ export async function authRoutes(app: FastifyInstance) {
       if (!user) {
         return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
       }
+      console.log('[auth] Регистрация (PostgreSQL), отправка уведомления на почту:', user.email)
       sendRegistrationNotification({
         email: user.email,
         name: user.firstName,

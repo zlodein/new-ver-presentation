@@ -54,6 +54,31 @@ export function isMailConfigured(): boolean {
   return !!(SMTP_HOST && SMTP_USER && SMTP_PASS)
 }
 
+/** Отправить тестовое письмо и вернуть результат (для диагностики). Вызов: GET /api/admin/mail-test от имени админа. */
+export async function sendTestMail(): Promise<{ ok: boolean; message: string }> {
+  const transport = getTransporter()
+  if (!transport) {
+    return { ok: false, message: 'SMTP не настроен: задайте SMTP_HOST, SMTP_USER, SMTP_PASS в server/.env' }
+  }
+  const to = MAIL_TO
+  const subject = '[E-Presentation] Тест почты ' + new Date().toISOString()
+  const html = '<p>Это тестовое письмо. Если вы его видите, отправка работает.</p>'
+  try {
+    await transport.sendMail({
+      from: MAIL_FROM,
+      to,
+      subject,
+      html,
+    })
+    console.log('[mailer] Тестовое письмо отправлено →', to)
+    return { ok: true, message: 'Письмо отправлено на ' + to }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[mailer] Ошибка тестовой отправки:', msg)
+    return { ok: false, message: 'Ошибка: ' + msg }
+  }
+}
+
 /** Отправить письмо на info@e-presentation.ru. При отсутствии SMTP — не отправляет и пишет в лог один раз. */
 export async function sendMail(options: { to?: string; subject: string; html: string }): Promise<void> {
   const transport = getTransporter()

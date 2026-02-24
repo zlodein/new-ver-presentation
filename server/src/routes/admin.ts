@@ -10,6 +10,7 @@ import { db, useMysql, useFileStore } from '../db/index.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
 import { deletePresentationImagesFolder, deleteSupportTicketFolder, deleteUploadFileByDbPath } from './upload.js'
+import { sendTestMail } from '../services/mailer.js'
 
 function toIsoDate(d: Date | string): string {
   if (d instanceof Date) return d.toISOString().slice(0, 19).replace('T', ' ')
@@ -70,6 +71,12 @@ function toUserResponse(r: Record<string, unknown>, presentationsCount = 0) {
 
 export async function adminRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate)
+
+  /** Тест отправки почты: GET /api/admin/mail-test (только админ). Ответ в JSON и в логах сервера. */
+  app.get('/api/admin/mail-test', { preHandler: [requireAdmin] }, async (_req: FastifyRequest, reply: FastifyReply) => {
+    const result = await sendTestMail()
+    return reply.send(result)
+  })
 
   app.get('/api/admin/users', { preHandler: [requireAdmin] }, async (req: FastifyRequest, reply: FastifyReply) => {
     try {
