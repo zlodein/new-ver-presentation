@@ -337,7 +337,42 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   })
 
-  /** Полное удаление пользователя и всех связанных данных (презентации, оплаты, файлы). Только для MySQL. */
+  /** Внутренняя логика полного удаления пользователя (вызывается из DELETE и POST). */
+  async function deleteUserById(uid: number, adminId: number, reply: FastifyReply, mysqlDb: import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>) {
+    if (uid === adminId) return reply.status(403).send({ error: 'Нельзя удалить себя' })
+    const user = await mysqlDb.query.users.findFirst({
+      where: eq(mysqlSchema.users.id, uid),
+      columns: { id: true, user_img: true, company_logo: true },
+    })
+    if (!user) return reply.status(404).send({ error: 'Пользователь не найден' })
+    const presentations = await mysqlDb.query.presentations.findMany({
+      where: eq(mysqlSchema.presentations.user_id, uid),
+      columns: { id: true },
+    })
+    const presentationIds = (presentations as { id: number }[]).map((p) => p.id)
+    const supportRequests = await mysqlDb.query.supportRequests.findMany({
+      where: eq(mysqlSchema.supportRequests.user_id, uid),
+      columns: { id: true },
+    })
+    const supportRequestIds = (supportRequests as { id: number }[]).map((r) => r.id)
+    await deleteUploadFileByDbPath((user as { user_img?: string | null }).user_img)
+    await deleteUploadFileByDbPath((user as { company_logo?: string | null }).company_logo)
+    for (const pid of presentationIds) await deletePresentationImagesFolder(String(pid))
+    for (const tid of supportRequestIds) await deleteSupportTicketFolder(String(tid))
+    try {
+      await mysqlDb.execute(sql`DELETE FROM presentation_audit_log WHERE user_id = ${uid}`)
+    } catch {
+      /* таблица может отсутствовать */
+    }
+    await mysqlDb.delete(mysqlSchema.supportRequests).where(eq(mysqlSchema.supportRequests.user_id, uid))
+    await mysqlDb.delete(mysqlSchema.notifications).where(eq(mysqlSchema.notifications.user_id, uid))
+    await mysqlDb.delete(mysqlSchema.calendarEvents).where(eq(mysqlSchema.calendarEvents.user_id, uid))
+    await mysqlDb.delete(mysqlSchema.tasks).where(eq(mysqlSchema.tasks.user_id, uid))
+    await mysqlDb.delete(mysqlSchema.users).where(eq(mysqlSchema.users.id, uid))
+    return reply.send({ success: true })
+  }
+
+  /** Полное удаление пользователя (DELETE). Прокси на проде может блокировать DELETE — используйте POST /api/admin/users/:id/delete. */
   app.delete<{ Params: { id: string } }>('/api/admin/users/:id', { preHandler: [requireAdmin] }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     try {
       const targetId = req.params.id
@@ -346,45 +381,23 @@ export async function adminRoutes(app: FastifyInstance) {
       if (Number.isNaN(uid)) return reply.status(404).send({ error: 'Пользователь не найден' })
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
       const adminId = Number((req.user as { sub: string }).sub)
-      if (uid === adminId) return reply.status(400).send({ error: 'Нельзя удалить себя' })
+      return deleteUserById(uid, adminId, reply, mysqlDb)
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({ error: 'Ошибка удаления пользователя' })
+    }
+  })
 
-      const user = await mysqlDb.query.users.findFirst({
-        where: eq(mysqlSchema.users.id, uid),
-        columns: { id: true, user_img: true, company_logo: true },
-      })
-      if (!user) return reply.status(404).send({ error: 'Пользователь не найден' })
-
-      const presentations = await mysqlDb.query.presentations.findMany({
-        where: eq(mysqlSchema.presentations.user_id, uid),
-        columns: { id: true },
-      })
-      const presentationIds = (presentations as { id: number }[]).map((p) => p.id)
-
-      const supportRequests = await mysqlDb.query.supportRequests.findMany({
-        where: eq(mysqlSchema.supportRequests.user_id, uid),
-        columns: { id: true },
-      })
-      const supportRequestIds = (supportRequests as { id: number }[]).map((r) => r.id)
-
-      // Удаление файлов на диске
-      await deleteUploadFileByDbPath((user as { user_img?: string | null }).user_img)
-      await deleteUploadFileByDbPath((user as { company_logo?: string | null }).company_logo)
-      for (const pid of presentationIds) await deletePresentationImagesFolder(String(pid))
-      for (const tid of supportRequestIds) await deleteSupportTicketFolder(String(tid))
-
-      // Таблицы без FK на users или с ручным удалением
-      try {
-        await mysqlDb.execute(sql`DELETE FROM presentation_audit_log WHERE user_id = ${uid}`)
-      } catch {
-        // Таблица может отсутствовать
-      }
-      await mysqlDb.delete(mysqlSchema.supportRequests).where(eq(mysqlSchema.supportRequests.user_id, uid))
-      await mysqlDb.delete(mysqlSchema.notifications).where(eq(mysqlSchema.notifications.user_id, uid))
-      await mysqlDb.delete(mysqlSchema.calendarEvents).where(eq(mysqlSchema.calendarEvents.user_id, uid))
-      await mysqlDb.delete(mysqlSchema.tasks).where(eq(mysqlSchema.tasks.user_id, uid))
-      await mysqlDb.delete(mysqlSchema.users).where(eq(mysqlSchema.users.id, uid))
-
-      return reply.send({ success: true })
+  /** Удаление пользователя через POST (если прокси возвращает 400 на DELETE). */
+  app.post<{ Params: { id: string } }>('/api/admin/users/:id/delete', { preHandler: [requireAdmin] }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    try {
+      const targetId = req.params.id
+      if (useFileStore) return reply.status(501).send({ error: 'Удаление пользователей поддерживается только при работе с MySQL' })
+      const uid = Number(targetId)
+      if (Number.isNaN(uid)) return reply.status(404).send({ error: 'Пользователь не найден' })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const adminId = Number((req.user as { sub: string }).sub)
+      return deleteUserById(uid, adminId, reply, mysqlDb)
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({ error: 'Ошибка удаления пользователя' })

@@ -586,7 +586,7 @@ async function deleteUser(user: AdminUser) {
   deletingId.value = user.id
   error.value = ''
   try {
-    await api.delete(`/api/admin/users/${user.id}`)
+    await api.post(`/api/admin/users/${user.id}/delete`)
     users.value = users.value.filter((u) => u.id !== user.id)
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'Ошибка удаления пользователя')
