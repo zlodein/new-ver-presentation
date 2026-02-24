@@ -6,6 +6,7 @@ import { deleteSupportTicketFolder } from './upload.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { toIsoDate } from '../utils/date.js'
+import { sendSupportRequestNotification } from '../services/mailer.js'
 
 /** Отображаемый ID тикета: для MySQL #123, для PG #A1B2C3D4 (первые 8 символов UUID) */
 function formatTicketId(id: string | number, isPg: boolean): string {
@@ -139,9 +140,22 @@ export async function supportRoutes(app: FastifyInstance) {
           })
           if (!created) return reply.status(500).send({ error: 'Запрос не найден после создания' })
           const r = created as { id: number; user_id: number; subject: string; message: string | null; status: string; created_at: Date; updated_at: Date }
+          const ticketId = formatTicketId(r.id, false)
+          const userRow = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+            where: eq(mysqlSchema.users.id, r.user_id),
+            columns: { email: true, name: true, last_name: true },
+          })
+          const u = userRow as { email: string; name: string; last_name: string | null } | undefined
+          sendSupportRequestNotification({
+            userEmail: u?.email ?? '',
+            userName: u ? [u.name, u.last_name].filter(Boolean).join(' ') : undefined,
+            subject: r.subject,
+            message: r.message ?? undefined,
+            ticketId,
+          }).catch(() => {})
           return reply.status(201).send({
             id: String(r.id),
-            ticketId: formatTicketId(r.id, false),
+            ticketId,
             userId: String(r.user_id),
             subject: r.subject,
             message: r.message ?? undefined,
@@ -161,9 +175,22 @@ export async function supportRoutes(app: FastifyInstance) {
           })
           .returning()
         if (!created) return reply.status(500).send({ error: 'Ошибка создания запроса' })
+        const ticketId = formatTicketId(created.id, true)
+        const userRow = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+          where: eq(pgSchema.users.id, created.userId),
+          columns: { email: true, firstName: true, lastName: true },
+        })
+        const u = userRow as { email: string; firstName: string | null; lastName: string | null } | undefined
+        sendSupportRequestNotification({
+          userEmail: u?.email ?? '',
+          userName: u ? [u.firstName, u.lastName].filter(Boolean).join(' ') : undefined,
+          subject: created.subject,
+          message: created.message ?? undefined,
+          ticketId,
+        }).catch(() => {})
         return reply.status(201).send({
           id: created.id,
-          ticketId: formatTicketId(created.id, true),
+          ticketId,
           userId: created.userId,
           subject: created.subject,
           message: created.message ?? undefined,

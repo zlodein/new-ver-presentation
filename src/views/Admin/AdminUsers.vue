@@ -259,6 +259,17 @@
                       <div class="flex items-center gap-2">
                         <button
                           type="button"
+                          @click="confirmDeleteUser(user)"
+                          :disabled="deletingId === user.id || user.role_id === 2"
+                          class="inline-flex items-center justify-center rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-error-50 hover:border-error-300 hover:text-error-600 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-400 dark:hover:bg-error-500/15 dark:hover:border-error-800 dark:hover:text-error-400 transition-colors"
+                          title="Удалить пользователя безвозвратно"
+                        >
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
                           @click="toggleActive(user)"
                           :disabled="deactivatingId === user.id || user.role_id === 2"
                           class="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -267,7 +278,7 @@
                               ? 'border-error-300 bg-white text-error-600 hover:bg-error-50 dark:border-error-800 dark:bg-gray-800 dark:text-error-400 dark:hover:bg-error-500/15'
                               : 'border-success-300 bg-white text-success-600 hover:bg-success-50 dark:border-success-800 dark:bg-gray-800 dark:text-success-400 dark:hover:bg-success-500/15'
                           "
-                          :title="user.is_active ? 'Деактивировать' : 'Активировать'"
+                          :title="user.is_active ? 'Деактивировать (временно заморозить)' : 'Активировать'"
                         >
                           {{ user.is_active ? 'Деактивировать' : 'Активировать' }}
                         </button>
@@ -419,6 +430,7 @@ const loading = ref(true)
 const error = ref('')
 const selectedUser = ref<AdminUser | null>(null)
 const deactivatingId = ref<string | null>(null)
+const deletingId = ref<string | null>(null)
 const impersonatingId = ref<string | null>(null)
 const downloadLoading = ref(false)
 
@@ -554,6 +566,32 @@ function onUserSaved(updated: AdminUser) {
   const idx = users.value.findIndex((u) => u.id === updated.id)
   if (idx >= 0) users.value[idx] = { ...users.value[idx], ...updated }
   selectedUser.value = null
+}
+
+function confirmDeleteUser(user: AdminUser) {
+  if (user.role_id === 2) {
+    error.value = 'Нельзя удалить администратора'
+    return
+  }
+  const fullName = getFullName(user) || user.email
+  if (!window.confirm(`Удалить пользователя «${fullName}» (${user.email}) безвозвратно? Будут удалены все его презентации, оплаты, файлы и данные. Это действие нельзя отменить.`)) {
+    return
+  }
+  deleteUser(user)
+}
+
+async function deleteUser(user: AdminUser) {
+  if (deletingId.value) return
+  deletingId.value = user.id
+  error.value = ''
+  try {
+    await api.delete(`/api/admin/users/${user.id}`)
+    users.value = users.value.filter((u) => u.id !== user.id)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка удаления пользователя'
+  } finally {
+    deletingId.value = null
+  }
 }
 
 async function toggleActive(user: AdminUser) {

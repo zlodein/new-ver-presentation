@@ -42,6 +42,19 @@ export async function deleteSupportTicketFolder(ticketId: string): Promise<void>
   }
 }
 
+/** Удаляет файл по пути из БД (например /uploads/avatars/123.jpg или /uploads/company-logo/logo.png). */
+export async function deleteUploadFileByDbPath(dbPath: string | null | undefined): Promise<void> {
+  if (!dbPath || typeof dbPath !== 'string' || !dbPath.startsWith('/uploads/')) return
+  const relative = dbPath.replace(/^\//, '').replace(/\.\./g, '')
+  if (!relative) return
+  const filepath = path.join(__dirname, '../../', relative)
+  try {
+    await fs.unlink(filepath)
+  } catch {
+    // Файл может отсутствовать — игнорируем
+  }
+}
+
 // Создать папку для аватаров, если её нет
 async function ensureAvatarsDir() {
   try {

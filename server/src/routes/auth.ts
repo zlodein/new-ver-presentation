@@ -12,6 +12,7 @@ import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
+import { sendRegistrationNotification } from '../services/mailer.js'
 
 const SALT_ROUNDS = 10
 const SERVER_ERR = 'Ошибка сервера. При использовании файлового хранилища проверьте папку server/data.'
@@ -258,6 +259,7 @@ export async function authRoutes(app: FastifyInstance) {
           firstName: firstName?.trim() || null,
           lastName: lastName?.trim() || null,
         })
+        sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch(() => {})
         const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
         return reply.send({
           user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
@@ -291,6 +293,11 @@ export async function authRoutes(app: FastifyInstance) {
         }).$returningId()
         const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
         if (newId == null) return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
+        sendRegistrationNotification({
+          email: normalizedEmail,
+          name: name?.trim() || firstName?.trim() || null,
+          lastName: last_name?.trim() || lastName?.trim() || null,
+        }).catch(() => {})
         const token = await reply.jwtSign({ sub: String(newId), email: normalizedEmail }, { expiresIn: '7d' })
         return reply.send({
           user: { 
@@ -319,6 +326,11 @@ export async function authRoutes(app: FastifyInstance) {
       if (!user) {
         return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
       }
+      sendRegistrationNotification({
+        email: user.email,
+        name: user.firstName,
+        lastName: user.lastName,
+      }).catch(() => {})
       const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
       return reply.send({
         user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
