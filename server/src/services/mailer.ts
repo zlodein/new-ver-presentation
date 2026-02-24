@@ -11,6 +11,7 @@ const SMTP_USER = process.env.SMTP_USER
 const SMTP_PASS = process.env.SMTP_PASS
 
 let transporter: Transporter | null = null
+let skipLogShown = false
 
 function getTransporter(): Transporter | null {
   if (transporter) return transporter
@@ -29,10 +30,25 @@ function getTransporter(): Transporter | null {
   return transporter
 }
 
-/** Отправить письмо на info@e-presentation.ru. При отсутствии SMTP-настроек — тихо ничего не делать. */
+/** Проверка: настроена ли отправка писем (для логов и диагностики). */
+export function isMailConfigured(): boolean {
+  return !!(SMTP_HOST && SMTP_USER && SMTP_PASS)
+}
+
+/** Отправить письмо на info@e-presentation.ru. При отсутствии SMTP — не отправляет и пишет в лог один раз. */
 export async function sendMail(options: { to?: string; subject: string; html: string }): Promise<void> {
   const transport = getTransporter()
-  if (!transport) return
+  if (!transport) {
+    if (!skipLogShown) {
+      skipLogShown = true
+      console.warn(
+        '[mailer] Письма не отправляются: в .env не заданы SMTP_HOST, SMTP_USER и SMTP_PASS. ' +
+          'Добавьте их в server/.env для уведомлений на ' +
+          MAIL_TO
+      )
+    }
+    return
+  }
   const to = options.to || MAIL_TO
   try {
     await transport.sendMail({
@@ -79,4 +95,10 @@ export async function sendSupportRequestNotification(data: {
 }): Promise<void> {
   const { subject, html } = getSupportRequestEmail(data)
   await sendMail({ subject, html })
+}
+
+if (isMailConfigured()) {
+  console.log('[mailer] Уведомления на почту включены, MAIL_TO=' + MAIL_TO)
+} else {
+  console.log('[mailer] Уведомления на почту отключены. Задайте SMTP_HOST, SMTP_USER, SMTP_PASS в server/.env')
 }
