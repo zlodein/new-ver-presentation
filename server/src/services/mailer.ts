@@ -148,5 +148,10 @@ export async function sendSupportRequestNotification(data: {
 if (isMailConfigured()) {
   console.log('[mailer] Уведомления на почту включены, MAIL_TO=' + MAIL_TO)
 } else {
-  console.log('[mailer] Уведомления на почту отключены. Задайте SMTP_HOST, SMTP_USER, SMTP_PASS в server/.env')
+  const missing = [
+    !SMTP_HOST && 'SMTP_HOST',
+    !SMTP_USER && 'SMTP_USER',
+    !SMTP_PASS && 'SMTP_PASS',
+  ].filter(Boolean)
+  console.log('[mailer] Уведомления на почту отключены. Не заданы: ' + missing.join(', ') + '. Добавьте в server/.env на сервере или в переменные окружения хостинга.')
 }

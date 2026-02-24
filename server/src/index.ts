@@ -1,14 +1,30 @@
 import dotenv from 'dotenv'
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { basename, dirname, join } from 'node:path'
 
-// Загружаем .env до импорта app, иначе маршруты прочитают process.env до загрузки переменных
+// Загружаем .env до импорта app. Проверяем несколько путей, чтобы работало при разном способе запуска (локально, на сервере, из dist/).
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const serverDir =
   basename(__dirname) === 'dist' || basename(__dirname) === 'src'
     ? join(__dirname, '..')
     : __dirname
-dotenv.config({ path: join(serverDir, '.env') })
+const cwd = process.cwd()
+const envPaths = [
+  join(serverDir, '.env'),
+  join(cwd, 'server', '.env'),
+  join(cwd, '.env'),
+]
+for (const envPath of envPaths) {
+  if (existsSync(envPath)) {
+    dotenv.config({ path: envPath })
+    break
+  }
+}
+// Если ни один файл не найден, пробуем стандартный путь (dotenv не ругается на отсутствующий файл)
+if (!process.env.DATABASE_URL && !process.env.SMTP_HOST) {
+  dotenv.config({ path: join(serverDir, '.env') })
+}
 
 const PORT = Number(process.env.PORT) || 3001
 
