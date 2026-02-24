@@ -82,6 +82,15 @@
 
                 <button
                   type="button"
+                  :disabled="mailTestLoading"
+                  @click="testMail"
+                  class="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-[11px] text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
+                  title="Отправить тестовое письмо на info@e-presentation.ru"
+                >
+                  {{ mailTestLoading ? 'Отправка...' : 'Тест почты' }}
+                </button>
+                <button
+                  type="button"
                   :disabled="downloadLoading || (selectedUsers.length === 0 && filteredUsers.length === 0)"
                   @click="downloadExcel"
                   class="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-[11px] text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
@@ -434,6 +443,7 @@ const deactivatingId = ref<string | null>(null)
 const deletingId = ref<string | null>(null)
 const impersonatingId = ref<string | null>(null)
 const downloadLoading = ref(false)
+const mailTestLoading = ref(false)
 
 const search = ref('')
 const perPage = ref(10)
@@ -536,6 +546,25 @@ function prevPage() {
 
 function nextPage() {
   if (currentPage.value < totalPages.value) currentPage.value++
+}
+
+async function testMail() {
+  if (mailTestLoading.value) return
+  mailTestLoading.value = true
+  error.value = ''
+  try {
+    const res = await api.get<{ ok: boolean; message: string }>('/api/admin/mail-test')
+    if (res.ok) {
+      alert('Почта: ' + res.message + '\nПроверьте папку «Входящие» и «Спам» на info@e-presentation.ru')
+    } else {
+      alert('Ошибка: ' + res.message)
+    }
+  } catch (e) {
+    const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'Ошибка запроса')
+    alert('Ошибка: ' + msg)
+  } finally {
+    mailTestLoading.value = false
+  }
 }
 
 async function downloadExcel() {
