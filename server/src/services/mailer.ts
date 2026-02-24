@@ -2,6 +2,16 @@ import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 import { getRegistrationEmail, getPaymentEmail, getSupportRequestEmail } from '../emails/templates.js'
 
+/** Опции SMTP для createTransport (типы nodemailer различаются по версиям) */
+interface SmtpConnectionOptions {
+  host: string
+  port: number
+  secure: boolean
+  auth: { user: string; pass: string }
+  requireTLS?: boolean
+  tls?: { rejectUnauthorized: boolean }
+}
+
 const MAIL_TO = process.env.MAIL_TO || 'info@e-presentation.ru'
 const MAIL_FROM = process.env.MAIL_FROM || process.env.SMTP_USER || 'noreply@e-presentation.ru'
 const SMTP_HOST = process.env.SMTP_HOST
@@ -20,7 +30,7 @@ function getTransporter(): Transporter | null {
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
     return null
   }
-  const options: nodemailer.TransportOptions = {
+  const options: SmtpConnectionOptions = {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_SECURE,
@@ -30,10 +40,10 @@ function getTransporter(): Transporter | null {
     },
   }
   if (SMTP_PORT === 587 && !SMTP_SECURE) {
-    ;(options as Record<string, unknown>).requireTLS = true
+    options.requireTLS = true
   }
   if (SMTP_INSECURE_TLS) {
-    ;(options as Record<string, unknown>).tls = { rejectUnauthorized: false }
+    options.tls = { rejectUnauthorized: false }
   }
   transporter = nodemailer.createTransport(options)
   return transporter
