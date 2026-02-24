@@ -9,6 +9,8 @@ const SMTP_PORT = Number(process.env.SMTP_PORT) || 587
 const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1'
 const SMTP_USER = process.env.SMTP_USER
 const SMTP_PASS = process.env.SMTP_PASS
+/** Для серверов с самоподписанным сертификатом (например свой SMTP на e-presentation.ru) задайте SMTP_INSECURE_TLS=1 */
+const SMTP_INSECURE_TLS = process.env.SMTP_INSECURE_TLS === '1' || process.env.SMTP_INSECURE_TLS === 'true'
 
 let transporter: Transporter | null = null
 let skipLogShown = false
@@ -18,7 +20,7 @@ function getTransporter(): Transporter | null {
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
     return null
   }
-  transporter = nodemailer.createTransport({
+  const options: nodemailer.TransportOptions = {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_SECURE,
@@ -26,7 +28,14 @@ function getTransporter(): Transporter | null {
       user: SMTP_USER,
       pass: SMTP_PASS,
     },
-  })
+  }
+  if (SMTP_PORT === 587 && !SMTP_SECURE) {
+    ;(options as Record<string, unknown>).requireTLS = true
+  }
+  if (SMTP_INSECURE_TLS) {
+    ;(options as Record<string, unknown>).tls = { rejectUnauthorized: false }
+  }
+  transporter = nodemailer.createTransport(options)
   return transporter
 }
 
@@ -57,8 +66,12 @@ export async function sendMail(options: { to?: string; subject: string; html: st
       subject: options.subject,
       html: options.html,
     })
+    console.log('[mailer] Письмо отправлено:', options.subject, '→', to)
   } catch (err) {
-    console.error('[mailer] Ошибка отправки письма:', err instanceof Error ? err.message : err)
+    const msg = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack : ''
+    console.error('[mailer] Ошибка отправки письма:', msg)
+    if (stack) console.error('[mailer]', stack)
   }
 }
 

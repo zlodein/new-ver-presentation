@@ -259,7 +259,9 @@ export async function authRoutes(app: FastifyInstance) {
           firstName: firstName?.trim() || null,
           lastName: lastName?.trim() || null,
         })
-        sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch(() => {})
+        sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch((err) => {
+          console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
+        })
         const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
         return reply.send({
           user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
@@ -297,7 +299,9 @@ export async function authRoutes(app: FastifyInstance) {
           email: normalizedEmail,
           name: name?.trim() || firstName?.trim() || null,
           lastName: last_name?.trim() || lastName?.trim() || null,
-        }).catch(() => {})
+        }).catch((err) => {
+          console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
+        })
         const token = await reply.jwtSign({ sub: String(newId), email: normalizedEmail }, { expiresIn: '7d' })
         return reply.send({
           user: { 
@@ -330,7 +334,9 @@ export async function authRoutes(app: FastifyInstance) {
         email: user.email,
         name: user.firstName,
         lastName: user.lastName,
-      }).catch(() => {})
+      }).catch((err) => {
+        console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
+      })
       const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
       return reply.send({
         user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
