@@ -260,9 +260,9 @@
                         <button
                           type="button"
                           @click="confirmDeleteUser(user)"
-                          :disabled="deletingId === user.id || user.role_id === 2"
+                          :disabled="deletingId === user.id || user.role_id === 2 || user.id === currentUserId"
                           class="inline-flex items-center justify-center rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-error-50 hover:border-error-300 hover:text-error-600 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-400 dark:hover:bg-error-500/15 dark:hover:border-error-800 dark:hover:text-error-400 transition-colors"
-                          title="Удалить пользователя безвозвратно"
+                          :title="user.id === currentUserId ? 'Нельзя удалить себя' : 'Удалить пользователя безвозвратно'"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -423,7 +423,8 @@ interface AdminUserWithSelect extends AdminUser {
 }
 
 const router = useRouter()
-const { fetchUser } = useAuth()
+const { fetchUser, currentUser } = useAuth()
+const currentUserId = computed(() => currentUser.value?.id ?? null)
 const currentPageTitle = ref('Пользователи')
 const users = ref<AdminUserWithSelect[]>([])
 const loading = ref(true)
@@ -588,7 +589,7 @@ async function deleteUser(user: AdminUser) {
     await api.delete(`/api/admin/users/${user.id}`)
     users.value = users.value.filter((u) => u.id !== user.id)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Ошибка удаления пользователя'
+    error.value = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'Ошибка удаления пользователя')
   } finally {
     deletingId.value = null
   }
