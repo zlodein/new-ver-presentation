@@ -224,13 +224,16 @@ jobs:
       # Подмешиваем SMTP в server/.env на сервере из GitHub Secrets (файл .env в git не попадает).
       # В настройках репозитория: Settings → Secrets and variables → Actions → добавить SMTP_HOST, SMTP_USER, SMTP_PASS.
       - name: Ensure server .env has SMTP (from GitHub Secrets)
-        if: ${{ secrets.SMTP_HOST != '' && secrets.SMTP_USER != '' && secrets.SMTP_PASS != '' }}
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
         run: |
+          if [ -z "$SMTP_HOST" ] || [ -z "$SMTP_USER" ] || [ -z "$SMTP_PASS" ]; then
+            echo "SMTP secrets not set (SMTP_HOST, SMTP_USER, SMTP_PASS), skipping .env update"
+            exit 0
+          fi
           SMTP_BLOCK="MAIL_TO=info@e-presentation.ru
           MAIL_FROM=info@e-presentation.ru
           SMTP_HOST=${SMTP_HOST}
