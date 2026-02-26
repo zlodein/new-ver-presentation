@@ -45,10 +45,23 @@
   height: 100%;
   min-height: 0;
   max-height: 100%;
-  padding: 1rem;
+  padding: 0;
   box-sizing: border-box;
   overflow: hidden;
   background: #fff;
+}
+
+/* Масштаб 1.42518: контент рисуется в уменьшенной области и масштабируется (как на presentation-realty.ru) */
+.presentation-slider-wrap.booklet-view .booklet-scale-root {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 70.16%; /* 100 / 1.42518 */
+  height: 70.16%;
+  transform: scale(1.42518);
+  transform-origin: 0 0;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-content {
@@ -185,18 +198,21 @@
   word-break: break-word;
 }
 
-/* Обложка в режиме просмотра/PDF: размер шрифта заголовка и подзаголовка на самих блоках (v-html) */
+/* Обложка: унифицированные размеры (заголовки/подзаголовки 28px, описание 17px, тип сделки 26px, цена 24px) */
 .presentation-slider-wrap.booklet-view .booklet-main__top {
-  font-size: var(--booklet-font-size-heading, 38px);
+  font-size: 28px;
+  font-weight: 400;
 }
 .presentation-slider-wrap.booklet-view .booklet-main__center {
-  font-size: var(--booklet-font-size-presentation-title, 38px);
+  font-size: 28px;
+  font-weight: 400;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__top input,
 .presentation-slider-wrap.booklet-view .booklet-main__top .booklet-main__top-input,
 .presentation-slider-wrap.booklet-view .booklet-main__top textarea {
-  font-size: var(--booklet-font-size-heading, 38px);
+  font-size: 28px;
+  font-weight: 400;
   min-height: 0;
   width: 100%;
   max-width: 100%;
@@ -206,7 +222,8 @@
 .presentation-slider-wrap.booklet-view .booklet-main__center input,
 .presentation-slider-wrap.booklet-view .booklet-main__center .booklet-main__center-input,
 .presentation-slider-wrap.booklet-view .booklet-main__center textarea {
-  font-size: var(--booklet-font-size-presentation-title, 38px);
+  font-size: 28px;
+  font-weight: 400;
   margin-top: 0.25rem;
   min-height: 0;
   width: 100%;
@@ -218,13 +235,14 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  font-size: var(--booklet-font-size-text, 22px);
+  font-size: 17px;
+  font-weight: 400;
   overflow-wrap: break-word;
   word-break: break-word;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__short-desc textarea {
-  font-size: var(--booklet-font-size-text, 22px) !important;
+  font-size: 17px !important;
   line-height: 1.4;
 }
 
@@ -242,12 +260,18 @@
 
 .presentation-slider-wrap.booklet-view .booklet-main__price,
 .presentation-slider-wrap.booklet-view .booklet-main__bottom .booklet-main__price {
-  font-size: var(--booklet-font-size-price, 18px) !important;
+  font-size: 24px !important;
+  font-weight: 500;
 }
 
-.presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__deal-type,
+.presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__deal-type {
+  font-size: 26px !important;
+  font-weight: 700;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__price-suffix {
-  font-size: var(--booklet-font-size-price, 18px) !important;
+  font-size: 24px !important;
+  font-weight: 500;
 }
 
 /* Обложка: текст в стиле публичного просмотра */
@@ -308,8 +332,8 @@
 .presentation-slider-wrap.booklet-view .booklet-galery__title,
 .presentation-slider-wrap.booklet-view .booklet-galery__title input {
   margin: 0 0 0.5rem 0;
-  font-size: var(--booklet-font-size-heading, 38px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;
@@ -358,8 +382,8 @@
 .presentation-slider-wrap.booklet-view .booklet-char__title {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: var(--booklet-font-size-heading, 38px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
 }
@@ -411,6 +435,8 @@
   padding: 0.35rem 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   align-items: center;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-char__row .booklet-char__item {
@@ -434,8 +460,8 @@
 
 .presentation-slider-wrap.booklet-view .booklet-layout__title {
   margin: 0;
-  font-size: var(--booklet-font-size-heading, 38px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
 }
@@ -471,6 +497,27 @@
   min-height: 320px;
 }
 
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-right"] {
+  direction: rtl;
+}
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-right"] .booklet-info__block {
+  direction: ltr;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-top"] {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+}
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-top"] .booklet-info__block.booklet-info__content { order: 1; }
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-top"] .booklet-info__grid { order: 2; }
+
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-bottom"] {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+}
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-bottom"] .booklet-info__block.booklet-info__content { order: 2; }
+.presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-bottom"] .booklet-info__grid { order: 1; }
+
 .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__content {
   display: flex;
   flex-direction: column;
@@ -482,8 +529,8 @@
 .presentation-slider-wrap.booklet-view .booklet-info__title,
 .presentation-slider-wrap.booklet-view .booklet-info__title input {
   margin: 0;
-  font-size: var(--booklet-font-size-heading, 38px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a !important;
   flex-shrink: 0;
@@ -493,7 +540,8 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  font-size: var(--booklet-font-size-text, 22px);
+  font-size: 17px;
+  font-weight: 400;
   line-height: 1.5;
   color: #444;
   display: flex;
@@ -505,7 +553,7 @@
 .presentation-slider-wrap.booklet-view .booklet-info__text textarea {
   flex: 1;
   min-height: 60px;
-  font-size: var(--booklet-font-size-text, 22px) !important;
+  font-size: 17px !important;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-info__text .rounded,
@@ -555,6 +603,27 @@
   min-height: 320px;
 }
 
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-right"] {
+  direction: rtl;
+}
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-right"] .booklet-stroen__block {
+  direction: ltr;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-top"] {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+}
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-top"] .booklet-stroen__block.booklet-stroen__content { order: 1; }
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-top"] .booklet-stroen__grid { order: 2; }
+
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-bottom"] {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+}
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-bottom"] .booklet-stroen__block.booklet-stroen__content { order: 2; }
+.presentation-slider-wrap.booklet-view .booklet-stroen__wrap[data-block-layout="text-bottom"] .booklet-stroen__grid { order: 1; }
+
 .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__content {
   display: flex;
   flex-direction: column;
@@ -565,8 +634,8 @@
 
 .presentation-slider-wrap.booklet-view .booklet-stroen__title {
   margin: 0;
-  font-size: var(--booklet-font-size-heading, 38px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;
@@ -576,7 +645,8 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  font-size: var(--booklet-font-size-text, 22px);
+  font-size: 17px;
+  font-weight: 400;
   line-height: 1.5;
   color: #444;
   display: flex;
@@ -588,7 +658,7 @@
 .presentation-slider-wrap.booklet-view .booklet-stroen__text textarea {
   flex: 1;
   min-height: 60px;
-  font-size: var(--booklet-font-size-text, 22px) !important;
+  font-size: 17px !important;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-stroen__text .rounded,
@@ -642,8 +712,8 @@
 .presentation-slider-wrap.booklet-view .booklet-map__title {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: var(--booklet-font-size-heading, 38px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;
@@ -683,7 +753,8 @@
 
 .presentation-slider-wrap.booklet-view .booklet-map__info {
   flex: none;
-  font-size: var(--booklet-font-size-text, 22px);
+  font-size: 17px;
+  font-weight: 400;
   color: #444;
   display: flex;
   flex-direction: column;
@@ -695,12 +766,13 @@
 
 .presentation-slider-wrap.booklet-view .booklet-map__metro-label {
   color: #1a1a1a;
-  font-size: var(--booklet-font-size-text, 22px);
+  font-size: 17px;
   font-weight: 600;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-map__metro-list {
-  font-size: var(--booklet-font-size-text, 22px);
+  font-size: 17px;
+  font-weight: 400;
   color: #1a1a1a;
 }
 
@@ -731,8 +803,8 @@
 .presentation-slider-wrap.booklet-view .booklet-contacts__title,
 .presentation-slider-wrap.booklet-view .booklet-contacts__title input {
   margin: 0;
-  font-size: var(--booklet-font-size-heading, 38px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;

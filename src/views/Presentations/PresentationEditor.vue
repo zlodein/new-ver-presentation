@@ -345,7 +345,7 @@
                     </span>
                   </div>
                 </div>
-                <div>
+                <div class="hidden">
                   <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Название презентации</label>
                   <div class="relative z-20 bg-transparent">
                     <select v-model="presentationSettings.fontSizePresentationTitle" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
@@ -356,7 +356,7 @@
                     </span>
                   </div>
                 </div>
-                <div>
+                <div class="hidden">
                   <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Подзаголовок обложки / заголовки слайдов</label>
                   <div class="relative z-20 bg-transparent">
                     <select v-model="presentationSettings.fontSizeHeading" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
@@ -367,7 +367,7 @@
                     </span>
                   </div>
                 </div>
-                <div>
+                <div class="hidden">
                   <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Текст</label>
                   <div class="relative z-20 bg-transparent">
                     <select v-model="presentationSettings.fontSizeText" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
@@ -378,7 +378,7 @@
                     </span>
                   </div>
                 </div>
-                <div>
+                <div class="hidden">
                   <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Тип сделки и цена</label>
                   <div class="relative z-20 bg-transparent">
                     <select v-model="presentationSettings.fontSizePrice" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
@@ -460,6 +460,7 @@
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
                 >
                   <div class="booklet-page__inner">
+                    <div class="booklet-scale-root w-full h-full">
                     <!-- 1. Обложка (как на presentation-realty.ru/view) -->
                     <div
                       v-if="slide.type === 'cover'"
@@ -587,9 +588,9 @@
                   <!-- 2. Описание (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'description'"
-                    class="booklet-content booklet-info"
+                    class="booklet-content booklet-info relative"
                   >
-                    <div class="booklet-info__wrap">
+                    <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
                       <div class="booklet-info__block booklet-info__content">
                         <input
                           :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
@@ -613,6 +614,23 @@
                                 <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                               </svg>
                             </span>
+                          </div>
+                          <span class="text-xs font-medium text-gray-500">Раскладка:</span>
+                          <div class="relative z-20">
+                            <button
+                              type="button"
+                              class="inline-flex h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                              :title="blockLayoutLabel(getBlockLayout(slide))"
+                              @click="toggleBlockLayoutMenu(slide.id)"
+                            >
+                              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                              <span class="hidden sm:inline">{{ blockLayoutLabel(getBlockLayout(slide)) }}</span>
+                            </button>
+                            <div v-if="blockLayoutMenuSlideId === slide.id" class="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800" @click.stop>
+                              <button v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" :class="{ 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300': getBlockLayout(slide) === opt.value }" @click="setBlockLayout(slide, opt.value); blockLayoutMenuSlideId = null">
+                                <span>{{ opt.label }}</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <div class="booklet-info__text">
@@ -659,9 +677,9 @@
                   <!-- 3. Инфраструктура (как на presentation-realty.ru/view) -->
                   <div
                     v-else-if="slide.type === 'infrastructure'"
-                    class="booklet-content booklet-stroen"
+                    class="booklet-content booklet-stroen relative"
                   >
-                    <div class="booklet-stroen__wrap">
+                    <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
                       <div class="booklet-stroen__block booklet-stroen__content">
                         <input
                           v-model="slide.data.heading"
@@ -684,6 +702,23 @@
                                 <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                               </svg>
                             </span>
+                          </div>
+                          <span class="text-xs font-medium text-gray-500">Раскладка:</span>
+                          <div class="relative z-20">
+                            <button
+                              type="button"
+                              class="inline-flex h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                              :title="blockLayoutLabel(getBlockLayout(slide))"
+                              @click="toggleBlockLayoutMenu(slide.id)"
+                            >
+                              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                              <span class="hidden sm:inline">{{ blockLayoutLabel(getBlockLayout(slide)) }}</span>
+                            </button>
+                            <div v-if="blockLayoutMenuSlideId === slide.id" class="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800" @click.stop>
+                              <button v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" :class="{ 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300': getBlockLayout(slide) === opt.value }" @click="setBlockLayout(slide, opt.value); blockLayoutMenuSlideId = null">
+                                <span>{{ opt.label }}</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <div class="booklet-stroen__text">
@@ -1097,6 +1132,7 @@
                   <div v-else class="flex h-full items-center justify-center p-8 text-gray-500">
                     Слайд: {{ slide.type }}
                   </div>
+                    </div>
                   </div>
                 </div>
               </SwiperSlide>
@@ -1692,6 +1728,29 @@ const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   contacts: '1x1',
 }
 
+const BLOCK_LAYOUT_OPTIONS = [
+  { value: 'text-left', label: 'Текст слева, фото справа' },
+  { value: 'text-right', label: 'Текст справа, фото слева' },
+  { value: 'text-top', label: 'Текст сверху, фото снизу' },
+  { value: 'text-bottom', label: 'Фото сверху, текст снизу' },
+]
+const blockLayoutMenuSlideId = ref<string | null>(null)
+function getBlockLayout(slide: SlideItem): string {
+  const v = slide.data?.blockLayout
+  if (typeof v === 'string' && BLOCK_LAYOUT_OPTIONS.some((o) => o.value === v)) return v
+  return 'text-left'
+}
+function blockLayoutLabel(layout: string): string {
+  return BLOCK_LAYOUT_OPTIONS.find((o) => o.value === layout)?.label ?? 'Текст слева'
+}
+function toggleBlockLayoutMenu(slideId: string) {
+  blockLayoutMenuSlideId.value = blockLayoutMenuSlideId.value === slideId ? null : slideId
+}
+function setBlockLayout(slide: SlideItem, value: string) {
+  if (!slide.data) slide.data = {}
+  ;(slide.data as Record<string, string>).blockLayout = value
+}
+
 function getImageGrid(slide: SlideItem): string {
   const v = slide.data?.imageGrid
   if (typeof v === 'string' && v) return v
@@ -1828,10 +1887,6 @@ function resetPresentationSettings() {
 const presentationStyle = computed(() => ({
   fontFamily: presentationSettings.value.fontFamily,
   '--booklet-image-radius': presentationSettings.value.imageBorderRadius,
-  '--booklet-font-size-presentation-title': presentationSettings.value.fontSizePresentationTitle,
-  '--booklet-font-size-heading': presentationSettings.value.fontSizeHeading,
-  '--booklet-font-size-text': presentationSettings.value.fontSizeText,
-  '--booklet-font-size-price': presentationSettings.value.fontSizePrice,
 } as Record<string, string>))
 
 /** Мета презентации: статус, публичная ссылка, shortId (только владелец) */

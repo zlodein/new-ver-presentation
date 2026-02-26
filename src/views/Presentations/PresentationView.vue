@@ -35,6 +35,7 @@
         class="booklet-page booklet-page--stacked"
       >
         <div class="booklet-page__inner">
+          <div class="booklet-scale-root w-full h-full">
             <!-- Обложка -->
             <div v-if="slide.type === 'cover'" class="booklet-content booklet-main">
               <div class="booklet-main__wrap">
@@ -70,7 +71,7 @@
             </div>
             <!-- 2. Описание (с блоком текста и сеткой 2 фото) -->
             <div v-else-if="slide.type === 'description'" class="booklet-content booklet-info">
-              <div class="booklet-info__wrap">
+              <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-info__block booklet-info__content">
                   <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
                   <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text" v-html="String(slide.data?.text ?? slide.data?.content ?? '').replace(/\n/g, '<br>')" />
@@ -84,7 +85,7 @@
             </div>
             <!-- 3. Инфраструктура -->
             <div v-else-if="slide.type === 'infrastructure'" class="booklet-content booklet-stroen">
-              <div class="booklet-stroen__wrap">
+              <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-stroen__block booklet-stroen__content">
                   <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
                   <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text" v-html="String(slide.data?.content ?? slide.data?.text ?? '').replace(/\n/g, '<br>')" />
@@ -221,6 +222,7 @@
                 <img v-for="(url, i) in viewSlideImages(slide, 4)" :key="i" :src="url" alt="" class="h-24 w-full cursor-pointer object-cover rounded" v-show="url" @click="url && openGallery(getGalleryGlobalIndex(index, i))">
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -417,6 +419,13 @@ function getImageGrid(slide: ViewSlideItem): string {
   const v = slide.data?.imageGrid
   if (typeof v === 'string' && v) return v
   return DEFAULT_IMAGE_GRID_BY_TYPE[slide.type] ?? '2x2'
+}
+
+const BLOCK_LAYOUT_VALUES = ['text-left', 'text-right', 'text-top', 'text-bottom'] as const
+function getBlockLayout(slide: ViewSlideItem): string {
+  const v = slide.data?.blockLayout
+  if (typeof v === 'string' && BLOCK_LAYOUT_VALUES.includes(v as (typeof BLOCK_LAYOUT_VALUES)[number])) return v
+  return 'text-left'
 }
 
 /** Количество слотов по сетке (cols×rows) */
