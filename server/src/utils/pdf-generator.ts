@@ -332,7 +332,19 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'layout': {
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || 'ПЛАНИРОВКА')
-        const imageUrl = String(dataObj.layoutImageUrl || dataObj.image || '')
+        const grid = String(dataObj.imageGrid || '1x1')
+        const limit = (() => {
+          const [c, r] = grid.split('x').map(Number)
+          return (c || 1) * (r || 1)
+        })()
+        const rawImages = Array.isArray(dataObj.images) ? (dataObj.images as (string | { url?: string })[]) : []
+        const singleUrl = dataObj.layoutImageUrl || dataObj.image
+        const layoutImages: string[] = rawImages.length
+          ? rawImages.slice(0, limit).map((v) => (typeof v === 'string' ? v : (v as { url?: string })?.url) || '')
+          : singleUrl
+            ? [String(singleUrl), ...Array(Math.max(0, limit - 1)).fill('')]
+            : Array(limit).fill('')
+        while (layoutImages.length < limit) layoutImages.push('')
 
         return `
           <div class="booklet-page">
@@ -340,8 +352,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
               <div class="booklet-scale-root">
               <div class="booklet-content booklet-layout">
                 <div class="booklet-layout__wrap">
-                  <h2 class="booklet-layout__title">${heading}</h2>
-                  ${imageUrl ? `<div class="booklet-layout__img"><img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
+                  <h2 class="booklet-layout__title">${escapeHtml(heading)}</h2>
+                  <div class="booklet-layout__grid image-grid-bound" data-image-grid="${escapeHtml(grid)}">
+                    ${layoutImages.slice(0, limit).map((url) => `<div class="booklet-layout__img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}
+                  </div>
                 </div>
               </div>
               </div>
@@ -501,7 +515,16 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-char__table { flex: 1; margin-top: 0; display: flex; flex-direction: column; gap: 0; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-char__row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); align-items: center; font-size: 14px; font-weight: 400; }
     .presentation-slider-wrap.booklet-view .booklet-layout__wrap { display: flex; flex-direction: column; gap: 0; width: 100%; height: 100%; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid { display: grid; gap: 8px; flex: 1; min-height: 0; overflow: hidden; }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="1x1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="2x1"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="1x2"] { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="2x2"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="3x1"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="1x3"] { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-map__left { display: flex; flex-direction: column; min-height: 0; }

@@ -457,41 +457,39 @@
                               @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
-                          <!-- Тип сделки, цена и валюта — в одну строку -->
+                          <!-- Тип сделки, цена и валюта — единый блок: тип слева, инпут по центру, валюта справа -->
                           <div class="booklet-main__bottom">
-                            <div class="flex flex-nowrap items-end gap-2">
-                              <div class="w-24 shrink-0">
-                                <div class="relative z-20 bg-transparent">
-                                  <select
-                                    v-model="slide.data.deal_type"
-                                    class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-2 py-2.5 pr-7 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                                  >
-                                    <option value="Аренда">Аренда</option>
-                                    <option value="Продажа">Продажа</option>
-                                  </select>
-                                  <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
-                                    <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                  </span>
-                                </div>
+                            <div class="flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:focus-within:border-brand-800">
+                              <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
+                                <select
+                                  v-model="slide.data.deal_type"
+                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-3 pr-7 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
+                                >
+                                  <option value="Аренда">Аренда</option>
+                                  <option value="Продажа">Продажа</option>
+                                </select>
+                                <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                  <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                </span>
                               </div>
-                              <div class="booklet-main__price min-w-[7rem] flex-1 shrink-0">
+                              <div class="booklet-main__price flex-1 min-w-0">
                                 <input
                                   :value="coverPriceValue(slide)"
                                   type="text"
                                   :placeholder="coverPricePlaceholder(slide)"
-                                  class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-2 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                  class="dark:bg-dark-900 h-11 w-full border-0 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                                   @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
                                 />
                               </div>
-                              <div class="relative z-20 w-16 shrink-0 bg-transparent">
+                              <div class="relative z-20 flex shrink-0 items-center border-l border-gray-300 bg-transparent dark:border-gray-700">
                                 <select
                                   :value="slide.data.currency"
-                                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-1.5 py-2.5 pr-6 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-2 pr-6 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
                                   @change="onCoverCurrencyChange(slide, $event)"
                                 >
                                   <option v-for="c in CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
                                 </select>
-                                <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
                                   <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 </span>
                               </div>
@@ -527,7 +525,7 @@
                   >
                     <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
                       <div class="booklet-info__block booklet-info__content">
-                        <div v-if="canEditImages" class="flex flex-nowrap items-center gap-2 mb-1">
+                        <div v-if="canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
                           <input
                             :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
                             type="text"
@@ -535,27 +533,29 @@
                             class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                             @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
                           />
-                          <div class="relative z-20 w-[5.5rem] shrink-0">
-                            <select
-                              :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-8 w-full appearance-none rounded border border-gray-300 bg-transparent px-2 py-1 pr-6 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                              @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
-                            >
-                              <option disabled value="">Сетка изображений</option>
-                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                          </div>
-                          <div class="relative z-20 w-[7rem] shrink-0">
+                          <div class="relative z-20 w-[4rem] shrink-0">
                             <select
                               :value="getBlockLayout(slide)"
-                              class="dark:bg-dark-900 h-8 w-full appearance-none rounded border border-gray-300 bg-transparent px-2 py-1 pr-6 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              title="Раскладка"
                               @input="setBlockLayout(slide, ($event.target as HTMLSelectElement).value)"
                             >
                               <option disabled value="">Раскладка</option>
                               <option v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
-                            <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                          </div>
+                          <div class="relative z-20 w-[3.5rem] shrink-0">
+                            <select
+                              :value="getImageGrid(slide)"
+                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              title="Сетка изображений"
+                              @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
+                            >
+                              <option disabled value="">Сетка</option>
+                              <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                            </select>
+                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                           </div>
                         </div>
                         <template v-else>
@@ -615,34 +615,36 @@
                   >
                     <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
                       <div class="booklet-stroen__block booklet-stroen__content">
-                        <div v-if="canEditImages" class="flex flex-nowrap items-center gap-2 mb-1">
+                        <div v-if="canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
                           <input
                             v-model="slide.data.heading"
                             type="text"
                             placeholder="ИНФРАСТРУКТУРА"
                             class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                           />
-                          <div class="relative z-20 w-[5.5rem] shrink-0">
-                            <select
-                              :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-8 w-full appearance-none rounded border border-gray-300 bg-transparent px-2 py-1 pr-6 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                              @input="(slide.data as Record<string, unknown>).imageGrid = ($event.target as HTMLSelectElement).value"
-                            >
-                              <option disabled value="">Сетка изображений</option>
-                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                          </div>
-                          <div class="relative z-20 w-[7rem] shrink-0">
+                          <div class="relative z-20 w-[4rem] shrink-0">
                             <select
                               :value="getBlockLayout(slide)"
-                              class="dark:bg-dark-900 h-8 w-full appearance-none rounded border border-gray-300 bg-transparent px-2 py-1 pr-6 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              title="Раскладка"
                               @input="setBlockLayout(slide, ($event.target as HTMLSelectElement).value)"
                             >
                               <option disabled value="">Раскладка</option>
                               <option v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
-                            <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                          </div>
+                          <div class="relative z-20 w-[3.5rem] shrink-0">
+                            <select
+                              :value="getImageGrid(slide)"
+                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              title="Сетка изображений"
+                              @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
+                            >
+                              <option disabled value="">Сетка</option>
+                              <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                            </select>
+                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                           </div>
                         </div>
                         <template v-else>
@@ -824,35 +826,40 @@
                     </div>
                   </div>
 
-                  <!-- 5. Галерея 3 фото (как на presentation-realty.ru/view) -->
+                  <!-- 5. Галерея (как в блоках Описание/Инфраструктура: заголовок + сетка в одну строку) -->
                   <div
                     v-else-if="slide.type === 'gallery'"
                     class="booklet-content booklet-galery"
                   >
                     <div class="booklet-galery__wrap">
-                      <input
-                        v-model="slide.data.heading"
-                        type="text"
-                        placeholder="ГАЛЕРЕЯ"
-                        class="booklet-galery__title w-full flex-shrink-0 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                      />
-                      <div v-if="canEditImages" class="image-grid-select-row flex items-center justify-center gap-2 px-2 py-1 col-span-full md:justify-start">
-                        <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
-                        <div class="relative z-20 min-w-[5.5rem] bg-transparent">
+                      <div v-if="canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="ГАЛЕРЕЯ"
+                          class="booklet-galery__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                        />
+                        <div class="relative z-20 w-[3.5rem] shrink-0">
                           <select
                             :value="getImageGrid(slide)"
-                            class="dark:bg-dark-900 h-11 w-full min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                            @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                            class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                            title="Сетка изображений"
+                            @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
                           >
-                            <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
+                            <option disabled value="">Сетка</option>
+                            <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                           </select>
-                          <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
-                            <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                          </span>
+                          <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                         </div>
                       </div>
+                      <template v-else>
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="ГАЛЕРЕЯ"
+                          class="booklet-galery__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                        />
+                      </template>
                       <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                         <div
                           v-for="(img, i) in galleryImages3(slide)"
@@ -951,32 +958,60 @@
                     </div>
                   </div>
 
-                  <!-- 8. Планировка: 100% изображение по ширине и высоте -->
+                  <!-- 8. Планировка: заголовок + сетка изображений (как Галерея) -->
                   <div
                     v-else-if="slide.type === 'layout'"
                     class="booklet-content booklet-layout"
                   >
                     <div class="booklet-layout__wrap">
-                      <div class="booklet-layout__title-wrapper flex-shrink-0">
+                      <div v-if="canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1 flex-shrink-0">
                         <input
                           v-model="slide.data.heading"
                           type="text"
                           placeholder="ПЛАНИРОВКА"
-                          class="booklet-layout__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                          class="booklet-layout__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
+                        <div class="relative z-20 w-[3.5rem] shrink-0">
+                          <select
+                            :value="getImageGrid(slide)"
+                            class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                            title="Сетка изображений"
+                            @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
+                          >
+                            <option disabled value="">Сетка</option>
+                            <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                          </select>
+                          <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                        </div>
                       </div>
-                      <div class="booklet-layout__img relative flex-1 min-h-0">
-                        <template v-if="canEditImages">
-                          <label class="booklet-upload-btn cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              class="hidden"
-                              @change="onSingleImageUpload(slide, $event, 'layoutImageUrl')"
-                            />
-                          </label>
-                        </template>
-                        <img v-if="slide.data?.layoutImageUrl" :src="String(slide.data.layoutImageUrl)" alt="">
+                      <template v-else>
+                        <div class="booklet-layout__title-wrapper flex-shrink-0">
+                          <input
+                            v-model="slide.data.heading"
+                            type="text"
+                            placeholder="ПЛАНИРОВКА"
+                            class="booklet-layout__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                          />
+                        </div>
+                      </template>
+                      <div class="booklet-layout__grid image-grid-bound flex-1 min-h-0" :data-image-grid="getImageGrid(slide)">
+                        <div
+                          v-for="(img, i) in layoutImages(slide)"
+                          :key="i"
+                          class="booklet-layout__img relative"
+                        >
+                          <template v-if="canEditImages">
+                            <label class="booklet-upload-btn cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onLayoutImageUpload(slide, $event, i)"
+                              />
+                            </label>
+                          </template>
+                          <img v-if="img" :src="img" alt="">
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1581,22 +1616,34 @@ const SLIDE_TYPE_LABELS: Record<string, string> = {
   contacts: 'Контакты',
 }
 
-/** Варианты сетки для слайдов с изображениями (колонки × строки) */
-const IMAGE_GRID_OPTIONS = [
-  { value: '1x1', label: '1×1', cols: 1, rows: 1 },
-  { value: '2x1', label: '2×1', cols: 2, rows: 1 },
-  { value: '1x2', label: '1×2', cols: 1, rows: 2 },
-  { value: '2x2', label: '2×2', cols: 2, rows: 2 },
-  { value: '3x1', label: '3×1', cols: 3, rows: 1 },
-  { value: '1x3', label: '1×3', cols: 1, rows: 3 },
-  { value: '3x2', label: '3×2', cols: 3, rows: 2 },
-  { value: '2x3', label: '2×3', cols: 2, rows: 3 },
-] as const
+/** Метаданные сеток (колонки × строки) — только используемые в зависимостях раскладки */
+const IMAGE_GRID_META: Record<string, { cols: number; rows: number }> = {
+  '1x1': { cols: 1, rows: 1 },
+  '2x1': { cols: 2, rows: 1 },
+  '1x2': { cols: 1, rows: 2 },
+  '2x2': { cols: 2, rows: 2 },
+  '3x1': { cols: 3, rows: 1 },
+  '1x3': { cols: 1, rows: 3 },
+  '3x2': { cols: 3, rows: 2 },
+  '2x3': { cols: 2, rows: 3 },
+}
+
+/** Доступные сетки по раскладке: сначала раскладка, потом выбор сетки */
+const LAYOUT_IMAGE_GRIDS: Record<string, string[]> = {
+  'text-left': ['1x1', '1x2', '2x2', '1x3', '2x3'],
+  'text-right': ['1x1', '1x2', '2x2', '1x3', '2x3'],
+  'text-top': ['1x1', '2x1', '2x2', '3x1', '3x2'],
+  'text-bottom': ['1x1', '2x1', '2x2', '3x1', '3x2'],
+}
+
+/** Сетки для слайдов без раскладки (Галерея, Планировка) */
+const GALLERY_LAYOUT_GRIDS = ['1x1', '2x1', '1x2', '2x2', '3x1', '1x3', '3x2', '2x3']
 
 const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
   gallery: '3x1',
+  layout: '1x1',
   contacts: '1x1',
 }
 
@@ -1606,29 +1653,61 @@ const BLOCK_LAYOUT_OPTIONS = [
   { value: 'text-top', label: 'Текст сверху, фото снизу' },
   { value: 'text-bottom', label: 'Фото сверху, текст снизу' },
 ]
+
 function getBlockLayout(slide: SlideItem): string {
   const v = slide.data?.blockLayout
   if (typeof v === 'string' && BLOCK_LAYOUT_OPTIONS.some((o) => o.value === v)) return v
   return 'text-left'
 }
+
+function getGridOptionsForLayout(layout: string): { value: string; label: string }[] {
+  const values = LAYOUT_IMAGE_GRIDS[layout] ?? LAYOUT_IMAGE_GRIDS['text-left']
+  return values.map((value) => ({
+    value,
+    label: value.replace('x', '×'),
+  }))
+}
+
+function getGridOptionsForSlide(slide: SlideItem): { value: string; label: string }[] {
+  if (slide.type === 'description' || slide.type === 'infrastructure') {
+    return getGridOptionsForLayout(getBlockLayout(slide))
+  }
+  return GALLERY_LAYOUT_GRIDS.map((value) => ({ value, label: value.replace('x', '×') }))
+}
+
 function setBlockLayout(slide: SlideItem, value: string) {
   if (!value) return
   if (!slide.data) slide.data = {}
+  const layoutGrids = LAYOUT_IMAGE_GRIDS[value]
+  const currentGrid = getImageGrid(slide)
+  const allowed = layoutGrids && layoutGrids.length
+  const validGrid = allowed && layoutGrids.includes(currentGrid) ? currentGrid : layoutGrids?.[0] ?? '1x1'
   ;(slide.data as Record<string, string>).blockLayout = value
+  ;(slide.data as Record<string, string>).imageGrid = validGrid
 }
 
 function getImageGrid(slide: SlideItem): string {
   const v = slide.data?.imageGrid
-  if (typeof v === 'string' && v) return v
-  return DEFAULT_IMAGE_GRID_BY_TYPE[slide.type] ?? '2x2'
+  const opts = getGridOptionsForSlide(slide)
+  const values = opts.map((o) => o.value)
+  if (typeof v === 'string' && v && values.includes(v)) return v
+  return values[0] ?? DEFAULT_IMAGE_GRID_BY_TYPE[slide.type] ?? '1x1'
+}
+
+function setImageGrid(slide: SlideItem, value: string) {
+  if (!value) return
+  const opts = getGridOptionsForSlide(slide)
+  if (!opts.some((o) => o.value === value)) return
+  if (!slide.data) slide.data = {}
+  ;(slide.data as Record<string, string>).imageGrid = value
 }
 
 function getImageGridColsRows(slide: SlideItem): { cols: number; rows: number } {
   const grid = getImageGrid(slide)
-  const opt = IMAGE_GRID_OPTIONS.find((o) => o.value === grid)
-  if (opt) return { cols: opt.cols, rows: opt.rows }
+  const meta = IMAGE_GRID_META[grid]
+  if (meta) return meta
   const [c, r] = grid.split('x').map(Number)
-  return { cols: c || 2, rows: r || 2 }
+  return { cols: c || 1, rows: r || 1 }
 }
 
 function getImageGridLimit(slide: SlideItem): number {
@@ -2316,7 +2395,7 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
     case 'characteristics':
       return { heading: 'Характеристики', items: defaultCharItems.map((x) => ({ ...x })) }
     case 'layout':
-      return { heading: 'Планировка' }
+      return { heading: 'Планировка', imageGrid: '1x1', images: [] as string[] }
     case 'contacts':
       return { heading: 'Контакты', contactName: '', aboutText: '', phone: '', email: '', address: '', messengers: {} as Record<string, string>, messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
     default:
@@ -2681,6 +2760,47 @@ async function onDescriptionImageUpload(slide: SlideItem, event: Event, index: n
 
 function infrastructureImages(slide: SlideItem): string[] {
   return imageSlotsForSlide(slide)
+}
+
+/** Изображения планировки: либо images[], либо обратная совместимость с layoutImageUrl */
+function layoutImages(slide: SlideItem): string[] {
+  const limit = getImageGridLimit(slide)
+  const arr = slide.data?.images
+  if (Array.isArray(arr)) {
+    const out = [...arr]
+    while (out.length < limit) out.push('')
+    return out.slice(0, limit)
+  }
+  const single = slide.data?.layoutImageUrl
+  if (single) {
+    const out = [String(single)]
+    while (out.length < limit) out.push('')
+    return out.slice(0, limit)
+  }
+  return Array(limit).fill('')
+}
+
+async function onLayoutImageUpload(slide: SlideItem, event: Event, index: number) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!slide.data) slide.data = {}
+  if (!Array.isArray(slide.data.images)) slide.data.images = []
+  const arr = slide.data.images as string[]
+  while (arr.length <= index) arr.push('')
+  try {
+    if (hasApi() && getToken()) {
+      try {
+        arr[index] = await uploadPresentationImage(file)
+        return
+      } catch (e) {
+        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
+      }
+    }
+    arr[index] = await readFileAsDataUrl(file)
+  } finally {
+    input.value = ''
+  }
 }
 
 function locationImages(slide: SlideItem): string[] {

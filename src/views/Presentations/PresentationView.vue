@@ -166,12 +166,14 @@
                 </div>
               </div>
             </div>
-            <!-- 8. Планировка: 100% изображение -->
+            <!-- 8. Планировка: сетка изображений -->
             <div v-else-if="slide.type === 'layout'" class="booklet-content booklet-layout">
               <div class="booklet-layout__wrap">
                 <h2 class="booklet-layout__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ПЛАНИРОВКА' }}</h2>
-                <div v-if="slide.data?.layoutImageUrl || slide.data?.image" class="booklet-layout__img">
-                  <img :src="String(slide.data?.layoutImageUrl ?? slide.data?.image)" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
+                <div class="booklet-layout__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
+                  <div v-for="(url, i) in viewLayoutImages(slide)" :key="i" class="booklet-layout__img">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
+                  </div>
                 </div>
               </div>
             </div>
@@ -410,6 +412,7 @@ const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
   gallery: '3x1',
+  layout: '1x1',
   location: '1x2',
   contacts: '1x2',
 }
@@ -460,6 +463,28 @@ function resolveImageUrl(url: string | null | undefined): string {
   return base ? `${base.replace(/\/$/, '')}${path}` : path
 }
 
+/** Изображения планировки: images[] или обратная совместимость с layoutImageUrl */
+function viewLayoutImages(slide: ViewSlideItem): string[] {
+  const limit = getViewImageLimit(slide)
+  const arr = slide.data?.images
+  if (Array.isArray(arr)) {
+    const out: string[] = []
+    for (let i = 0; i < limit; i++) {
+      const v = arr[i]
+      const u = typeof v === 'string' ? v : (v as { url?: string })?.url
+      out.push(u ? String(u) : '')
+    }
+    return out.slice(0, limit)
+  }
+  const single = slide.data?.layoutImageUrl ?? slide.data?.image
+  if (single) {
+    const out = [String(single)]
+    while (out.length < limit) out.push('')
+    return out.slice(0, limit)
+  }
+  return Array(limit).fill('')
+}
+
 /** Извлечь URL изображений из слайда (поддержка строк и { url }), limit — максимум штук */
 function viewSlideImages(slide: ViewSlideItem, limit: number): string[] {
   const arr = slide.data?.images
@@ -495,10 +520,8 @@ function getSlideImageUrls(slide: ViewSlideItem): string[] {
       const u = slide.data?.charImageUrl ?? slide.data?.image
       return u ? [String(u)] : []
     }
-    case 'layout': {
-      const u = slide.data?.layoutImageUrl ?? slide.data?.image
-      return u ? [String(u)] : []
-    }
+    case 'layout':
+      return viewLayoutImages(slide).filter(Boolean)
     case 'contacts': {
       const u = contactImageUrl(slide)
       return u ? [String(u)] : []

@@ -485,6 +485,14 @@
   color: #1a1a1a;
 }
 
+.presentation-slider-wrap.booklet-view .booklet-layout__grid {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-layout__img {
   position: relative;
   flex: 1;
