@@ -25,7 +25,7 @@
         </a>
       </nav>
       <div
-        class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-[1123px] rounded-xl bg-white shadow-lg dark:bg-gray-900"
+        class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
       >
       <div
@@ -573,22 +573,24 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Режим просмотра / публичная ссылка: единый формат 1123×794 из booklet-slides.css */
+/* Режим просмотра: фиксированная ширина как в PDF (1123px), горизонтальный формат */
 .presentation-view-wrap.presentation-slider-wrap {
   overflow: visible;
-  width: 100%;
+  width: 1123px;
+  max-width: 100%;
 }
-/* Слайды в пропорции А4 альбом */
+/* Слайды в пропорции А4 альбом 1123×794 */
 .booklet-page--stacked {
-  aspect-ratio: 297 / 210;
+  aspect-ratio: 1123 / 794;
   width: 100%;
   min-height: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 .booklet-page--stacked .booklet-page__inner {
+  width: 100%;
   height: 100%;
   min-height: 0;
-  max-height: none;
+  max-height: 100%;
 }
 .booklet-page--stacked .booklet-content {
   min-height: 0;

@@ -501,46 +501,42 @@
                               @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
-                          <!-- Тип сделки, цена и валюта -->
+                          <!-- Тип сделки, цена и валюта — в одну строку -->
                           <div class="booklet-main__bottom">
-                            <div class="flex flex-wrap items-end gap-4">
-                              <div class="min-w-[140px]">
+                            <div class="flex flex-nowrap items-end gap-2">
+                              <div class="w-28 shrink-0">
                                 <div class="relative z-20 bg-transparent">
                                   <select
                                     v-model="slide.data.deal_type"
-                                    class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                    class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-2 py-2.5 pr-8 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                                   >
                                     <option value="Аренда">Аренда</option>
                                     <option value="Продажа">Продажа</option>
                                   </select>
-                                  <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
-                                    <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
+                                  <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                    <svg class="h-4 w-4 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                   </span>
                                 </div>
                               </div>
-                              <div class="booklet-main__price w-[120px] min-w-[100px] shrink-0">
+                              <div class="booklet-main__price w-24 min-w-[5rem] shrink-0">
                                 <input
                                   :value="coverPriceValue(slide)"
                                   type="text"
                                   :placeholder="coverPricePlaceholder(slide)"
-                                  class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                  class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-2 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                   @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
                                 />
                               </div>
-                              <div class="relative z-20 bg-transparent w-24 shrink-0">
+                              <div class="relative z-20 w-20 shrink-0 bg-transparent">
                                 <select
                                   :value="slide.data.currency"
-                                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-2 py-2.5 pr-7 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
                                   @change="onCoverCurrencyChange(slide, $event)"
                                 >
                                   <option v-for="c in CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
                                 </select>
-                                <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
-                                  <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                  </svg>
+                                <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                  <svg class="h-4 w-4 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 </span>
                               </div>
                             </div>
@@ -575,47 +571,51 @@
                   >
                     <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
                       <div class="booklet-info__block booklet-info__content">
-                        <input
-                          :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
-                          type="text"
-                          placeholder="ОПИСАНИЕ"
-                          class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                          @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
-                        />
-                        <div v-if="canEditImages" class="image-grid-select-row flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                          <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
-                          <div class="relative z-20 min-w-[5.5rem] bg-transparent">
+                        <div v-if="canEditImages" class="flex flex-nowrap items-center gap-2 mb-1">
+                          <input
+                            :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
+                            type="text"
+                            placeholder="ОПИСАНИЕ"
+                            class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                            @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
+                          />
+                          <div class="relative z-20 w-[4.5rem] shrink-0">
                             <select
                               :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-11 w-full min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                              class="dark:bg-dark-900 h-8 w-full appearance-none rounded border border-gray-300 bg-transparent px-2 py-1 pr-6 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              title="Сетка изображений"
                               @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
                             >
-                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
+                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
-                            <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
-                              <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                              </svg>
-                            </span>
+                            <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                           </div>
-                          <span class="text-xs font-medium text-gray-500">Раскладка:</span>
-                          <div class="relative z-20">
+                          <div class="relative z-20 shrink-0">
                             <button
                               type="button"
-                              class="inline-flex h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                              class="inline-flex h-8 items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                               :title="blockLayoutLabel(getBlockLayout(slide))"
                               @click="toggleBlockLayoutMenu(slide.id)"
                             >
-                              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                              <span class="hidden sm:inline">{{ blockLayoutLabel(getBlockLayout(slide)) }}</span>
+                              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                              <span class="max-w-[4.5rem] truncate">{{ blockLayoutLabel(getBlockLayout(slide)) }}</span>
                             </button>
-                            <div v-if="blockLayoutMenuSlideId === slide.id" class="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800" @click.stop>
-                              <button v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" :class="{ 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300': getBlockLayout(slide) === opt.value }" @click="setBlockLayout(slide, opt.value); blockLayoutMenuSlideId = null">
+                            <div v-if="blockLayoutMenuSlideId === slide.id" class="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800" @click.stop>
+                              <button v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" :class="{ 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300': getBlockLayout(slide) === opt.value }" @click="setBlockLayout(slide, opt.value); blockLayoutMenuSlideId = null">
                                 <span>{{ opt.label }}</span>
                               </button>
                             </div>
                           </div>
                         </div>
+                        <template v-else>
+                          <input
+                            :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
+                            type="text"
+                            placeholder="ОПИСАНИЕ"
+                            class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                            @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
+                          />
+                        </template>
                         <div class="booklet-info__text">
                           <textarea
                             :value="String(slide.data?.text ?? '')"
@@ -664,46 +664,49 @@
                   >
                     <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
                       <div class="booklet-stroen__block booklet-stroen__content">
-                        <input
-                          v-model="slide.data.heading"
-                          type="text"
-                          placeholder="ИНФРАСТРУКТУРА"
-                          class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                        />
-                        <div v-if="canEditImages" class="image-grid-select-row flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                          <span class="text-xs font-medium text-gray-500">Сетка изображений:</span>
-                          <div class="relative z-20 min-w-[5.5rem] bg-transparent">
+                        <div v-if="canEditImages" class="flex flex-nowrap items-center gap-2 mb-1">
+                          <input
+                            v-model="slide.data.heading"
+                            type="text"
+                            placeholder="ИНФРАСТРУКТУРА"
+                            class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                          />
+                          <div class="relative z-20 w-[4.5rem] shrink-0">
                             <select
                               :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-11 w-full min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                              @input="(slide.data as Record<string, string>).imageGrid = ($event.target as HTMLSelectElement).value"
+                              class="dark:bg-dark-900 h-8 w-full appearance-none rounded border border-gray-300 bg-transparent px-2 py-1 pr-6 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                              title="Сетка изображений"
+                              @input="(slide.data as Record<string, unknown>).imageGrid = ($event.target as HTMLSelectElement).value"
                             >
-                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ opt.label }}</option>
+                              <option v-for="opt in IMAGE_GRID_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
-                            <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
-                              <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                              </svg>
-                            </span>
+                            <span class="absolute right-1.5 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                           </div>
-                          <span class="text-xs font-medium text-gray-500">Раскладка:</span>
-                          <div class="relative z-20">
+                          <div class="relative z-20 shrink-0">
                             <button
                               type="button"
-                              class="inline-flex h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                              class="inline-flex h-8 items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                               :title="blockLayoutLabel(getBlockLayout(slide))"
                               @click="toggleBlockLayoutMenu(slide.id)"
                             >
-                              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                              <span class="hidden sm:inline">{{ blockLayoutLabel(getBlockLayout(slide)) }}</span>
+                              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                              <span class="max-w-[4.5rem] truncate">{{ blockLayoutLabel(getBlockLayout(slide)) }}</span>
                             </button>
-                            <div v-if="blockLayoutMenuSlideId === slide.id" class="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800" @click.stop>
-                              <button v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" :class="{ 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300': getBlockLayout(slide) === opt.value }" @click="setBlockLayout(slide, opt.value); blockLayoutMenuSlideId = null">
+                            <div v-if="blockLayoutMenuSlideId === slide.id" class="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800" @click.stop>
+                              <button v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" :class="{ 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300': getBlockLayout(slide) === opt.value }" @click="setBlockLayout(slide, opt.value); blockLayoutMenuSlideId = null">
                                 <span>{{ opt.label }}</span>
                               </button>
                             </div>
                           </div>
                         </div>
+                        <template v-else>
+                          <input
+                            v-model="slide.data.heading"
+                            type="text"
+                            placeholder="ИНФРАСТРУКТУРА"
+                            class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                          />
+                        </template>
                         <div class="booklet-stroen__text">
                           <textarea
                             :value="String(slide.data?.content ?? '')"
@@ -775,7 +778,7 @@
                                 :ref="(el) => setLocationInputRef(slide.id, el as HTMLInputElement | null)"
                                 :value="String(slide.data?.address ?? '')"
                                 type="text"
-                                placeholder="ЖК «Успешная продажа»"
+                                placeholder="Введите адрес объекта"
                                 autocomplete="off"
                                 class="location-dadata-input dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                 @input="onLocationAddressInput(slide, ($event.target as HTMLInputElement).value)"
@@ -816,7 +819,7 @@
                               <input
                                 v-model="slide.data.address"
                                 type="text"
-                                placeholder="ЖК «Успешная продажа»"
+                                placeholder="Введите адрес объекта"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                               />
                               <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">Задайте VITE_DADATA_API_KEY в .env для подсказок Dadata.</p>
