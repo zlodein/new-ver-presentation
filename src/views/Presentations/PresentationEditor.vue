@@ -401,7 +401,7 @@
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
-            class="presentation-slider-wrap booklet-view mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900"
+            class="presentation-slider-wrap booklet-view mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
             :style="presentationStyle"
           >
             <Swiper
@@ -459,7 +459,7 @@
                           </div>
                           <!-- Тип сделки, цена и валюта — единый блок: тип слева, инпут по центру, валюта справа -->
                           <div class="booklet-main__bottom">
-                            <div class="flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:focus-within:border-brand-800">
+                            <div class="booklet-main__price-block flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs">
                               <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
                                 <select
                                   v-model="slide.data.deal_type"
@@ -567,22 +567,23 @@
                             @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
                           />
                         </template>
-                        <div class="booklet-info__text">
+                        <div class="booklet-info__text relative">
                           <textarea
                             :value="String(slide.data?.text ?? '')"
                             placeholder="Подробно опишите объект..."
                             rows="6"
-                            class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            class="booklet-info__textarea w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pb-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400"
                             @input="(slide.data as Record<string, string>).text = ($event.target as HTMLTextAreaElement).value"
                           />
                           <button
                             type="button"
-                            class="mt-2 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                            class="booklet-info__generate-btn absolute bottom-[10px] right-[10px] inline-flex items-center gap-[15px] rounded-md bg-gradient-to-r from-violet-500 to-purple-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 disabled:opacity-70"
                             :disabled="generateTextLoading === slide.id"
                             @click="generateTextWithAI(slide, 'description')"
                           >
+                            <img src="/images/icons/gigachat-logo.svg" alt="" class="h-4 w-4 shrink-0" width="16" height="16" />
                             <span v-if="generateTextLoading === slide.id" class="animate-pulse">Генерация...</span>
-                            <span v-else>Сгенерировать текст (GigaChat)</span>
+                            <span v-else>сгенерировать</span>
                           </button>
                         </div>
                       </div>
@@ -3288,6 +3289,37 @@ async function exportToPDF() {
   height: 100%;
 }
 
+/* Блоки в слайдере редактора: без обводки/подсветки при фокусе и без затемнения в ночном режиме */
+.editor-slider-wrap .presentation-slider-wrap.booklet-view {
+  background-color: #fff !important;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view input,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view select,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view textarea {
+  background-color: #fff !important;
+  border-color: #d1d5db !important;
+  color: #1f2937 !important;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view input::placeholder,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view textarea::placeholder {
+  color: #9ca3af !important;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view input:focus,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view select:focus,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #d1d5db !important;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block input,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block select {
+  border-color: transparent !important;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block:focus-within {
+  box-shadow: none !important;
+  border-color: #d1d5db !important;
+}
+
 /* Оптимизация мобильного редактора */
 @media (max-width: 768px) {
   /* Увеличиваем размеры кнопок загрузки изображений для удобства на мобильных */
@@ -3325,6 +3357,11 @@ async function exportToPDF() {
     min-height: 44px;
     padding: 10px 16px;
     font-size: 15px;
+  }
+  .presentation-slider-wrap.booklet-view .booklet-info__generate-btn {
+    min-height: auto;
+    padding: 6px 10px;
+    font-size: 12px;
   }
   
   /* Улучшаем панель слайдов на мобильных */
