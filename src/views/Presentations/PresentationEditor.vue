@@ -1981,7 +1981,7 @@ function onCoverCurrencyChange(slide: SlideItem, event: Event) {
   slide.data.currency = newCurrency
 }
 
-/** Генерация краткого описания для обложки (заполняет шаблон по данным слайда) */
+/** Генерация краткого описания для обложки (заполняет шаблон по данным слайда). При повторном нажатии заменяет текст, а не дополняет. */
 function generateCoverShortDescription(slide: SlideItem) {
   const subtitle = String(slide.data?.subtitle || '').trim()
   const title = String(slide.data?.title || '').trim()
@@ -1989,7 +1989,7 @@ function generateCoverShortDescription(slide: SlideItem) {
   const base = subtitle || title || 'Объект недвижимости'
   const generated = `Эксклюзивное предложение: ${base}. Уникальный объект на ${dealType}. Подробности в презентации.`
   if (!slide.data) slide.data = {}
-  slide.data.shortDescription = (slide.data.shortDescription ? String(slide.data.shortDescription).trim() + '\n\n' : '') + generated
+  slide.data.shortDescription = generated
 }
 
 /** EXCHANGE_RATES: сколько единиц валюты за 1 RUB (1 RUB = 0.011 USD и т.д.) */
@@ -2252,9 +2252,9 @@ const generateTextLoading = ref<string | null>(null)
 
 async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infrastructure') {
   const cover = slides.value.find((s) => s.type === 'cover')
-  const objectTitle = cover?.data?.title ? String(cover.data.title) : ''
-  const currentText = type === 'description' ? String(slide.data?.text ?? '') : String(slide.data?.content ?? '')
-  const prompt = currentText.trim() || objectTitle || 'объект недвижимости'
+  const objectTitle = (cover?.data?.title ? String(cover.data.title) : '').trim() || 'объект недвижимости'
+  // Всегда передаём только название объекта, чтобы при повторной генерации получать новый вариант, а не дополнение к старому
+  const prompt = objectTitle
 
   generateTextLoading.value = slide.id
   try {
