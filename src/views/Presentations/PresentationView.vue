@@ -10,20 +10,22 @@
       v-else
       class="w-full p-4 pb-20 md:mx-auto md:max-w-(--breakpoint-2xl) md:p-6 md:pb-6"
     >
-      <!-- Навигационная шапка по блокам -->
-      <nav
+      <!-- Навигационная шапка по блокам (та же ширина, что и контент) -->
+      <div
         v-if="visibleSlides.length"
-        class="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95"
+        class="sticky top-0 z-10 mx-auto w-[1123px] max-w-full border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95"
       >
-        <a
-          v-for="(slide, index) in visibleSlides"
-          :key="index"
-          :href="'#block-' + index"
-          class="rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-        >
-          {{ getBlockName(slide, index) }}
-        </a>
-      </nav>
+        <nav class="flex flex-wrap items-center justify-center gap-2 px-4 py-2">
+          <a
+            v-for="(slide, index) in visibleSlides"
+            :key="index"
+            :href="'#block-' + index"
+            class="rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+          >
+            {{ getBlockName(slide, index) }}
+          </a>
+        </nav>
+      </div>
       <div
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
