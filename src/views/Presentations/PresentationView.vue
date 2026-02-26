@@ -328,6 +328,8 @@ function normalizeSlideData(raw: Record<string, unknown>, type: string, topCover
   if (out.email == null && flat.contact_email != null) out.email = flat.contact_email
   if (out.contact_email == null && flat.email != null) out.contact_email = flat.email
   if (out.contact_name == null && flat.contact_title != null) out.contact_name = flat.contact_title
+  if (out.imageGrid == null && flat.image_grid != null) out.imageGrid = flat.image_grid
+  if (out.blockLayout == null && flat.block_layout != null) out.blockLayout = flat.block_layout
   return out
 }
 

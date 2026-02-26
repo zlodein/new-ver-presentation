@@ -277,6 +277,18 @@
   font-weight: 500;
 }
 
+/* Валюты обложки: сетка 2×2 (две в ряд) */
+.presentation-slider-wrap.booklet-view .booklet-main__currencies-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.25rem 1rem;
+  text-align: right;
+}
+.presentation-slider-wrap.booklet-view .booklet-main__bottom--view .booklet-main__currencies-grid {
+  max-width: max-content;
+  margin-left: auto;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-main__price,
 .presentation-slider-wrap.booklet-view .booklet-main__bottom .booklet-main__price {
   font-size: 24px !important;

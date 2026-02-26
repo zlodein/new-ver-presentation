@@ -66,13 +66,13 @@ const DEFAULT_IMAGE_GRID: Record<string, string> = {
 
 const BLOCK_LAYOUT_VALUES = ['text-left', 'text-right', 'text-top', 'text-bottom'] as const
 function blockLayout(dataObj: Record<string, unknown>): string {
-  const v = dataObj.blockLayout
+  const v = dataObj.blockLayout ?? dataObj.block_layout
   if (typeof v === 'string' && (BLOCK_LAYOUT_VALUES as readonly string[]).includes(v)) return v
   return 'text-left'
 }
 
 function getImageGridLimit(dataObj: Record<string, unknown>, slideType: string): { cols: number; rows: number; limit: number; grid: string } {
-  const grid = String(dataObj.imageGrid || DEFAULT_IMAGE_GRID[slideType] || '2x2')
+  const grid = String((dataObj.imageGrid ?? dataObj.image_grid) || DEFAULT_IMAGE_GRID[slideType] || '2x2')
   const [c, r] = grid.split('x').map(Number)
   const cols = c || 2
   const rows = r || 2
@@ -475,7 +475,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__deal-type { font-size: 26px !important; font-weight: 700; }
     .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__price-suffix { font-size: 24px !important; font-weight: 500; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom .mt-2 { margin-top: 0.5rem; }
-    .presentation-slider-wrap.booklet-view .booklet-main__currencies-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem 1rem; text-align: right; max-width: max-content; margin-left: auto; }
+    .presentation-slider-wrap.booklet-view .booklet-main__currencies-grid,
+    .booklet-main__currencies-grid { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 0.25rem 1rem; text-align: right; max-width: max-content; margin-left: auto; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex { display: flex; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex-wrap { flex-wrap: wrap; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .justify-end { justify-content: flex-end; }
