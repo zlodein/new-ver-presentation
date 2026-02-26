@@ -510,7 +510,7 @@
                               </div>
                               Показывать все валюты
                             </label>
-                            <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                            <div v-if="slide.data?.show_all_currencies" class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
                               <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                             </div>
                           </div>

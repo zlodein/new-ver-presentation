@@ -139,7 +139,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                         ${formatPrice(Number(price))} ${symbol}
                         ${dealType === 'Аренда' ? '<span class="booklet-main__price-suffix font-normal">/ месяц</span>' : ''}
                       </div>
-                      ${convertedLines.length ? `<div class="booklet-main__bottom-line mt-2 flex flex-wrap justify-end gap-x-4 gap-y-1 text-sm text-gray-600">${convertedLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('')}</div>` : ''}
+                      ${convertedLines.length ? `<div class="booklet-main__bottom-line booklet-main__currencies-grid mt-2 text-sm text-gray-600">${convertedLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('')}</div>` : ''}
                     </div>
                   </div>
                 </div>
@@ -475,6 +475,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__deal-type { font-size: 26px !important; font-weight: 700; }
     .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__price-suffix { font-size: 24px !important; font-weight: 500; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom .mt-2 { margin-top: 0.5rem; }
+    .presentation-slider-wrap.booklet-view .booklet-main__currencies-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem 1rem; text-align: right; max-width: max-content; margin-left: auto; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex { display: flex; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex-wrap { flex-wrap: wrap; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .justify-end { justify-content: flex-end; }
