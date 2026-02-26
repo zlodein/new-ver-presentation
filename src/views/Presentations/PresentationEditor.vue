@@ -577,13 +577,16 @@
                           />
                           <button
                             type="button"
-                            class="booklet-info__generate-btn absolute bottom-[10px] right-[10px] inline-flex items-center gap-[15px] rounded-md bg-gradient-to-r from-violet-500 to-purple-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 disabled:opacity-70"
+                            :class="[
+                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md bg-gradient-to-r from-violet-500 to-purple-600 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-white shadow-sm transition-[max-width] duration-200 hover:from-violet-600 hover:to-purple-700 disabled:opacity-70',
+                              generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
+                            ]"
                             :disabled="generateTextLoading === slide.id"
                             @click="generateTextWithAI(slide, 'description')"
                           >
                             <img src="/images/icons/gigachat-logo.svg" alt="" class="h-4 w-4 shrink-0" width="16" height="16" />
-                            <span v-if="generateTextLoading === slide.id" class="animate-pulse">Генерация...</span>
-                            <span v-else>сгенерировать</span>
+                            <span v-if="generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse">Генерация...</span>
+                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap">сгенерировать</span>
                           </button>
                         </div>
                       </div>
@@ -656,22 +659,26 @@
                             class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                           />
                         </template>
-                        <div class="booklet-stroen__text">
+                        <div class="booklet-stroen__text relative">
                           <textarea
                             :value="String(slide.data?.content ?? '')"
                             placeholder="Текст об инфраструктуре..."
                             rows="6"
-                            class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            class="booklet-stroen__textarea w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pb-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400"
                             @input="(slide.data as Record<string, string>).content = ($event.target as HTMLTextAreaElement).value"
                           />
                           <button
                             type="button"
-                            class="mt-1 inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                            :class="[
+                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md bg-gradient-to-r from-violet-500 to-purple-600 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-white shadow-sm transition-[max-width] duration-200 hover:from-violet-600 hover:to-purple-700 disabled:opacity-70',
+                              generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
+                            ]"
                             :disabled="generateTextLoading === slide.id"
                             @click="generateTextWithAI(slide, 'infrastructure')"
                           >
-                            <span v-if="generateTextLoading === slide.id" class="animate-pulse">Генерация...</span>
-                            <span v-else>Сгенерировать (GigaChat)</span>
+                            <img src="/images/icons/gigachat-logo.svg" alt="" class="h-4 w-4 shrink-0" width="16" height="16" />
+                            <span v-if="generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse">Генерация...</span>
+                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap">сгенерировать</span>
                           </button>
                         </div>
                       </div>
@@ -776,11 +783,11 @@
                           </div>
                           <button
                             type="button"
-                            class="mb-2 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                            class="booklet-btn booklet-btn--secondary mb-2 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white py-1.5 px-2.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
                             :disabled="locationMetroLoading(slide)"
                             @click="findNearestMetro(slide)"
                           >
-                            {{ locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}
+                            <span>{{ locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}</span>
                           </button>
                           <label class="flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
                             <div class="relative">
@@ -934,7 +941,7 @@
                             <button
                               v-if="charItems(slide).length > 1"
                               type="button"
-                              class="remove-row shrink-0 rounded p-1 text-gray-400 hover:text-red-600"
+                              class="booklet-btn booklet-btn--icon shrink-0 rounded-md p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
                               title="Удалить"
                               @click="removeCharacteristicItem(slide, i)"
                             >
@@ -946,10 +953,10 @@
                           <button
                             v-if="charItems(slide).length < 13"
                             type="button"
-                            class="add-row mt-2 flex w-full items-center justify-center gap-1 rounded border border-dashed border-gray-300 py-1.5 text-xs text-gray-600 hover:border-brand-500 hover:text-brand-600"
+                            class="booklet-btn booklet-btn--secondary add-row mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 py-1.5 px-2.5 text-xs font-medium text-gray-600 transition hover:border-brand-500 hover:text-brand-600"
                             @click="addCharacteristicItem(slide)"
                           >
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
                             Добавить характеристику
@@ -3358,7 +3365,12 @@ async function exportToPDF() {
     padding: 10px 16px;
     font-size: 15px;
   }
-  .presentation-slider-wrap.booklet-view .booklet-info__generate-btn {
+  .presentation-slider-wrap.booklet-view .booklet-btn {
+    min-height: auto;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .presentation-slider-wrap.booklet-view .booklet-btn--generate {
     min-height: auto;
     padding: 6px 10px;
     font-size: 12px;
