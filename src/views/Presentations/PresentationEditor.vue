@@ -3318,6 +3318,10 @@ async function exportToPDF() {
   box-shadow: none !important;
   border-color: #d1d5db !important;
 }
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block > div {
+  border-color: #d1d5db !important;
+}
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block input,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block select {
   border-color: transparent !important;
