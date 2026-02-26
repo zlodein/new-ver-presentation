@@ -25,7 +25,7 @@
         </a>
       </nav>
       <div
-        class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
+        class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-full max-w-[1123px] rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
       >
       <div
@@ -51,18 +51,14 @@
                 <div class="booklet-main__content">
                   <div class="booklet-main__top" v-html="(slide.data?.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ').toString().replace(/\n/g, '<br>')" />
                   <div class="booklet-main__center" v-html="(slide.data?.subtitle || '').toString().replace(/\n/g, '<br>')" />
-                  <div v-if="slide.data?.shortDescription" class="booklet-main__short-desc booklet-main__short-desc--view text-sm text-gray-600 dark:text-gray-400" v-html="String(slide.data.shortDescription).replace(/\n/g, '<br>')" />
-                  <div class="booklet-main__bottom">
-                    <p
-                      class="booklet-main__price booklet-main__price-line font-semibold text-gray-800"
-                      :style="priceLineStyle"
-                    >
-                      <span class="booklet-main__deal-type">{{ slide.data?.deal_type || 'Аренда' }}</span>
+                  <div class="booklet-main__bottom booklet-main__bottom--view text-right">
+                    <div class="booklet-main__deal-type booklet-main__bottom-line">{{ slide.data?.deal_type || 'Аренда' }}</div>
+                    <div class="booklet-main__price booklet-main__bottom-line font-semibold text-gray-800">
                       {{ formatPrice(Number(slide.data?.price_value) || 0) }}
                       {{ currencySymbol(slide.data?.currency) }}
                       <span v-if="slide.data?.deal_type === 'Аренда'" class="booklet-main__price-suffix font-normal">/ месяц</span>
-                    </p>
-                    <div v-if="slide.data?.show_all_currencies" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                    </div>
+                    <div v-if="slide.data?.show_all_currencies" class="booklet-main__bottom-line mt-2 flex flex-wrap justify-end gap-x-4 gap-y-1 text-sm text-gray-600">
                       <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                     </div>
                   </div>
@@ -383,8 +379,9 @@ function coverConvertedPrices(slide: ViewSlideItem): string[] {
   })
 }
 
-/** Название блока для навигации (из заголовка слайда или тип по умолчанию) */
+/** Название блока для навигации: первый пункт всегда «Обложка», остальные — из заголовка слайда или тип по умолчанию */
 function getBlockName(slide: ViewSlideItem, index: number): string {
+  if (index === 0) return 'Обложка'
   const byType: Record<string, string> = {
     cover: 'Обложка',
     description: 'Описание',

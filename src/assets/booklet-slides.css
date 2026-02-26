@@ -258,6 +258,25 @@
   margin-top: auto;
 }
 
+/* Обложка в режиме просмотра и PDF: тип сделки с новой строки, цена, валюты — выравнивание по правому краю */
+.presentation-slider-wrap.booklet-view .booklet-main__bottom--view {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.presentation-slider-wrap.booklet-view .booklet-main__bottom--view .booklet-main__bottom-line {
+  display: block;
+}
+.presentation-slider-wrap.booklet-view .booklet-main__bottom--view .booklet-main__deal-type {
+  font-size: 26px;
+  font-weight: 700;
+}
+.presentation-slider-wrap.booklet-view .booklet-main__bottom--view .booklet-main__price {
+  font-size: 24px;
+  font-weight: 500;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-main__price,
 .presentation-slider-wrap.booklet-view .booklet-main__bottom .booklet-main__price {
   font-size: 24px !important;

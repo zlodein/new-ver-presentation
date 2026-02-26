@@ -94,7 +94,6 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const coverImage = String(dataObj.coverImageUrl || dataObj.background_image || data.coverImage || '')
         const title = String(dataObj.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ')
         const subtitle = String(dataObj.subtitle || '')
-        const shortDescription = String(dataObj.shortDescription || '')
         const dealType = String(dataObj.deal_type || 'Аренда')
         const price = Number(dataObj.price_value || 0)
         const currency = String(dataObj.currency || 'RUB')
@@ -134,13 +133,13 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   <div class="booklet-main__content">
                     <div class="booklet-main__top">${title.replace(/\n/g, '<br>')}</div>
                     <div class="booklet-main__center">${subtitle.replace(/\n/g, '<br>')}</div>
-                    ${shortDescription ? `<div class="booklet-main__short-desc booklet-main__short-desc--view">${shortDescription.replace(/\n/g, '<br>')}</div>` : ''}
-                    <div class="booklet-main__bottom">
-                      <p class="booklet-main__price booklet-main__price-line font-semibold text-gray-800">
-                        <span class="booklet-main__deal-type">${escapeHtml(dealType)}</span> ${formatPrice(Number(price))} ${symbol}
+                    <div class="booklet-main__bottom booklet-main__bottom--view text-right">
+                      <div class="booklet-main__deal-type booklet-main__bottom-line">${escapeHtml(dealType)}</div>
+                      <div class="booklet-main__price booklet-main__bottom-line font-semibold text-gray-800">
+                        ${formatPrice(Number(price))} ${symbol}
                         ${dealType === 'Аренда' ? '<span class="booklet-main__price-suffix font-normal">/ месяц</span>' : ''}
-                      </p>
-                      ${convertedLines.length ? `<div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">${convertedLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('')}</div>` : ''}
+                      </div>
+                      ${convertedLines.length ? `<div class="booklet-main__bottom-line mt-2 flex flex-wrap justify-end gap-x-4 gap-y-1 text-sm text-gray-600">${convertedLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('')}</div>` : ''}
                     </div>
                   </div>
                 </div>
@@ -454,10 +453,17 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-main__center { font-size: 28px; margin-top: 0.25rem; }
     .presentation-slider-wrap.booklet-view .booklet-main__short-desc { font-size: 17px; overflow-wrap: break-word; word-break: break-word; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom { flex: 0 0 auto; margin-top: auto; }
+    .presentation-slider-wrap.booklet-view .booklet-main__bottom--view { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+    .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .booklet-main__bottom-line { display: block; }
+    .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .booklet-main__deal-type { font-size: 26px; font-weight: 700; }
+    .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .booklet-main__price { font-size: 24px; font-weight: 500; }
     .presentation-slider-wrap.booklet-view .booklet-main__price { font-size: 24px !important; font-weight: 500; }
     .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__deal-type { font-size: 26px !important; font-weight: 700; }
     .presentation-slider-wrap.booklet-view .booklet-main__price-line .booklet-main__price-suffix { font-size: 24px !important; font-weight: 500; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom .mt-2 { margin-top: 0.5rem; }
+    .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex { display: flex; }
+    .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex-wrap { flex-wrap: wrap; }
+    .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .justify-end { justify-content: flex-end; }
     .presentation-slider-wrap.booklet-view .booklet-info__wrap, .presentation-slider-wrap.booklet-view .booklet-stroen__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-info__title, .presentation-slider-wrap.booklet-view .booklet-stroen__title, .presentation-slider-wrap.booklet-view .booklet-char__title, .presentation-slider-wrap.booklet-view .booklet-layout__title, .presentation-slider-wrap.booklet-view .booklet-galery__title, .presentation-slider-wrap.booklet-view .booklet-contacts__title { margin: 0 0 1rem 0; font-size: 28px; font-weight: 400; letter-spacing: 0.02em; color: #1a1a1a; }
     .presentation-slider-wrap.booklet-view .booklet-map__title { margin: 0 0 1rem 0; font-size: 28px; font-weight: 400; letter-spacing: 0.02em; color: #1a1a1a; grid-column: 1 / -1; }

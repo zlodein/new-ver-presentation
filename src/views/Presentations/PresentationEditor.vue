@@ -501,24 +501,7 @@
                               @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
-                          <!-- 3. Краткое описание + кнопка сгенерировать -->
-                          <div class="booklet-main__short-desc flex flex-col gap-1">
-                            <textarea
-                              :value="String(slide.data?.shortDescription ?? '')"
-                              rows="3"
-                              placeholder="Краткое описание объекта..."
-                              class="w-full resize-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-200"
-                              @input="(e) => { if (!slide.data) slide.data = {}; (slide.data as Record<string, unknown>).shortDescription = (e.target as HTMLTextAreaElement).value }"
-                            />
-                            <button
-                              type="button"
-                              class="booklet-btn-generate mt-2 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-violet-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-violet-500/50 dark:from-violet-600 dark:to-purple-700 dark:hover:from-violet-700 dark:hover:to-purple-800"
-                              @click="generateCoverShortDescription(slide)"
-                            >
-                              Сгенерировать описание
-                            </button>
-                          </div>
-                          <!-- 4. Тип сделки и цена и валюта в одной строке -->
+                          <!-- Тип сделки, цена и валюта -->
                           <div class="booklet-main__bottom">
                             <div class="flex flex-wrap items-end gap-4">
                               <div class="min-w-[140px]">
@@ -2034,17 +2017,6 @@ function onCoverCurrencyChange(slide: SlideItem, event: Event) {
   const converted = Math.round(priceInRUB * newRate)
   slide.data.price_value = converted
   slide.data.currency = newCurrency
-}
-
-/** Генерация краткого описания для обложки (заполняет шаблон по данным слайда). При повторном нажатии заменяет текст, а не дополняет. */
-function generateCoverShortDescription(slide: SlideItem) {
-  const subtitle = String(slide.data?.subtitle || '').trim()
-  const title = String(slide.data?.title || '').trim()
-  const dealType = slide.data?.deal_type === 'Продажа' ? 'продаже' : 'аренде'
-  const base = subtitle || title || 'Объект недвижимости'
-  const generated = `Эксклюзивное предложение: ${base}. Уникальный объект на ${dealType}. Подробности в презентации.`
-  if (!slide.data) slide.data = {}
-  slide.data.shortDescription = generated
 }
 
 /** EXCHANGE_RATES: сколько единиц валюты за 1 RUB (1 RUB = 0.011 USD и т.д.) */
