@@ -142,15 +142,16 @@ const currentPageTitle = ref('Уведомления')
 const notifications = ref([])
 const loading = ref(false)
 
-/** Уровень по типу и тексту (бэкенд присылает calendar/presentation, не success/error) */
+/** Уровень по типу, isExpired (календарь по времени) и тексту */
 function getNotificationLevel(notification) {
   const type = notification?.type ?? ''
-  const title = (notification?.title ?? '').toLowerCase()
-  const message = (notification?.message ?? '').toLowerCase()
-  const text = title + ' ' + message
   if (type === 'error') return 'error'
   if (type === 'success') return 'success'
   if (type === 'warning') return 'warning'
+  if (type === 'calendar' && notification?.isExpired === true) return 'error'
+  const title = (notification?.title ?? '').toLowerCase()
+  const message = (notification?.message ?? '').toLowerCase()
+  const text = title + ' ' + message
   if (/истек|истекл|истекш/i.test(text)) return 'error'
   if (/добавлено|новое событие|опубликование|успешно/i.test(text)) return 'success'
   if (/истекает|скоро/i.test(text)) return 'warning'

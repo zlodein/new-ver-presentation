@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, desc, and } from 'drizzle-orm'
+import { eq, desc, and, inArray } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -53,16 +53,46 @@ export async function notificationRoutes(app: FastifyInstance) {
           where: whereClause,
           orderBy: [desc(mysqlSchema.notifications.created_at)],
         })
+        const calendarSourceIds = list
+          .filter((n: { type: string; source_id?: string | null }) => n.type === 'calendar' && n.source_id)
+          .map((n: { source_id?: string | null }) => parseMysqlId(String(n.source_id)))
+          .filter((id): id is number => id !== null)
+        let eventEndByEventId: Map<number, { end: Date | null; start: Date }> = new Map()
+        if (calendarSourceIds.length > 0) {
+          const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+          const events = await mysqlDb.query.calendarEvents.findMany({
+            where: and(eq(mysqlSchema.calendarEvents.user_id, userIdNum), inArray(mysqlSchema.calendarEvents.id, calendarSourceIds)),
+            columns: { id: true, start: true, end: true },
+          })
+          for (const e of events as { id: number; start: Date; end: Date | null }[]) {
+            eventEndByEventId.set(e.id, { start: e.start, end: e.end })
+          }
+        }
+        const now = new Date()
         return reply.send(
-          list.map((n: { id: number; title: string; message: string | null; type: string; read: string; created_at: Date; source_id?: string | null }) => ({
-            id: String(n.id),
-            title: n.title,
-            message: n.message ?? undefined,
-            type: n.type,
-            read: n.read === 'true',
-            createdAt: toIsoDate(n.created_at),
-            sourceId: n.source_id ?? undefined,
-          }))
+          list.map((n: { id: number; title: string; message: string | null; type: string; read: string; created_at: Date; source_id?: string | null }) => {
+            const out: { id: string; title: string; message?: string; type: string; read: boolean; createdAt: string; sourceId?: string; eventEndAt?: string; isExpired?: boolean } = {
+              id: String(n.id),
+              title: n.title,
+              message: n.message ?? undefined,
+              type: n.type,
+              read: n.read === 'true',
+              createdAt: toIsoDate(n.created_at),
+              sourceId: n.source_id ?? undefined,
+            }
+            if (n.type === 'calendar' && n.source_id) {
+              const eventId = parseMysqlId(String(n.source_id))
+              if (eventId !== null) {
+                const ev = eventEndByEventId.get(eventId)
+                if (ev) {
+                  const endAt = ev.end ?? ev.start
+                  out.eventEndAt = toIsoDate(endAt)
+                  out.isExpired = endAt < now
+                }
+              }
+            }
+            return out
+          })
         )
       }
 
@@ -77,15 +107,41 @@ export async function notificationRoutes(app: FastifyInstance) {
         orderBy: [desc(pgSchema.notifications.createdAt)],
       })
 
-      return reply.send(notifications.map((n) => ({
-        id: n.id,
-        title: n.title,
-        message: n.message,
-        type: n.type,
-        read: n.read === 'true',
-        createdAt: toIsoDate(n.createdAt),
-        sourceId: n.sourceId ?? undefined,
-      })))
+      const calendarSourceIds = notifications.filter((n) => n.type === 'calendar' && n.sourceId).map((n) => n.sourceId as string)
+      let eventEndByEventId: Map<string, { end: Date | null; start: Date }> = new Map()
+      if (calendarSourceIds.length > 0) {
+        const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+        const events = await pgDb.query.calendarEvents.findMany({
+          where: and(eq(pgSchema.calendarEvents.userId, userId), inArray(pgSchema.calendarEvents.id, calendarSourceIds)),
+          columns: { id: true, start: true, end: true },
+        })
+        for (const e of events) {
+          eventEndByEventId.set(e.id, { start: e.start, end: e.end ?? null })
+        }
+      }
+      const now = new Date()
+      return reply.send(
+        notifications.map((n) => {
+          const out: { id: string; title: string; message: string | null; type: string; read: boolean; createdAt: string; sourceId?: string; eventEndAt?: string; isExpired?: boolean } = {
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            read: n.read === 'true',
+            createdAt: toIsoDate(n.createdAt),
+            sourceId: n.sourceId ?? undefined,
+          }
+          if (n.type === 'calendar' && n.sourceId) {
+            const ev = eventEndByEventId.get(n.sourceId)
+            if (ev) {
+              const endAt = ev.end ?? ev.start
+              out.eventEndAt = toIsoDate(endAt)
+              out.isExpired = endAt < now
+            }
+          }
+          return out
+        })
+      )
     } catch (err) {
       console.error('[notifications] Ошибка получения уведомлений:', err)
       return reply.status(500).send({ error: 'Ошибка сервера' })

@@ -161,15 +161,16 @@ const notifying = computed(() => unreadCount.value > 0)
 
 const PANEL_CLEARED_IDS_KEY = 'notification_panel_cleared_ids'
 
-/** По тексту и типу: истекло → red, добавлено/успех → green, истекает/скоро → orange (бэкенд присылает type 'calendar'/'presentation', не success/error) */
+/** По типу, isExpired (календарь по времени) и тексту: истекло → red, добавлено/успех → green, истекает/скоро → orange */
 function getNotificationLevel(notification) {
   const type = notification?.type ?? ''
-  const title = (notification?.title ?? '').toLowerCase()
-  const message = (notification?.message ?? '').toLowerCase()
-  const text = title + ' ' + message
   if (type === 'error') return 'error'
   if (type === 'success') return 'success'
   if (type === 'warning') return 'warning'
+  if (type === 'calendar' && notification?.isExpired === true) return 'error'
+  const title = (notification?.title ?? '').toLowerCase()
+  const message = (notification?.message ?? '').toLowerCase()
+  const text = title + ' ' + message
   if (/истек|истекл|истекш/i.test(text)) return 'error'
   if (/добавлено|новое событие|опубликование|успешно/i.test(text)) return 'success'
   if (/истекает|скоро/i.test(text)) return 'warning'
