@@ -190,7 +190,7 @@ async function restore(p: PresentationListItem) {
     return
   }
   try {
-    await api.post(`/api/presentations/${encodeURIComponent(id)}/restore`)
+    await api.post('/api/presentations/restore', { id })
     presentations.value = presentations.value.map((item) =>
       item.id === p.id ? { ...item, deletedAt: undefined } : item
     )

@@ -975,17 +975,20 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
   )
 
-  /** Восстановление мягко удалённой презентации */
-  app.post<{ Params: { id: string } }>(
-    '/api/presentations/:id/restore',
+  /** Восстановление мягко удалённой презентации (id в теле, как при удалении). */
+  app.post<{ Body: { id?: string } }>(
+    '/api/presentations/restore',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Body: { id?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
-      if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-      const id = req.params?.id?.trim() ?? ''
-      if (!id) return reply.status(400).send({ error: 'Не указан id презентации' })
+      const id = req.body?.id != null ? String(req.body.id).trim() : ''
+      if (!id) {
+        return reply.status(400).send({ error: 'Не указан id презентации' })
+      }
       const idNum = useMysql ? parseMysqlId(id) : null
-      if (useMysql && idNum === null) return reply.status(400).send({ error: 'Неверный формат id' })
+      if (useMysql && idNum === null) {
+        return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
+      }
       if (useFileStore) return reply.status(404).send({ error: 'Презентация не найдена' })
       if (useMysql) {
         const userIdNum = Number(userId)
@@ -999,7 +1002,7 @@ export async function presentationRoutes(app: FastifyInstance) {
       const updated = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
         .update(pgSchema.presentations)
         .set({ deletedAt: null })
-        .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId)))
+        .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
       if (updated.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
       return reply.status(204).send()

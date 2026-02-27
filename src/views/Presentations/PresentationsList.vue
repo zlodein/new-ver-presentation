@@ -507,7 +507,7 @@ async function restorePresentation(presentation: Presentation) {
     return
   }
   try {
-    await api.post(`/api/presentations/${encodeURIComponent(id)}/restore`)
+    await api.post('/api/presentations/restore', { id })
     error.value = ''
     await fetchUser()
     activeTab.value = 'active'
