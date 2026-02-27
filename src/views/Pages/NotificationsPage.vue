@@ -100,7 +100,8 @@
                 <div class="ml-4 flex items-center gap-2" @click.stop>
                   <span
                     v-if="!notification.read"
-                    :class="['h-2 w-2 rounded-full', notificationIndicatorClass(notification.type, notification)]"
+                    :class="['h-2.5 w-2.5 rounded-full flex-shrink-0', notificationIndicatorClass(notification.type, notification)]"
+                    :title="getNotificationStatusLabel(notification)"
                   ></span>
                   <button
                     @click="handleDelete(notification.id)"
@@ -163,6 +164,15 @@ function notificationIndicatorClass(type, notification) {
   if (level === 'error') return 'bg-error-500'
   if (level === 'success') return 'bg-success-500'
   return 'bg-orange-400'
+}
+
+/** Текст статуса для подсказки при наведении на точку */
+function getNotificationStatusLabel(notification) {
+  const level = getNotificationLevel(notification ?? {})
+  if (level === 'error') return 'Истекло'
+  if (level === 'success') return 'Добавлено'
+  if (level === 'warning') return 'Истекает'
+  return 'Требует внимания'
 }
 
 function navigateFromNotification(notification) {
