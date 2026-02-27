@@ -510,7 +510,7 @@ export async function authRoutes(app: FastifyInstance) {
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
       const { testDriveUsed: tdu, expertPlanQuantity: eqty, expertPresentationsUsed: eused, ...rest } = user
-      const planQty = eqty != null && eqty !== '' ? Math.max(1, Math.min(100, Number(eqty) || 1)) : 1
+      const planQty = eqty != null && eqty !== '' ? Math.max(1, Number(eqty) || 1) : 1
       const usedCount = eused != null && eused !== '' ? Math.max(0, Number(eused) || 0) : 0
       return reply.send({
         ...rest,
@@ -531,7 +531,7 @@ export async function authRoutes(app: FastifyInstance) {
     try {
       const payload = req.user as { sub: string }
       const tariff = req.body?.tariff
-      const quantity = req.body?.quantity != null ? Math.max(1, Math.min(100, Math.floor(Number(req.body.quantity)) || 1)) : undefined
+      const quantity = req.body?.quantity != null ? Math.max(1, Math.floor(Number(req.body.quantity)) || 1) : undefined
       if (tariff !== 'test_drive' && tariff !== 'expert') {
         return reply.status(400).send({ error: 'Укажите тариф: test_drive или expert' })
       }
@@ -558,15 +558,14 @@ export async function authRoutes(app: FastifyInstance) {
         if (tariff === 'test_drive' && user.test_drive_used === 'true') {
           return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
         }
-        const updates: { tariff: string; test_drive_used?: string; expert_plan_quantity?: number } = { tariff }
+        const updates: { tariff: string; test_drive_used?: string; expert_plan_quantity?: number; expert_presentations_used?: number } = { tariff }
         if (tariff === 'expert' && user.tariff === 'test_drive') {
           updates.test_drive_used = 'true'
+          updates.expert_presentations_used = 0
         }
         if (tariff === 'expert' && quantity != null) {
-          // При первом выборе тарифа «Эксперт» — задаём лимит; при докупке — добавляем к текущему
           const current = Math.max(0, user.expert_plan_quantity ?? 0)
-          updates.expert_plan_quantity =
-            user.tariff === 'expert' ? Math.min(100, current + quantity) : Math.min(100, quantity)
+          updates.expert_plan_quantity = user.tariff === 'expert' ? current + quantity : quantity
         }
         await mysqlDb.update(mysqlSchema.users).set(updates).where(eq(mysqlSchema.users.id, userId))
         const nextTestDriveUsed = updates.test_drive_used === 'true' || user.test_drive_used === 'true'
@@ -583,15 +582,14 @@ export async function authRoutes(app: FastifyInstance) {
       if (tariff === 'test_drive' && user.testDriveUsed === 'true') {
         return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
       }
-      const updates: { tariff: string; testDriveUsed?: string; expertPlanQuantity?: string } = { tariff }
+      const updates: { tariff: string; testDriveUsed?: string; expertPlanQuantity?: string; expertPresentationsUsed?: string } = { tariff }
       if (tariff === 'expert' && user.tariff === 'test_drive') {
         updates.testDriveUsed = 'true'
+        updates.expertPresentationsUsed = '0'
       }
       if (tariff === 'expert' && quantity != null) {
-        // При первом выборе тарифа «Эксперт» — задаём лимит; при докупке — добавляем к текущему
         const current = Math.max(0, Number(user.expertPlanQuantity) || 0)
-        updates.expertPlanQuantity =
-          user.tariff === 'expert' ? String(Math.min(100, current + quantity)) : String(Math.min(100, quantity))
+        updates.expertPlanQuantity = user.tariff === 'expert' ? String(current + quantity) : String(quantity)
       }
       await pgDb.update(pgSchema.users).set(updates).where(eq(pgSchema.users.id, payload.sub))
       const nextTestDriveUsed = updates.testDriveUsed === 'true' || user.testDriveUsed === 'true'

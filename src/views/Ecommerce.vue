@@ -23,7 +23,7 @@
       </div>
 
       <div class="col-span-12 xl:col-span-7">
-        <recent-orders />
+        <my-presentations />
       </div>
     </div>
   </admin-layout>
@@ -36,7 +36,7 @@ import MonthlyTarget from '@/components/ecommerce/MonthlyTarget.vue'
 import MonthlySale from '@/components/ecommerce/MonthlySale.vue'
 import CustomerDemographic from '@/components/ecommerce/CustomerDemographic.vue'
 import StatisticsChart from '@/components/ecommerce/StatisticsChart.vue'
-import RecentOrders from '@/components/ecommerce/RecentOrders.vue'
+import MyPresentations from '@/components/ecommerce/MyPresentations.vue'
 
 export default {
   name: 'Ecommerce',
@@ -47,7 +47,7 @@ export default {
     MonthlySale,
     CustomerDemographic,
     StatisticsChart,
-    RecentOrders,
+    MyPresentations,
   },
 }
 </script>

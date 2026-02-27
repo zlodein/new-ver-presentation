@@ -169,6 +169,9 @@ export interface PresentationListItem {
   coverImage?: string
   updatedAt: string
   status?: string
+  deletedAt?: string | null
+  viewsCount?: number
+  shortId?: string | null
 }
 
 export interface PresentationFull {

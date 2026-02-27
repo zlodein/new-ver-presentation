@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, or, desc, gte, lte, like, sql } from 'drizzle-orm'
+import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -209,7 +209,9 @@ export async function presentationRoutes(app: FastifyInstance) {
   app.get('/api/presentations', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = getUserId(req)
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-    const q = (req.query as { q?: string })?.q?.trim()
+    const query = req.query as { q?: string; filter?: string }
+    const q = query?.q?.trim()
+    const filter = query?.filter === 'deleted' ? 'deleted' : query?.filter === 'all' ? 'all' : 'active'
     if (useFileStore) {
       let list = fileStore.getPresentationsByUserId(userId)
       if (q) {
@@ -238,6 +240,8 @@ export async function presentationRoutes(app: FastifyInstance) {
       const userIdNum = Number(userId)
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
       const conditions = [eq(mysqlSchema.presentations.user_id, userIdNum)]
+      if (filter === 'active') conditions.push(isNull(mysqlSchema.presentations.deleted_at))
+      if (filter === 'deleted') conditions.push(not(isNull(mysqlSchema.presentations.deleted_at)))
       if (q && q.length > 0) {
         const likePattern = `%${escapeLike(q)}%`
         const idNum = parseMysqlId(q)
@@ -252,11 +256,21 @@ export async function presentationRoutes(app: FastifyInstance) {
       }
       const list = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.presentations.findMany({
         where: and(...conditions),
-        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true, short_id: true, slides_data: true },
+        columns: { id: true, title: true, cover_image: true, updated_at: true, status: true, is_public: true, public_url: true, short_id: true, slides_data: true, deleted_at: true },
         orderBy: [desc(mysqlSchema.presentations.updated_at)],
       })
+      const ids = list.map((p: { id: number }) => p.id)
+      let viewsMap: Record<number, number> = {}
+      if (ids.length > 0) {
+        const viewsRows = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
+          .select({ presentation_id: mysqlSchema.presentationViews.presentation_id, count: sql<number>`COUNT(*)`.as('count') })
+          .from(mysqlSchema.presentationViews)
+          .where(inArray(mysqlSchema.presentationViews.presentation_id, ids))
+          .groupBy(mysqlSchema.presentationViews.presentation_id)
+        viewsMap = Object.fromEntries(viewsRows.map((r: { presentation_id: number; count: unknown }) => [r.presentation_id, Number(r.count)]))
+      }
       return reply.send(
-        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null; is_public?: number | null; public_url?: string | null; short_id?: string | null; slides_data?: string | null }) => {
+        list.map((p: { id: number; title: string; cover_image: string | null; updated_at: Date; status?: string | null; is_public?: number | null; public_url?: string | null; short_id?: string | null; slides_data?: string | null; deleted_at?: Date | null }) => {
           const title = displayTitleFromContent(p.slides_data ?? null, p.title)
           return {
             id: String(p.id),
@@ -267,14 +281,18 @@ export async function presentationRoutes(app: FastifyInstance) {
             isPublic: Boolean(p.is_public),
             publicUrl: p.public_url ?? undefined,
             shortId: p.short_id ?? undefined,
+            deletedAt: p.deleted_at ? toIsoDate(p.deleted_at) : undefined,
+            viewsCount: viewsMap[p.id] ?? 0,
           }
         })
       )
     }
-    const conditions = [eq(pgSchema.presentations.userId, userId)]
+    const pgConditions = [eq(pgSchema.presentations.userId, userId)]
+    if (filter === 'active') pgConditions.push(isNull(pgSchema.presentations.deletedAt))
+    if (filter === 'deleted') pgConditions.push(not(isNull(pgSchema.presentations.deletedAt)))
     if (q && q.length > 0) {
       const likePattern = `%${escapeLike(q)}%`
-      conditions.push(
+      pgConditions.push(
         or(
           like(pgSchema.presentations.title, likePattern),
           sql`${pgSchema.presentations.content}::text ILIKE ${likePattern}`,
@@ -283,12 +301,12 @@ export async function presentationRoutes(app: FastifyInstance) {
       )
     }
     const list = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findMany({
-      where: and(...conditions),
-      columns: { id: true, title: true, coverImage: true, updatedAt: true, status: true, content: true },
+      where: and(...pgConditions),
+      columns: { id: true, title: true, coverImage: true, updatedAt: true, status: true, content: true, deletedAt: true },
       orderBy: [desc(pgSchema.presentations.updatedAt)],
     })
     return reply.send(
-      list.map((p: { id: string; title: string; coverImage: string | null; updatedAt: Date | string; status?: string | null; content?: unknown }) => {
+      list.map((p: { id: string; title: string; coverImage: string | null; updatedAt: Date | string; status?: string | null; content?: unknown; deletedAt?: Date | string | null }) => {
         const title = displayTitleFromContent(p.content ?? null, p.title)
         return {
           id: p.id,
@@ -296,6 +314,8 @@ export async function presentationRoutes(app: FastifyInstance) {
           coverImage: p.coverImage ?? undefined,
           updatedAt: toIsoDate(p.updatedAt),
           status: p.status ?? 'draft',
+          deletedAt: p.deletedAt ? toIsoDate(p.deletedAt) : undefined,
+          viewsCount: 0,
         }
       })
     )
@@ -536,7 +556,7 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (userRow?.tariff === 'test_drive' && pgTestDriveUsed) {
         return reply.status(403).send({ error: 'Вы уже использовали тест драйв (одну презентацию). Перейдите на тариф «Эксперт» для создания новых презентаций.' })
       }
-      const pgExpertPlan = userRow?.expertPlanQuantity != null && userRow.expertPlanQuantity !== '' ? Math.max(1, Math.min(100, Number(userRow.expertPlanQuantity) || 1)) : 1
+      const pgExpertPlan = userRow?.expertPlanQuantity != null && userRow.expertPlanQuantity !== '' ? Math.max(1, Number(userRow.expertPlanQuantity) || 1) : 1
       const pgExpertUsed = userRow?.expertPresentationsUsed != null && userRow.expertPresentationsUsed !== '' ? Math.max(0, Number(userRow.expertPresentationsUsed) || 0) : 0
       if (userRow?.tariff === 'expert' && pgExpertUsed >= pgExpertPlan) {
         try {
@@ -873,7 +893,7 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
   )
 
-  /** Удаление по id из тела запроса (как при создании — тот же канал, без проблем с URL/параметрами). */
+  /** Мягкое удаление по id из тела запроса (deleted_at = now(); храним месяц). */
   app.post<{ Body: { id?: string } }>(
     '/api/presentations/delete',
     { preHandler: [app.authenticate] },
@@ -899,18 +919,15 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const existing = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
-        await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
-        // Удалённые презентации по-прежнему учитываются в лимите (expert_presentations_used не уменьшаем)
-        await deletePresentationImagesFolder(id)
+        await mysqlDb.update(mysqlSchema.presentations).set({ deleted_at: new Date() }).where(eq(mysqlSchema.presentations.id, idNum!))
         return reply.status(204).send()
       }
-      const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-        .delete(pgSchema.presentations)
+      const updated = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .update(pgSchema.presentations)
+        .set({ deletedAt: new Date() })
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
-      if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
-      // Удалённые презентации по-прежнему учитываются в лимите (expertPresentationsUsed не уменьшаем)
-      await deletePresentationImagesFolder(id)
+      if (updated.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
       return reply.status(204).send()
     }
   )
@@ -945,18 +962,43 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const existing = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
-        await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, idNum!))
-        // Удалённые презентации по-прежнему учитываются в лимите (expert_presentations_used не уменьшаем)
-        await deletePresentationImagesFolder(id)
+        await mysqlDb.update(mysqlSchema.presentations).set({ deleted_at: new Date() }).where(eq(mysqlSchema.presentations.id, idNum!))
         return reply.status(204).send()
       }
-      const deleted = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
-        .delete(pgSchema.presentations)
+      const updated = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .update(pgSchema.presentations)
+        .set({ deletedAt: new Date() })
         .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
         .returning({ id: pgSchema.presentations.id })
-      if (deleted.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
-      // Удалённые презентации по-прежнему учитываются в лимите (expertPresentationsUsed не уменьшаем)
-      await deletePresentationImagesFolder(id)
+      if (updated.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
+      return reply.status(204).send()
+    }
+  )
+
+  /** Восстановление мягко удалённой презентации */
+  app.post<{ Params: { id: string } }>(
+    '/api/presentations/:id/restore',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      const id = req.params?.id?.trim() ?? ''
+      if (!id) return reply.status(400).send({ error: 'Не указан id презентации' })
+      const idNum = useMysql ? parseMysqlId(id) : null
+      if (useMysql && idNum === null) return reply.status(400).send({ error: 'Неверный формат id' })
+      if (useFileStore) return reply.status(404).send({ error: 'Презентация не найдена' })
+      if (useMysql) {
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const existing = await findPresentationForUser(mysqlDb, idNum!, Number(userId))
+        if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
+        await mysqlDb.update(mysqlSchema.presentations).set({ deleted_at: null }).where(eq(mysqlSchema.presentations.id, idNum!))
+        return reply.status(204).send()
+      }
+      const updated = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
+        .update(pgSchema.presentations)
+        .set({ deletedAt: null })
+        .where(and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)))
+        .returning({ id: pgSchema.presentations.id })
+      if (updated.length === 0) return reply.status(404).send({ error: 'Презентация не найдена' })
       return reply.status(204).send()
     }
   )

@@ -30,19 +30,48 @@
         </router-link>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          {{ loading ? 'Загрузка...' : 'Создавайте и редактируйте презентации' }}
-        </p>
-        <button
-          type="button"
-          :disabled="!canCreatePresentation"
-          class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-          :title="cannotCreateReason"
-          @click="createAndOpenEditor()"
-        >
-          <PlusIcon />
-          Создать презентацию
-        </button>
+        <div class="flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800/50">
+          <button
+            type="button"
+            :class="[
+              'rounded-md px-4 py-2 text-sm font-medium transition',
+              activeTab === 'active'
+                ? 'bg-white text-gray-900 shadow dark:bg-gray-700 dark:text-white'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+            ]"
+            @click="switchTab('active')"
+          >
+            Активные
+          </button>
+          <button
+            type="button"
+            :class="[
+              'rounded-md px-4 py-2 text-sm font-medium transition',
+              activeTab === 'deleted'
+                ? 'bg-white text-gray-900 shadow dark:bg-gray-700 dark:text-white'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+            ]"
+            @click="switchTab('deleted')"
+          >
+            Удалённые
+          </button>
+        </div>
+        <div class="flex items-center gap-4">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            {{ loading ? 'Загрузка...' : activeTab === 'active' ? 'Создавайте и редактируйте презентации' : 'Удалённые можно восстановить в течение месяца' }}
+          </p>
+          <button
+            v-if="activeTab === 'active'"
+            type="button"
+            :disabled="!canCreatePresentation"
+            class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            :title="cannotCreateReason"
+            @click="createAndOpenEditor()"
+          >
+            <PlusIcon />
+            Создать презентацию
+          </button>
+        </div>
       </div>
 
       <div
@@ -53,6 +82,45 @@
           :key="presentation.id"
           class="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-brand-800"
         >
+          <template v-if="activeTab === 'deleted'">
+            <div class="flex flex-1 flex-col">
+              <div
+                class="aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
+              >
+                <img
+                  v-if="presentation.coverImage"
+                  :src="presentation.coverImage"
+                  :alt="presentation.title"
+                  class="h-full w-full object-cover"
+                />
+                <span v-else class="text-4xl text-gray-400 dark:text-gray-500">
+                  {{ presentation.title?.charAt(0) || 'П' }}
+                </span>
+              </div>
+              <div class="flex flex-1 flex-col p-4">
+                <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
+                  {{ presentation.title || 'Без названия' }}
+                </h3>
+                <span class="mt-1 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                  Удалено
+                </span>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Удалено {{ formatApiDate((presentation as PresentationWithDeleted).deletedAt) }}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="absolute right-2 top-2 rounded-lg bg-white/90 p-2 text-gray-500 shadow-sm transition hover:bg-green-50 hover:text-green-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-green-950 dark:hover:text-green-400"
+              title="Восстановить презентацию"
+              @click.stop="restorePresentation(presentation)"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </template>
+          <template v-else>
           <router-link
             :to="`/dashboard/presentations/${presentation.id}/edit`"
             class="flex flex-1 flex-col"
@@ -101,6 +169,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
+          </template>
         </div>
       </div>
 
@@ -109,9 +178,10 @@
         class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-16 dark:border-gray-700"
       >
         <p class="text-gray-500 dark:text-gray-400">
-          Презентаций пока нет
+          {{ activeTab === 'deleted' ? 'Удалённых презентаций пока нет' : 'Презентаций пока нет' }}
         </p>
         <button
+          v-if="activeTab === 'active'"
           type="button"
           :disabled="!canCreatePresentation"
           :title="cannotCreateReason"
@@ -337,14 +407,22 @@ async function createAndOpenEditor(title = 'Новая презентация', 
   router.push(`/dashboard/presentations/${id}/edit`)
 }
 
+type TabKind = 'active' | 'deleted'
+
 interface Presentation {
   id: string
   title: string
   coverImage?: string
   updatedAt: string
   status?: string
+  deletedAt?: string
 }
 
+interface PresentationWithDeleted extends Presentation {
+  deletedAt: string
+}
+
+const activeTab = ref<TabKind>('active')
 const presentations = ref<Presentation[]>([])
 const loading = ref(false)
 const error = ref('')
@@ -366,11 +444,18 @@ onUnmounted(() => {
   isMounted = false
 })
 
+function switchTab(tab: TabKind) {
+  if (activeTab.value === tab) return
+  activeTab.value = tab
+  loadPresentations()
+}
+
 async function loadFromApi() {
   loading.value = true
   error.value = ''
+  const filter = activeTab.value === 'deleted' ? 'deleted' : 'active'
   try {
-    const list = await api.get<PresentationListItem[]>('/api/presentations')
+    const list = await api.get<PresentationListItem[]>(`/api/presentations?filter=${filter}`)
     if (isMounted) {
       presentations.value = list.map((p) => ({
         ...p,
@@ -388,6 +473,10 @@ async function loadFromApi() {
 }
 
 function loadFromLocalStorage() {
+  if (activeTab.value === 'deleted') {
+    presentations.value = []
+    return
+  }
   try {
     const raw = localStorage.getItem('presentations-list')
     if (raw) {
@@ -413,8 +502,24 @@ function loadPresentations() {
   }
 }
 
+async function restorePresentation(presentation: Presentation) {
+  const id = presentation?.id != null ? String(presentation.id) : ''
+  if (!id) {
+    error.value = 'Не удалось определить id презентации'
+    return
+  }
+  try {
+    await api.post(`/api/presentations/${id}/restore`)
+    presentations.value = presentations.value.filter((p) => p.id !== presentation.id)
+    error.value = ''
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Не удалось восстановить презентацию'
+    loadPresentations()
+  }
+}
+
 async function confirmDelete(presentation: Presentation) {
-  if (!window.confirm(`Удалить презентацию «${presentation.title || 'Без названия'}»?`)) {
+  if (!window.confirm(`Удалить презентацию «${presentation.title || 'Без названия'}»? Её можно будет восстановить в течение месяца.`)) {
     return
   }
   if (hasApi() && getToken()) {
