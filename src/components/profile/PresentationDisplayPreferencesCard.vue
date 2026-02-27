@@ -4,6 +4,48 @@
     <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
       Выберите, какие данные из вашего профиля будут автоматически подставляться в блок контакты при создании презентации.
     </p>
+
+    <!-- Наглядность: что будет выводиться -->
+    <div class="mb-8 rounded-xl border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+      <h5 class="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Что будет выводиться в презентации</h5>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
+          <p class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">Изображение</p>
+          <div v-if="previewImageUrl" class="flex items-center gap-2">
+            <img :src="previewImageUrl" alt="" class="h-12 w-12 rounded-lg object-cover" />
+            <span class="text-sm text-gray-800 dark:text-gray-200">{{ previewImageLabel }}</span>
+          </div>
+          <p v-else class="text-sm text-gray-400 dark:text-gray-500">— не выбрано</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
+          <p class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">ФИО / компания</p>
+          <p class="text-sm text-gray-800 dark:text-gray-200">{{ previewNameOrOrg || '— не выбрано' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
+          <p class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">Данные о себе / должность</p>
+          <p class="text-sm text-gray-800 dark:text-gray-200">{{ previewAbout || '— не выбрано' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
+          <p class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">Телефон</p>
+          <p class="text-sm text-gray-800 dark:text-gray-200">{{ previewPhone || '— не выбрано' }}</p>
+        </div>
+      </div>
+      <div v-if="previewMessengerKeys.length" class="mt-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
+        <p class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Мессенджеры</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            v-for="key in previewMessengerKeys"
+            :key="key"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          >
+            <img v-if="messengerItemByKey(key)" :src="messengerItemByKey(key)?.icon" :alt="messengerItemByKey(key)?.title" class="h-4 w-4 object-contain" />
+            {{ messengerItemByKey(key)?.title ?? key }}
+          </span>
+        </div>
+      </div>
+      <p v-else class="mt-4 text-sm text-gray-400 dark:text-gray-500">Мессенджеры не выбраны.</p>
+    </div>
+
     <form @submit.prevent="save" class="flex flex-col">
       <div v-if="prefsError" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ prefsError }}</div>
       <div class="space-y-6">
@@ -144,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { api, ApiError } from '@/api/client'
 import type { PresentationDisplayPreferences } from '@/api/client'
@@ -175,6 +217,65 @@ const prefsForm = ref<PresentationDisplayPreferences & { avatarOrLogo?: string; 
 function isMessengerSelected(key: string) {
   return (prefsForm.value.showMessengerKeys ?? []).includes(key)
 }
+
+function messengerItemByKey(key: string) {
+  return messengerItems.find((m) => m.key === key)
+}
+
+const u = () => currentUser.value
+
+/** Для наглядности: что будет выводиться по текущим настройкам */
+const previewImageUrl = computed(() => {
+  const choice = prefsForm.value.avatarOrLogo
+  if (!choice || choice === 'none') return null
+  if (choice === 'personal' && u()?.user_img) {
+    const img = String(u()!.user_img!).trim()
+    return img.startsWith('/') ? img : `/${img}`
+  }
+  if (choice === 'company' && u()?.company_logo) {
+    const img = String(u()!.company_logo!).trim()
+    return img.startsWith('/') ? img : `/${img}`
+  }
+  return null
+})
+
+const previewImageLabel = computed(() => {
+  const choice = prefsForm.value.avatarOrLogo
+  if (choice === 'personal') return 'Личное фото'
+  if (choice === 'company') return 'Логотип компании'
+  return ''
+})
+
+const previewNameOrOrg = computed(() => {
+  const choice = prefsForm.value.nameOrOrg
+  if (!choice || choice === 'none') return ''
+  if (choice === 'personal') {
+    const name = u()?.name ?? ''
+    const last = u()?.last_name ?? ''
+    const middle = u()?.middle_name ?? ''
+    return [name, middle, last].filter(Boolean).join(' ') || (u()?.email ?? '')
+  }
+  if (choice === 'company') return u()?.company_name?.trim() ?? ''
+  return ''
+})
+
+const previewAbout = computed(() => {
+  const choice = prefsForm.value.aboutType
+  if (!choice || choice === 'none') return ''
+  if (choice === 'about') return u()?.position?.trim() ?? ''
+  if (choice === 'position') return u()?.work_position?.trim() ?? ''
+  return ''
+})
+
+const previewPhone = computed(() => {
+  const choice = prefsForm.value.phoneType
+  if (!choice || choice === 'none') return ''
+  if (choice === 'personal') return u()?.personal_phone?.trim() ?? ''
+  if (choice === 'work') return u()?.work_phone?.trim() ?? ''
+  return ''
+})
+
+const previewMessengerKeys = computed(() => prefsForm.value.showMessengerKeys ?? [])
 
 function toggleMessenger(key: string) {
   const keys = [...(prefsForm.value.showMessengerKeys ?? [])]
