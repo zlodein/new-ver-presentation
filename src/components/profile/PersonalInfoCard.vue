@@ -264,7 +264,15 @@
                       <h5 class="mb-4 text-base font-medium text-gray-800 dark:text-white/90">
                         Смена пароля
                       </h5>
-                      <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                      <button
+                        v-if="!wantToChangePassword"
+                        type="button"
+                        @click="wantToChangePassword = true"
+                        class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]"
+                      >
+                        Хочу сменить пароль
+                      </button>
+                      <div v-else class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                         <div class="col-span-2 lg:col-span-1">
                           <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                             Текущий пароль
@@ -329,7 +337,7 @@
                 type="button"
                 class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
               >
-                Close
+                Закрыть
               </button>
               <button
                 type="submit"
@@ -359,6 +367,8 @@ const loading = ref(false)
 const error = ref('')
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
+/** Пользователь нажал «Хочу сменить пароль» — показываем поля пароля (чтобы браузер не предлагал сохранить пароль при простом сохранении профиля) */
+const wantToChangePassword = ref(false)
 
 const formData = ref({
   name: '',
@@ -389,6 +399,7 @@ const canChangePassword = computed(() => {
 
 // Заполнить форму данными пользователя при открытии модального окна
 watch(isProfileInfoModal, (isOpen) => {
+  if (!isOpen) wantToChangePassword.value = false
   if (isOpen && currentUser.value) {
     const phone = currentUser.value.personal_phone || ''
     const u = currentUser.value

@@ -179,7 +179,14 @@
         </div>
       </div>
       <div class="flex items-center gap-3 mt-6 lg:justify-end">
-        <button type="submit" :disabled="prefsLoading" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 sm:w-auto">{{ prefsLoading ? 'Сохранение...' : 'Сохранить' }}</button>
+        <button
+          type="submit"
+          :disabled="prefsLoading"
+          class="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60 sm:w-auto transition-colors"
+          :class="justSaved ? 'bg-success-500 hover:bg-success-600' : 'bg-brand-500 hover:bg-brand-600'"
+        >
+          {{ prefsLoading ? 'Сохранение...' : justSaved ? 'Сохранено' : 'Сохранить' }}
+        </button>
       </div>
     </form>
   </div>
@@ -205,6 +212,7 @@ const messengerItems = [
 const { currentUser, fetchUser } = useAuth()
 const prefsLoading = ref(false)
 const prefsError = ref('')
+const justSaved = ref(false)
 
 const prefsForm = ref<PresentationDisplayPreferences & { avatarOrLogo?: string; nameOrOrg?: string; phoneType?: string; aboutType?: string; showMessengerKeys?: string[] }>({
   avatarOrLogo: 'none',
@@ -320,6 +328,8 @@ async function save() {
     }
     await api.put('/api/auth/profile', { presentation_display_preferences: payload })
     await fetchUser()
+    justSaved.value = true
+    setTimeout(() => { justSaved.value = false }, 2500)
   } catch (e) {
     if (e instanceof ApiError) {
       prefsError.value = e.message || 'Ошибка сохранения'
