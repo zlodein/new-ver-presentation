@@ -3353,31 +3353,31 @@ async function exportToPDF() {
     opacity: 0.7;
   }
   
-  /* Увеличиваем размеры элементов управления в редакторе */
+  /* Элементы управления в редакторе (мобильная версия: чуть уменьшенные шрифты) */
   .presentation-slider-wrap.booklet-view input[type="text"],
   .presentation-slider-wrap.booklet-view input[type="email"],
   .presentation-slider-wrap.booklet-view textarea,
   .presentation-slider-wrap.booklet-view select {
-    font-size: 16px; /* Предотвращает зум на iOS */
+    font-size: 15px; /* Чуть меньше для мобильного редактора, 15px ещё не вызывает зум на iOS */
     min-height: 44px; /* Минимальный размер для удобного нажатия */
     padding: 10px 12px;
   }
   
-  /* Улучшаем кнопки в редакторе */
+  /* Кнопки в редакторе */
   .presentation-slider-wrap.booklet-view button {
     min-height: 44px;
     padding: 10px 16px;
-    font-size: 15px;
+    font-size: 14px;
   }
   .presentation-slider-wrap.booklet-view .booklet-btn {
     min-height: auto;
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: 11px;
   }
   .presentation-slider-wrap.booklet-view .booklet-btn--generate {
     min-height: auto;
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: 11px;
   }
   
   /* Улучшаем панель слайдов на мобильных */
@@ -3498,10 +3498,18 @@ async function exportToPDF() {
         overflow-x: hidden;
         box-sizing: border-box;
       }
+      /* Цепочка высоты: без height блоки схлопываются, :not(.presentation-view-fixed) — только в редакторе */
+      .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-page,
+      .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-page__inner,
+      .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-content {
+        min-height: 0;
+        height: 100%;
+        box-sizing: border-box;
+      }
       .presentation-slider-wrap.booklet-view .booklet-page__inner {
         min-height: 0;
         height: 100%;
-        padding: 20px 16px;
+        padding: 20px 16px 70px 16px; /* 70px снизу — под высоту нижней панели, чтобы не перекрывала контент */
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
