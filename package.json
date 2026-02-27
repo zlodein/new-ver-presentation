@@ -27,6 +27,7 @@
     "@types/leaflet": "^1.9.21",
     "apexcharts": "^4.4.0",
     "cropperjs": "^1.6.2",
+    "custom-vue-scrollbar": "^0.0.8",
     "dropzone": "^6.0.0-beta.2",
     "flatpickr": "^4.6.13",
     "jsvectormap": "^1.6.0",
