@@ -184,11 +184,17 @@ async function softDelete(p: PresentationListItem) {
 }
 
 async function restore(p: PresentationListItem) {
+  const id = p?.id != null ? String(p.id) : ''
+  if (!id) {
+    error.value = 'Не удалось определить id презентации'
+    return
+  }
   try {
-    await api.post(`/api/presentations/${p.id}/restore`)
+    await api.post(`/api/presentations/${encodeURIComponent(id)}/restore`)
     presentations.value = presentations.value.map((item) =>
       item.id === p.id ? { ...item, deletedAt: undefined } : item
     )
+    error.value = ''
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Не удалось восстановить'
     load()

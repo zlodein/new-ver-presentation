@@ -85,7 +85,7 @@
           <template v-if="activeTab === 'deleted'">
             <div class="flex flex-1 flex-col">
               <div
-                class="aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
+                class="relative aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
               >
                 <img
                   v-if="presentation.coverImage"
@@ -96,14 +96,14 @@
                 <span v-else class="text-4xl text-gray-400 dark:text-gray-500">
                   {{ presentation.title?.charAt(0) || 'П' }}
                 </span>
+                <span class="absolute left-2 top-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-300 shadow-sm">
+                  Удалено
+                </span>
               </div>
               <div class="flex flex-1 flex-col p-4">
                 <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
                   {{ presentation.title || 'Без названия' }}
                 </h3>
-                <span class="mt-1 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                  Удалено
-                </span>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Удалено {{ formatApiDate((presentation as PresentationWithDeleted).deletedAt) }}
                 </p>
@@ -126,7 +126,7 @@
             class="flex flex-1 flex-col"
           >
             <div
-              class="aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
+              class="relative aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
             >
               <img
                 v-if="presentation.coverImage"
@@ -140,20 +140,18 @@
               >
                 {{ presentation.title?.charAt(0) || 'П' }}
               </span>
+              <span
+                v-if="presentation.status"
+                class="absolute left-2 top-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm"
+                :class="presentation.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+              >
+                {{ presentation.status === 'published' ? 'Опубликовано' : 'Черновик' }}
+              </span>
             </div>
             <div class="flex flex-1 flex-col p-4">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
-                  {{ presentation.title || 'Без названия' }}
-                </h3>
-                <span
-                  v-if="presentation.status"
-                  class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-                  :class="presentation.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
-                >
-                  {{ presentation.status === 'published' ? 'Опубликовано' : 'Черновик' }}
-                </span>
-              </div>
+              <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
+                {{ presentation.title || 'Без названия' }}
+              </h3>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Обновлено {{ formatApiDate(presentation.updatedAt) }}
               </p>
@@ -509,9 +507,11 @@ async function restorePresentation(presentation: Presentation) {
     return
   }
   try {
-    await api.post(`/api/presentations/${id}/restore`)
-    presentations.value = presentations.value.filter((p) => p.id !== presentation.id)
+    await api.post(`/api/presentations/${encodeURIComponent(id)}/restore`)
     error.value = ''
+    await fetchUser()
+    activeTab.value = 'active'
+    await loadPresentations()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Не удалось восстановить презентацию'
     loadPresentations()
