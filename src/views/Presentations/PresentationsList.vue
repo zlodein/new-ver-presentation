@@ -415,7 +415,7 @@ interface Presentation {
   coverImage?: string
   updatedAt: string
   status?: string
-  deletedAt?: string
+  deletedAt?: string | null
 }
 
 interface PresentationWithDeleted extends Presentation {
