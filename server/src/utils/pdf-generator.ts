@@ -72,10 +72,23 @@ function blockLayout(dataObj: Record<string, unknown>): string {
 }
 
 function getImageGridLimit(dataObj: Record<string, unknown>, slideType: string): { cols: number; rows: number; limit: number; grid: string } {
-  const grid = String((dataObj.imageGrid ?? dataObj.image_grid) || DEFAULT_IMAGE_GRID[slideType] || '2x2')
+  let grid = String((dataObj.imageGrid ?? dataObj.image_grid) || DEFAULT_IMAGE_GRID[slideType] || '2x2')
   const [c, r] = grid.split('x').map(Number)
-  const cols = c || 2
-  const rows = r || 2
+  let cols = c || 2
+  let rows = r || 2
+  // Для инфраструктуры и описания: если сетка 1x2, но заполнено только одно изображение — один блок (1x1), без пустого слота
+  if ((slideType === 'infrastructure' || slideType === 'description') && grid === '1x2') {
+    const arr = Array.isArray(dataObj.images) ? (dataObj.images as unknown[]) : []
+    const filled = arr.filter((v) => {
+      const u = typeof v === 'string' ? v : (v as { url?: string })?.url
+      return u && String(u).trim()
+    })
+    if (filled.length <= 1) {
+      grid = '1x1'
+      cols = 1
+      rows = 1
+    }
+  }
   return { cols, rows, limit: cols * rows, grid }
 }
 

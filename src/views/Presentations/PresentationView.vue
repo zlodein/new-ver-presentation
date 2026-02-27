@@ -74,8 +74,8 @@
                   <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
                   <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text" v-html="String(slide.data?.text ?? slide.data?.content ?? '').replace(/\n/g, '<br>')" />
                 </div>
-                <div class="booklet-info__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
-                  <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-info__block booklet-info__img">
+                <div class="booklet-info__grid image-grid-bound" :data-image-grid="getEffectiveImageGrid(slide)">
+                  <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-info__block booklet-info__img">
                     <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                   </div>
                 </div>
@@ -88,8 +88,8 @@
                   <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
                   <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text" v-html="String(slide.data?.content ?? slide.data?.text ?? '').replace(/\n/g, '<br>')" />
                 </div>
-                <div class="booklet-stroen__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
-                  <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-stroen__block booklet-stroen__img">
+                <div class="booklet-stroen__grid image-grid-bound" :data-image-grid="getEffectiveImageGrid(slide)">
+                  <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-stroen__block booklet-stroen__img">
                     <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                   </div>
                 </div>
@@ -437,6 +437,26 @@ function getViewImageLimit(slide: ViewSlideItem): number {
   const grid = getImageGrid(slide)
   const [c, r] = grid.split('x').map(Number)
   return (c || 2) * (r || 2)
+}
+
+/** Для инфраструктуры/описания: если выбрана сетка 1x2, но заполнено только одно изображение — показываем один блок (1x1), без пустого слота */
+function getEffectiveImageGrid(slide: ViewSlideItem): string {
+  const grid = getImageGrid(slide)
+  if (slide.type !== 'infrastructure' && slide.type !== 'description') return grid
+  if (grid !== '1x2') return grid
+  const arr = slide.data?.images
+  if (!Array.isArray(arr)) return grid
+  const filled = arr.filter((v) => {
+    const u = typeof v === 'string' ? v : (v as { url?: string })?.url
+    return u && String(u).trim()
+  })
+  return filled.length <= 1 ? '1x1' : grid
+}
+
+function getEffectiveViewImageLimit(slide: ViewSlideItem): number {
+  const grid = getEffectiveImageGrid(slide)
+  const [c, r] = grid.split('x').map(Number)
+  return (c || 1) * (r || 1)
 }
 
 /** Контакты: одно изображение справа (contactImageUrl или images[0]) */
