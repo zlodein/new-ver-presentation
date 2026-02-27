@@ -142,14 +142,25 @@ const currentPageTitle = ref('Уведомления')
 const notifications = ref([])
 const loading = ref(false)
 
-/** Цвет индикатора: успешное сохранение/добавление — зелёный; приближается к истечению — оранжевый; истекло — красный */
+/** Уровень по типу и тексту (бэкенд присылает calendar/presentation, не success/error) */
+function getNotificationLevel(notification) {
+  const type = notification?.type ?? ''
+  const title = (notification?.title ?? '').toLowerCase()
+  const message = (notification?.message ?? '').toLowerCase()
+  const text = title + ' ' + message
+  if (type === 'error') return 'error'
+  if (type === 'success') return 'success'
+  if (type === 'warning') return 'warning'
+  if (/истек|истекл|истекш/i.test(text)) return 'error'
+  if (/добавлено|новое событие|опубликование|успешно/i.test(text)) return 'success'
+  if (/истекает|скоро/i.test(text)) return 'warning'
+  return 'warning'
+}
+
 function notificationIndicatorClass(type, notification) {
-  if (type === 'success') return 'bg-success-500'
-  if (type === 'error') return 'bg-error-500'
-  if (type === 'warning') return 'bg-orange-400'
-  const msg = (notification?.message ?? '') + (notification?.title ?? '')
-  if (/\bистек(ла|ло|ший|шая)?\b/i.test(msg)) return 'bg-error-500'
-  if (/\bистекает|скоро\b/i.test(msg)) return 'bg-orange-400'
+  const level = getNotificationLevel(notification ?? { type })
+  if (level === 'error') return 'bg-error-500'
+  if (level === 'success') return 'bg-success-500'
   return 'bg-orange-400'
 }
 
@@ -213,6 +224,9 @@ const handleClearAll = async () => {
   try {
     await api.get('/api/notifications/actions/clear-all')
     notifications.value = []
+    try {
+      localStorage.removeItem('notification_panel_cleared_ids')
+    } catch (_) {}
   } catch (err) {
     console.error('Ошибка очистки уведомлений:', err)
     alert('Ошибка очистки уведомлений')

@@ -159,35 +159,67 @@ const unreadCount = computed(() => {
 
 const notifying = computed(() => unreadCount.value > 0)
 
-/** Цвет индикатора: успешное сохранение/добавление — зелёный; приближается к истечению — оранжевый; истекло — красный */
+const PANEL_CLEARED_IDS_KEY = 'notification_panel_cleared_ids'
+
+/** По тексту и типу: истекло → red, добавлено/успех → green, истекает/скоро → orange (бэкенд присылает type 'calendar'/'presentation', не success/error) */
+function getNotificationLevel(notification) {
+  const type = notification?.type ?? ''
+  const title = (notification?.title ?? '').toLowerCase()
+  const message = (notification?.message ?? '').toLowerCase()
+  const text = title + ' ' + message
+  if (type === 'error') return 'error'
+  if (type === 'success') return 'success'
+  if (type === 'warning') return 'warning'
+  if (/истек|истекл|истекш/i.test(text)) return 'error'
+  if (/добавлено|новое событие|опубликование|успешно/i.test(text)) return 'success'
+  if (/истекает|скоро/i.test(text)) return 'warning'
+  return 'warning'
+}
+
 function notificationIndicatorClass(type, notification) {
-  if (type === 'success') return 'bg-success-500'
-  if (type === 'error') return 'bg-error-500'
-  if (type === 'warning') return 'bg-orange-400'
-  const msg = (notification?.message ?? '') + (notification?.title ?? '')
-  if (/\bистек(ла|ло|ший|шая)?\b/i.test(msg)) return 'bg-error-500'
-  if (/\bистекает|скоро\b/i.test(msg)) return 'bg-orange-400'
+  const level = getNotificationLevel(notification ?? { type })
+  if (level === 'error') return 'bg-error-500'
+  if (level === 'success') return 'bg-success-500'
   return 'bg-orange-400'
 }
 
-/** Класс точки на колокольчике: по наивысшей важности (истекшие > приближающиеся > успешные) */
+/** Класс точки на колокольчике: при смешанных типах — синий; иначе по приоритету (error > warning > success) */
 const indicatorBadgeClass = computed(() => {
   const unread = notifications.value.filter((n) => !n.read)
-  const hasError = unread.some((n) => n.type === 'error' || /\bистек(ла|ло|ший|шая)?\b/i.test((n.message ?? '') + (n.title ?? '')))
-  const hasWarning = unread.some((n) => n.type === 'warning' || /\bистекает|скоро\b/i.test((n.message ?? '') + (n.title ?? '')))
-  if (hasError) return 'bg-error-500'
-  if (hasWarning) return 'bg-orange-400'
-  if (unread.some((n) => n.type === 'success')) return 'bg-success-500'
+  const levels = unread.map((n) => getNotificationLevel(n))
+  const unique = new Set(levels)
+  if (unique.size > 1) return 'bg-primary-500'
+  if (levels.some((l) => l === 'error')) return 'bg-error-500'
+  if (levels.some((l) => l === 'warning')) return 'bg-orange-400'
+  if (levels.some((l) => l === 'success')) return 'bg-success-500'
   return 'bg-orange-400'
 })
 
 const displayedNotifications = computed(() => notifications.value.slice(0, 5))
 
+function getPanelClearedIds() {
+  try {
+    const raw = localStorage.getItem(PANEL_CLEARED_IDS_KEY)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function setPanelClearedIds(ids) {
+  try {
+    const arr = ids.size ? Array.from(ids) : []
+    if (arr.length) localStorage.setItem(PANEL_CLEARED_IDS_KEY, JSON.stringify(arr))
+    else localStorage.removeItem(PANEL_CLEARED_IDS_KEY)
+  } catch (_) {}
+}
+
 const loadNotifications = async () => {
   try {
     loading.value = true
     const data = await api.get('/api/notifications')
-    notifications.value = data
+    const cleared = getPanelClearedIds()
+    notifications.value = Array.isArray(data) ? data.filter((n) => !cleared.has(String(n.id))) : []
   } catch (err) {
     console.error('Ошибка загрузки уведомлений:', err)
   } finally {
@@ -242,8 +274,11 @@ function navigateFromNotification(notification) {
   }
 }
 
-/** Очистить только панель (виджет); уведомления остаются на странице /dashboard/notifications */
+/** Очистить панель: скрыть текущие уведомления из виджета до следующей загрузки; на странице /dashboard/notifications они остаются */
 const handleClearAll = () => {
+  const cleared = getPanelClearedIds()
+  notifications.value.forEach((n) => cleared.add(String(n.id)))
+  setPanelClearedIds(cleared)
   notifications.value = []
 }
 
