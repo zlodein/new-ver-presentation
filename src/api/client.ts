@@ -152,8 +152,10 @@ export interface PresentationDisplayPreferences {
   aboutType?: 'none' | 'about' | 'position'
   /** Телефон: none | personal | work */
   phoneType?: 'none' | 'personal' | 'work'
-  /** Выводить заполненные мессенджеры */
+  /** Выводить мессенджеры (если задан showMessengerKeys — только они) */
   showMessengers?: boolean
+  /** Ключи мессенджеров для вывода в презентации (whatsapp, telegram, vk и т.д.) */
+  showMessengerKeys?: string[]
 }
 
 export interface AuthResponse {

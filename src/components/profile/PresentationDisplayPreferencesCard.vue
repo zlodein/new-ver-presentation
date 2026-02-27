@@ -111,20 +111,29 @@
             </label>
           </div>
         </div>
-        <div>
-          <label class="flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
-            <div class="relative">
-              <input type="checkbox" v-model="prefsForm.showMessengers" class="sr-only" />
-              <div class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]" :class="prefsForm.showMessengers ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                <span :class="{ 'opacity-0': !prefsForm.showMessengers }">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </span>
-              </div>
-            </div>
-            Выводить заполненные мессенджеры
-          </label>
+        <div class="flex flex-col gap-3">
+          <p class="text-sm font-medium text-gray-800 dark:text-white/90">Выводить мессенджеры</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Отметьте мессенджеры, которые нужно подставлять в блок контактов презентации.</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-for="item in messengerItems"
+              :key="item.key"
+              type="button"
+              :title="item.title"
+              @click="toggleMessenger(item.key)"
+              class="relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+              :class="isMessengerSelected(item.key)
+                ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/20'
+                : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'"
+            >
+              <img :src="item.icon" :alt="item.title" class="w-6 h-6 object-contain pointer-events-none" />
+              <span v-if="isMessengerSelected(item.key)" class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-white">
+                <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
       <div class="flex items-center gap-3 mt-6 lg:justify-end">
@@ -140,31 +149,55 @@ import { useAuth } from '@/composables/useAuth'
 import { api, ApiError } from '@/api/client'
 import type { PresentationDisplayPreferences } from '@/api/client'
 
+const messengerItems = [
+  { key: 'twitter', title: 'Twitter', icon: '/images/icons/twitter-color.svg' },
+  { key: 'whatsapp', title: 'WhatsApp', icon: '/images/icons/whatsapp-color.svg' },
+  { key: 'telegram', title: 'Telegram', icon: '/images/icons/telegram-color.svg' },
+  { key: 'viber', title: 'Viber', icon: '/images/icons/viber-color.svg' },
+  { key: 'instagram', title: 'Instagram', icon: '/images/icons/instagram-color.svg' },
+  { key: 'vk', title: 'Vk', icon: '/images/icons/vk-color.svg' },
+  { key: 'max', title: 'Max', icon: '/images/icons/max-color.svg' },
+  { key: 'x', title: 'X', icon: '/images/icons/x-color.svg' },
+]
+
 const { currentUser, fetchUser } = useAuth()
 const prefsLoading = ref(false)
 const prefsError = ref('')
 
-const prefsForm = ref<PresentationDisplayPreferences & { avatarOrLogo?: string; nameOrOrg?: string; phoneType?: string; aboutType?: string }>({
+const prefsForm = ref<PresentationDisplayPreferences & { avatarOrLogo?: string; nameOrOrg?: string; phoneType?: string; aboutType?: string; showMessengerKeys?: string[] }>({
   avatarOrLogo: 'none',
   nameOrOrg: 'none',
   aboutType: 'none',
   phoneType: 'none',
-  showMessengers: false,
+  showMessengerKeys: [],
 })
+
+function isMessengerSelected(key: string) {
+  return (prefsForm.value.showMessengerKeys ?? []).includes(key)
+}
+
+function toggleMessenger(key: string) {
+  const keys = [...(prefsForm.value.showMessengerKeys ?? [])]
+  const idx = keys.indexOf(key)
+  if (idx >= 0) keys.splice(idx, 1)
+  else keys.push(key)
+  prefsForm.value.showMessengerKeys = keys
+}
 
 function initForm() {
   if (currentUser.value?.presentation_display_preferences) {
     const p = currentUser.value.presentation_display_preferences
     const aboutType = p.aboutType ?? (p.showAbout ? 'about' : 'none')
+    const showMessengerKeys = Array.isArray(p.showMessengerKeys) ? p.showMessengerKeys : (p.showMessengers ? messengerItems.map(m => m.key) : [])
     prefsForm.value = {
       avatarOrLogo: p.avatarOrLogo ?? 'none',
       nameOrOrg: p.nameOrOrg ?? 'none',
       aboutType,
       phoneType: p.phoneType ?? 'none',
-      showMessengers: p.showMessengers ?? false,
+      showMessengerKeys,
     }
   } else {
-    prefsForm.value = { avatarOrLogo: 'none', nameOrOrg: 'none', aboutType: 'none', phoneType: 'none', showMessengers: false }
+    prefsForm.value = { avatarOrLogo: 'none', nameOrOrg: 'none', aboutType: 'none', phoneType: 'none', showMessengerKeys: [] }
   }
   prefsError.value = ''
 }
@@ -175,12 +208,14 @@ async function save() {
   prefsError.value = ''
   prefsLoading.value = true
   try {
+    const keys = prefsForm.value.showMessengerKeys ?? []
     const payload: PresentationDisplayPreferences = {
       avatarOrLogo: prefsForm.value.avatarOrLogo === 'none' ? undefined : (prefsForm.value.avatarOrLogo as 'personal' | 'company'),
       nameOrOrg: prefsForm.value.nameOrOrg === 'none' ? undefined : (prefsForm.value.nameOrOrg as 'personal' | 'company'),
       aboutType: prefsForm.value.aboutType === 'none' ? undefined : (prefsForm.value.aboutType as 'about' | 'position'),
       phoneType: prefsForm.value.phoneType === 'none' ? undefined : (prefsForm.value.phoneType as 'personal' | 'work'),
-      showMessengers: prefsForm.value.showMessengers || undefined,
+      showMessengers: keys.length > 0 || undefined,
+      showMessengerKeys: keys.length > 0 ? keys : undefined,
     }
     await api.put('/api/auth/profile', { presentation_display_preferences: payload })
     await fetchUser()
