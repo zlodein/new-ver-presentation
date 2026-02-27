@@ -72,7 +72,7 @@ const dropdownRef = ref(null)
 
 const menuItems = [
   { href: '/dashboard/profile', icon: UserCircleIcon, text: 'Редактировать профиль' },
-  { href: '/chat', icon: SettingsIcon, text: 'Настройки аккаунта' },
+  { href: '/dashboard/settings', icon: SettingsIcon, text: 'Настройки аккаунта' },
   { href: '/dashboard/support', icon: InfoCircleIcon, text: 'Поддержка' },
 ]
 

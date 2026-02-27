@@ -100,7 +100,7 @@
                 <div class="ml-4 flex items-center gap-2" @click.stop>
                   <span
                     v-if="!notification.read"
-                    class="h-2 w-2 rounded-full bg-orange-400"
+                    :class="['h-2 w-2 rounded-full', notificationIndicatorClass(notification.type)]"
                   ></span>
                   <button
                     @click="handleDelete(notification.id)"
@@ -141,6 +141,13 @@ const router = useRouter()
 const currentPageTitle = ref('Уведомления')
 const notifications = ref([])
 const loading = ref(false)
+
+/** Цвет индикатора: успешные — зелёный, требующие внимания — оранжевый, критические — красный */
+function notificationIndicatorClass(type) {
+  if (type === 'success') return 'bg-success-500'
+  if (type === 'error') return 'bg-error-500'
+  return 'bg-orange-400'
+}
 
 function navigateFromNotification(notification) {
   const sourceId = notification.sourceId ?? notification.source_id
