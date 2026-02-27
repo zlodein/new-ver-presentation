@@ -133,14 +133,8 @@
         <!-- Мобильная: раскрытый список слайдов (вертикально) -->
         <div
           v-show="showMobSlidesNav"
-          class="slides-strip-mob border-t border-gray-200 dark:border-gray-700 md:hidden"
+          class="slides-strip-mob max-h-[60vh] overflow-y-auto border-t border-gray-200 py-2 dark:border-gray-700 md:hidden"
         >
-          <custom-scrollbar
-            :style="{ height: '60vh' }"
-            :autoExpand="true"
-            class="w-full"
-            contentClass="py-2"
-          >
           <draggable
             v-model="slides"
             item-key="id"
@@ -217,7 +211,6 @@
               </div>
             </template>
           </draggable>
-          </custom-scrollbar>
         </div>
 
         <!-- ПК: плитка слайдов по левому краю -->
@@ -1125,11 +1118,9 @@
           <div class="mob-editor-bottom fixed bottom-0 left-0 right-0 z-[100] flex flex-col md:hidden" data-mob-settings-menu>
             <!-- Шторка снизу вверх на всю ширину -->
             <Transition name="mob-sheet">
-              <custom-scrollbar
+              <div
                 v-if="showSettingsMenu || (showAddSlideMenu && canAddSlide)"
-                :style="{ maxHeight: '70vh', height: '70vh' }"
-                :autoExpand="true"
-                class="mob-editor-sheet w-full border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+                class="mob-editor-sheet w-full max-h-[70vh] overflow-y-auto border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
                 @click.stop
               >
                 <!-- Контент: настройки -->
@@ -1160,7 +1151,7 @@
                 <!-- Контент: добавить слайд -->
                 <div v-else-if="showAddSlideMenu && canAddSlide" class="py-2">
                   <p class="px-4 pb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Добавить слайд</p>
-                  <custom-scrollbar :style="{ height: '256px' }" :autoExpand="true" class="w-full">
+                  <div class="max-h-64 overflow-y-auto">
                     <button
                       v-for="opt in SLIDE_TYPE_OPTIONS"
                       :key="opt.type"
@@ -1170,9 +1161,9 @@
                     >
                       {{ opt.label }}
                     </button>
-                  </custom-scrollbar>
+                  </div>
                 </div>
-              </custom-scrollbar>
+              </div>
             </Transition>
             <!-- Кнопки панели -->
             <div class="mob-editor-buttons flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800">
@@ -1440,12 +1431,7 @@
           </div>
 
           <!-- Навигация по слайдам (список) -->
-          <custom-scrollbar
-            :style="{ height: '60vh' }"
-            :autoExpand="true"
-            class="w-full"
-            contentClass="p-3"
-          >
+          <div class="max-h-[60vh] overflow-y-auto p-3">
             <draggable
               v-model="slides"
               item-key="id"
@@ -1522,7 +1508,7 @@
                 </div>
               </template>
             </draggable>
-          </custom-scrollbar>
+          </div>
 
           <!-- Кнопки Просмотр, Сохранить, Опубликовать / Экспорт в PDF (для не-админа: 2 в ряд + полная ширина снизу) -->
           <div class="flex flex-col gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
