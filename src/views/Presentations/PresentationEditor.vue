@@ -422,7 +422,12 @@
                   class="booklet-page h-full w-full"
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
                 >
-                  <div class="booklet-page__inner">
+                  <custom-scrollbar
+                    class="booklet-page__inner"
+                    :style="{ height: '100%' }"
+                    contentClass="booklet-page__inner-content"
+                    :autoExpand="true"
+                  >
                     <div class="booklet-scale-root w-full h-full">
                     <!-- 1. Обложка (как на presentation-realty.ru/view) -->
                     <div
@@ -1115,7 +1120,7 @@
                     Слайд: {{ slide.type }}
                   </div>
                     </div>
-                  </div>
+                  </custom-scrollbar>
                 </div>
               </SwiperSlide>
             </Swiper>
@@ -3512,14 +3517,15 @@ async function exportToPDF() {
         overflow-x: hidden;
         box-sizing: border-box;
       }
+      /* Контейнер слайда: кастомный скролл (custom-scrollbar), без overflow — скролл внутри компонента */
       .presentation-slider-wrap.booklet-view .booklet-page__inner {
         min-height: 0;
         height: 100%;
-        padding: 20px 16px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
         max-width: 100%;
+        box-sizing: border-box;
+      }
+      .presentation-slider-wrap.booklet-view .booklet-page__inner-content {
+        padding: 20px 16px;
         box-sizing: border-box;
       }
 
