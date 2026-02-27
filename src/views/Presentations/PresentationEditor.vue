@@ -2463,15 +2463,16 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
   const email = prefs.nameOrOrg === 'company' && user.work_email ? user.work_email : user.email
   if (email) data.email = String(email).trim()
 
-  if (user.messengers && typeof user.messengers === 'object') {
+  const messengers = user.messengers && typeof user.messengers === 'object' ? user.messengers : null
+  if (messengers) {
     const keysToShow = prefs.showMessengerKeys?.length
       ? (prefs.showMessengerKeys as string[])
       : prefs.showMessengers
-        ? Object.keys(user.messengers)
+        ? Object.keys(messengers)
         : []
     const out: Record<string, string> = {}
     keysToShow.forEach((k) => {
-      const v = user.messengers[k]
+      const v = messengers[k]
       if (v && String(v).trim()) out[k] = String(v).trim()
     })
     if (Object.keys(out).length) data.messengers = out
