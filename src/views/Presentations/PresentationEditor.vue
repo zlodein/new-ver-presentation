@@ -578,7 +578,7 @@
                           <button
                             type="button"
                             :class="[
-                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md bg-gradient-to-r from-violet-500 to-purple-600 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-white shadow-sm transition-[max-width] duration-200 hover:from-violet-600 hover:to-purple-700 disabled:opacity-70',
+                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
                               generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
                             ]"
                             :disabled="generateTextLoading === slide.id"
@@ -670,7 +670,7 @@
                           <button
                             type="button"
                             :class="[
-                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md bg-gradient-to-r from-violet-500 to-purple-600 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-white shadow-sm transition-[max-width] duration-200 hover:from-violet-600 hover:to-purple-700 disabled:opacity-70',
+                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
                               generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
                             ]"
                             :disabled="generateTextLoading === slide.id"
