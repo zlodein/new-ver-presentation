@@ -114,7 +114,7 @@
               </div>
               <span
                 v-if="!notification.read"
-                :class="['absolute top-0 right-0 z-10 h-2.5 w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900', notificationIndicatorClass(notification.type)]"
+                :class="['absolute top-0 right-0 z-10 h-2.5 w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900', notificationIndicatorClass(notification.type, notification)]"
               ></span>
             </span>
 
@@ -159,18 +159,24 @@ const unreadCount = computed(() => {
 
 const notifying = computed(() => unreadCount.value > 0)
 
-/** Цвет индикатора по типу: успешные — зелёный, требующие внимания — оранжевый, критические — красный */
-function notificationIndicatorClass(type) {
+/** Цвет индикатора: успешное сохранение/добавление — зелёный; приближается к истечению — оранжевый; истекло — красный */
+function notificationIndicatorClass(type, notification) {
   if (type === 'success') return 'bg-success-500'
   if (type === 'error') return 'bg-error-500'
-  return 'bg-orange-400' // warning, info, support, calendar, presentation — требующие внимания
+  if (type === 'warning') return 'bg-orange-400'
+  const msg = (notification?.message ?? '') + (notification?.title ?? '')
+  if (/\bистек(ла|ло|ший|шая)?\b/i.test(msg)) return 'bg-error-500'
+  if (/\bистекает|скоро\b/i.test(msg)) return 'bg-orange-400'
+  return 'bg-orange-400'
 }
 
-/** Класс точки на колокольчике: по наивысшей важности среди непрочитанных (критические > внимание > успешные) */
+/** Класс точки на колокольчике: по наивысшей важности (истекшие > приближающиеся > успешные) */
 const indicatorBadgeClass = computed(() => {
   const unread = notifications.value.filter((n) => !n.read)
-  if (unread.some((n) => n.type === 'error')) return 'bg-error-500'
-  if (unread.some((n) => n.type === 'warning')) return 'bg-orange-400'
+  const hasError = unread.some((n) => n.type === 'error' || /\bистек(ла|ло|ший|шая)?\b/i.test((n.message ?? '') + (n.title ?? '')))
+  const hasWarning = unread.some((n) => n.type === 'warning' || /\bистекает|скоро\b/i.test((n.message ?? '') + (n.title ?? '')))
+  if (hasError) return 'bg-error-500'
+  if (hasWarning) return 'bg-orange-400'
   if (unread.some((n) => n.type === 'success')) return 'bg-success-500'
   return 'bg-orange-400'
 })
@@ -236,18 +242,9 @@ function navigateFromNotification(notification) {
   }
 }
 
-const handleClearAll = async () => {
-  if (!confirm('Очистить все уведомления из виджета? На странице уведомлений можно удалять по одному или все сразу.')) {
-    return
-  }
-
-  try {
-    await api.get('/api/notifications/actions/clear-all')
-    notifications.value = []
-  } catch (err) {
-    console.error('Ошибка очистки уведомлений:', err)
-    alert('Ошибка очистки уведомлений')
-  }
+/** Очистить только панель (виджет); уведомления остаются на странице /dashboard/notifications */
+const handleClearAll = () => {
+  notifications.value = []
 }
 
 const onVisibilityChange = () => {

@@ -229,7 +229,6 @@ import { useRoute } from "vue-router";
 import {
   GridIcon,
   CalenderIcon,
-  UserCircleIcon,
   DocsIcon,
   ChevronDownIcon,
   HorizontalDots,
@@ -288,11 +287,6 @@ const menuGroups = computed(() => {
       { icon: CalenderIcon, name: "Календарь", path: "/dashboard/calendar" },
       { icon: TaskIcon, name: "Задачи", path: "/dashboard/tasks" },
     ]),
-    {
-      icon: UserCircleIcon,
-      name: "Профиль пользователя",
-      path: "/dashboard/profile",
-    },
   ];
   const otherItems = [
     ...(isAdmin.value ? [] : [
