@@ -89,13 +89,14 @@ export async function authRoutes(app: FastifyInstance) {
       redirect_uri: redirectUri,
       scope: cfg.scope,
     })
-    // VK ID: PKCE + state (обязательны для обмена кода на токен)
+    // VK ID: PKCE + state (обязательны для обмена кода на токен), lang_id=0 — русский (имя/фамилия в ответе user_info на кириллице)
     if (provider === 'vk') {
       const { codeVerifier, codeChallenge } = generatePkce()
       const state = crypto.randomBytes(24).toString('base64url')
       params.set('code_challenge', codeChallenge)
       params.set('code_challenge_method', 'S256')
       params.set('state', state)
+      params.set('lang_id', '0') // 0 = RUS — язык интерфейса и данных (имя, фамилия)
       reply.setCookie(PKCE_COOKIE_NAME, codeVerifier, {
         path: '/',
         httpOnly: true,
