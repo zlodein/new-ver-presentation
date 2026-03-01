@@ -253,16 +253,19 @@ export async function authRoutes(app: FastifyInstance) {
           gender = String(sex).toLowerCase() === 'male' || sex === 1 ? 'male' : String(sex).toLowerCase() === 'female' || sex === 2 ? 'female' : null
         }
       } else {
-        email = (userData.email as string) || (userData.phone as string) || ''
-        if (!email && (userData.user_id as string)) {
-          email = `vk_${userData.user_id}@vk.placeholder`
+        // VK ID возвращает данные во вложенном объекте user: { user_id, first_name, last_name, email, phone, avatar, ... }
+        const vkUser = (userData.user as Record<string, unknown>) ?? userData
+        email = (vkUser.email as string) || (vkUser.phone as string) || ''
+        const vkUserId = (vkUser.user_id as string) || (userData.user_id as string)
+        if (!email && vkUserId) {
+          email = `vk_${vkUserId}@vk.placeholder`
         }
-        name = (userData.first_name as string) ?? null
-        lastName = (userData.last_name as string) ?? null
-        birthday = (userData.bdate as string) || null
-        personalPhone = (userData.phone as string) ?? null
-        userImg = (userData.picture as string) ?? null
-        const sex = userData.sex
+        name = (vkUser.first_name as string) ?? null
+        lastName = (vkUser.last_name as string) ?? null
+        birthday = (vkUser.birthday as string) || (userData.bdate as string) || null
+        personalPhone = (vkUser.phone as string) ?? null
+        userImg = (vkUser.avatar as string) ?? (vkUser.picture as string) ?? (userData.picture as string) ?? null
+        const sex = vkUser.sex ?? userData.sex
         if (sex !== undefined && sex !== null) {
           gender = String(sex) === '1' ? 'female' : String(sex) === '2' ? 'male' : null
         }
