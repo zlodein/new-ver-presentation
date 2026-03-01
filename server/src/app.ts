@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import cookie from '@fastify/cookie'
 import fjwt from '@fastify/jwt'
 import multipart from '@fastify/multipart'
 import staticFiles from '@fastify/static'
@@ -29,6 +30,11 @@ export async function buildApp() {
   await app.register(cors, {
     origin: true,
     credentials: true,
+  })
+
+  await app.register(cookie, {
+    secret: secret,
+    parseOptions: {},
   })
 
   await app.register(fjwt, { secret })

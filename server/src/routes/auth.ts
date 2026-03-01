@@ -59,6 +59,16 @@ const oauthConfig = {
 
 type OAuthProvider = keyof typeof oauthConfig
 
+/** Генерация PKCE code_verifier и code_challenge (S256) для VK ID */
+function generatePkce(): { codeVerifier: string; codeChallenge: string } {
+  const codeVerifier = crypto.randomBytes(64).toString('base64url')
+  const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url')
+  return { codeVerifier, codeChallenge }
+}
+
+const PKCE_COOKIE_NAME = 'oauth_pkce_verifier'
+const PKCE_COOKIE_MAX_AGE = 600 // 10 минут
+
 export async function authRoutes(app: FastifyInstance) {
   // ——— OAuth: редирект на провайдера ———
   app.get<{ Params: { provider: string } }>('/api/auth/oauth/:provider', async (req: FastifyRequest<{ Params: { provider: string } }>, reply: FastifyReply) => {
@@ -78,6 +88,20 @@ export async function authRoutes(app: FastifyInstance) {
       redirect_uri: redirectUri,
       scope: cfg.scope,
     })
+    // VK ID требует PKCE (code_challenge, code_challenge_method)
+    if (provider === 'vk') {
+      const { codeVerifier, codeChallenge } = generatePkce()
+      params.set('code_challenge', codeChallenge)
+      params.set('code_challenge_method', 'S256')
+      reply.setCookie(PKCE_COOKIE_NAME, codeVerifier, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: PKCE_COOKIE_MAX_AGE,
+        signed: true,
+      })
+    }
     const authUrl = `${cfg.authUrl}?${params.toString()}`
     return reply.redirect(authUrl, 302)
   })
@@ -102,6 +126,21 @@ export async function authRoutes(app: FastifyInstance) {
     }
     const redirectUri = `${SITE_URL}/api/auth/oauth/callback/${provider}`
 
+    // VK ID: извлекаем code_verifier из cookie (PKCE)
+    let codeVerifier: string | undefined
+    if (provider === 'vk') {
+      const raw = req.cookies?.[PKCE_COOKIE_NAME]
+      if (raw) {
+        const unsigned = reply.unsignCookie(raw)
+        codeVerifier = unsigned?.valid ? unsigned.value : undefined
+      }
+      reply.clearCookie(PKCE_COOKIE_NAME, { path: '/' })
+      if (!codeVerifier) {
+        req.log.warn({ provider }, 'OAuth: отсутствует code_verifier (PKCE cookie)')
+        return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_failed`, 302)
+      }
+    }
+
     let accessToken: string
     let email: string
     let name: string | null = null
@@ -112,16 +151,20 @@ export async function authRoutes(app: FastifyInstance) {
     let gender: string | null = null
 
     try {
+      const tokenBody: Record<string, string> = {
+        grant_type: 'authorization_code',
+        code,
+        client_id: cfg.clientId,
+        client_secret: cfg.clientSecret,
+        redirect_uri: redirectUri,
+      }
+      if (provider === 'vk' && codeVerifier) {
+        tokenBody.code_verifier = codeVerifier
+      }
       const tokenRes = await fetch(cfg.tokenUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          code,
-          client_id: cfg.clientId,
-          client_secret: cfg.clientSecret,
-          redirect_uri: redirectUri,
-        }).toString(),
+        body: new URLSearchParams(tokenBody).toString(),
       })
       if (!tokenRes.ok) {
         const errText = await tokenRes.text()
