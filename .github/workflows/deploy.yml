@@ -150,35 +150,16 @@ jobs:
           cd deploy/frontend
           tar -czf /tmp/frontend.tar.gz .
           cd ../..
-          
+          # Опции SSH: сохранять соединение, не обрываться по таймауту
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o ConnectTimeout=30"
           if [ -n "$SSH_PASSWORD" ]; then
-            # Создаем директорию на сервере и передаем архив через stdin
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}
-              cat > /tmp/frontend.tar.gz
-            " < /tmp/frontend.tar.gz
-            
-            # Распаковываем на сервере
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}
-              tar -xzf /tmp/frontend.tar.gz
-              rm /tmp/frontend.tar.gz
-              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true
-            "
+            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}"
+            sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/frontend.tar.gz
+            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }} && tar -xzf /tmp/frontend.tar.gz && rm /tmp/frontend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true"
           else
-            # Создаем директорию на сервере и передаем архив через stdin
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}
-              cat > /tmp/frontend.tar.gz
-            " < /tmp/frontend.tar.gz
-            
-            # Распаковываем на сервере
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}
-              tar -xzf /tmp/frontend.tar.gz
-              rm /tmp/frontend.tar.gz
-              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true
-            "
+            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}"
+            scp -i ~/.ssh/id_rsa $SSH_OPTS /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/frontend.tar.gz
+            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }} && tar -xzf /tmp/frontend.tar.gz && rm /tmp/frontend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true"
           fi
           rm -f /tmp/frontend.tar.gz
 
@@ -190,35 +171,15 @@ jobs:
           cd deploy/backend
           tar -czf /tmp/backend.tar.gz .
           cd ../..
-          
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o ConnectTimeout=30"
           if [ -n "$SSH_PASSWORD" ]; then
-            # Создаем директорию на сервере и передаем архив через stdin
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}/server
-              cat > /tmp/backend.tar.gz
-            " < /tmp/backend.tar.gz
-            
-            # Распаковываем на сервере
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}/server
-              tar -xzf /tmp/backend.tar.gz
-              rm /tmp/backend.tar.gz
-              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true
-            "
+            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+            sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/backend.tar.gz
+            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf /tmp/backend.tar.gz && rm /tmp/backend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true"
           else
-            # Создаем директорию на сервере и передаем архив через stdin
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}/server
-              cat > /tmp/backend.tar.gz
-            " < /tmp/backend.tar.gz
-            
-            # Распаковываем на сервере
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}/server
-              tar -xzf /tmp/backend.tar.gz
-              rm /tmp/backend.tar.gz
-              chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true
-            "
+            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+            scp -i ~/.ssh/id_rsa $SSH_OPTS /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/backend.tar.gz
+            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf /tmp/backend.tar.gz && rm /tmp/backend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true"
           fi
           rm -f /tmp/backend.tar.gz
 
