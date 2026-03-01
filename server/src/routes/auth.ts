@@ -45,7 +45,7 @@ const oauthConfig = {
     authUrl: 'https://oauth.yandex.ru/authorize',
     tokenUrl: 'https://oauth.yandex.ru/token',
     userInfoUrl: 'https://login.yandex.ru/info',
-    scope: 'login:email login:info login:avatar',
+    scope: 'login:birthday login:email login:info login:avatar login:default_phone',
   },
   vk: {
     clientId: process.env.OAUTH_VK_CLIENT_ID,
@@ -106,6 +106,10 @@ export async function authRoutes(app: FastifyInstance) {
     let email: string
     let name: string | null = null
     let lastName: string | null = null
+    let birthday: string | null = null
+    let personalPhone: string | null = null
+    let userImg: string | null = null
+    let gender: string | null = null
 
     try {
       const tokenRes = await fetch(cfg.tokenUrl, {
@@ -143,11 +147,23 @@ export async function authRoutes(app: FastifyInstance) {
       if (provider === 'yandex') {
         const emails = userData.emails as string[] | undefined
         email = (userData.default_email as string) || (emails?.[0]) || ''
-        const firstName = userData.real_name as string
+        const firstName = (userData.first_name as string) || (userData.real_name as string)
         if (firstName) {
           const parts = firstName.trim().split(/\s+/)
           name = parts[0] ?? null
-          lastName = parts.length > 1 ? parts.slice(1).join(' ') : null
+          lastName = (userData.last_name as string) ?? (parts.length > 1 ? parts.slice(1).join(' ') : null)
+        }
+        birthday = (userData.birthday as string) || null
+        const dp = userData.default_phone as { number?: string } | undefined
+        personalPhone = dp?.number ?? null
+        const avatarId = userData.default_avatar_id as string | undefined
+        const isAvatarEmpty = userData.is_avatar_empty as boolean | undefined
+        if (avatarId && !isAvatarEmpty) {
+          userImg = `https://avatars.yandex.net/get-yapic/${avatarId}/islands-200`
+        }
+        const sex = userData.sex
+        if (sex !== undefined && sex !== null) {
+          gender = String(sex).toLowerCase() === 'male' || sex === 1 ? 'male' : String(sex).toLowerCase() === 'female' || sex === 2 ? 'female' : null
         }
       } else {
         email = (userData.email as string) || (userData.phone as string) || ''
@@ -156,6 +172,13 @@ export async function authRoutes(app: FastifyInstance) {
         }
         name = (userData.first_name as string) ?? null
         lastName = (userData.last_name as string) ?? null
+        birthday = (userData.bdate as string) || null
+        personalPhone = (userData.phone as string) ?? null
+        userImg = (userData.picture as string) ?? null
+        const sex = userData.sex
+        if (sex !== undefined && sex !== null) {
+          gender = String(sex) === '1' ? 'female' : String(sex) === '2' ? 'male' : null
+        }
       }
 
       if (!email) {
@@ -194,6 +217,10 @@ export async function authRoutes(app: FastifyInstance) {
           password: passwordHash,
           name: name || '',
           last_name: lastName,
+          user_img: userImg,
+          personal_phone: personalPhone,
+          birthday,
+          gender,
         }).$returningId()
         const insertedArr = inserted as { id: number }[] | { id: number }
         const newId = Array.isArray(insertedArr) ? insertedArr[0]?.id : insertedArr?.id
@@ -441,7 +468,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
         const expertColumns = { expert_plan_quantity: true, expert_presentations_used: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
@@ -459,7 +486,7 @@ export async function authRoutes(app: FastifyInstance) {
               }) as Record<string, unknown> | null
             } catch (err2) {
               if (isUnknownColumnError(err2)) {
-                const baseColumnsNoRole = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, created_at: true }
+                const baseColumnsNoRole = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, created_at: true }
                 user = await mysqlDb.query.users.findFirst({
                   where: eq(mysqlSchema.users.id, userId),
                   columns: { ...baseColumnsNoRole, ...workColumns },
@@ -484,6 +511,8 @@ export async function authRoutes(app: FastifyInstance) {
           middle_name: user.middle_name,
           user_img: user.user_img,
           personal_phone: user.personal_phone,
+          birthday: user.birthday,
+          gender: user.gender,
           position: user.position,
           messengers: messengersData,
           presentation_display_preferences: prefsData ?? undefined,

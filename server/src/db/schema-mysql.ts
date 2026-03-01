@@ -20,8 +20,10 @@ export const users = mysqlTable('users', {
   name: varchar('name', { length: 100 }).notNull().default(''),
   last_name: varchar('last_name', { length: 100 }),
   middle_name: varchar('middle_name', { length: 255 }),
-  user_img: varchar('user_img', { length: 255 }),
-  personal_phone: varchar('personal_phone', { length: 20 }),
+  user_img: varchar('user_img', { length: 512 }),
+  personal_phone: varchar('personal_phone', { length: 30 }),
+  birthday: varchar('birthday', { length: 20 }), // YYYY-MM-DD
+  gender: varchar('gender', { length: 20 }), // male | female
   position: varchar('position', { length: 255 }),
   messengers: longtext('messengers'), // JSON строка
   workplace: varchar('workplace', { length: 255 }), // в БД: workplace; в API отдаём как company_name
