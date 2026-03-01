@@ -66,11 +66,12 @@ const userInitials = computed(() => {
 const userImage = computed(() => {
   if (!currentUser.value) return null
   const img = currentUser.value.user_img
-  if (img && img.trim()) {
-    if (img.startsWith('/uploads/')) return img
-    return img.startsWith('/') ? img : `/${img}`
-  }
-  return null
+  if (!img || !img.trim()) return null
+  const s = img.trim()
+  // Абсолютный URL (OAuth: Яндекс, VK) — используем как есть, без ведущего /
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  if (s.startsWith('/uploads/') || s.startsWith('/')) return s
+  return `/${s}`
 })
 
 onMounted(() => {

@@ -2428,8 +2428,9 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
   const toUrl = (v: string | null | undefined) => {
     if (!v || !String(v).trim()) return ''
     const s = String(v).trim()
-    if (s.startsWith('/uploads/')) return s
-    return s.startsWith('/') ? s : `/${s}`
+    if (s.startsWith('http://') || s.startsWith('https://')) return s
+    if (s.startsWith('/uploads/') || s.startsWith('/')) return s
+    return `/${s}`
   }
   const fullName = [user.name, user.middle_name, user.last_name].filter(Boolean).join(' ') || user.email || ''
 
@@ -2872,8 +2873,9 @@ function profileContactsAvatarUrl(): string {
   else if (prefs.avatarOrLogo === 'company') img = user.company_logo
   if (!img || !String(img).trim()) return ''
   const s = String(img).trim()
-  if (s.startsWith('/uploads/')) return s
-  return s.startsWith('/') ? s : `/${s}`
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  if (s.startsWith('/uploads/') || s.startsWith('/')) return s
+  return `/${s}`
 }
 
 /** Итоговый URL аватара/лого в блоке контактов: из слайда или из профиля */

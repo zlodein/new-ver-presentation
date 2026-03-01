@@ -243,10 +243,12 @@ const previewImageUrl = computed(() => {
   if (!choice || choice === 'none') return null
   if (choice === 'personal' && u()?.user_img) {
     const img = String(u()!.user_img!).trim()
+    if (img.startsWith('http://') || img.startsWith('https://')) return img
     return img.startsWith('/') ? img : `/${img}`
   }
   if (choice === 'company' && u()?.company_logo) {
     const img = String(u()!.company_logo!).trim()
+    if (img.startsWith('http://') || img.startsWith('https://')) return img
     return img.startsWith('/') ? img : `/${img}`
   }
   return null
