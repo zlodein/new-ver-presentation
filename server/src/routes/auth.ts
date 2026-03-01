@@ -69,7 +69,7 @@ export async function authRoutes(app: FastifyInstance) {
     const cfg = oauthConfig[provider]
     if (!cfg.clientId) {
       req.log.warn({ provider }, 'OAuth: не заданы client_id')
-      return reply.status(502).redirect(`${FRONTEND_URL}/signin?error=oauth_not_configured`)
+      return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_not_configured`, 302)
     }
     const redirectUri = `${SITE_URL}/api/auth/oauth/callback/${provider}`
     const params = new URLSearchParams({
