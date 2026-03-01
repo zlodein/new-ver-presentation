@@ -237,6 +237,24 @@
                           class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                         />
                       </div>
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Vk</label>
+                        <input
+                          v-model="formData.messengers.vk"
+                          type="url"
+                          placeholder="https://vk.com/..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Max</label>
+                        <input
+                          v-model="formData.messengers.max"
+                          type="url"
+                          placeholder="https://..."
+                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -246,7 +264,15 @@
                       <h5 class="mb-4 text-base font-medium text-gray-800 dark:text-white/90">
                         Смена пароля
                       </h5>
-                      <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                      <button
+                        v-if="!wantToChangePassword"
+                        type="button"
+                        @click="wantToChangePassword = true"
+                        class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]"
+                      >
+                        Хочу сменить пароль
+                      </button>
+                      <div v-else class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                         <div class="col-span-2 lg:col-span-1">
                           <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                             Текущий пароль
@@ -311,7 +337,7 @@
                 type="button"
                 class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
               >
-                Close
+                Закрыть
               </button>
               <button
                 type="submit"
@@ -341,6 +367,8 @@ const loading = ref(false)
 const error = ref('')
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
+/** Пользователь нажал «Хочу сменить пароль» — показываем поля пароля (чтобы браузер не предлагал сохранить пароль при простом сохранении профиля) */
+const wantToChangePassword = ref(false)
 
 const formData = ref({
   name: '',
@@ -356,6 +384,8 @@ const formData = ref({
     instagram: '',
     twitter: '',
     x: '',
+    vk: '',
+    max: '',
   },
 })
 
@@ -369,6 +399,7 @@ const canChangePassword = computed(() => {
 
 // Заполнить форму данными пользователя при открытии модального окна
 watch(isProfileInfoModal, (isOpen) => {
+  if (!isOpen) wantToChangePassword.value = false
   if (isOpen && currentUser.value) {
     const phone = currentUser.value.personal_phone || ''
     const u = currentUser.value
@@ -386,6 +417,8 @@ watch(isProfileInfoModal, (isOpen) => {
         instagram: currentUser.value.messengers?.instagram || '',
         twitter: currentUser.value.messengers?.twitter || '',
         x: currentUser.value.messengers?.x || '',
+        vk: currentUser.value.messengers?.vk || '',
+        max: currentUser.value.messengers?.max || '',
       },
     }
     error.value = ''

@@ -5,11 +5,14 @@
       @click="toggleDropdown"
     >
       <span
-        :class="{ hidden: !notifying, flex: notifying }"
-        class="absolute right-0 top-0.5 z-1 h-2 w-2 rounded-full bg-orange-400"
+        :class="[
+          { hidden: !notifying, flex: notifying },
+          'absolute right-0 top-0.5 z-1 flex h-2 w-2 rounded-full',
+          indicatorBadgeClass
+        ]"
       >
         <span
-          class="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 -z-1 animate-ping"
+          :class="['absolute inline-flex w-full h-full rounded-full opacity-75 -z-1 animate-ping', indicatorBadgeClass]"
         ></span>
       </span>
       <svg
@@ -111,7 +114,7 @@
               </div>
               <span
                 v-if="!notification.read"
-                class="absolute top-0 right-0 z-10 h-2.5 w-2.5 rounded-full bg-orange-400 border-[1.5px] border-white dark:border-gray-900"
+                :class="['absolute top-0 right-0 z-10 h-2.5 w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900', notificationIndicatorClass(notification.type, notification)]"
               ></span>
             </span>
 
@@ -156,13 +159,68 @@ const unreadCount = computed(() => {
 
 const notifying = computed(() => unreadCount.value > 0)
 
+const PANEL_CLEARED_IDS_KEY = 'notification_panel_cleared_ids'
+
+/** По типу, isExpired (календарь по времени) и тексту: истекло → red, добавлено/успех → green, истекает/скоро → orange */
+function getNotificationLevel(notification) {
+  const type = notification?.type ?? ''
+  if (type === 'error') return 'error'
+  if (type === 'success') return 'success'
+  if (type === 'warning') return 'warning'
+  if (type === 'calendar' && notification?.isExpired === true) return 'error'
+  const title = (notification?.title ?? '').toLowerCase()
+  const message = (notification?.message ?? '').toLowerCase()
+  const text = title + ' ' + message
+  if (/истек|истекл|истекш/i.test(text)) return 'error'
+  if (/добавлено|новое событие|опубликование|успешно/i.test(text)) return 'success'
+  if (/истекает|скоро/i.test(text)) return 'warning'
+  return 'warning'
+}
+
+function notificationIndicatorClass(type, notification) {
+  const level = getNotificationLevel(notification ?? { type })
+  if (level === 'error') return 'bg-error-500'
+  if (level === 'success') return 'bg-success-500'
+  return 'bg-orange-400'
+}
+
+/** Класс точки на колокольчике: при смешанных типах — синий; иначе по приоритету (error > warning > success) */
+const indicatorBadgeClass = computed(() => {
+  const unread = notifications.value.filter((n) => !n.read)
+  const levels = unread.map((n) => getNotificationLevel(n))
+  const unique = new Set(levels)
+  if (unique.size > 1) return 'bg-primary-500'
+  if (levels.some((l) => l === 'error')) return 'bg-error-500'
+  if (levels.some((l) => l === 'warning')) return 'bg-orange-400'
+  if (levels.some((l) => l === 'success')) return 'bg-success-500'
+  return 'bg-orange-400'
+})
+
 const displayedNotifications = computed(() => notifications.value.slice(0, 5))
+
+function getPanelClearedIds() {
+  try {
+    const raw = localStorage.getItem(PANEL_CLEARED_IDS_KEY)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function setPanelClearedIds(ids) {
+  try {
+    const arr = ids.size ? Array.from(ids) : []
+    if (arr.length) localStorage.setItem(PANEL_CLEARED_IDS_KEY, JSON.stringify(arr))
+    else localStorage.removeItem(PANEL_CLEARED_IDS_KEY)
+  } catch (_) {}
+}
 
 const loadNotifications = async () => {
   try {
     loading.value = true
     const data = await api.get('/api/notifications')
-    notifications.value = data
+    const cleared = getPanelClearedIds()
+    notifications.value = Array.isArray(data) ? data.filter((n) => !cleared.has(String(n.id))) : []
   } catch (err) {
     console.error('Ошибка загрузки уведомлений:', err)
   } finally {
@@ -217,18 +275,12 @@ function navigateFromNotification(notification) {
   }
 }
 
-const handleClearAll = async () => {
-  if (!confirm('Очистить все уведомления из виджета? На странице уведомлений можно удалять по одному или все сразу.')) {
-    return
-  }
-
-  try {
-    await api.get('/api/notifications/actions/clear-all')
-    notifications.value = []
-  } catch (err) {
-    console.error('Ошибка очистки уведомлений:', err)
-    alert('Ошибка очистки уведомлений')
-  }
+/** Очистить панель: скрыть текущие уведомления из виджета до следующей загрузки; на странице /dashboard/notifications они остаются */
+const handleClearAll = () => {
+  const cleared = getPanelClearedIds()
+  notifications.value.forEach((n) => cleared.add(String(n.id)))
+  setPanelClearedIds(cleared)
+  notifications.value = []
 }
 
 const onVisibilityChange = () => {

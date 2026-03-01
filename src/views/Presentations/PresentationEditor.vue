@@ -578,7 +578,7 @@
                           <button
                             type="button"
                             :class="[
-                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md bg-gradient-to-r from-violet-500 to-purple-600 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-white shadow-sm transition-[max-width] duration-200 hover:from-violet-600 hover:to-purple-700 disabled:opacity-70',
+                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
                               generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
                             ]"
                             :disabled="generateTextLoading === slide.id"
@@ -670,7 +670,7 @@
                           <button
                             type="button"
                             :class="[
-                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md bg-gradient-to-r from-violet-500 to-purple-600 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-white shadow-sm transition-[max-width] duration-200 hover:from-violet-600 hover:to-purple-700 disabled:opacity-70',
+                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
                               generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
                             ]"
                             :disabled="generateTextLoading === slide.id"
@@ -2463,9 +2463,16 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
   const email = prefs.nameOrOrg === 'company' && user.work_email ? user.work_email : user.email
   if (email) data.email = String(email).trim()
 
-  if (prefs.showMessengers && user.messengers && typeof user.messengers === 'object') {
+  const messengers = user.messengers && typeof user.messengers === 'object' ? user.messengers : null
+  if (messengers) {
+    const keysToShow = prefs.showMessengerKeys?.length
+      ? (prefs.showMessengerKeys as string[])
+      : prefs.showMessengers
+        ? Object.keys(messengers)
+        : []
     const out: Record<string, string> = {}
-    Object.entries(user.messengers).forEach(([k, v]) => {
+    keysToShow.forEach((k) => {
+      const v = messengers[k]
       if (v && String(v).trim()) out[k] = String(v).trim()
     })
     if (Object.keys(out).length) data.messengers = out
@@ -3353,31 +3360,31 @@ async function exportToPDF() {
     opacity: 0.7;
   }
   
-  /* Увеличиваем размеры элементов управления в редакторе */
+  /* Элементы управления в редакторе (мобильная версия: чуть уменьшенные шрифты) */
   .presentation-slider-wrap.booklet-view input[type="text"],
   .presentation-slider-wrap.booklet-view input[type="email"],
   .presentation-slider-wrap.booklet-view textarea,
   .presentation-slider-wrap.booklet-view select {
-    font-size: 16px; /* Предотвращает зум на iOS */
+    font-size: 15px; /* Чуть меньше для мобильного редактора, 15px ещё не вызывает зум на iOS */
     min-height: 44px; /* Минимальный размер для удобного нажатия */
     padding: 10px 12px;
   }
   
-  /* Улучшаем кнопки в редакторе */
+  /* Кнопки в редакторе */
   .presentation-slider-wrap.booklet-view button {
     min-height: 44px;
     padding: 10px 16px;
-    font-size: 15px;
+    font-size: 14px;
   }
   .presentation-slider-wrap.booklet-view .booklet-btn {
     min-height: auto;
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: 11px;
   }
   .presentation-slider-wrap.booklet-view .booklet-btn--generate {
     min-height: auto;
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: 11px;
   }
   
   /* Улучшаем панель слайдов на мобильных */
@@ -3498,10 +3505,18 @@ async function exportToPDF() {
         overflow-x: hidden;
         box-sizing: border-box;
       }
+      /* Цепочка высоты: без height блоки схлопываются, :not(.presentation-view-fixed) — только в редакторе */
+      .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-page,
+      .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-page__inner,
+      .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-content {
+        min-height: 0;
+        height: 100%;
+        box-sizing: border-box;
+      }
       .presentation-slider-wrap.booklet-view .booklet-page__inner {
         min-height: 0;
         height: 100%;
-        padding: 20px 16px;
+        padding: 20px 16px 70px 16px; /* 70px снизу — под высоту нижней панели, чтобы не перекрывала контент */
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;

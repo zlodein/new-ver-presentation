@@ -100,7 +100,8 @@
                 <div class="ml-4 flex items-center gap-2" @click.stop>
                   <span
                     v-if="!notification.read"
-                    class="h-2 w-2 rounded-full bg-orange-400"
+                    :class="['h-2.5 w-2.5 rounded-full flex-shrink-0', notificationIndicatorClass(notification.type, notification)]"
+                    :title="getNotificationStatusLabel(notification)"
                   ></span>
                   <button
                     @click="handleDelete(notification.id)"
@@ -141,6 +142,38 @@ const router = useRouter()
 const currentPageTitle = ref('Уведомления')
 const notifications = ref([])
 const loading = ref(false)
+
+/** Уровень по типу, isExpired (календарь по времени) и тексту */
+function getNotificationLevel(notification) {
+  const type = notification?.type ?? ''
+  if (type === 'error') return 'error'
+  if (type === 'success') return 'success'
+  if (type === 'warning') return 'warning'
+  if (type === 'calendar' && notification?.isExpired === true) return 'error'
+  const title = (notification?.title ?? '').toLowerCase()
+  const message = (notification?.message ?? '').toLowerCase()
+  const text = title + ' ' + message
+  if (/истек|истекл|истекш/i.test(text)) return 'error'
+  if (/добавлено|новое событие|опубликование|успешно/i.test(text)) return 'success'
+  if (/истекает|скоро/i.test(text)) return 'warning'
+  return 'warning'
+}
+
+function notificationIndicatorClass(type, notification) {
+  const level = getNotificationLevel(notification ?? { type })
+  if (level === 'error') return 'bg-error-500'
+  if (level === 'success') return 'bg-success-500'
+  return 'bg-orange-400'
+}
+
+/** Текст статуса для подсказки при наведении на точку */
+function getNotificationStatusLabel(notification) {
+  const level = getNotificationLevel(notification ?? {})
+  if (level === 'error') return 'Истекло'
+  if (level === 'success') return 'Добавлено'
+  if (level === 'warning') return 'Истекает'
+  return 'Требует внимания'
+}
 
 function navigateFromNotification(notification) {
   const sourceId = notification.sourceId ?? notification.source_id
@@ -202,6 +235,9 @@ const handleClearAll = async () => {
   try {
     await api.get('/api/notifications/actions/clear-all')
     notifications.value = []
+    try {
+      localStorage.removeItem('notification_panel_cleared_ids')
+    } catch (_) {}
   } catch (err) {
     console.error('Ошибка очистки уведомлений:', err)
     alert('Ошибка очистки уведомлений')

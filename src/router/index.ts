@@ -96,6 +96,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/settings',
+      name: 'AccountSettings',
+      component: () => import('../views/Others/AccountSettings.vue'),
+      meta: {
+        title: 'Настройки аккаунта',
+      },
+    },
+    {
       path: '/dashboard/form-elements',
       name: 'Form Elements',
       component: () => import('../views/Forms/FormElements.vue'),

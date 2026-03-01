@@ -24,214 +24,22 @@
             <MessengerIcons :messengers="currentUser?.messengers" />
           </div>
         </div>
-        <button @click="isPresentationPrefsModal = true" class="edit-button">
-          <svg class="fill-current shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15ZM12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z" fill="currentColor"/>
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M10.5 2.5C10.5 1.67157 11.1716 1 12 1C12.8284 1 13.5 1.67157 13.5 2.5V4.5C13.5 5.32843 12.8284 6 12 6C11.1716 6 10.5 5.32843 10.5 4.5V2.5ZM12 8C11.1716 8 10.5 8.67157 10.5 9.5V10.5C10.5 11.3284 11.1716 12 12 12C12.8284 12 13.5 11.3284 13.5 10.5V9.5C13.5 8.67157 12.8284 8 12 8Z" fill="currentColor"/>
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M6 10.5C6 9.67157 6.67157 9 7.5 9H8.5C9.32843 9 10 9.67157 10 10.5C10 11.3284 9.32843 12 8.5 12H7.5C6.67157 12 6 11.3284 6 10.5Z" fill="currentColor"/>
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M14 10.5C14 9.67157 14.6716 9 15.5 9H16.5C17.3284 9 18 9.67157 18 10.5C18 11.3284 17.3284 12 16.5 12H15.5C14.6716 12 14 11.3284 14 10.5Z" fill="currentColor"/>
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M2.5 13.5C2.5 12.6716 3.17157 12 4 12H5C5.82843 12 6.5 12.6716 6.5 13.5C6.5 14.3284 5.82843 15 5 15H4C3.17157 15 2.5 14.3284 2.5 13.5Z" fill="currentColor"/>
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 13.5C17.5 12.6716 18.1716 12 19 12H20C20.8284 12 21.5 12.6716 21.5 13.5C21.5 14.3284 20.8284 15 20 15H19C18.1716 15 17.5 14.3284 17.5 13.5Z" fill="currentColor"/>
-          </svg>
-          Данные для презентаций
-        </button>
       </div>
     </div>
-    <Modal v-if="isPresentationPrefsModal" @close="isPresentationPrefsModal = false">
-      <template #body>
-        <div class="no-scrollbar relative w-full max-w-[560px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-          <button
-            @click="isPresentationPrefsModal = false"
-            class="transition-color absolute right-5 top-5 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-700 dark:bg-white/[0.05] dark:text-gray-400 dark:hover:bg-white/[0.07] dark:hover:text-gray-300"
-            aria-label="Закрыть"
-          >
-            <svg class="fill-current" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M6.04289 16.5418C5.65237 16.9323 5.65237 17.5655 6.04289 17.956C6.43342 18.3465 7.06658 18.3465 7.45711 17.956L11.9987 13.4144L16.5408 17.9565C16.9313 18.347 17.5645 18.347 17.955 17.9565C18.3455 17.566 18.3455 16.9328 17.955 16.5423L13.4129 12.0002L17.955 7.45808C18.3455 7.06756 18.3455 6.43439 17.955 6.04387C17.5645 5.65335 16.9313 5.65335 16.5408 6.04387L11.9987 10.586L7.45711 6.04439C7.06658 5.65386 6.43342 5.65386 6.04289 6.04439C5.65237 6.43491 5.65237 7.06808 6.04289 7.4586L10.5845 12.0002L6.04289 16.5418Z" fill=""/>
-            </svg>
-          </button>
-          <div class="px-2 pr-14">
-            <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">Выводить в презентации</h4>
-            <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Выберите, какие данные из вашего профиля будут автоматически подставляться в блок контакты при создании презентации.
-            </p>
-          </div>
-          <form @submit.prevent="savePresentationPrefs" class="flex flex-col">
-            <div v-if="prefsError" class="mb-4 mx-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ prefsError }}</div>
-            <div class="custom-scrollbar max-h-[60vh] overflow-y-auto space-y-6 p-2">
-              <div class="flex flex-col gap-3">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Фото или логотип</p>
-                <div class="flex flex-col gap-2">
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.avatarOrLogo === 'none' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="none" v-model="prefsForm.avatarOrLogo" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.avatarOrLogo === 'none' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.avatarOrLogo === 'none' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Не выбрано
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.avatarOrLogo === 'personal' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="personal" v-model="prefsForm.avatarOrLogo" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.avatarOrLogo === 'personal' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.avatarOrLogo === 'personal' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Личное фото
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.avatarOrLogo === 'company' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="company" v-model="prefsForm.avatarOrLogo" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.avatarOrLogo === 'company' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.avatarOrLogo === 'company' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Логотип компании
-                  </label>
-                </div>
-              </div>
-              <div class="flex flex-col gap-3">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">ФИО или название организации</p>
-                <div class="flex flex-col gap-2">
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.nameOrOrg === 'none' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="none" v-model="prefsForm.nameOrOrg" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.nameOrOrg === 'none' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.nameOrOrg === 'none' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Не выбрано
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.nameOrOrg === 'personal' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="personal" v-model="prefsForm.nameOrOrg" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.nameOrOrg === 'personal' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.nameOrOrg === 'personal' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Личные данные
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.nameOrOrg === 'company' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="company" v-model="prefsForm.nameOrOrg" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.nameOrOrg === 'company' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.nameOrOrg === 'company' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Название организации
-                  </label>
-                </div>
-              </div>
-              <div class="flex flex-col gap-3">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Данные о себе / должность</p>
-                <div class="flex flex-col gap-2">
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.aboutType === 'none' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="none" v-model="prefsForm.aboutType" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.aboutType === 'none' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.aboutType === 'none' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Не выбрано
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.aboutType === 'about' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="about" v-model="prefsForm.aboutType" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.aboutType === 'about' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.aboutType === 'about' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Данные о себе
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.aboutType === 'position' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="position" v-model="prefsForm.aboutType" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.aboutType === 'position' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.aboutType === 'position' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Должность
-                  </label>
-                </div>
-              </div>
-              <div class="flex flex-col gap-3">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Телефон</p>
-                <div class="flex flex-col gap-2">
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.phoneType === 'none' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="none" v-model="prefsForm.phoneType" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.phoneType === 'none' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.phoneType === 'none' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Не выбрано
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.phoneType === 'personal' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="personal" v-model="prefsForm.phoneType" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.phoneType === 'personal' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.phoneType === 'personal' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Личный номер
-                  </label>
-                  <label class="relative flex items-center gap-3 text-sm font-medium cursor-pointer select-none" :class="prefsForm.phoneType === 'work' ? 'text-gray-700 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'">
-                    <input class="sr-only" type="radio" value="work" v-model="prefsForm.phoneType" />
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.phoneType === 'work' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.phoneType === 'work' ? 'block' : 'hidden'"></span>
-                    </span>
-                    Рабочий номер
-                  </label>
-                </div>
-              </div>
-              <div>
-                <label class="flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
-                  <div class="relative">
-                    <input type="checkbox" v-model="prefsForm.showMessengers" class="sr-only" />
-                    <div class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]" :class="prefsForm.showMessengers ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
-                      <span :class="{ 'opacity-0': !prefsForm.showMessengers }">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </span>
-                    </div>
-                  </div>
-                  Выводить заполненные мессенджеры
-                </label>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button type="button" @click="isPresentationPrefsModal = false" class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto">Отмена</button>
-              <button type="submit" :disabled="prefsLoading" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 sm:w-auto">{{ prefsLoading ? 'Сохранение...' : 'Сохранить' }}</button>
-            </div>
-          </form>
-        </div>
-      </template>
-    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import Modal from './Modal.vue'
+import { computed, onMounted } from 'vue'
 import MessengerIcons from './MessengerIcons.vue'
 import AvatarUpload from './AvatarUpload.vue'
 import { useAuth } from '@/composables/useAuth'
-import { api, ApiError } from '@/api/client'
-import type { PresentationDisplayPreferences } from '@/api/client'
 
 const { currentUser, fetchUser } = useAuth()
-const isPresentationPrefsModal = ref(false)
-const prefsLoading = ref(false)
-const prefsError = ref('')
-
-const prefsForm = ref<PresentationDisplayPreferences & { avatarOrLogo?: string; nameOrOrg?: string; phoneType?: string; aboutType?: string }>({
-  avatarOrLogo: 'none',
-  nameOrOrg: 'none',
-  aboutType: 'none',
-  phoneType: 'none',
-  showMessengers: false,
-})
 
 const handleAvatarUploaded = async () => {
   await fetchUser()
 }
-
-watch(isPresentationPrefsModal, (isOpen) => {
-  if (isOpen && currentUser.value?.presentation_display_preferences) {
-    const p = currentUser.value.presentation_display_preferences
-    const aboutType = p.aboutType ?? (p.showAbout ? 'about' : 'none')
-    prefsForm.value = {
-      avatarOrLogo: p.avatarOrLogo ?? 'none',
-      nameOrOrg: p.nameOrOrg ?? 'none',
-      aboutType,
-      phoneType: p.phoneType ?? 'none',
-      showMessengers: p.showMessengers ?? false,
-    }
-    prefsError.value = ''
-  } else if (isOpen) {
-    prefsForm.value = { avatarOrLogo: 'none', nameOrOrg: 'none', aboutType: 'none', phoneType: 'none', showMessengers: false }
-    prefsError.value = ''
-  }
-})
 
 const fullName = computed(() => {
   if (!currentUser.value) return ''
@@ -264,31 +72,6 @@ const userImage = computed(() => {
   }
   return null
 })
-
-async function savePresentationPrefs() {
-  prefsError.value = ''
-  prefsLoading.value = true
-  try {
-    const payload: PresentationDisplayPreferences = {
-      avatarOrLogo: prefsForm.value.avatarOrLogo === 'none' ? undefined : (prefsForm.value.avatarOrLogo as 'personal' | 'company'),
-      nameOrOrg: prefsForm.value.nameOrOrg === 'none' ? undefined : (prefsForm.value.nameOrOrg as 'personal' | 'company'),
-      aboutType: prefsForm.value.aboutType === 'none' ? undefined : (prefsForm.value.aboutType as 'about' | 'position'),
-      phoneType: prefsForm.value.phoneType === 'none' ? undefined : (prefsForm.value.phoneType as 'personal' | 'work'),
-      showMessengers: prefsForm.value.showMessengers || undefined,
-    }
-    await api.put('/api/auth/profile', { presentation_display_preferences: payload })
-    await fetchUser()
-    isPresentationPrefsModal.value = false
-  } catch (e) {
-    if (e instanceof ApiError) {
-      prefsError.value = e.message || 'Ошибка сохранения'
-    } else {
-      prefsError.value = 'Ошибка соединения с сервером'
-    }
-  } finally {
-    prefsLoading.value = false
-  }
-}
 
 onMounted(() => {
   fetchUser()

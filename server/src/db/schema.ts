@@ -44,8 +44,10 @@ export const presentations = pgTable(
     content: jsonb('content').$type<{ slides: unknown[] }>().notNull().default({ slides: [] }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
+    index('presentations_deleted_at_idx').on(table.deletedAt),
     index('presentations_user_id_idx').on(table.userId),
     index('presentations_updated_at_idx').on(table.updatedAt),
   ]

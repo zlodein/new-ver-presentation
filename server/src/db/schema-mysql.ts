@@ -59,7 +59,9 @@ export const presentations = mysqlTable('presentations', {
   short_id: varchar('short_id', { length: 6 }), // 6 символов A-Z0-9 для тех. поддержки
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  deleted_at: timestamp('deleted_at'), // мягкое удаление; храним месяц, затем можно удалять
 }, (table) => ({
+  deletedAtIdx: index('presentations_deleted_at_idx').on(table.deleted_at),
   userIdx: index('presentations_user_id_idx').on(table.user_id),
   updatedIdx: index('presentations_updated_at_idx').on(table.updated_at),
   publicHashIdx: uniqueIndex('idx_public_hash').on(table.public_hash),

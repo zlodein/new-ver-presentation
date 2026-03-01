@@ -595,6 +595,7 @@ const calendarOptions = reactive({
   eventOverlap: true,
   slotDuration: '00:30:00',
   slotLabelInterval: '00:30:00',
+  slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
   slotMinTime: '00:00:00',
   slotMaxTime: '24:00:00',
   eventMinHeight: 25,

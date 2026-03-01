@@ -479,7 +479,7 @@ export async function adminRoutes(app: FastifyInstance) {
       if (!useMysql) return reply.status(501).send({ error: 'Не поддерживается для файлового хранилища' })
       const uid = Number(targetId)
       if (Number.isNaN(uid)) return reply.status(400).send({ error: 'Неверный id пользователя' })
-      const num = typeof addPresentations === 'number' && addPresentations > 0 ? Math.min(100, addPresentations) : 0
+      const num = typeof addPresentations === 'number' && addPresentations > 0 ? addPresentations : 0
       if (num === 0) return reply.status(400).send({ error: 'Укажите addPresentations (положительное число)' })
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
       const user = await mysqlDb.query.users.findFirst({
@@ -490,7 +490,7 @@ export async function adminRoutes(app: FastifyInstance) {
       if (user.role_id === 2) return reply.status(400).send({ error: 'Нельзя изменить тариф администратору' })
       if (user.tariff !== 'expert') return reply.status(400).send({ error: 'Добавление презентаций доступно только для тарифа «Эксперт»' })
       const current = Math.max(0, user.expert_plan_quantity ?? 0)
-      const newQty = Math.min(100, current + num)
+      const newQty = current + num
       await mysqlDb.update(mysqlSchema.users).set({ expert_plan_quantity: newQty, updated_at: new Date() }).where(eq(mysqlSchema.users.id, uid))
       return reply.send({ success: true, expert_plan_quantity: newQty })
     } catch (err) {
