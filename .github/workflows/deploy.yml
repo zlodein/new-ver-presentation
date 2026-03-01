@@ -124,63 +124,88 @@ jobs:
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}/backups
-              if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
-                tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
-                  -C ${{ env.DEPLOY_DIR }} frontend server 2>/dev/null || true
-              fi
-            "
-          else
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              mkdir -p ${{ env.DEPLOY_DIR }}/backups
-              if [ -d ${{ env.DEPLOY_DIR }}/server ] || [ -f ${{ env.DEPLOY_DIR }}/index.html ]; then
-                tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
-                  -C ${{ env.DEPLOY_DIR }} server index.html assets 2>/dev/null || true
-              fi
-            "
-          fi
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ConnectTimeout=60"
+          for i in 1 2 3; do
+            if [ -n "$SSH_PASSWORD" ]; then
+              sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/backups && (cd ${{ env.DEPLOY_DIR }} && tar -czf backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz server index.html assets 2>/dev/null || tar -czf backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz frontend server 2>/dev/null || true)" && break
+            else
+              ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/backups && (cd ${{ env.DEPLOY_DIR }} && tar -czf backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz server index.html assets 2>/dev/null || tar -czf backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz frontend server 2>/dev/null || true)" && break
+            fi
+            [ $i -lt 3 ] && echo "Backup attempt $i failed, retrying..." && sleep 10
+          done
 
       - name: Deploy frontend
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          # Создаем архив для передачи
           cd deploy/frontend
           tar -czf /tmp/frontend.tar.gz .
           cd ../..
-          # Опции SSH: сохранять соединение, не обрываться по таймауту
-          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o ConnectTimeout=30"
-          if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}"
-            sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/frontend.tar.gz
-            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }} && tar -xzf /tmp/frontend.tar.gz && rm /tmp/frontend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true"
-          else
-            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}"
-            scp -i ~/.ssh/id_rsa $SSH_OPTS /tmp/frontend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/frontend.tar.gz
-            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }} && tar -xzf /tmp/frontend.tar.gz && rm /tmp/frontend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true"
-          fi
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ServerAliveCountMax=10 -o ConnectTimeout=60 -o TCPKeepAlive=yes"
+          do_ssh() {
+            for i in 1 2 3; do
+              if [ -n "$SSH_PASSWORD" ]; then
+                sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$1" && return 0
+              else
+                ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$1" && return 0
+              fi
+              echo "SSH attempt $i failed, retrying in 10s..."
+              sleep 10
+            done
+            return 1
+          }
+          do_scp() {
+            for i in 1 2 3; do
+              if [ -n "$SSH_PASSWORD" ]; then
+                sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
+              else
+                scp -i ~/.ssh/id_rsa $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
+              fi
+              echo "SCP attempt $i failed, retrying in 10s..."
+              sleep 10
+            done
+            return 1
+          }
+          do_ssh "mkdir -p ${{ env.DEPLOY_DIR }}"
+          do_scp /tmp/frontend.tar.gz /tmp/frontend.tar.gz
+          do_ssh "cd ${{ env.DEPLOY_DIR }} && tar -xzf /tmp/frontend.tar.gz && rm -f /tmp/frontend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} . 2>/dev/null || true"
           rm -f /tmp/frontend.tar.gz
 
       - name: Deploy backend
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          # Создаем архив для передачи
           cd deploy/backend
           tar -czf /tmp/backend.tar.gz .
           cd ../..
-          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o ConnectTimeout=30"
-          if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/backend.tar.gz
-            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf /tmp/backend.tar.gz && rm /tmp/backend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true"
-          else
-            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server"
-            scp -i ~/.ssh/id_rsa $SSH_OPTS /tmp/backend.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:/tmp/backend.tar.gz
-            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf /tmp/backend.tar.gz && rm /tmp/backend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true"
-          fi
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ServerAliveCountMax=10 -o ConnectTimeout=60 -o TCPKeepAlive=yes"
+          do_ssh() {
+            for i in 1 2 3; do
+              if [ -n "$SSH_PASSWORD" ]; then
+                sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$1" && return 0
+              else
+                ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$1" && return 0
+              fi
+              echo "SSH attempt $i failed, retrying in 10s..."
+              sleep 10
+            done
+            return 1
+          }
+          do_scp() {
+            for i in 1 2 3; do
+              if [ -n "$SSH_PASSWORD" ]; then
+                sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
+              else
+                scp -i ~/.ssh/id_rsa $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
+              fi
+              echo "SCP attempt $i failed, retrying in 10s..."
+              sleep 10
+            done
+            return 1
+          }
+          do_ssh "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+          do_scp /tmp/backend.tar.gz /tmp/backend.tar.gz
+          do_ssh "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf /tmp/backend.tar.gz && rm -f /tmp/backend.tar.gz && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} . 2>/dev/null || true"
           rm -f /tmp/backend.tar.gz
 
       # Подмешиваем SMTP в server/.env на сервере из GitHub Secrets (файл .env в git не попадает).
@@ -233,52 +258,33 @@ jobs:
             [ -n "$OAUTH_VK_CLIENT_ID" ] && echo "OAUTH_VK_CLIENT_ID=$OAUTH_VK_CLIENT_ID"
             [ -n "$OAUTH_VK_CLIENT_SECRET" ] && echo "OAUTH_VK_CLIENT_SECRET=$OAUTH_VK_CLIENT_SECRET"
           } > /tmp/oauth_env.txt
-          SCP_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ConnectTimeout=60"
           TARGET="${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/"
-          if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" scp $SCP_OPTS /tmp/oauth_env.txt "$TARGET"
-            sshpass -p "$SSH_PASSWORD" ssh $SCP_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && touch .env && grep -vE '^(OAUTH_YANDEX_CLIENT_ID|OAUTH_YANDEX_CLIENT_SECRET|OAUTH_VK_CLIENT_ID|OAUTH_VK_CLIENT_SECRET|SITE_URL|FRONTEND_URL)=' .env > .env.clean 2>/dev/null || true; mv .env.clean .env 2>/dev/null || true; cat oauth_env.txt >> .env; rm -f oauth_env.txt"
-          else
-            scp -i ~/.ssh/id_rsa $SCP_OPTS /tmp/oauth_env.txt "$TARGET"
-            ssh -i ~/.ssh/id_rsa $SCP_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && touch .env && grep -vE '^(OAUTH_YANDEX_CLIENT_ID|OAUTH_YANDEX_CLIENT_SECRET|OAUTH_VK_CLIENT_ID|OAUTH_VK_CLIENT_SECRET|SITE_URL|FRONTEND_URL)=' .env > .env.clean 2>/dev/null || true; mv .env.clean .env 2>/dev/null || true; cat oauth_env.txt >> .env; rm -f oauth_env.txt"
-          fi
+          for i in 1 2 3; do
+            if [ -n "$SSH_PASSWORD" ]; then
+              sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS /tmp/oauth_env.txt "$TARGET" && \
+              sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && touch .env && grep -vE '^(OAUTH_YANDEX_CLIENT_ID|OAUTH_YANDEX_CLIENT_SECRET|OAUTH_VK_CLIENT_ID|OAUTH_VK_CLIENT_SECRET|SITE_URL|FRONTEND_URL)=' .env > .env.clean 2>/dev/null || true; mv .env.clean .env 2>/dev/null || true; cat oauth_env.txt >> .env; rm -f oauth_env.txt" && break
+            else
+              scp -i ~/.ssh/id_rsa $SSH_OPTS /tmp/oauth_env.txt "$TARGET" && \
+              ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && touch .env && grep -vE '^(OAUTH_YANDEX_CLIENT_ID|OAUTH_YANDEX_CLIENT_SECRET|OAUTH_VK_CLIENT_ID|OAUTH_VK_CLIENT_SECRET|SITE_URL|FRONTEND_URL)=' .env > .env.clean 2>/dev/null || true; mv .env.clean .env 2>/dev/null || true; cat oauth_env.txt >> .env; rm -f oauth_env.txt" && break
+            fi
+            [ $i -lt 3 ] && echo "OAuth env attempt $i failed, retrying..." && sleep 10
+          done
           rm -f /tmp/oauth_env.txt
 
       - name: Install dependencies and restart
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}/server
-              npm ci --production
-              if [ -f .env ]; then
-                export \$(cat .env | grep -v '^#' | xargs)
-                npm run deploy:migrate || echo 'Migrations skipped'
-              fi
-              if systemctl is-active --quiet presentation-backend; then
-                systemctl restart presentation-backend
-              fi
-              if systemctl is-active --quiet nginx; then
-                systemctl reload nginx
-              fi
-            "
-          else
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
-              cd ${{ env.DEPLOY_DIR }}/server
-              npm ci --production
-              if [ -f .env ]; then
-                export \$(cat .env | grep -v '^#' | xargs)
-                npm run deploy:migrate || echo 'Migrations skipped'
-              fi
-              if systemctl is-active --quiet presentation-backend; then
-                systemctl restart presentation-backend
-              fi
-              if systemctl is-active --quiet nginx; then
-                systemctl reload nginx
-              fi
-            "
-          fi
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ServerAliveCountMax=30 -o ConnectTimeout=120"
+          for i in 1 2 3; do
+            if [ -n "$SSH_PASSWORD" ]; then
+              sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && npm ci --production && ([ -f .env ] && export \$(grep -v '^#' .env | xargs) && npm run deploy:migrate) || echo 'Migrations skipped' && (systemctl is-active --quiet presentation-backend && systemctl restart presentation-backend || true) && (systemctl is-active --quiet nginx && systemctl reload nginx || true)" && break
+            else
+              ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && npm ci --production && ([ -f .env ] && export \$(grep -v '^#' .env | xargs) && npm run deploy:migrate) || echo 'Migrations skipped' && (systemctl is-active --quiet presentation-backend && systemctl restart presentation-backend || true) && (systemctl is-active --quiet nginx && systemctl reload nginx || true)" && break
+            fi
+            [ $i -lt 3 ] && echo "Install attempt $i failed, retrying in 15s..." && sleep 15
+          done
 
       - name: Cleanup
         if: always()
