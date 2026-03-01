@@ -13,7 +13,6 @@ env:
   SERVER_USER: root
   DEPLOY_DIR: /var/www/e_presentati_usr/data/www/e-presentation.ru
   SITE_USER: e_presentati_usr
-  SSH_OPTS: -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3
 
 jobs:
   build:
@@ -124,17 +123,8 @@ jobs:
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          sleep 3
-          ssh_retry() {
-            for i in 1 2 3 4 5; do
-              if "$@"; then return 0; fi
-              echo "SSH attempt $i failed, retrying in 15s..."
-              sleep 15
-            done
-            return 1
-          }
           if [ -n "$SSH_PASSWORD" ]; then
-            ssh_retry sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/backups
               if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
                 tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
@@ -142,7 +132,7 @@ jobs:
               fi
             "
           else
-            ssh_retry ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/backups
               if [ -d ${{ env.DEPLOY_DIR }}/server ] || [ -f ${{ env.DEPLOY_DIR }}/index.html ]; then
                 tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
@@ -158,26 +148,23 @@ jobs:
           cd deploy/frontend
           tar -czf /tmp/frontend.tar.gz .
           cd ../..
-          ssh_retry() { for i in 1 2 3 4 5; do if "$@"; then return 0; fi; echo "Retry $i/5 in 15s..."; sleep 15; done; return 1; }
           if [ -n "$SSH_PASSWORD" ]; then
-            ssh_retry sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}
               cat > /tmp/frontend.tar.gz
             " < /tmp/frontend.tar.gz
-            sleep 2
-            ssh_retry sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}
               tar -xzf /tmp/frontend.tar.gz
               rm /tmp/frontend.tar.gz
               chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true
             "
           else
-            ssh_retry ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}
               cat > /tmp/frontend.tar.gz
             " < /tmp/frontend.tar.gz
-            sleep 2
-            ssh_retry ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}
               tar -xzf /tmp/frontend.tar.gz
               rm /tmp/frontend.tar.gz
@@ -193,26 +180,23 @@ jobs:
           cd deploy/backend
           tar -czf /tmp/backend.tar.gz .
           cd ../..
-          ssh_retry() { for i in 1 2 3 4 5; do if "$@"; then return 0; fi; echo "Retry $i/5 in 15s..."; sleep 15; done; return 1; }
           if [ -n "$SSH_PASSWORD" ]; then
-            ssh_retry sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/server
               cat > /tmp/backend.tar.gz
             " < /tmp/backend.tar.gz
-            sleep 2
-            ssh_retry sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               tar -xzf /tmp/backend.tar.gz
               rm /tmp/backend.tar.gz
               chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true
             "
           else
-            ssh_retry ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/server
               cat > /tmp/backend.tar.gz
             " < /tmp/backend.tar.gz
-            sleep 2
-            ssh_retry ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               tar -xzf /tmp/backend.tar.gz
               rm /tmp/backend.tar.gz
@@ -244,9 +228,9 @@ jobs:
           SMTP_INSECURE_TLS=1"
           REMOTE_CMD="cd ${{ env.DEPLOY_DIR }}/server && touch .env && (grep -q '^SMTP_HOST=' .env || echo \"$SMTP_BLOCK\" >> .env)"
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
           else
-            ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
           fi
 
       # Подмешиваем OAuth (Яндекс, VK) и SITE_URL/FRONTEND_URL в server/.env из GitHub Secrets.
@@ -274,9 +258,9 @@ jobs:
           OAUTH_VK_CLIENT_SECRET=${OAUTH_VK_CLIENT_SECRET}"
           REMOTE_CMD="cd $DEPLOY_DIR/server && touch .env && (grep -q '^SITE_URL=' .env && grep -q '^OAUTH_YANDEX_CLIENT_ID=' .env) || (echo \"$OAUTH_BLOCK\" >> .env && echo 'OAuth block added to .env')"
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
           else
-            ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
           fi
 
       - name: Install dependencies and restart
@@ -284,7 +268,7 @@ jobs:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               npm ci --production
               if [ -f .env ]; then
@@ -299,7 +283,7 @@ jobs:
               fi
             "
           else
-            ssh -i ~/.ssh/id_rsa ${{ env.SSH_OPTS }} ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               npm ci --production
               if [ -f .env ]; then
