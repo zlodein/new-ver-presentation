@@ -13,7 +13,6 @@ env:
   SERVER_USER: root
   DEPLOY_DIR: /var/www/e_presentati_usr/data/www/e-presentation.ru
   SITE_USER: e_presentati_usr
-  SSH_CTRL: /tmp/ssh-deploy-%r@%h:%p
 
 jobs:
   build:
@@ -119,27 +118,13 @@ jobs:
           if [ -n "$SSH_PASSWORD" ]; then
             sudo apt-get update && sudo apt-get install -y sshpass
           fi
-
-      - name: Establish SSH master connection
-        env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          CTRL="${{ env.SSH_CTRL }}"
-          OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ControlMaster=yes -o ControlPath=$CTRL -o ControlPersist=600"
-          if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS -N -f ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}
-          else
-            ssh -i ~/.ssh/id_rsa $OPTS -N -f ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}
-          fi
-          sleep 2
       
       - name: Create backup
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          OPTS="-o StrictHostKeyChecking=no -o ControlMaster=no -o ControlPath=${{ env.SSH_CTRL }}"
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/backups
               if [ -d ${{ env.DEPLOY_DIR }}/frontend ] || [ -d ${{ env.DEPLOY_DIR }}/server ]; then
                 tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
@@ -147,7 +132,7 @@ jobs:
               fi
             "
           else
-            ssh -i ~/.ssh/id_rsa $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               mkdir -p ${{ env.DEPLOY_DIR }}/backups
               if [ -d ${{ env.DEPLOY_DIR }}/server ] || [ -f ${{ env.DEPLOY_DIR }}/index.html ]; then
                 tar -czf ${{ env.DEPLOY_DIR }}/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz \
@@ -160,21 +145,34 @@ jobs:
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
+          # Создаем архив для передачи
           cd deploy/frontend
           tar -czf /tmp/frontend.tar.gz .
           cd ../..
-          OPTS="-o StrictHostKeyChecking=no -o ControlMaster=no -o ControlPath=${{ env.SSH_CTRL }}"
+          
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }} && cat > /tmp/frontend.tar.gz" < /tmp/frontend.tar.gz
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            # Создаем директорию на сервере и передаем архив через stdin
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}
+              cat > /tmp/frontend.tar.gz
+            " < /tmp/frontend.tar.gz
+            
+            # Распаковываем на сервере
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}
               tar -xzf /tmp/frontend.tar.gz
               rm /tmp/frontend.tar.gz
               chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} || true
             "
           else
-            ssh -i ~/.ssh/id_rsa $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }} && cat > /tmp/frontend.tar.gz" < /tmp/frontend.tar.gz
-            ssh -i ~/.ssh/id_rsa $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            # Создаем директорию на сервере и передаем архив через stdin
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}
+              cat > /tmp/frontend.tar.gz
+            " < /tmp/frontend.tar.gz
+            
+            # Распаковываем на сервере
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}
               tar -xzf /tmp/frontend.tar.gz
               rm /tmp/frontend.tar.gz
@@ -187,21 +185,34 @@ jobs:
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
+          # Создаем архив для передачи
           cd deploy/backend
           tar -czf /tmp/backend.tar.gz .
           cd ../..
-          OPTS="-o StrictHostKeyChecking=no -o ControlMaster=no -o ControlPath=${{ env.SSH_CTRL }}"
+          
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server && cat > /tmp/backend.tar.gz" < /tmp/backend.tar.gz
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            # Создаем директорию на сервере и передаем архив через stdin
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/server
+              cat > /tmp/backend.tar.gz
+            " < /tmp/backend.tar.gz
+            
+            # Распаковываем на сервере
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               tar -xzf /tmp/backend.tar.gz
               rm /tmp/backend.tar.gz
               chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server || true
             "
           else
-            ssh -i ~/.ssh/id_rsa $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "mkdir -p ${{ env.DEPLOY_DIR }}/server && cat > /tmp/backend.tar.gz" < /tmp/backend.tar.gz
-            ssh -i ~/.ssh/id_rsa $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            # Создаем директорию на сервере и передаем архив через stdin
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+              mkdir -p ${{ env.DEPLOY_DIR }}/server
+              cat > /tmp/backend.tar.gz
+            " < /tmp/backend.tar.gz
+            
+            # Распаковываем на сервере
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               tar -xzf /tmp/backend.tar.gz
               rm /tmp/backend.tar.gz
@@ -231,12 +242,11 @@ jobs:
           SMTP_USER=${SMTP_USER}
           SMTP_PASS=${SMTP_PASS}
           SMTP_INSECURE_TLS=1"
-          REMOTE_CMD="cd ${{ env.DEPLOY_DIR }}/server && touch .env && (grep -q '^SMTP_HOST=' .env || echo \"$SMTP_BLOCK\" >> .env)"
-          OPTS="-o StrictHostKeyChecking=no -o ControlMaster=no -o ControlPath=${{ env.SSH_CTRL }}"
+          REMOTE_CMD="cd ${{ env.DEPLOY_DIR }}/server && touch .env && (grep -q '^SMTP_HOST=' .env || cat >> .env)"
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+            echo "$SMTP_BLOCK" | sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
           else
-            ssh -i ~/.ssh/id_rsa $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+            echo "$SMTP_BLOCK" | ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
           fi
 
       # Подмешиваем OAuth (Яндекс, VK) и SITE_URL/FRONTEND_URL в server/.env из GitHub Secrets.
@@ -263,20 +273,18 @@ jobs:
           OAUTH_VK_CLIENT_ID=${OAUTH_VK_CLIENT_ID}
           OAUTH_VK_CLIENT_SECRET=${OAUTH_VK_CLIENT_SECRET}"
           REMOTE_CMD="cd $DEPLOY_DIR/server && touch .env && (grep -q '^SITE_URL=' .env && grep -q '^OAUTH_YANDEX_CLIENT_ID=' .env) || (echo \"$OAUTH_BLOCK\" >> .env && echo 'OAuth block added to .env')"
-          OPTS="-o StrictHostKeyChecking=no -o ControlMaster=no -o ControlPath=${{ env.SSH_CTRL }}"
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
           else
-            ssh -i ~/.ssh/id_rsa $OPTS $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
           fi
 
       - name: Install dependencies and restart
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          OPTS="-o StrictHostKeyChecking=no -o ControlMaster=no -o ControlPath=${{ env.SSH_CTRL }}"
           if [ -n "$SSH_PASSWORD" ]; then
-            sshpass -p "$SSH_PASSWORD" ssh $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               npm ci --production
               if [ -f .env ]; then
@@ -291,7 +299,7 @@ jobs:
               fi
             "
           else
-            ssh -i ~/.ssh/id_rsa $OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "
               cd ${{ env.DEPLOY_DIR }}/server
               npm ci --production
               if [ -f .env ]; then
@@ -306,11 +314,6 @@ jobs:
               fi
             "
           fi
-
-      - name: Close SSH master
-        if: always()
-        run: |
-          ssh -o ControlPath=${{ env.SSH_CTRL }} -O exit ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} 2>/dev/null || true
 
       - name: Cleanup
         if: always()
