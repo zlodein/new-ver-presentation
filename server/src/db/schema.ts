@@ -17,6 +17,10 @@ export const users = pgTable(
     passwordHash: varchar('password_hash', { length: 255 }).notNull(),
     firstName: varchar('first_name', { length: 120 }),
     lastName: varchar('last_name', { length: 120 }),
+    birthday: varchar('birthday', { length: 20 }), // YYYY-MM-DD
+    phone: varchar('phone', { length: 30 }),
+    userImg: varchar('user_img', { length: 512 }), // URL аватара (Яндекс, VK)
+    gender: varchar('gender', { length: 20 }), // male | female
     tariff: varchar('tariff', { length: 20 }), // null | 'test_drive' | 'expert'
     testDriveUsed: varchar('test_drive_used', { length: 10 }).notNull().default('false'), // 'true' | 'false' для совместимости
     expertPlanQuantity: varchar('expert_plan_quantity', { length: 5 }).default('1'), // лимит презентаций на тарифе Эксперт (1–100), varchar для совместимости
