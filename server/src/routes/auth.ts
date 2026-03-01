@@ -45,7 +45,7 @@ const oauthConfig = {
     authUrl: 'https://oauth.yandex.ru/authorize',
     tokenUrl: 'https://oauth.yandex.ru/token',
     userInfoUrl: 'https://login.yandex.ru/info',
-    scope: 'login:email login:info login:avatar login:birthday login:default_phone',
+    scope: 'login:email login:info login:avatar',
   },
   vk: {
     clientId: process.env.OAUTH_VK_CLIENT_ID,
@@ -106,10 +106,6 @@ export async function authRoutes(app: FastifyInstance) {
     let email: string
     let name: string | null = null
     let lastName: string | null = null
-    let birthday: string | null = null
-    let phone: string | null = null
-    let userImg: string | null = null
-    let gender: string | null = null
 
     try {
       const tokenRes = await fetch(cfg.tokenUrl, {
@@ -147,21 +143,12 @@ export async function authRoutes(app: FastifyInstance) {
       if (provider === 'yandex') {
         const emails = userData.emails as string[] | undefined
         email = (userData.default_email as string) || (emails?.[0]) || ''
-        name = (userData.first_name as string) ?? null
-        lastName = (userData.last_name as string) ?? null
-        if (!name && (userData.real_name as string)) {
-          const parts = (userData.real_name as string).trim().split(/\s+/)
+        const firstName = userData.real_name as string
+        if (firstName) {
+          const parts = firstName.trim().split(/\s+/)
           name = parts[0] ?? null
-          lastName = lastName ?? (parts.length > 1 ? parts.slice(1).join(' ') : null)
+          lastName = parts.length > 1 ? parts.slice(1).join(' ') : null
         }
-        birthday = (userData.birthday as string) || null
-        const dp = userData.default_phone as { number?: string } | undefined
-        phone = dp?.number ?? null
-        const avatarId = userData.default_avatar_id as string | undefined
-        if (avatarId && !(userData.is_avatar_empty as boolean)) {
-          userImg = `https://avatars.yandex.net/get-yapic/${avatarId}/islands-200`
-        }
-        gender = (userData.sex as string) || null
       } else {
         email = (userData.email as string) || (userData.phone as string) || ''
         if (!email && (userData.user_id as string)) {
@@ -169,13 +156,6 @@ export async function authRoutes(app: FastifyInstance) {
         }
         name = (userData.first_name as string) ?? null
         lastName = (userData.last_name as string) ?? null
-        birthday = (userData.bdate as string) || null
-        phone = (userData.phone as string) ?? null
-        userImg = (userData.picture as string) ?? null
-        const sex = userData.sex as number | string | undefined
-        if (sex !== undefined && sex !== null) {
-          gender = String(sex) === '1' ? 'male' : String(sex) === '2' ? 'female' : null
-        }
       }
 
       if (!email) {
@@ -214,10 +194,6 @@ export async function authRoutes(app: FastifyInstance) {
           password: passwordHash,
           name: name || '',
           last_name: lastName,
-          user_img: userImg,
-          personal_phone: phone,
-          birthday,
-          gender,
         }).$returningId()
         const insertedArr = inserted as { id: number }[] | { id: number }
         const newId = Array.isArray(insertedArr) ? insertedArr[0]?.id : insertedArr?.id
@@ -241,10 +217,6 @@ export async function authRoutes(app: FastifyInstance) {
           passwordHash,
           firstName: name,
           lastName: lastName,
-          birthday,
-          phone,
-          userImg,
-          gender,
         }).returning({ id: pgSchema.users.id })
         if (!inserted) {
           return reply.redirect(`${FRONTEND_URL}/signin?error=create_user_failed`, 302)
@@ -469,7 +441,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
         const expertColumns = { expert_plan_quantity: true, expert_presentations_used: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
@@ -512,8 +484,6 @@ export async function authRoutes(app: FastifyInstance) {
           middle_name: user.middle_name,
           user_img: user.user_img,
           personal_phone: user.personal_phone,
-          birthday: user.birthday,
-          gender: user.gender,
           position: user.position,
           messengers: messengersData,
           presentation_display_preferences: prefsData ?? undefined,
@@ -535,7 +505,7 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
         where: eq(pgSchema.users.id, payload.sub),
-        columns: { id: true, email: true, firstName: true, lastName: true, birthday: true, phone: true, userImg: true, gender: true, createdAt: true, tariff: true, testDriveUsed: true, expertPlanQuantity: true, expertPresentationsUsed: true },
+        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true, tariff: true, testDriveUsed: true, expertPlanQuantity: true, expertPresentationsUsed: true },
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
       const { testDriveUsed: tdu, expertPlanQuantity: eqty, expertPresentationsUsed: eused, ...rest } = user
