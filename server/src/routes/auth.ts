@@ -51,7 +51,7 @@ const oauthConfig = {
     clientId: process.env.OAUTH_VK_CLIENT_ID,
     clientSecret: process.env.OAUTH_VK_CLIENT_SECRET,
     authUrl: 'https://id.vk.ru/authorize',
-    tokenUrl: 'https://id.vk.ru/oauth2/token',
+    tokenUrl: 'https://id.vk.ru/oauth2/auth',
     userInfoUrl: 'https://id.vk.ru/oauth2/user_info',
     scope: 'vkid.personal_info email',
   },
@@ -168,10 +168,16 @@ export async function authRoutes(app: FastifyInstance) {
       })
       if (!tokenRes.ok) {
         const errText = await tokenRes.text()
-        req.log.warn({ provider, status: tokenRes.status, body: errText }, 'OAuth token exchange failed')
+        req.log.warn({ provider, status: tokenRes.status, body: errText, tokenUrl: cfg.tokenUrl }, 'OAuth token exchange failed')
         return reply.redirect(`${FRONTEND_URL}/signin?error=token_exchange_failed`, 302)
       }
-      const tokenData = (await tokenRes.json()) as { access_token?: string }
+      let tokenData: { access_token?: string }
+      try {
+        tokenData = (await tokenRes.json()) as { access_token?: string }
+      } catch {
+        req.log.warn({ provider }, 'OAuth token response is not JSON')
+        return reply.redirect(`${FRONTEND_URL}/signin?error=token_exchange_failed`, 302)
+      }
       const rawToken = tokenData.access_token
       if (!rawToken) {
         return reply.redirect(`${FRONTEND_URL}/signin?error=no_access_token`, 302)
