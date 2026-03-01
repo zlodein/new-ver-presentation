@@ -208,9 +208,9 @@ export async function authRoutes(app: FastifyInstance) {
         req.log.warn({ provider, status: tokenRes.status, body: errText, tokenUrl: cfg.tokenUrl }, 'OAuth token exchange failed')
         return reply.redirect(`${FRONTEND_URL}/signin?error=token_exchange_failed`, 302)
       }
-      let tokenData: { access_token?: string }
+      let tokenData: { access_token?: string; user_id?: string | number }
       try {
-        tokenData = (await tokenRes.json()) as { access_token?: string }
+        tokenData = (await tokenRes.json()) as { access_token?: string; user_id?: string | number }
       } catch {
         req.log.warn({ provider }, 'OAuth token response is not JSON')
         return reply.redirect(`${FRONTEND_URL}/signin?error=token_exchange_failed`, 302)
@@ -221,6 +221,8 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.redirect(`${FRONTEND_URL}/signin?error=no_access_token`, 302)
       }
       accessToken = rawToken
+      // VK ID возвращает user_id в ответе токена — используем как запас для placeholder-email, если user_info не вернёт почту
+      const tokenUserId = provider === 'vk' && tokenData.user_id != null ? String(tokenData.user_id) : null
 
       const userRes = await fetch(cfg.userInfoUrl, {
         headers: { Authorization: provider === 'yandex' ? `Oauth ${accessToken}` : `Bearer ${accessToken}` },
@@ -253,12 +255,16 @@ export async function authRoutes(app: FastifyInstance) {
           gender = String(sex).toLowerCase() === 'male' || sex === 1 ? 'male' : String(sex).toLowerCase() === 'female' || sex === 2 ? 'female' : null
         }
       } else {
-        // VK ID возвращает данные во вложенном объекте user: { user_id, first_name, last_name, email, phone, avatar, ... }
+        // VK ID: данные могут быть в user: { user_id, ... } или на верхнем уровне; user_id бывает number
         const vkUser = (userData.user as Record<string, unknown>) ?? userData
         email = (vkUser.email as string) || (vkUser.phone as string) || ''
-        const vkUserId = (vkUser.user_id as string) || (userData.user_id as string)
+        const uid = vkUser.user_id ?? userData.user_id
+        const vkUserId = uid != null ? String(uid) : tokenUserId
         if (!email && vkUserId) {
           email = `vk_${vkUserId}@vk.placeholder`
+        }
+        if (!email) {
+          req.log.warn({ provider: 'vk', userDataKeys: Object.keys(userData), hasUser: !!userData.user, tokenUserId }, 'VK OAuth: нет email и user_id для placeholder')
         }
         name = (vkUser.first_name as string) ?? null
         lastName = (vkUser.last_name as string) ?? null
