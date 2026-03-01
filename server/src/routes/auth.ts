@@ -279,6 +279,21 @@ export async function authRoutes(app: FastifyInstance) {
         }
         name = (vkUser.first_name as string) ?? null
         lastName = (vkUser.last_name as string) ?? null
+        // Имя/фамилия из user_info могут быть в транслите; пробуем API ВКонтакте users.get с lang=0 (русский) для кириллицы
+        if (vkUserId && accessToken) {
+          try {
+            const vkApiUrl = `https://api.vk.com/method/users.get?user_ids=${encodeURIComponent(vkUserId)}&fields=first_name,last_name&lang=0&access_token=${encodeURIComponent(accessToken)}&v=5.199`
+            const vkApiRes = await fetch(vkApiUrl)
+            if (vkApiRes.ok) {
+              const vkApiData = (await vkApiRes.json()) as { response?: { first_name?: string; last_name?: string }[] }
+              const first = vkApiData.response?.[0]
+              if (first?.first_name) name = first.first_name
+              if (first?.last_name) lastName = first.last_name
+            }
+          } catch (e) {
+            req.log.debug({ err: e }, 'VK users.get fallback skip')
+          }
+        }
         birthday = (vkUser.birthday as string) || (userData.bdate as string) || null
         personalPhone = (vkUser.phone as string) ?? null
         userImg = (vkUser.avatar as string) ?? (vkUser.picture as string) ?? (userData.picture as string) ?? null

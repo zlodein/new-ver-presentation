@@ -118,19 +118,13 @@ const localPreview = ref<string | null>(null)
 let cropperInstance: any = null
 
 const preview = computed(() => {
-  // Приоритет локальному превью (после загрузки)
   if (localPreview.value) return localPreview.value
-  
-  // Иначе использовать пропс
-  if (props.currentImage) {
-    // Если путь начинается с /uploads, использовать как есть
-    if (props.currentImage.startsWith('/uploads/')) {
-      return props.currentImage
-    }
-    // Иначе добавить префикс
-    return props.currentImage.startsWith('/') ? props.currentImage : `/${props.currentImage}`
-  }
-  return null
+  if (!props.currentImage || !props.currentImage.trim()) return null
+  const s = props.currentImage.trim()
+  // Абсолютный URL (OAuth: Яндекс, VK) — из базы как есть, без изменений
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  if (s.startsWith('/uploads/') || s.startsWith('/')) return s
+  return `/${s}`
 })
 
 const initials = computed(() => props.initials || 'П')
