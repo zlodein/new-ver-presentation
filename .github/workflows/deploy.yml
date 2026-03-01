@@ -250,6 +250,39 @@ jobs:
             echo "$SMTP_BLOCK" | ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
           fi
 
+      # Подмешиваем OAuth (Яндекс, VK) в server/.env из GitHub Secrets.
+      # Добавьте в Settings → Secrets and variables → Actions: OAUTH_YANDEX_CLIENT_ID, OAUTH_YANDEX_CLIENT_SECRET, OAUTH_VK_CLIENT_ID, OAUTH_VK_CLIENT_SECRET.
+      - name: Ensure server .env has OAuth (from GitHub Secrets)
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          OAUTH_YANDEX_CLIENT_ID: ${{ secrets.OAUTH_YANDEX_CLIENT_ID }}
+          OAUTH_YANDEX_CLIENT_SECRET: ${{ secrets.OAUTH_YANDEX_CLIENT_SECRET }}
+          OAUTH_VK_CLIENT_ID: ${{ secrets.OAUTH_VK_CLIENT_ID }}
+          OAUTH_VK_CLIENT_SECRET: ${{ secrets.OAUTH_VK_CLIENT_SECRET }}
+        run: |
+          if [ -z "$OAUTH_YANDEX_CLIENT_ID" ] && [ -z "$OAUTH_VK_CLIENT_ID" ]; then
+            echo "OAuth secrets not set, skipping. Add OAUTH_YANDEX_CLIENT_ID, OAUTH_YANDEX_CLIENT_SECRET (and OAUTH_VK_*) to GitHub Secrets."
+            exit 0
+          fi
+          {
+            echo "SITE_URL=https://e-presentation.ru"
+            echo "FRONTEND_URL=https://e-presentation.ru"
+            [ -n "$OAUTH_YANDEX_CLIENT_ID" ] && echo "OAUTH_YANDEX_CLIENT_ID=$OAUTH_YANDEX_CLIENT_ID"
+            [ -n "$OAUTH_YANDEX_CLIENT_SECRET" ] && echo "OAUTH_YANDEX_CLIENT_SECRET=$OAUTH_YANDEX_CLIENT_SECRET"
+            [ -n "$OAUTH_VK_CLIENT_ID" ] && echo "OAUTH_VK_CLIENT_ID=$OAUTH_VK_CLIENT_ID"
+            [ -n "$OAUTH_VK_CLIENT_SECRET" ] && echo "OAUTH_VK_CLIENT_SECRET=$OAUTH_VK_CLIENT_SECRET"
+          } > /tmp/oauth_env.txt
+          SCP_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts"
+          TARGET="${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.DEPLOY_DIR }}/server/"
+          if [ -n "$SSH_PASSWORD" ]; then
+            sshpass -p "$SSH_PASSWORD" scp $SCP_OPTS /tmp/oauth_env.txt "$TARGET"
+            sshpass -p "$SSH_PASSWORD" ssh $SCP_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && touch .env && grep -vE '^(OAUTH_YANDEX_CLIENT_ID|OAUTH_YANDEX_CLIENT_SECRET|OAUTH_VK_CLIENT_ID|OAUTH_VK_CLIENT_SECRET|SITE_URL|FRONTEND_URL)=' .env > .env.clean 2>/dev/null || true; mv .env.clean .env 2>/dev/null || true; cat oauth_env.txt >> .env; rm -f oauth_env.txt"
+          else
+            scp -i ~/.ssh/id_rsa $SCP_OPTS /tmp/oauth_env.txt "$TARGET"
+            ssh -i ~/.ssh/id_rsa $SCP_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && touch .env && grep -vE '^(OAUTH_YANDEX_CLIENT_ID|OAUTH_YANDEX_CLIENT_SECRET|OAUTH_VK_CLIENT_ID|OAUTH_VK_CLIENT_SECRET|SITE_URL|FRONTEND_URL)=' .env > .env.clean 2>/dev/null || true; mv .env.clean .env 2>/dev/null || true; cat oauth_env.txt >> .env; rm -f oauth_env.txt"
+          fi
+          rm -f /tmp/oauth_env.txt
+
       - name: Install dependencies and restart
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
