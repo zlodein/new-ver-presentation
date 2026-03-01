@@ -224,9 +224,19 @@ export async function authRoutes(app: FastifyInstance) {
       // VK ID возвращает user_id в ответе токена — используем как запас для placeholder-email, если user_info не вернёт почту
       const tokenUserId = provider === 'vk' && tokenData.user_id != null ? String(tokenData.user_id) : null
 
-      const userRes = await fetch(cfg.userInfoUrl, {
-        headers: { Authorization: provider === 'yandex' ? `Oauth ${accessToken}` : `Bearer ${accessToken}` },
-      })
+      const userRes =
+        provider === 'vk'
+          ? await fetch(cfg.userInfoUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                client_id: cfg.clientId,
+                access_token: accessToken,
+              }).toString(),
+            })
+          : await fetch(cfg.userInfoUrl, {
+              headers: { Authorization: `Oauth ${accessToken}` },
+            })
       if (!userRes.ok) {
         req.log.warn({ provider, status: userRes.status }, 'OAuth user info failed')
         return reply.redirect(`${FRONTEND_URL}/signin?error=user_info_failed`, 302)
