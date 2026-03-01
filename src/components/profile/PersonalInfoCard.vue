@@ -33,6 +33,11 @@
             </div>
 
             <div>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Дата рождения</p>
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ displayBirthday || '—' }}</p>
+            </div>
+
+            <div>
               <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">О себе</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.position || '—' }}</p>
             </div>
@@ -432,6 +437,29 @@ const displayPersonalPhone = computed(() => {
   if (!raw || !String(raw).trim()) return ''
   return formatPhone(String(raw))
 })
+
+/** Форматирует дату рождения в ДД.ММ.ГГГГ (принимает YYYY-MM-DD, DD.MM.YYYY, D.M.YYYY и др.) */
+function formatBirthdayDisplay(value: string | null | undefined): string {
+  if (!value || !String(value).trim()) return ''
+  const s = String(value).trim()
+  // YYYY-MM-DD
+  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch
+    return `${d.padStart(2, '0')}.${m.padStart(2, '0')}.${y}`
+  }
+  // DD.MM.YYYY или D.M.YYYY
+  const dmyMatch = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch
+    return `${d.padStart(2, '0')}.${m.padStart(2, '0')}.${y}`
+  }
+  // DD.MM (без года) — оставляем как есть
+  if (/^\d{1,2}\.\d{1,2}$/.test(s)) return s
+  return s
+}
+
+const displayBirthday = computed(() => formatBirthdayDisplay(currentUser.value?.birthday))
 
 const handlePhoneInput = (event: Event) => {
   const input = event.target as HTMLInputElement

@@ -33,6 +33,19 @@ function isUnknownColumnError(err: unknown): boolean {
   return /Unknown column|doesn't exist/i.test(msg)
 }
 
+/** Форматирует телефон в +7 (000) 000-00-00 для сохранения в personal_phone */
+function formatPhoneForDb(raw: string | null | undefined): string | null {
+  if (!raw || !String(raw).trim()) return null
+  const digits = String(raw).replace(/\D/g, '')
+  if (digits.length < 10) return null
+  let normalized = digits
+  if (normalized.startsWith('8')) normalized = '7' + normalized.slice(1)
+  else if (!normalized.startsWith('7')) normalized = '7' + normalized
+  normalized = normalized.slice(0, 11)
+  if (normalized.length < 11) return null
+  return `+7 (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7, 9)}-${normalized.slice(9, 11)}`
+}
+
 /** Базовый URL бэкенда (для redirect_uri OAuth). Например https://api.example.com или http://localhost:3001 */
 const SITE_URL = (process.env.SITE_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3001}`).replace(/\/$/, '')
 /** URL фронтенда (редирект после успешного OAuth). Например https://example.com или http://localhost:5173 */
@@ -53,7 +66,7 @@ const oauthConfig = {
     authUrl: 'https://id.vk.ru/authorize',
     tokenUrl: 'https://id.vk.ru/oauth2/auth',
     userInfoUrl: 'https://id.vk.ru/oauth2/user_info',
-    scope: 'vkid.personal_info email',
+    scope: 'vkid.personal_info email phone',
   },
 } as const
 
@@ -255,7 +268,7 @@ export async function authRoutes(app: FastifyInstance) {
         }
         birthday = (userData.birthday as string) || null
         const dp = userData.default_phone as { number?: string } | undefined
-        personalPhone = dp?.number ?? null
+        personalPhone = formatPhoneForDb(dp?.number ?? null) ?? null
         const avatarId = userData.default_avatar_id as string | undefined
         const isAvatarEmpty = userData.is_avatar_empty as boolean | undefined
         if (avatarId && !isAvatarEmpty) {
@@ -295,7 +308,7 @@ export async function authRoutes(app: FastifyInstance) {
           }
         }
         birthday = (vkUser.birthday as string) || (userData.bdate as string) || null
-        personalPhone = (vkUser.phone as string) ?? null
+        personalPhone = formatPhoneForDb((vkUser.phone as string) ?? null) ?? null
         userImg = (vkUser.avatar as string) ?? (vkUser.picture as string) ?? (userData.picture as string) ?? null
         const sex = vkUser.sex ?? userData.sex
         if (sex !== undefined && sex !== null) {

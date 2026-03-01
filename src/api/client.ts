@@ -115,6 +115,8 @@ export interface AuthUser {
   middle_name?: string | null
   user_img?: string | null
   personal_phone?: string | null
+  birthday?: string | null
+  gender?: string | null
   position?: string | null
   messengers?: Record<string, string> | null
   createdAt?: string
