@@ -120,6 +120,7 @@ jobs:
           fi
       
       - name: Create backup
+        continue-on-error: true
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
