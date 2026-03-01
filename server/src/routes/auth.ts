@@ -67,6 +67,7 @@ function generatePkce(): { codeVerifier: string; codeChallenge: string } {
 }
 
 const PKCE_COOKIE_NAME = 'oauth_pkce_verifier'
+const VK_STATE_COOKIE_NAME = 'oauth_vk_state'
 const PKCE_COOKIE_MAX_AGE = 600 // 10 минут
 
 export async function authRoutes(app: FastifyInstance) {
@@ -88,12 +89,22 @@ export async function authRoutes(app: FastifyInstance) {
       redirect_uri: redirectUri,
       scope: cfg.scope,
     })
-    // VK ID требует PKCE (code_challenge, code_challenge_method)
+    // VK ID: PKCE + state (обязательны для обмена кода на токен)
     if (provider === 'vk') {
       const { codeVerifier, codeChallenge } = generatePkce()
+      const state = crypto.randomBytes(24).toString('base64url')
       params.set('code_challenge', codeChallenge)
       params.set('code_challenge_method', 'S256')
+      params.set('state', state)
       reply.setCookie(PKCE_COOKIE_NAME, codeVerifier, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: PKCE_COOKIE_MAX_AGE,
+        signed: true,
+      })
+      reply.setCookie(VK_STATE_COOKIE_NAME, state, {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -107,9 +118,9 @@ export async function authRoutes(app: FastifyInstance) {
   })
 
   // ——— OAuth: callback от провайдера, обмен code на токен, создание/поиск пользователя, редирект на фронт с JWT ———
-  app.get<{ Params: { provider: string }; Querystring: { code?: string; error?: string } }>('/api/auth/oauth/callback/:provider', async (req: FastifyRequest<{ Params: { provider: string }; Querystring: { code?: string; error?: string } }>, reply: FastifyReply) => {
+  app.get<{ Params: { provider: string }; Querystring: { code?: string; error?: string; state?: string; device_id?: string } }>('/api/auth/oauth/callback/:provider', async (req: FastifyRequest<{ Params: { provider: string }; Querystring: { code?: string; error?: string; state?: string; device_id?: string } }>, reply: FastifyReply) => {
     const rawProvider = req.params.provider
-    const { code, error: oauthError } = req.query
+    const { code, error: oauthError, state: stateFromVk, device_id: deviceId } = req.query
     if (oauthError) {
       return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_cancelled`, 302)
     }
@@ -121,22 +132,40 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.redirect(`${FRONTEND_URL}/signin?error=missing_code`, 302)
     }
     const cfg = oauthConfig[provider]
-    if (!cfg.clientId || !cfg.clientSecret) {
+    if (!cfg.clientId) {
+      return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_not_configured`, 302)
+    }
+    if (provider === 'yandex' && !cfg.clientSecret) {
       return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_not_configured`, 302)
     }
     const redirectUri = `${SITE_URL}/api/auth/oauth/callback/${provider}`
 
-    // VK ID: извлекаем code_verifier из cookie (PKCE)
+    // VK ID: извлекаем code_verifier и state из cookie; проверяем state; нужен device_id из query
     let codeVerifier: string | undefined
+    let vkState: string | undefined
     if (provider === 'vk') {
       const raw = req.cookies?.[PKCE_COOKIE_NAME]
       if (raw) {
         const unsigned = reply.unsignCookie(raw)
         codeVerifier = unsigned?.valid ? unsigned.value : undefined
       }
+      const rawState = req.cookies?.[VK_STATE_COOKIE_NAME]
+      if (rawState) {
+        const unsigned = reply.unsignCookie(rawState)
+        vkState = unsigned?.valid ? unsigned.value : undefined
+      }
       reply.clearCookie(PKCE_COOKIE_NAME, { path: '/' })
+      reply.clearCookie(VK_STATE_COOKIE_NAME, { path: '/' })
       if (!codeVerifier) {
         req.log.warn({ provider }, 'OAuth: отсутствует code_verifier (PKCE cookie)')
+        return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_failed`, 302)
+      }
+      if (!stateFromVk || stateFromVk !== vkState) {
+        req.log.warn({ provider }, 'OAuth: state не совпадает или отсутствует')
+        return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_failed`, 302)
+      }
+      if (!deviceId) {
+        req.log.warn({ provider }, 'OAuth: отсутствует device_id в callback')
         return reply.redirect(`${FRONTEND_URL}/signin?error=oauth_failed`, 302)
       }
     }
@@ -151,16 +180,24 @@ export async function authRoutes(app: FastifyInstance) {
     let gender: string | null = null
 
     try {
-      const tokenBody: Record<string, string> = {
-        grant_type: 'authorization_code',
-        code,
-        client_id: cfg.clientId,
-        client_secret: cfg.clientSecret,
-        redirect_uri: redirectUri,
-      }
-      if (provider === 'vk' && codeVerifier) {
-        tokenBody.code_verifier = codeVerifier
-      }
+      const tokenBody: Record<string, string> =
+        provider === 'vk'
+          ? {
+              grant_type: 'authorization_code',
+              code,
+              client_id: cfg.clientId,
+              redirect_uri: redirectUri,
+              code_verifier: codeVerifier!,
+              device_id: deviceId!,
+              state: stateFromVk!,
+            }
+          : {
+              grant_type: 'authorization_code',
+              code,
+              client_id: cfg.clientId,
+              client_secret: cfg.clientSecret!,
+              redirect_uri: redirectUri,
+            }
       const tokenRes = await fetch(cfg.tokenUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -180,6 +217,7 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const rawToken = tokenData.access_token
       if (!rawToken) {
+        req.log.warn({ provider, tokenDataKeys: Object.keys(tokenData), tokenDataError: (tokenData as { error?: string; error_description?: string }).error }, 'OAuth: в ответе нет access_token')
         return reply.redirect(`${FRONTEND_URL}/signin?error=no_access_token`, 302)
       }
       accessToken = rawToken
