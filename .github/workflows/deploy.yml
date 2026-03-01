@@ -242,11 +242,41 @@ jobs:
           SMTP_USER=${SMTP_USER}
           SMTP_PASS=${SMTP_PASS}
           SMTP_INSECURE_TLS=1"
-          REMOTE_CMD="cd ${{ env.DEPLOY_DIR }}/server && touch .env && (grep -q '^SMTP_HOST=' .env || cat >> .env)"
+          REMOTE_CMD="cd ${{ env.DEPLOY_DIR }}/server && touch .env && (grep -q '^SMTP_HOST=' .env || echo \"$SMTP_BLOCK\" >> .env)"
           if [ -n "$SSH_PASSWORD" ]; then
-            echo "$SMTP_BLOCK" | sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
           else
-            echo "$SMTP_BLOCK" | ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+          fi
+
+      # Подмешиваем OAuth (Яндекс, VK) и SITE_URL/FRONTEND_URL в server/.env из GitHub Secrets.
+      # Добавить в Settings → Secrets: OAUTH_YANDEX_CLIENT_ID, OAUTH_YANDEX_CLIENT_SECRET, OAUTH_VK_CLIENT_ID, OAUTH_VK_CLIENT_SECRET.
+      - name: Ensure server .env has OAuth and URLs
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          OAUTH_YANDEX_CLIENT_ID: ${{ secrets.OAUTH_YANDEX_CLIENT_ID }}
+          OAUTH_YANDEX_CLIENT_SECRET: ${{ secrets.OAUTH_YANDEX_CLIENT_SECRET }}
+          OAUTH_VK_CLIENT_ID: ${{ secrets.OAUTH_VK_CLIENT_ID }}
+          OAUTH_VK_CLIENT_SECRET: ${{ secrets.OAUTH_VK_CLIENT_SECRET }}
+        run: |
+          DEPLOY_DIR="${{ env.DEPLOY_DIR }}"
+          SERVER_USER="${{ env.SERVER_USER }}"
+          SERVER_IP="${{ env.SERVER_IP }}"
+          SITE_URL="https://e-presentation.ru"
+          FRONTEND_URL="https://e-presentation.ru"
+          OAUTH_BLOCK="
+          # OAuth (Яндекс, VK) — для входа через соцсети
+          SITE_URL=${SITE_URL}
+          FRONTEND_URL=${FRONTEND_URL}
+          OAUTH_YANDEX_CLIENT_ID=${OAUTH_YANDEX_CLIENT_ID}
+          OAUTH_YANDEX_CLIENT_SECRET=${OAUTH_YANDEX_CLIENT_SECRET}
+          OAUTH_VK_CLIENT_ID=${OAUTH_VK_CLIENT_ID}
+          OAUTH_VK_CLIENT_SECRET=${OAUTH_VK_CLIENT_SECRET}"
+          REMOTE_CMD="cd $DEPLOY_DIR/server && touch .env && (grep -q '^SITE_URL=' .env && grep -q '^OAUTH_YANDEX_CLIENT_ID=' .env) || (echo \"$OAUTH_BLOCK\" >> .env && echo 'OAuth block added to .env')"
+          if [ -n "$SSH_PASSWORD" ]; then
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
+          else
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "$REMOTE_CMD"
           fi
 
       - name: Install dependencies and restart
