@@ -26,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export async function buildApp() {
-  const app = Fastify({ logger: true })
+  const app = Fastify({ logger: true, trustProxy: true })
 
   const secret = process.env.JWT_SECRET
   if (!secret || secret.length < 32) {

@@ -21,8 +21,13 @@ export interface SessionItem {
 }
 
 function getClientIp(req: FastifyRequest): string {
-  const ip = req.ip || (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || ''
-  return ip || ''
+  // При работе за nginx/proxy реальный IP клиента приходит в заголовках.
+  // req.ip без trustProxy возвращает IP прокси (127.0.0.1).
+  const forwarded = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+  if (forwarded) return forwarded
+  const realIp = (req.headers['x-real-ip'] as string)?.trim()
+  if (realIp) return realIp
+  return req.ip || ''
 }
 
 function getClientUserAgent(req: FastifyRequest): string {
