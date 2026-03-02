@@ -11,37 +11,14 @@ import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
 import { deletePresentationImagesFolder, deleteSupportTicketFolder, deleteUploadFileByDbPath } from './upload.js'
 import { sendTestMail } from '../services/mailer.js'
+import { getPageSettings, setPageSettings, type HomePageSettings } from './page-settings.js'
 
 function toIsoDate(d: Date | string): string {
   if (d instanceof Date) return d.toISOString().slice(0, 19).replace('T', ' ')
   return String(d).slice(0, 19).replace('T', ' ')
 }
 
-/** Middleware: только для пользователей с role_id === 2 (admin) */
-async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
-  const payload = req.user as { sub: string }
-  const userId = payload.sub
-  if (useFileStore) {
-    const user = fileStore.findUserById(userId)
-    if (!user) return reply.status(403).send({ error: 'Доступ запрещён' })
-    const allUsers = fileStore.load().users
-    const isFirst = allUsers[0]?.id === userId
-    if (!isFirst) return reply.status(403).send({ error: 'Требуются права администратора' })
-  } else if (useMysql) {
-    const uid = Number(userId)
-    if (Number.isNaN(uid)) return reply.status(403).send({ error: 'Доступ запрещён' })
-    const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-    const user = await mysqlDb.query.users.findFirst({
-      where: eq(mysqlSchema.users.id, uid),
-      columns: { role_id: true },
-    })
-    if (!user || (user as { role_id?: number }).role_id !== 2) {
-      return reply.status(403).send({ error: 'Требуются права администратора' })
-    }
-  } else {
-    return reply.status(403).send({ error: 'Требуются права администратора' })
-  }
-}
+import { requireAdmin } from '../middleware/admin.js'
 
 function toUserResponse(r: Record<string, unknown>, presentationsCount = 0) {
   const messengersData = r.messengers ? (typeof r.messengers === 'string' ? JSON.parse(r.messengers as string) : r.messengers) : null
@@ -77,6 +54,45 @@ export async function adminRoutes(app: FastifyInstance) {
     const result = await sendTestMail()
     return reply.send(result)
   })
+
+  /** GET /api/admin/pages/:pageId — настройки страницы (только админ) */
+  app.get<{ Params: { pageId: string } }>(
+    '/api/admin/pages/:pageId',
+    { preHandler: [requireAdmin] },
+    async (req: FastifyRequest<{ Params: { pageId: string } }>, reply: FastifyReply) => {
+      try {
+        const { pageId } = req.params
+        if (!pageId || !/^[a-z0-9_-]+$/.test(pageId)) {
+          return reply.status(400).send({ error: 'Недопустимый pageId' })
+        }
+        const settings = await getPageSettings(pageId)
+        return reply.send({ settings: settings ?? {} })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({ error: 'Ошибка загрузки настроек' })
+      }
+    }
+  )
+
+  /** PUT /api/admin/pages/:pageId — сохранить настройки страницы (только админ) */
+  app.put<{ Params: { pageId: string }; Body: HomePageSettings }>(
+    '/api/admin/pages/:pageId',
+    { preHandler: [requireAdmin] },
+    async (req: FastifyRequest<{ Params: { pageId: string }; Body: HomePageSettings }>, reply: FastifyReply) => {
+      try {
+        const { pageId } = req.params
+        const settings = req.body ?? {}
+        if (!pageId || !/^[a-z0-9_-]+$/.test(pageId)) {
+          return reply.status(400).send({ error: 'Недопустимый pageId' })
+        }
+        await setPageSettings(pageId, settings)
+        return reply.send({ success: true })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({ error: 'Ошибка сохранения настроек' })
+      }
+    }
+  )
 
   app.get('/api/admin/users', { preHandler: [requireAdmin] }, async (req: FastifyRequest, reply: FastifyReply) => {
     try {

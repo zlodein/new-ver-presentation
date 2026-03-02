@@ -253,6 +253,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/admin/pages',
+      name: 'Admin Pages',
+      component: () => import('../views/Admin/AdminPages.vue'),
+      meta: {
+        title: 'Настройка страниц',
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/dashboard/admin/pages/home',
+      name: 'Admin Page Home',
+      component: () => import('../views/Admin/AdminPageHome.vue'),
+      meta: {
+        title: 'Главная страница',
+        requiresAdmin: true,
+      },
+    },
+    {
       path: '/dashboard/line-chart',
       name: 'Line Chart',
       component: () => import('../views/Chart/LineChart/LineChart.vue'),

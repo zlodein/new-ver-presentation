@@ -265,6 +265,7 @@ const adminPanelItem = {
     { name: "Запросы", path: "/dashboard/admin/requests" },
     { name: "Тарифы", path: "/dashboard/admin/tariffs" },
     { name: "Платежи", path: "/dashboard/admin/payments" },
+    { name: "Настройка страниц", path: "/dashboard/admin/pages" },
   ],
 };
 

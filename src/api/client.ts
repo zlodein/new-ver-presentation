@@ -78,7 +78,15 @@ async function request<T>(
     const errMsg = (data && typeof data === 'object' && 'error' in data && typeof (data as { error: unknown }).error === 'string')
       ? (data as { error: string }).error
       : res.statusText
-    if (!res.ok) throw new ApiError(res.status, errMsg, data)
+    if (!res.ok) {
+      if (res.status === 401) {
+        setToken(null)
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search)
+        window.location.href = `/signin?redirect=${redirect}`
+        throw new ApiError(401, 'Сессия истекла. Войдите снова.', data)
+      }
+      throw new ApiError(res.status, errMsg, data)
+    }
     return data as T
   } catch (err) {
     clearTimeoutOnce()

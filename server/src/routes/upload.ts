@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 import { eq } from 'drizzle-orm'
 import { db, useMysql, mysqlSchema } from '../db/index.js'
+import { requireAdmin } from '../middleware/admin.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,6 +18,8 @@ const COMPANY_LOGO_DIR = path.join(__dirname, '../../uploads/company-logo')
 const PRESENTATIONS_IMAGES_DIR = path.join(__dirname, '../../uploads/presentations')
 // Папка для вложений тикетов поддержки
 const SUPPORT_UPLOADS_DIR = path.join(__dirname, '../../uploads/support')
+// Папка для изображений страниц (слайдер главной и т.д.)
+const PAGE_IMAGES_DIR = path.join(__dirname, '../../uploads/page-images')
 
 /** Удаляет папку с загруженными изображениями презентации (по id презентации). */
 export async function deletePresentationImagesFolder(presentationId: string): Promise<void> {
@@ -81,6 +84,14 @@ async function ensurePresentationsImagesDir() {
   }
 }
 
+async function ensurePageImagesDir() {
+  try {
+    await fs.access(PAGE_IMAGES_DIR)
+  } catch {
+    await fs.mkdir(PAGE_IMAGES_DIR, { recursive: true })
+  }
+}
+
 // Инициализировать папки при загрузке модуля (не блокируем запуск сервера)
 ensureAvatarsDir().catch((err) => {
   console.error('[upload] Ошибка создания папки для аватаров:', err)
@@ -90,6 +101,9 @@ ensureCompanyLogoDir().catch((err) => {
 })
 ensurePresentationsImagesDir().catch((err) => {
   console.error('[upload] Ошибка создания папки для изображений презентаций:', err)
+})
+ensurePageImagesDir().catch((err) => {
+  console.error('[upload] Ошибка создания папки для изображений страниц:', err)
 })
 
 export async function uploadRoutes(app: FastifyInstance) {
@@ -302,6 +316,43 @@ export async function uploadRoutes(app: FastifyInstance) {
         req.log.error(err)
         return reply.status(500).send({
           error: err instanceof Error ? err.message : 'Ошибка загрузки файла',
+        })
+      }
+    }
+  )
+
+  // Загрузка изображения для страниц (слайдер главной и т.д.) — только для админов
+  app.post(
+    '/api/upload/page-image',
+    { preHandler: [app.authenticate, requireAdmin] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const data = await req.file()
+        if (!data) {
+          return reply.status(400).send({ error: 'Файл не загружен' })
+        }
+        if (!data.mimetype.startsWith('image/')) {
+          return reply.status(400).send({ error: 'Файл должен быть изображением' })
+        }
+        const maxSize = 5 * 1024 * 1024
+        const buffer = await data.toBuffer()
+        if (buffer.length > maxSize) {
+          return reply.status(400).send({ error: 'Размер файла не должен превышать 5MB' })
+        }
+        await ensurePageImagesDir()
+        const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}.jpg`
+        const filepath = path.join(PAGE_IMAGES_DIR, filename)
+        try {
+          await sharp(buffer).jpeg({ quality: 88 }).toFile(filepath)
+        } catch {
+          await fs.writeFile(filepath, buffer)
+        }
+        const dbPath = `/uploads/page-images/${filename}`
+        return reply.send({ success: true, url: dbPath })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({
+          error: err instanceof Error ? err.message : 'Ошибка загрузки изображения',
         })
       }
     }
