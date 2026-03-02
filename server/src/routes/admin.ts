@@ -12,6 +12,7 @@ import { fileStore } from '../db/file-store.js'
 import { deletePresentationImagesFolder, deleteSupportTicketFolder, deleteUploadFileByDbPath } from './upload.js'
 import { sendTestMail } from '../services/mailer.js'
 import { getPageSettings, setPageSettings, type HomePageSettings } from './page-settings.js'
+import { getSiteSettings, setSiteSettings, type SiteSettings } from './site-settings.js'
 
 function toIsoDate(d: Date | string): string {
   if (d instanceof Date) return d.toISOString().slice(0, 19).replace('T', ' ')
@@ -86,6 +87,33 @@ export async function adminRoutes(app: FastifyInstance) {
           return reply.status(400).send({ error: 'Недопустимый pageId' })
         }
         await setPageSettings(pageId, settings)
+        return reply.send({ success: true })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({ error: 'Ошибка сохранения настроек' })
+      }
+    }
+  )
+
+  /** GET /api/admin/site/settings — настройки сайта (только админ) */
+  app.get('/api/admin/site/settings', { preHandler: [requireAdmin] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const settings = await getSiteSettings()
+      return reply.send(settings)
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({ error: 'Ошибка загрузки настроек' })
+    }
+  })
+
+  /** PUT /api/admin/site/settings — сохранить настройки сайта (только админ) */
+  app.put<{ Body: Partial<SiteSettings> }>(
+    '/api/admin/site/settings',
+    { preHandler: [requireAdmin] },
+    async (req: FastifyRequest<{ Body: Partial<SiteSettings> }>, reply: FastifyReply) => {
+      try {
+        const body = req.body ?? {}
+        await setSiteSettings(body)
         return reply.send({ success: true })
       } catch (err) {
         req.log.error(err)

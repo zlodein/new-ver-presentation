@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken, api } from '@/api/client'
+import { getToken, api, getApiBase, hasApi } from '@/api/client'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -416,6 +416,14 @@ const router = createRouter({
         title: 'Восстановление пароля',
       },
     },
+    {
+      path: '/maintenance',
+      name: 'Maintenance',
+      component: () => import('../views/Maintenance.vue'),
+      meta: {
+        title: 'Сайт в разработке',
+      },
+    },
     // Все неизвестные пути — редирект на страницу 404
     {
       path: '/:pathMatch(.*)*',
@@ -446,8 +454,48 @@ router.onError((err) => {
 export default router
 
 router.beforeEach(async (to, from, next) => {
-  const requiresAuth = to.path.startsWith('/dashboard') || to.path === '/administration'
   const token = getToken()
+
+  // Страница «Сайт в разработке» — всегда разрешена
+  if (to.path === '/maintenance') {
+    const title = to.meta?.title
+    document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
+    next()
+    return
+  }
+
+  // Проверка рубильника «сайт отключён» (только для админа доступен полный сайт)
+  if (hasApi()) try {
+    const base = getApiBase()
+    const statusUrl = base ? `${base}/api/site/status` : '/api/site/status'
+    const res = await fetch(statusUrl)
+    const data = await res.json().catch(() => ({}))
+    const siteDisabled = !!data?.siteDisabled
+
+    if (siteDisabled) {
+      // Вход и регистрация разрешены, чтобы админ мог войти
+      if (to.path === '/signin' || to.path === '/signup') {
+        const title = to.meta?.title
+        document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
+        next()
+        return
+      }
+      if (!token) {
+        next({ path: '/maintenance' })
+        return
+      }
+      const user = await api.get<{ role_id?: number }>('/api/auth/me')
+      if (user.role_id !== 2) {
+        next({ path: '/maintenance' })
+        return
+      }
+      // Админ — пропускаем
+    }
+  } catch {
+    // Ошибка запроса статуса — не блокируем навигацию
+  }
+
+  const requiresAuth = to.path.startsWith('/dashboard') || to.path === '/administration'
   if (requiresAuth && !token) {
     next({ path: '/signin', query: { redirect: to.fullPath } })
     return
