@@ -20,7 +20,7 @@
         :is-expanded="isExpanded"
         @toggle-sidebar="handleToggle"
       />
-      <main class="p-4 md:p-6">
+      <main id="public-content" class="relative p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
         <slot />
       </main>
     </div>
