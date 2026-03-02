@@ -36,13 +36,11 @@
               <div class="mb-2 flex items-center justify-between">
                 <p class="text-xs leading-normal text-gray-500 dark:text-gray-400">Дата рождения</p>
                 <span
-                  class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white cursor-help"
+                  class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 cursor-help"
                   :title="birthdayTooltip"
                 >
-                  <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 max-w-[220px] rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50 text-left leading-relaxed">
+                  <img src="/images/icons/information.svg" alt="" class="h-3 w-3 object-contain" />
+                  <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 w-[250px] rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50 text-left leading-relaxed">
                     {{ birthdayTooltip }}
                   </span>
                 </span>
@@ -187,13 +185,11 @@
                         Дата рождения
                       </label>
                       <span
-                        class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white cursor-help"
+                        class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 cursor-help"
                         :title="birthdayTooltip"
                       >
-                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path fill-rule="evenodd" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd" />
-                        </svg>
-                        <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 max-w-[220px] rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50 text-left leading-relaxed">
+                        <img src="/images/icons/information.svg" alt="" class="h-3 w-3 object-contain" />
+                        <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 w-[250px] rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50 text-left leading-relaxed">
                           {{ birthdayTooltip }}
                         </span>
                       </span>
