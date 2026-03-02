@@ -49,6 +49,23 @@ export const presentations = pgTable(
   ]
 )
 
+// Сессии пользователей (для отслеживания устройств и выхода со всех)
+export const userSessions = pgTable('user_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sessionId: varchar('session_id', { length: 64 }).notNull(),
+  userAgent: text('user_agent'),
+  ip: varchar('ip', { length: 45 }),
+  country: varchar('country', { length: 100 }),
+  city: varchar('city', { length: 120 }),
+  lat: varchar('lat', { length: 20 }),
+  lng: varchar('lng', { length: 20 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('user_sessions_user_id_idx').on(table.userId),
+  index('user_sessions_session_id_idx').on(table.sessionId),
+])
+
 // Токены для восстановления пароля (действуют 1 час)
 export const passwordResetTokens = pgTable('password_reset_tokens', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -150,3 +167,5 @@ export type SupportRequest = typeof supportRequests.$inferSelect
 export type NewSupportRequest = typeof supportRequests.$inferInsert
 export type SupportReply = typeof supportReplies.$inferSelect
 export type NewSupportReply = typeof supportReplies.$inferInsert
+export type UserSession = typeof userSessions.$inferSelect
+export type NewUserSession = typeof userSessions.$inferInsert

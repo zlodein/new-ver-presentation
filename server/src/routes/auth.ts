@@ -13,6 +13,7 @@ import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
 import { sendRegistrationNotification } from '../services/mailer.js'
+import { createSession } from './sessions.js'
 
 const SALT_ROUNDS = 10
 const SERVER_ERR = 'Ошибка сервера. При использовании файлового хранилища проверьте папку server/data.'
@@ -398,7 +399,8 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.redirect(`${FRONTEND_URL}/signin?error=no_database`, 302)
     }
 
-    const token = await reply.jwtSign({ sub: userId, email: normalizedEmail }, { expiresIn: '7d' })
+    const { sessionId } = await createSession(req, userId, reply)
+    const token = await reply.jwtSign({ sub: userId, email: normalizedEmail, sid: sessionId }, { expiresIn: '7d' })
     return reply.redirect(`${FRONTEND_URL}/signin?token=${encodeURIComponent(token)}`, 302)
   })
 
@@ -472,7 +474,8 @@ export async function authRoutes(app: FastifyInstance) {
         }).catch((err) => {
           console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
         })
-        const token = await reply.jwtSign({ sub: String(newId), email: normalizedEmail }, { expiresIn: '7d' })
+        const { sessionId } = await createSession(req, String(newId), reply)
+        const token = await reply.jwtSign({ sub: String(newId), email: normalizedEmail, sid: sessionId }, { expiresIn: '7d' })
         return reply.send({
           user: { 
             id: String(newId), 
@@ -508,7 +511,8 @@ export async function authRoutes(app: FastifyInstance) {
       }).catch((err) => {
         console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
       })
-      const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
+      const { sessionId } = await createSession(req, user.id, reply)
+      const token = await reply.jwtSign({ sub: user.id, email: user.email, sid: sessionId }, { expiresIn: '7d' })
       return reply.send({
         user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
         token,
@@ -558,7 +562,8 @@ export async function authRoutes(app: FastifyInstance) {
         } catch (err) {
           if (!isUnknownColumnError(err)) req.log.warn(err, 'Не удалось обновить last_login_at')
         }
-        const token = await reply.jwtSign({ sub: String(user.id), email: user.email }, { expiresIn: '7d' })
+        const { sessionId } = await createSession(req, String(user.id), reply)
+        const token = await reply.jwtSign({ sub: String(user.id), email: user.email, sid: sessionId }, { expiresIn: '7d' })
         const messengersData = user.messengers ? (typeof user.messengers === 'string' ? JSON.parse(user.messengers) : user.messengers) : null
         
         return reply.send({
@@ -586,7 +591,8 @@ export async function authRoutes(app: FastifyInstance) {
       if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
         return reply.status(401).send({ error: 'Неверный email или пароль' })
       }
-      const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
+      const { sessionId } = await createSession(req, user.id, reply)
+      const token = await reply.jwtSign({ sub: user.id, email: user.email, sid: sessionId }, { expiresIn: '7d' })
       const { passwordHash: _drop, ...safe } = user
       void _drop
       return reply.send({ user: safe, token })

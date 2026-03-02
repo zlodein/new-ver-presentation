@@ -19,7 +19,7 @@
       </div>
 
       <div class="col-span-12 xl:col-span-5">
-        <customer-demographic />
+        <active-sessions />
       </div>
 
       <div class="col-span-12 xl:col-span-7">
@@ -34,7 +34,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import EcommerceMetrics from '@/components/ecommerce/EcommerceMetrics.vue'
 import MonthlyTarget from '@/components/ecommerce/MonthlyTarget.vue'
 import MonthlySale from '@/components/ecommerce/MonthlySale.vue'
-import CustomerDemographic from '@/components/ecommerce/CustomerDemographic.vue'
+import ActiveSessions from '@/components/ecommerce/ActiveSessions.vue'
 import StatisticsChart from '@/components/ecommerce/StatisticsChart.vue'
 import MyPresentations from '@/components/ecommerce/MyPresentations.vue'
 
@@ -45,7 +45,7 @@ export default {
     EcommerceMetrics,
     MonthlyTarget,
     MonthlySale,
-    CustomerDemographic,
+    ActiveSessions,
     StatisticsChart,
     MyPresentations,
   },

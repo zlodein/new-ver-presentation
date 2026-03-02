@@ -69,6 +69,22 @@ export const presentations = mysqlTable('presentations', {
   shortIdIdx: uniqueIndex('idx_presentations_short_id').on(table.short_id),
 }))
 
+export const userSessions = mysqlTable('user_sessions', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  user_id: int('user_id', { unsigned: true }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  session_id: varchar('session_id', { length: 64 }).notNull(),
+  user_agent: varchar('user_agent', { length: 512 }),
+  ip: varchar('ip', { length: 45 }),
+  country: varchar('country', { length: 100 }),
+  city: varchar('city', { length: 120 }),
+  lat: varchar('lat', { length: 20 }),
+  lng: varchar('lng', { length: 20 }),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('user_sessions_user_id_idx').on(table.user_id),
+  sessionIdIdx: index('user_sessions_session_id_idx').on(table.session_id),
+}))
+
 export const passwordResetTokens = mysqlTable('password_reset_tokens', {
   id: int('id', { unsigned: true }).primaryKey().autoincrement(),
   user_id: int('user_id', { unsigned: true }).notNull(),
@@ -177,3 +193,5 @@ export type SupportRequestMySQL = typeof supportRequests.$inferSelect
 export type NewSupportRequestMySQL = typeof supportRequests.$inferInsert
 export type SupportReplyMySQL = typeof supportReplies.$inferSelect
 export type NewSupportReplyMySQL = typeof supportReplies.$inferInsert
+export type UserSessionMySQL = typeof userSessions.$inferSelect
+export type NewUserSessionMySQL = typeof userSessions.$inferInsert
