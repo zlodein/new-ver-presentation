@@ -13,12 +13,18 @@
       </div>
     </div>
     <div
-      class="my-6 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 dark:border-gray-800 dark:bg-gray-900 sm:px-6"
+      class="relative my-6 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 dark:border-gray-800 dark:bg-gray-900 sm:px-6"
     >
       <div
         ref="mapRef"
         class="mapOne map-btn -mx-4 -my-6 h-[212px] w-[252px] 2xsm:w-[307px] xsm:w-[358px] sm:-mx-6 md:w-[668px] lg:w-[634px] xl:w-[393px] 2xl:w-[554px]"
       />
+      <p
+        v-if="!loading && markersFromSessions.length === 0 && sessions.length > 0"
+        class="absolute inset-x-0 bottom-2 text-center text-xs text-gray-500 dark:text-gray-400"
+      >
+        Местоположения недоступны при локальном подключении
+      </p>
     </div>
     <div class="space-y-4">
       <div
@@ -112,9 +118,15 @@ function getLocationText(s: SessionItem): string {
   if (s.city && s.country) parts.push(`${s.city}, ${s.country}`)
   else if (s.country) parts.push(s.country)
   else if (s.city) parts.push(s.city)
-  if (s.ip && !parts.length) parts.push(`IP: ${s.ip}`)
+  if (s.ip && !parts.length) {
+    parts.push(s.ip === '127.0.0.1' || s.ip === '::1' ? 'Локальное подключение' : `IP: ${s.ip}`)
+  }
   if (!parts.length) return 'Местоположение неизвестно'
-  const date = new Date(s.createdAt).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })
+  const date = new Date(s.createdAt).toLocaleString('ru-RU', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  })
   return `${parts.join(', ')} · ${date}`
 }
 
@@ -176,7 +188,7 @@ function initMap() {
     markers:
       markersFromSessions.value.length > 0
         ? markersFromSessions.value.map((m) => ({ name: m.name, coords: m.coords }))
-        : [{ name: 'World', coords: [55.7558, 37.6173] }],
+        : [],
     markerStyle: {
       initial: {
         strokeWidth: 1,
