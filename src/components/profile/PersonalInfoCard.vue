@@ -357,7 +357,9 @@ const showNewPassword = ref(false)
 /** Пользователь нажал «Хочу сменить пароль» — показываем поля пароля (чтобы браузер не предлагал сохранить пароль при простом сохранении профиля) */
 const wantToChangePassword = ref(false)
 
-const messengerItems = [
+type MessengerKey = 'whatsapp' | 'telegram' | 'viber' | 'instagram' | 'twitter' | 'x' | 'vk' | 'max'
+
+const messengerItems: { key: MessengerKey; title: string; icon: string; placeholder: string }[] = [
   { key: 'whatsapp', title: 'WhatsApp', icon: '/images/icons/whatsapp-color.svg', placeholder: 'https://wa.me/...' },
   { key: 'telegram', title: 'Telegram', icon: '/images/icons/telegram-color.svg', placeholder: 'https://t.me/...' },
   { key: 'viber', title: 'Viber', icon: '/images/icons/viber-color.svg', placeholder: 'viber://chat?number=...' },
