@@ -284,13 +284,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import { useAuth } from '@/composables/useAuth'
 import { ApiError, getApiBase } from '@/api/client'
 import { logoUrl } from '@/config/logos'
 
+const route = useRoute()
 const router = useRouter()
 const { register, hasApi, fetchUser, currentUser } = useAuth()
 const name = ref('')
@@ -335,11 +336,15 @@ const handleSubmit = async () => {
       last_name: last_name.value.trim() || undefined,
     })
     await fetchUser()
+    const redirect = (route.query.redirect as string) || '/dashboard'
+    const goToTariffs = redirect === '/tariffs' || redirect.startsWith('/tariffs?')
     const u = currentUser.value as { tariff?: string } | null
-    if (u && (u.tariff == null || u.tariff === '')) {
+    if (goToTariffs) {
+      router.push(redirect)
+    } else if (u && (u.tariff == null || u.tariff === '')) {
       router.push('/dashboard/tariffs')
     } else {
-      router.push('/dashboard')
+      router.push(redirect)
     }
   } catch (e) {
     if (e instanceof ApiError) {

@@ -217,7 +217,7 @@
                   >
                     Нет аккаунта?
                     <router-link
-                      to="/signup"
+                      :to="{ path: '/signup', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }"
                       class="text-brand-500 hover:text-brand-600 dark:text-brand-400"
                       >Регистрация</router-link
                     >
@@ -299,7 +299,8 @@ onMounted(async () => {
       await fetchUser()
       const redirect = (route.query.redirect as string) || '/dashboard'
       const u = currentUser.value as { tariff?: string } | null
-      router.replace(u && (u.tariff == null || u.tariff === '') ? '/dashboard/tariffs' : redirect)
+      const goToTariffs = redirect === '/tariffs' || redirect.startsWith('/tariffs?')
+      router.replace(goToTariffs ? redirect : (u && (u.tariff == null || u.tariff === '') ? '/dashboard/tariffs' : redirect))
     } catch {
       error.value = 'Не удалось войти по ссылке. Попробуйте снова.'
     }
@@ -326,7 +327,10 @@ const handleSubmit = async () => {
     await fetchUser()
     const redirect = (route.query.redirect as string) || '/dashboard'
     const u = currentUser.value as { tariff?: string } | null
-    if (u && (u.tariff == null || u.tariff === '')) {
+    const goToTariffs = redirect === '/tariffs' || redirect.startsWith('/tariffs?')
+    if (goToTariffs) {
+      router.push(redirect)
+    } else if (u && (u.tariff == null || u.tariff === '')) {
       router.push('/dashboard/tariffs')
     } else {
       router.push(redirect)

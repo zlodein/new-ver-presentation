@@ -16,6 +16,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/tariffs',
+      name: 'PublicTariffs',
+      component: () => import('../views/Tariffs/PublicTariffs.vue'),
+      meta: {
+        title: 'Тарифы',
+      },
+    },
+    {
       path: '/dashboard',
       name: 'Ecommerce',
       component: () => import('../views/Ecommerce.vue'),

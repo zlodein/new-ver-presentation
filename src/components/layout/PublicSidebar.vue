@@ -66,7 +66,29 @@
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
+                <router-link
+                  v-if="item.path"
+                  :to="item.path"
+                  :class="[
+                    'menu-item group w-full',
+                    'menu-item-inactive',
+                    !isExpanded && !isHovered
+                      ? 'lg:justify-center'
+                      : 'lg:justify-start',
+                  ]"
+                >
+                  <span class="menu-item-icon-inactive">
+                    <component :is="item.icon" />
+                  </span>
+                  <span
+                    v-if="isExpanded || isHovered || isMobileOpen"
+                    class="menu-item-text"
+                  >
+                    {{ item.name }}
+                  </span>
+                </router-link>
                 <span
+                  v-else
                   :class="[
                     'menu-item group w-full',
                     'menu-item-inactive',
@@ -115,7 +137,7 @@ const menuGroups = computed(() => [
     title: 'Меню',
     items: [
       { name: 'О нас', icon: InfoCircleIcon },
-      { name: 'Тарифы', icon: PieChartIcon },
+      { name: 'Тарифы', icon: PieChartIcon, path: '/tariffs' },
     ],
   },
 ])
