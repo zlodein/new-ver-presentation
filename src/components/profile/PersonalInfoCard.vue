@@ -39,10 +39,10 @@
                   class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white cursor-help"
                   :title="birthdayTooltip"
                 >
-                  <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                  <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd" />
                   </svg>
-                  <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50">
+                  <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 max-w-[220px] rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50 text-left leading-relaxed">
                     {{ birthdayTooltip }}
                   </span>
                 </span>
@@ -190,10 +190,10 @@
                         class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white cursor-help"
                         :title="birthdayTooltip"
                       >
-                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd" />
                         </svg>
-                        <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700">
+                        <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 max-w-[220px] rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50 text-left leading-relaxed">
                           {{ birthdayTooltip }}
                         </span>
                       </span>
@@ -228,18 +228,18 @@
                       <div v-for="item in messengerItems" :key="item.key">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{{ item.title }}</label>
                         <div class="flex items-center gap-[15px]">
-                          <input
-                            v-model="formData.messengers[item.key]"
-                            type="url"
-                            :placeholder="item.placeholder"
-                            class="dark:bg-dark-900 h-11 flex-1 min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                          />
                           <span
                             class="flex shrink-0 items-center justify-center w-12 h-12 rounded-xl border-2 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
                             :title="item.title"
                           >
                             <img :src="item.icon" :alt="item.title" class="w-6 h-6 object-contain pointer-events-none" />
                           </span>
+                          <input
+                            v-model="formData.messengers[item.key]"
+                            type="url"
+                            :placeholder="item.placeholder"
+                            class="dark:bg-dark-900 h-11 flex-1 min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                          />
                         </div>
                       </div>
                     </div>

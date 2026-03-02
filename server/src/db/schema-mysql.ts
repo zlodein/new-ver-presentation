@@ -33,6 +33,7 @@ export const users = mysqlTable('users', {
   work_phone: varchar('work_phone', { length: 20 }),
   work_website: varchar('work_website', { length: 512 }),
   presentation_display_preferences: longtext('presentation_display_preferences'), // JSON: настройки подстановки в блок контактов
+  auth_provider: varchar('auth_provider', { length: 50 }), // yandex | vk | google | ... — при входе через соцсети
   role_id: int('role_id').default(1),
   last_login_at: timestamp('last_login_at'),
   is_active: int('is_active', { unsigned: true }).default(1),

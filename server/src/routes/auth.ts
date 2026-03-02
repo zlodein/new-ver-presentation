@@ -356,6 +356,7 @@ export async function authRoutes(app: FastifyInstance) {
           personal_phone: personalPhone,
           birthday,
           gender,
+          auth_provider: provider,
         }).$returningId()
         const insertedArr = inserted as { id: number }[] | { id: number }
         const newId = Array.isArray(insertedArr) ? insertedArr[0]?.id : insertedArr?.id
@@ -365,6 +366,12 @@ export async function authRoutes(app: FastifyInstance) {
         userId = String(newId)
       } else {
         userId = String(user.id)
+        // Обновить auth_provider при входе через соцсеть (для существующих пользователей)
+        try {
+          await mysqlDb.update(mysqlSchema.users).set({ auth_provider: provider }).where(eq(mysqlSchema.users.id, user.id))
+        } catch (err) {
+          if (!isUnknownColumnError(err)) throw err
+        }
       }
     } else if (db) {
       const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
@@ -603,7 +610,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, presentation_display_preferences: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, presentation_display_preferences: true, auth_provider: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
         const expertColumns = { expert_plan_quantity: true, expert_presentations_used: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
@@ -621,7 +628,7 @@ export async function authRoutes(app: FastifyInstance) {
               }) as Record<string, unknown> | null
             } catch (err2) {
               if (isUnknownColumnError(err2)) {
-                const baseColumnsNoRole = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, created_at: true }
+                const baseColumnsNoRole = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, auth_provider: true, created_at: true }
                 user = await mysqlDb.query.users.findFirst({
                   where: eq(mysqlSchema.users.id, userId),
                   columns: { ...baseColumnsNoRole, ...workColumns },
@@ -651,6 +658,7 @@ export async function authRoutes(app: FastifyInstance) {
           position: user.position,
           messengers: messengersData,
           presentation_display_preferences: prefsData ?? undefined,
+          auth_provider: user.auth_provider ?? undefined,
           company_name: user.workplace ?? undefined,
           work_position: user.work_position ?? undefined,
           company_logo: user.company_logo ?? undefined,
