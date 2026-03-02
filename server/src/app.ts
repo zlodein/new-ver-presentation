@@ -1,4 +1,5 @@
 import Fastify from 'fastify'
+import type { FastifyRequest, FastifyReply } from 'fastify'
 import cors from '@fastify/cors'
 import cookie from '@fastify/cookie'
 import fjwt from '@fastify/jwt'
@@ -68,7 +69,7 @@ export async function buildApp() {
     // Не блокируем запуск сервера, если папка uploads не существует
   }
 
-  app.decorate('authenticate', async function (req: { jwtVerify: () => Promise<unknown>; user?: { sub: string; sid?: string } }, reply: { status: (code: number) => { send: (payload: unknown) => void } }) {
+  app.decorate('authenticate', async function (req: FastifyRequest, reply: FastifyReply) {
     try {
       await req.jwtVerify()
       const payload = req.user as { sub: string; sid?: string } | undefined

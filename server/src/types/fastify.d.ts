@@ -7,6 +7,6 @@ declare module 'fastify' {
     authenticate: (req: FastifyRequest, reply: import('fastify').FastifyReply) => Promise<void>
   }
   interface FastifyRequest {
-    user?: { sub: string; email?: string }
+    user?: { sub: string; email?: string; sid?: string }
   }
 }
