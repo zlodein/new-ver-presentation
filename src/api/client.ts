@@ -64,6 +64,9 @@ async function request<T>(
 
   if (body !== undefined) {
     fetchOptions.body = JSON.stringify(body) as BodyInit
+  } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+    // Fastify возвращает 400 при application/json без тела — отправляем пустой объект
+    fetchOptions.body = '{}'
   }
 
   try {
