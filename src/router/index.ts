@@ -9,8 +9,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Landing',
-      component: () => import('../views/Home/Landing.vue'),
+      name: 'PublicIndex',
+      component: () => import('../views/Home/PublicIndex.vue'),
       meta: {
         title: 'E-Presentation',
       },
