@@ -46,7 +46,7 @@
       </router-link>
     </div>
     <div
-      class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar"
+      class="flex flex-1 flex-col overflow-y-auto duration-300 ease-linear no-scrollbar"
     >
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
@@ -112,6 +112,35 @@
           </div>
         </div>
       </nav>
+      <div
+        class="mt-auto border-t border-gray-200 pt-6 pb-6 dark:border-gray-800"
+      >
+        <div
+          v-if="isExpanded || isHovered || isMobileOpen"
+          class="mb-4 flex flex-col gap-2"
+        >
+          <router-link
+            to="/privacy"
+            class="text-sm text-gray-500 transition-colors hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"
+          >
+            Политика конфиденциальности
+          </router-link>
+          <router-link
+            to="/terms"
+            class="text-sm text-gray-500 transition-colors hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"
+          >
+            Правила и условия
+          </router-link>
+        </div>
+        <p
+          :class="[
+            'text-xs text-gray-500 dark:text-gray-400',
+            !isExpanded && !isHovered ? 'lg:text-center' : '',
+          ]"
+        >
+          © 2026 E-Presentation. Все права защищены.
+        </p>
+      </div>
     </div>
   </aside>
 </template>

@@ -736,7 +736,9 @@ export async function authRoutes(app: FastifyInstance) {
           return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
         }
         const updates: { tariff: string; test_drive_used?: string; expert_plan_quantity?: number; expert_presentations_used?: number } = { tariff }
-        if (tariff === 'expert' && user.tariff === 'test_drive') {
+        if (tariff === 'test_drive') {
+          updates.test_drive_used = 'true'
+        } else if (tariff === 'expert' && user.tariff === 'test_drive') {
           updates.test_drive_used = 'true'
           updates.expert_presentations_used = 0
         }
@@ -760,7 +762,9 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Тест драйв доступен только один раз' })
       }
       const updates: { tariff: string; testDriveUsed?: string; expertPlanQuantity?: string; expertPresentationsUsed?: string } = { tariff }
-      if (tariff === 'expert' && user.tariff === 'test_drive') {
+      if (tariff === 'test_drive') {
+        updates.testDriveUsed = 'true'
+      } else if (tariff === 'expert' && user.tariff === 'test_drive') {
         updates.testDriveUsed = 'true'
         updates.expertPresentationsUsed = '0'
       }

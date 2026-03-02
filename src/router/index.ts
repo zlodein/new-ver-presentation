@@ -24,6 +24,22 @@ const router = createRouter({
       },
     },
     {
+      path: '/privacy',
+      name: 'PrivacyPolicy',
+      component: () => import('../views/Legal/PrivacyPolicy.vue'),
+      meta: {
+        title: 'Политика конфиденциальности',
+      },
+    },
+    {
+      path: '/terms',
+      name: 'TermsConditions',
+      component: () => import('../views/Legal/TermsConditions.vue'),
+      meta: {
+        title: 'Правила и условия',
+      },
+    },
+    {
       path: '/dashboard',
       name: 'Ecommerce',
       component: () => import('../views/Ecommerce.vue'),
