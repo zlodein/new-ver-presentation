@@ -33,7 +33,20 @@
             </div>
 
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Дата рождения</p>
+              <div class="mb-2 flex items-center justify-between">
+                <p class="text-xs leading-normal text-gray-500 dark:text-gray-400">Дата рождения</p>
+                <span
+                  class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white cursor-help"
+                  :title="birthdayTooltip"
+                >
+                  <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                  </svg>
+                  <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700 z-50">
+                    {{ birthdayTooltip }}
+                  </span>
+                </span>
+              </div>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ displayBirthday || '—' }}</p>
             </div>
 
@@ -168,17 +181,41 @@
                     />
                   </div>
 
+                  <div class="col-span-2 lg:col-span-1">
+                    <div class="mb-1.5 flex items-center justify-between">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Дата рождения
+                      </label>
+                      <span
+                        class="group/tooltip relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white cursor-help"
+                        :title="birthdayTooltip"
+                      >
+                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 dark:bg-gray-700">
+                          {{ birthdayTooltip }}
+                        </span>
+                      </span>
+                    </div>
+                    <input
+                      v-model="formData.birthday"
+                      type="date"
+                      class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+
                   <div class="col-span-2">
                     <label
                       class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
                     >
                       О себе
                     </label>
-                    <input
+                    <textarea
                       v-model="formData.position"
-                      type="text"
+                      rows="4"
                       placeholder="Введите описание"
-                      class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                      class="dark:bg-dark-900 h-[100px] w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 resize-y"
                     />
                   </div>
 
@@ -188,77 +225,22 @@
                       Мессенджеры
                     </h5>
                     <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">WhatsApp</label>
-                        <input
-                          v-model="formData.messengers.whatsapp"
-                          type="url"
-                          placeholder="https://wa.me/..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
-                      </div>
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Telegram</label>
-                        <input
-                          v-model="formData.messengers.telegram"
-                          type="url"
-                          placeholder="https://t.me/..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
-                      </div>
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Viber</label>
-                        <input
-                          v-model="formData.messengers.viber"
-                          type="url"
-                          placeholder="viber://chat?number=..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
-                      </div>
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Instagram</label>
-                        <input
-                          v-model="formData.messengers.instagram"
-                          type="url"
-                          placeholder="https://instagram.com/..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
-                      </div>
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Twitter</label>
-                        <input
-                          v-model="formData.messengers.twitter"
-                          type="url"
-                          placeholder="https://twitter.com/..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
-                      </div>
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">X</label>
-                        <input
-                          v-model="formData.messengers.x"
-                          type="url"
-                          placeholder="https://x.com/..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
-                      </div>
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Vk</label>
-                        <input
-                          v-model="formData.messengers.vk"
-                          type="url"
-                          placeholder="https://vk.com/..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
-                      </div>
-                      <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Max</label>
-                        <input
-                          v-model="formData.messengers.max"
-                          type="url"
-                          placeholder="https://..."
-                          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        />
+                      <div v-for="item in messengerItems" :key="item.key">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{{ item.title }}</label>
+                        <div class="flex items-center gap-[15px]">
+                          <input
+                            v-model="formData.messengers[item.key]"
+                            type="url"
+                            :placeholder="item.placeholder"
+                            class="dark:bg-dark-900 h-11 flex-1 min-w-0 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                          />
+                          <span
+                            class="flex shrink-0 items-center justify-center w-12 h-12 rounded-xl border-2 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
+                            :title="item.title"
+                          >
+                            <img :src="item.icon" :alt="item.title" class="w-6 h-6 object-contain pointer-events-none" />
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -375,11 +357,23 @@ const showNewPassword = ref(false)
 /** Пользователь нажал «Хочу сменить пароль» — показываем поля пароля (чтобы браузер не предлагал сохранить пароль при простом сохранении профиля) */
 const wantToChangePassword = ref(false)
 
+const messengerItems = [
+  { key: 'whatsapp', title: 'WhatsApp', icon: '/images/icons/whatsapp-color.svg', placeholder: 'https://wa.me/...' },
+  { key: 'telegram', title: 'Telegram', icon: '/images/icons/telegram-color.svg', placeholder: 'https://t.me/...' },
+  { key: 'viber', title: 'Viber', icon: '/images/icons/viber-color.svg', placeholder: 'viber://chat?number=...' },
+  { key: 'instagram', title: 'Instagram', icon: '/images/icons/instagram-color.svg', placeholder: 'https://instagram.com/...' },
+  { key: 'twitter', title: 'Twitter', icon: '/images/icons/twitter-color.svg', placeholder: 'https://twitter.com/...' },
+  { key: 'x', title: 'X', icon: '/images/icons/x-color.svg', placeholder: 'https://x.com/...' },
+  { key: 'vk', title: 'Vk', icon: '/images/icons/vk-color.svg', placeholder: 'https://vk.com/...' },
+  { key: 'max', title: 'Max', icon: '/images/icons/max-color.svg', placeholder: 'https://...' },
+]
+
 const formData = ref({
   name: '',
   last_name: '',
   personal_phone: '',
   position: '',
+  birthday: '',
   current_password: '',
   new_password: '',
   messengers: {
@@ -393,6 +387,8 @@ const formData = ref({
     max: '',
   },
 })
+
+const birthdayTooltip = 'Укажите дату рождения для получения скидок и персональных предложений в день вашего рождения'
 
 // Показывать блок смены пароля только если пользователь зарегистрирован по email (не через соц. сети)
 const socialProviders = ['google', 'yandex', 'vk', 'facebook', 'apple']
@@ -408,11 +404,14 @@ watch(isProfileInfoModal, (isOpen) => {
   if (isOpen && currentUser.value) {
     const phone = currentUser.value.personal_phone || ''
     const u = currentUser.value
+    const bd = u?.birthday
+    const birthdayValue = bd ? (String(bd).match(/^\d{4}-\d{2}-\d{2}$/) ? bd : formatBirthdayToInput(String(bd))) : ''
     formData.value = {
       name: u?.name || '',
       last_name: u?.last_name || '',
       personal_phone: phone ? formatPhone(phone) : '',
       position: u?.position || '',
+      birthday: birthdayValue,
       current_password: '',
       new_password: '',
       messengers: {
@@ -437,6 +436,20 @@ const displayPersonalPhone = computed(() => {
   if (!raw || !String(raw).trim()) return ''
   return formatPhone(String(raw))
 })
+
+/** Преобразует дату в YYYY-MM-DD для input type="date" */
+function formatBirthdayToInput(value: string): string {
+  if (!value || !String(value).trim()) return ''
+  const s = String(value).trim()
+  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (isoMatch) return s
+  const dmyMatch = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+  return ''
+}
 
 /** Форматирует дату рождения в ДД.ММ.ГГГГ (принимает YYYY-MM-DD, DD.MM.YYYY, D.M.YYYY и др.) */
 function formatBirthdayDisplay(value: string | null | undefined): string {
@@ -485,6 +498,7 @@ const saveProfile = async (e: Event) => {
       last_name: formData.value.last_name.trim() || undefined,
       personal_phone: cleanPhone || undefined,
       position: formData.value.position.trim() || undefined,
+      birthday: formData.value.birthday?.trim() || undefined,
       messengers: Object.keys(messengers).length > 0 ? messengers : undefined,
     })
     // Смена пароля (если заполнены оба поля)

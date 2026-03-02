@@ -882,11 +882,11 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Обновление профиля пользователя
   app.put<{
-    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> }
-  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> } }>, reply: FastifyReply) => {
+    Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; birthday?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> }
+  }>('/api/auth/profile', { preHandler: [app.authenticate] }, async (req: FastifyRequest<{ Body: { name?: string; last_name?: string; email?: string; personal_phone?: string; position?: string; birthday?: string; messengers?: Record<string, string>; company_name?: string; work_position?: string; company_logo?: string; work_email?: string; work_phone?: string; work_website?: string; presentation_display_preferences?: Record<string, unknown> } }>, reply: FastifyReply) => {
     try {
       const payload = req.user as { sub: string; email: string }
-      const { name, last_name, email, personal_phone, position, messengers, company_name, work_position, company_logo, work_email, work_phone, work_website, presentation_display_preferences } = req.body
+      const { name, last_name, email, personal_phone, position, birthday, messengers, company_name, work_position, company_logo, work_email, work_phone, work_website, presentation_display_preferences } = req.body
 
       if (useFileStore) {
         const user = fileStore.findUserById(payload.sub)
@@ -914,6 +914,7 @@ export async function authRoutes(app: FastifyInstance) {
         }
         if (personal_phone !== undefined) updateData.personal_phone = personal_phone.trim() || null
         if (position !== undefined) updateData.position = position.trim() || null
+        if (birthday !== undefined) updateData.birthday = (typeof birthday === 'string' ? birthday.trim() : birthday) || null
         if (messengers !== undefined) updateData.messengers = JSON.stringify(messengers)
         if (company_name !== undefined) updateData.workplace = (typeof company_name === 'string' ? company_name.trim() : company_name) || null
         if (work_position !== undefined) updateData.work_position = (typeof work_position === 'string' ? work_position.trim() : work_position) || null
