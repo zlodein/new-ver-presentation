@@ -1,28 +1,29 @@
 <template>
   <div class="location-map-container relative min-h-[140px] w-full flex-1 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
-    <div
-      v-show="hasValidCoords && mapReady"
-      ref="mapEl"
-      class="location-map h-full w-full min-h-[140px] rounded-lg"
-    />
-    <div
-      v-if="!hasValidCoords"
-      class="flex h-full min-h-[140px] w-full items-center justify-center text-gray-500 text-sm"
-    >
-      Укажите адрес — карта появится здесь
-    </div>
-    <div
-      v-else-if="hasValidCoords && !mapReady && yandexLoadError"
-      class="flex h-full min-h-[140px] w-full items-center justify-center text-amber-600 text-sm px-2"
-    >
-      Не удалось загрузить Яндекс.Карты. Проверьте ключ VITE_YANDEX_MAPS_API_KEY.
-    </div>
-    <div
-      v-else-if="hasValidCoords && !mapReady"
-      class="flex h-full min-h-[140px] w-full items-center justify-center text-gray-500 text-sm"
-    >
-      Загрузка карты…
-    </div>
+    <template v-if="!hasValidCoords">
+      <div class="flex h-full min-h-[140px] w-full items-center justify-center text-gray-500 text-sm">
+        Укажите адрес — карта появится здесь
+      </div>
+    </template>
+    <template v-else>
+      <!-- Контейнер карты всегда в DOM и видим при hasValidCoords, чтобы у карты были размеры при инициализации -->
+      <div ref="mapEl" class="location-map absolute inset-0 h-full w-full min-h-[140px] rounded-lg" />
+      <!-- Оверлей загрузки/ошибки поверх карты пока карта не готова -->
+      <div
+        v-if="!mapReady"
+        class="absolute inset-0 flex min-h-[140px] items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700"
+      >
+        <p
+          v-if="yandexLoadError"
+          class="px-2 text-center text-sm text-amber-600 dark:text-amber-400"
+        >
+          Не удалось загрузить Яндекс.Карты. Проверьте ключ VITE_YANDEX_MAPS_API_KEY.
+        </p>
+        <p v-else class="text-sm text-gray-500 dark:text-gray-400">
+          Загрузка карты…
+        </p>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -169,8 +170,10 @@ watch(
     if (hasValidCoords.value) {
       if (!map && !yandexMap) {
         if (useYandexOnly && !(window as unknown as { ymaps?: unknown }).ymaps) {
-          mapReady.value = false
-          yandexLoadError.value = true
+          loadYandexMaps().then((ok) => {
+            if (!ok) yandexLoadError.value = true
+            nextTick(() => initMap())
+          })
         } else {
           nextTick(() => initMap())
         }
