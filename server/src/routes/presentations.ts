@@ -497,13 +497,17 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (r.status === 'published') {
         return reply.status(400).send({ error: 'Копировать можно только черновики' })
       }
+      const contentCopy: { slides: unknown[] } =
+        r.content && typeof r.content === 'object' && Array.isArray((r.content as { slides?: unknown[] }).slides)
+          ? (r.content as { slides: unknown[] })
+          : { slides: [] }
       const [created] = await pgDb
         .insert(pgSchema.presentations)
         .values({
-          userId,
+          userId: userId!,
           title: (r.title?.trim() || 'Без названия') + ' (копия)',
           coverImage: r.coverImage,
-          content: r.content ?? { slides: [] },
+          content: contentCopy,
           status: 'draft',
         })
         .returning({ id: pgSchema.presentations.id })
