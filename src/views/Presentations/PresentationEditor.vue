@@ -1089,25 +1089,29 @@
                         </div>
                         <div class="booklet-contacts__block flex flex-col gap-1">
                           <textarea
-                            v-model="slide.data.aboutText"
+                            :value="(slide.data as Record<string, unknown>)?.aboutText as string ?? ''"
                             placeholder="О компании"
                             rows="3"
                             class="dark:bg-dark-900 min-h-[80px] w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-500 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            @input="(slide.data as Record<string, string>).aboutText = ($event.target as HTMLTextAreaElement).value"
                           />
                           <input
-                            v-model="slide.data.email"
+                            :value="(slide.data as Record<string, unknown>)?.email as string ?? ''"
+                            @input="(slide.data as Record<string, string>).email = ($event.target as HTMLInputElement).value"
                             type="text"
                             placeholder="Email"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                           <input
-                            v-model="slide.data.address"
+                            :value="(slide.data as Record<string, unknown>)?.address as string ?? ''"
+                            @input="(slide.data as Record<string, string>).address = ($event.target as HTMLInputElement).value"
                             type="text"
                             placeholder="Адрес"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                           <input
-                            v-model="slide.data.websiteUrl"
+                            :value="(slide.data as Record<string, unknown>)?.websiteUrl as string ?? ''"
+                            @input="(slide.data as Record<string, string>).websiteUrl = ($event.target as HTMLInputElement).value"
                             type="url"
                             placeholder="Сайт (выводится в просмотре только если заполнено)"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
