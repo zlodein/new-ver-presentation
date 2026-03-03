@@ -963,7 +963,7 @@
   border-radius: 50%;
 }
 
-/* Поверх изображения: затемнение 11px, белая линия 1px строго по центру этой области; скругление как у блока (inherit от родителя с --booklet-image-radius) */
+/* Поверх изображения: затемнение 7px, белая линия 2px; скругление как у блока (inherit от родителя с --booklet-image-radius) */
 .presentation-slider-wrap.booklet-view .booklet-main__img::after,
 .presentation-slider-wrap.booklet-view .booklet-img__img::after,
 .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img::after,
@@ -979,9 +979,8 @@
   pointer-events: none;
   z-index: 2;
   box-sizing: border-box;
-  border: 11px solid rgba(0, 0, 0, 0.3);
-  /* 1px белая линия по центру 11px: от 5px до 6px */
-  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 5px rgba(0, 0, 0, 0.3);
+  border: 7px solid rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 9px #0000004d;
 }
 .presentation-slider-wrap.booklet-view .booklet-contacts__avatar::after {
   content: '';
@@ -991,8 +990,8 @@
   pointer-events: none;
   z-index: 2;
   box-sizing: border-box;
-  border: 11px solid rgba(0, 0, 0, 0.3);
-  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 5px rgba(0, 0, 0, 0.3);
+  border: 7px solid rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 9px #0000004d;
 }
 
 /* Контакты: эффект наведения на аватарку как на остальные области изображений */

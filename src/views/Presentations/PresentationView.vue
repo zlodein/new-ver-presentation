@@ -638,6 +638,17 @@ function scrollToHash() {
   if (!Number.isNaN(index)) goToBlock(index)
 }
 
+/** Выполнить прокрутку к якорю с задержкой (для готовности DOM/раскладки после загрузки) */
+function scheduleScrollToHash() {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      scrollToHash()
+      requestAnimationFrame(() => scrollToHash())
+    })
+  })
+  setTimeout(scrollToHash, 200)
+}
+
 const galleryOpen = ref(false)
 const galleryIndex = ref(0)
 
@@ -691,7 +702,7 @@ watch(
   () => visibleSlides.value.length,
   (len) => {
     if (len > 0 && window.location.hash.startsWith('#block-')) {
-      nextTick(() => { requestAnimationFrame(scrollToHash) })
+      scheduleScrollToHash()
     }
   }
 )

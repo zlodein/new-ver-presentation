@@ -1882,7 +1882,6 @@ const RADIUS_OPTIONS = [
   { value: '8px', label: '8 px' },
   { value: '12px', label: '12 px' },
   { value: '16px', label: '16 px' },
-  { value: '9999px', label: 'Круглые' },
 ]
 const FONT_SIZE_HEADING_OPTIONS = [
   { value: '28px', label: '28 px' },

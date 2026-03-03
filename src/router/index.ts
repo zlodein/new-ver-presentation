@@ -4,6 +4,8 @@ import { getToken, api, getApiBase, hasApi } from '@/api/client'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, from, savedPosition) {
+    /* Якоря #block-N обрабатывает PresentationView после загрузки слайдов */
+    if (to.hash && to.hash.startsWith('#block-')) return false
     return savedPosition || { left: 0, top: 0 }
   },
   routes: [
