@@ -3434,9 +3434,9 @@ async function exportToPDF() {
 
 /* Оптимизация мобильного редактора */
 @media (max-width: 768px) {
-  /* Увеличиваем размеры кнопок загрузки изображений для удобства на мобильных */
+  /* Увеличиваем размеры кнопок загрузки изображений для удобства на мобильных; по умолчанию полупрозрачны */
   .presentation-slider-wrap.booklet-view .booklet-upload-btn {
-    opacity: 0.3;
+    opacity: 0.5;
     min-height: 60px;
   }
   
@@ -3446,12 +3446,12 @@ async function exportToPDF() {
     background-size: 28px;
   }
   
-  /* Улучшаем видимость кнопок загрузки на мобильных */
+  /* При нажатии на мобильных — полная видимость */
   .presentation-slider-wrap.booklet-view [class*='__img']:active .booklet-upload-btn,
   .presentation-slider-wrap.booklet-view .booklet-main__img:active .booklet-upload-btn,
   .presentation-slider-wrap.booklet-view .booklet-img__img:active .booklet-upload-btn,
   .presentation-slider-wrap.booklet-view .booklet-galery__img:active .booklet-upload-btn {
-    opacity: 0.7;
+    opacity: 1;
   }
   
   /* Элементы управления в редакторе (мобильная версия: чуть уменьшенные шрифты) */
