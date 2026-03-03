@@ -261,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
@@ -608,20 +608,25 @@ function getGalleryGlobalIndex(slideIndex: number, imageIndexInSlide: number): n
 
 const viewScrollContainerRef = ref<HTMLElement | null>(null)
 
-/** Прокрутка к блоку: скроллим контейнер с overflow (presentation-view-fixed), т.к. scrollIntoView его не всегда прокручивает */
+/** Прокрутка к блоку: скроллим контейнер с overflow (presentation-view-fixed) */
 function goToBlock(index: number) {
   const id = `block-${index}`
-  if (window.location.hash !== `#${id}`) window.history.replaceState(null, '', `#${id}`)
-  nextTick(() => {
+  const newHash = `#${id}`
+  if (window.location.hash !== newHash) {
+    window.history.replaceState(null, '', newHash)
+  }
+  const doScroll = () => {
     const el = document.getElementById(id)
     const container = viewScrollContainerRef.value
-    if (el && container) {
+    if (!el) return
+    if (container) {
       const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
       container.scrollTo({ top: Math.max(0, top - 16), behavior: 'smooth' })
-    } else if (el) {
+    } else {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  })
+  }
+  nextTick(() => { requestAnimationFrame(doScroll) })
 }
 
 /** Прокрутка к якорю при загрузке с #block-N или при смене hash */
@@ -673,13 +678,23 @@ onMounted(async () => {
     error.value = 'Презентация не найдена'
   } finally {
     loading.value = false
-    nextTick(() => { nextTick(scrollToHash) })
+    /* Прокрутка к якорю выполнится в watch при появлении visibleSlides */
   }
 })
 
 function onHashChange() {
   scrollToHash()
 }
+
+/* Когда слайды загрузились и в URL есть якорь — прокручиваем (режим просмотра и публичная ссылка) */
+watch(
+  () => visibleSlides.value.length,
+  (len) => {
+    if (len > 0 && window.location.hash.startsWith('#block-')) {
+      nextTick(() => { requestAnimationFrame(scrollToHash) })
+    }
+  }
+)
 
 onMounted(() => {
   window.addEventListener('hashchange', onHashChange)
