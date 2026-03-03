@@ -28,7 +28,6 @@
         </nav>
       </div>
       <div
-        ref="viewScrollContainerRef"
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
       >
@@ -606,47 +605,41 @@ function getGalleryGlobalIndex(slideIndex: number, imageIndexInSlide: number): n
   return (starts[slideIndex] ?? 0) + imageIndexInSlide
 }
 
-const viewScrollContainerRef = ref<HTMLElement | null>(null)
-
-/** Прокрутка к блоку: скроллим контейнер с overflow (presentation-view-fixed) */
+/** Прокрутка к блоку по индексу: всегда через scrollIntoView (скроллится окно, т.к. контейнер без max-height) */
 function goToBlock(index: number) {
-  const id = `block-${index}`
+  const safeIndex = Math.max(0, Math.min(index, visibleSlides.value.length - 1))
+  const id = `block-${safeIndex}`
   const newHash = `#${id}`
   if (window.location.hash !== newHash) {
-    window.history.replaceState(null, '', newHash)
+    window.history.replaceState(null, '', window.location.pathname + window.location.search + newHash)
   }
-  const doScroll = () => {
-    const el = document.getElementById(id)
-    const container = viewScrollContainerRef.value
-    if (!el) return
-    if (container) {
-      const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
-      container.scrollTo({ top: Math.max(0, top - 16), behavior: 'smooth' })
-    } else {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+  const el = document.getElementById(id)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
-  nextTick(() => { requestAnimationFrame(doScroll) })
 }
 
-/** Прокрутка к якорю при загрузке с #block-N или при смене hash */
+/** Прокрутка к якорю по текущему hash (#block-N) */
 function scrollToHash() {
-  const hash = window.location.hash
+  const hash = window.location.hash || route.hash
   if (!hash || !hash.startsWith('#block-')) return
   const id = hash.slice(1)
   const index = parseInt(id.replace('block-', ''), 10)
-  if (!Number.isNaN(index)) goToBlock(index)
+  if (Number.isNaN(index) || index < 0) return
+  if (index >= visibleSlides.value.length) return
+  goToBlock(index)
 }
 
-/** Выполнить прокрутку к якорю с задержкой (для готовности DOM/раскладки после загрузки) */
+/** Запланировать прокрутку к якорю после появления DOM (несколько попыток для надёжности) */
 function scheduleScrollToHash() {
-  nextTick(() => {
-    requestAnimationFrame(() => {
-      scrollToHash()
-      requestAnimationFrame(() => scrollToHash())
-    })
+  scrollToHash()
+  nextTick(scrollToHash)
+  requestAnimationFrame(() => {
+    scrollToHash()
+    requestAnimationFrame(scrollToHash)
   })
-  setTimeout(scrollToHash, 200)
+  setTimeout(scrollToHash, 100)
+  setTimeout(scrollToHash, 350)
 }
 
 const galleryOpen = ref(false)
@@ -699,12 +692,13 @@ function onHashChange() {
 
 /* Когда слайды загрузились и в URL есть якорь — прокручиваем (режим просмотра и публичная ссылка) */
 watch(
-  () => visibleSlides.value.length,
-  (len) => {
-    if (len > 0 && window.location.hash.startsWith('#block-')) {
+  () => [visibleSlides.value.length, route.hash],
+  ([len, hash]) => {
+    if (len > 0 && (hash?.startsWith('#block-') ?? window.location.hash.startsWith('#block-'))) {
       scheduleScrollToHash()
     }
-  }
+  },
+  { immediate: false }
 )
 
 onMounted(() => {
@@ -729,7 +723,7 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  scroll-margin-top: 1rem;
+  scroll-margin-top: 4rem; /* отступ при scrollIntoView, чтобы блок не уходил под sticky-навигацию */
 }
 .booklet-page--stacked .booklet-page__inner {
   width: 100%;
