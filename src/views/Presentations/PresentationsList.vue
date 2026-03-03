@@ -68,21 +68,32 @@
             Удалённые
           </button>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
           <p class="text-sm text-gray-500 dark:text-gray-400">
             {{ loading ? 'Загрузка...' : activeTab === 'deleted' ? 'Удалённые можно восстановить в течение месяца' : activeTab === 'draft' ? 'Черновики можно редактировать и публиковать' : 'Опубликованные презентации' }}
           </p>
-          <button
-            v-if="activeTab === 'published' || activeTab === 'draft'"
-            type="button"
-            :disabled="!canCreatePresentation"
-            class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-            :title="cannotCreateReason"
-            @click="createAndOpenEditor()"
-          >
-            <PlusIcon />
-            Создать презентацию
-          </button>
+          <template v-if="activeTab === 'published' || activeTab === 'draft'">
+            <select
+              v-model="selectedTemplateId"
+              class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              title="Умные шаблоны: макет под тип недвижимости и аудиторию"
+            >
+              <option value="">Без шаблона</option>
+              <option v-for="t in SMART_TEMPLATES" :key="t.id" :value="t.id">
+                {{ t.name }}
+              </option>
+            </select>
+            <button
+              type="button"
+              :disabled="!canCreatePresentation"
+              class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              :title="cannotCreateReason"
+              @click="createAndOpenEditor()"
+            >
+              <PlusIcon />
+              Создать презентацию
+            </button>
+          </template>
         </div>
       </div>
 
@@ -236,6 +247,7 @@ import { api, hasApi, getToken } from '@/api/client'
 import type { PresentationListItem } from '@/api/client'
 import { formatApiDate } from '@/composables/useApiDate'
 import { useAuth } from '@/composables/useAuth'
+import { SMART_TEMPLATES, getSmartTemplateById } from '@/data/smart-templates'
 
 const router = useRouter()
 const { currentUser, fetchUser } = useAuth()
@@ -325,6 +337,7 @@ const presentationsLimitColor = computed(() => {
 const currentPageTitle = ref('Презентации')
 
 const creating = ref(false)
+const selectedTemplateId = ref<string>('')
 
 function genSlideId() {
   return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -406,12 +419,16 @@ async function createAndOpenEditor(title = 'Новая презентация', 
   const slides = buildDefaultSlides(finalTitle, subtitle)
   const content = { slides }
 
+  const template = getSmartTemplateById(selectedTemplateId.value)
+  const themeColor = template?.themeColor
+
   if (hasApi() && getToken()) {
     creating.value = true
     try {
       const created = await api.post<{ id: string }>('/api/presentations', {
         title: finalTitle,
         content,
+        ...(themeColor ? { themeColor } : {}),
       })
       await fetchUser()
       router.push(`/dashboard/presentations/${created.id}/edit`)

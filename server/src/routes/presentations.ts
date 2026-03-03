@@ -517,15 +517,16 @@ export async function presentationRoutes(app: FastifyInstance) {
   )
 
   app.post<{
-    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] } }
+    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string }
   }>(
     '/api/presentations',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Body: { title?: string; coverImage?: string; content?: { slides: unknown[] } } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-      const { title, coverImage, content } = req.body ?? {}
+      const { title, coverImage, content, themeColor } = req.body ?? {}
       const contentVal = content ?? { slides: [] }
+      const themeColorNorm = typeof themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(themeColor) ? themeColor : undefined
       if (useFileStore) {
         const created = fileStore.createPresentation({
           userId,
@@ -613,8 +614,11 @@ export async function presentationRoutes(app: FastifyInstance) {
                 user_id: userIdNum,
                 title: title?.trim() || 'Без названия',
                 cover_image: coverImage || null,
-                slides_data: JSON.stringify(contentVal),
+                slides_data: JSON.stringify(themeColorNorm && typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
+                  ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, themeColor: themeColorNorm } }
+                  : contentVal),
                 short_id: shortId,
+                ...(themeColorNorm ? { theme_color: themeColorNorm } : {}),
               })
             break
           } catch (err: unknown) {
@@ -697,13 +701,16 @@ export async function presentationRoutes(app: FastifyInstance) {
           return reply.status(400).send({ error: 'На тарифе «Тест драйв» допускается не более 4 слайдов. Создайте презентацию с 4 слайдами или перейдите на тариф «Эксперт».' })
         }
       }
+      const pgContent = themeColorNorm && typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
+        ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, themeColor: themeColorNorm } }
+        : contentVal
       const [created] = await pgDb
         .insert(pgSchema.presentations)
         .values({
           userId,
           title: title?.trim() || 'Без названия',
           coverImage: coverImage || null,
-          content: contentVal,
+          content: pgContent,
         })
         .returning()
       if (userRow?.tariff === 'test_drive') {

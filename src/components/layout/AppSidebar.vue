@@ -283,6 +283,11 @@ const menuGroups = computed(() => {
         name: "Презентации",
         path: "/dashboard/presentations",
       },
+      {
+        icon: BoxCubeIcon,
+        name: "Компании",
+        path: "/dashboard/companies",
+      },
     ]),
     ...(isTestDrive.value && !isAdmin.value ? [] : [
       { icon: CalenderIcon, name: "Календарь", path: "/dashboard/calendar" },

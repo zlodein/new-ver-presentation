@@ -586,7 +586,7 @@
                         <div class="booklet-info__text relative">
                           <textarea
                             :value="String(slide.data?.text ?? '')"
-                            placeholder="Подробно опишите объект... Пустая строка — новый абзац. **жирный** — жирное начертание."
+                            placeholder="Подробно опишите объект... Пустая строка — новый абзац."
                             rows="6"
                             class="booklet-info__textarea w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pb-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400"
                             @input="(slide.data as Record<string, string>).text = ($event.target as HTMLTextAreaElement).value"
@@ -676,7 +676,7 @@
                         <div class="booklet-stroen__text relative">
                           <textarea
                             :value="String(slide.data?.content ?? '')"
-                            placeholder="Текст об инфраструктуре... Пустая строка — новый абзац. **жирный** — жирное начертание."
+                            placeholder="Текст об инфраструктуре... Пустая строка — новый абзац."
                             rows="6"
                             class="booklet-stroen__textarea w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pb-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400"
                             @input="(slide.data as Record<string, string>).content = ($event.target as HTMLTextAreaElement).value"
@@ -1071,7 +1071,7 @@
                               v-model="slide.data.contactName"
                               type="text"
                               placeholder="ФИО или название организации"
-                              class="mb-2 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-base font-semibold text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                              class="mb-2 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-base text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                             />
                           </div>
                         </div>
@@ -1210,7 +1210,7 @@
               title="Назад"
               @click="prevSlide"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -1224,7 +1224,7 @@
               title="Вперёд"
               @click="nextSlide"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -1235,7 +1235,7 @@
               class="mob-editor-buttons__add flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-700"
               @click.stop="showSettingsMenu = false; showAddSlideMenu = canAddSlide ? !showAddSlideMenu : false"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
             </button>
@@ -1245,7 +1245,7 @@
               title="Настройки отображения"
               @click.stop="showAddSlideMenu = false; showSettingsMenu = !showSettingsMenu"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -1256,7 +1256,7 @@
               title="Просмотр"
               @click="openViewPage"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </button>
@@ -1267,7 +1267,7 @@
               :disabled="saving"
               @click="savePresentation"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
             </button>
@@ -1278,7 +1278,7 @@ class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-b
               title="Экспорт в PDF"
                 @click="exportToPDF"
               >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </button>
@@ -1290,7 +1290,7 @@ class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-b
               title="Опубликовать"
               @click="publishPresentation"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </button>

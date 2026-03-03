@@ -466,7 +466,7 @@ function getEffectiveViewImageLimit(slide: ViewSlideItem): number {
   return (c || 1) * (r || 1)
 }
 
-/** Текст описания/инфраструктуры: абзацы (\n\n) с отступом и **жирный** в HTML для просмотра и PDF */
+/** Текст описания/инфраструктуры: абзацы (\n\n) в HTML для просмотра и PDF */
 function formatDescriptionHtml(text: string): string {
   if (!text || !String(text).trim()) return ''
   const raw = String(text)
@@ -475,8 +475,7 @@ function formatDescriptionHtml(text: string): string {
   return paragraphs
     .map((p) => {
       const escaped = escape(p.trim())
-      const withBold = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      const withBr = withBold.replace(/\n/g, '<br>')
+      const withBr = escaped.replace(/\n/g, '<br>')
       return `<p class="booklet-info__paragraph">${withBr}</p>`
     })
     .join('')

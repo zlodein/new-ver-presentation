@@ -21,6 +21,7 @@ import { calendarRoutes } from './routes/calendar.js'
 import { notificationRoutes } from './routes/notifications.js'
 import { taskRoutes } from './routes/tasks.js'
 import { supportRoutes } from './routes/support.js'
+import { companyRoutes } from './routes/companies.js'
 import { pageSettingsRoutes } from './routes/page-settings.js'
 import { siteSettingsRoutes } from './routes/site-settings.js'
 
@@ -107,6 +108,7 @@ export async function buildApp() {
   await app.register(notificationRoutes, { prefix: '/' })
   await app.register(taskRoutes, { prefix: '/' })
   await app.register(supportRoutes, { prefix: '/' })
+  await app.register(companyRoutes, { prefix: '/' })
   await app.register(pageSettingsRoutes, { prefix: '/' })
   await app.register(siteSettingsRoutes, { prefix: '/' })
 

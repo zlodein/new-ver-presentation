@@ -177,6 +177,18 @@ export const supportReplies = mysqlTable('support_replies', {
   requestIdIdx: index('support_replies_request_id_idx').on(table.support_request_id),
 }))
 
+/** Компании/агентства: владелец и единая библиотека ресурсов (логотипы, шрифты, палитра, иконки). */
+export const companies = mysqlTable('companies', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  user_id: int('user_id', { unsigned: true }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull().default(''),
+  resources: longtext('resources'), // JSON: { logos: string[], fonts: string[], palette: Record<string, string>, icons: string[] }
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('companies_user_id_idx').on(table.user_id),
+}))
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
@@ -194,5 +206,7 @@ export type SupportRequestMySQL = typeof supportRequests.$inferSelect
 export type NewSupportRequestMySQL = typeof supportRequests.$inferInsert
 export type SupportReplyMySQL = typeof supportReplies.$inferSelect
 export type NewSupportReplyMySQL = typeof supportReplies.$inferInsert
+export type CompanyMySQL = typeof companies.$inferSelect
+export type NewCompanyMySQL = typeof companies.$inferInsert
 export type UserSessionMySQL = typeof userSessions.$inferSelect
 export type NewUserSessionMySQL = typeof userSessions.$inferInsert
