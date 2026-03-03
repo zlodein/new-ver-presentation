@@ -553,11 +553,11 @@
                           />
                           <button
                             type="button"
-                            class="booklet-palette-btn flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
                             title="Макет и сетка изображений"
                             @click="openPalettePopup(slide.id, $event)"
                           >
-                            <svg class="h-[25px] w-[25px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                           </button>
                         </div>
                         <template v-else>
@@ -630,11 +630,11 @@
                           />
                           <button
                             type="button"
-                            class="booklet-palette-btn flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
                             title="Макет и сетка изображений"
                             @click="openPalettePopup(slide.id, $event)"
                           >
-                            <svg class="h-[25px] w-[25px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                           </button>
                         </div>
                         <template v-else>
@@ -835,11 +835,11 @@
                         />
                         <button
                           type="button"
-                          class="booklet-palette-btn flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                          class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
                           title="Сетка изображений"
                           @click="openPalettePopup(slide.id, $event)"
                         >
-                          <svg class="h-[25px] w-[25px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         </button>
                       </div>
                       <template v-else>
@@ -965,11 +965,11 @@
                         />
                         <button
                           type="button"
-                          class="booklet-palette-btn flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                          class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
                           title="Сетка изображений"
                           @click="openPalettePopup(slide.id, $event)"
                         >
-                          <svg class="h-[25px] w-[25px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         </button>
                       </div>
                       <template v-else>
@@ -1168,7 +1168,7 @@
             <div class="mob-editor-buttons flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800">
             <button
               type="button"
-              class="mob-editor-buttons__prev inline-flex h-[35px] w-[35px] flex-shrink-0 items-center justify-center rounded-lg border transition"
+              class="mob-editor-buttons__prev inline-flex h-[25px] w-[25px] flex-shrink-0 items-center justify-center rounded-lg border transition"
               :class="visibleSlideNumber <= 1
                 ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
                 : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'"
@@ -1182,7 +1182,7 @@
             </button>
             <button
               type="button"
-              class="mob-editor-buttons__next inline-flex h-[35px] w-[35px] flex-shrink-0 items-center justify-center rounded-lg border transition"
+              class="mob-editor-buttons__next inline-flex h-[25px] w-[25px] flex-shrink-0 items-center justify-center rounded-lg border transition"
               :class="visibleSlideNumber >= visibleSlides.length
                 ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
                 : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'"
@@ -1198,7 +1198,7 @@
               type="button"
               :disabled="!canAddSlide"
               :title="!canAddSlide ? 'На тарифе «Тест драйв» допускается не более 4 слайдов' : 'Добавить слайд'"
-              class="mob-editor-buttons__add flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-700"
+              class="mob-editor-buttons__add flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-700"
               @click.stop="showSettingsMenu = false; showAddSlideMenu = canAddSlide ? !showAddSlideMenu : false"
             >
               <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1207,7 +1207,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Настройки отображения"
               @click.stop="showAddSlideMenu = false; showSettingsMenu = !showSettingsMenu"
             >
@@ -1218,7 +1218,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Просмотр"
               @click="openViewPage"
             >
@@ -1228,7 +1228,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Сохранить"
               :disabled="saving"
               @click="savePresentation"
@@ -1240,7 +1240,7 @@
             <template v-if="presentationMeta.status === 'published' && !isAdmin">
               <button
                 type="button"
-class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
               title="Экспорт в PDF"
                 @click="exportToPDF"
               >
@@ -1252,7 +1252,7 @@ class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-b
             <button
               v-else-if="presentationMeta.status !== 'published'"
               type="button"
-              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+              class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
               title="Опубликовать"
               @click="publishPresentation"
             >
