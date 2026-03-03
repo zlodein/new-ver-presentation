@@ -310,9 +310,19 @@ const menuGroups = computed(() => {
 
 const isActive = (path) => route.path === path;
 
+/** Явно закрытый пользователем подпункт (чтобы при клике по «Админ панель» список закрывался) */
+const submenuClosedByUser = ref(null);
+
 const toggleSubmenu = (groupIndex, itemIndex) => {
   const key = `${groupIndex}-${itemIndex}`;
-  openSubmenu.value = openSubmenu.value === key ? null : key;
+  const currentlyOpen = isSubmenuOpen(groupIndex, itemIndex);
+  if (currentlyOpen) {
+    submenuClosedByUser.value = key;
+    openSubmenu.value = null;
+  } else {
+    submenuClosedByUser.value = null;
+    openSubmenu.value = key;
+  }
 };
 
 const isAnySubmenuRouteActive = computed(() => {
@@ -326,6 +336,7 @@ const isAnySubmenuRouteActive = computed(() => {
 
 const isSubmenuOpen = (groupIndex, itemIndex) => {
   const key = `${groupIndex}-${itemIndex}`;
+  if (submenuClosedByUser.value === key) return false;
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&

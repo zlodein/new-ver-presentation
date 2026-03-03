@@ -211,7 +211,7 @@ export async function presentationRoutes(app: FastifyInstance) {
     if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
     const query = req.query as { q?: string; filter?: string }
     const q = query?.q?.trim()
-    const filter = query?.filter === 'deleted' ? 'deleted' : query?.filter === 'all' ? 'all' : 'active'
+    const filter = query?.filter === 'deleted' ? 'deleted' : query?.filter === 'published' ? 'published' : query?.filter === 'draft' ? 'draft' : query?.filter === 'all' ? 'all' : 'active'
     if (useFileStore) {
       let list = fileStore.getPresentationsByUserId(userId)
       if (q) {
@@ -241,6 +241,14 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
       const conditions = [eq(mysqlSchema.presentations.user_id, userIdNum)]
       if (filter === 'active') conditions.push(isNull(mysqlSchema.presentations.deleted_at))
+      if (filter === 'published') {
+        conditions.push(isNull(mysqlSchema.presentations.deleted_at))
+        conditions.push(eq(mysqlSchema.presentations.status, 'published'))
+      }
+      if (filter === 'draft') {
+        conditions.push(isNull(mysqlSchema.presentations.deleted_at))
+        conditions.push(eq(mysqlSchema.presentations.status, 'draft'))
+      }
       if (filter === 'deleted') conditions.push(not(isNull(mysqlSchema.presentations.deleted_at)))
       if (q && q.length > 0) {
         const likePattern = `%${escapeLike(q)}%`
@@ -289,6 +297,14 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
     const pgConditions = [eq(pgSchema.presentations.userId, userId)]
     if (filter === 'active') pgConditions.push(isNull(pgSchema.presentations.deletedAt))
+    if (filter === 'published') {
+      pgConditions.push(isNull(pgSchema.presentations.deletedAt))
+      pgConditions.push(eq(pgSchema.presentations.status, 'published'))
+    }
+    if (filter === 'draft') {
+      pgConditions.push(isNull(pgSchema.presentations.deletedAt))
+      pgConditions.push(eq(pgSchema.presentations.status, 'draft'))
+    }
     if (filter === 'deleted') pgConditions.push(not(isNull(pgSchema.presentations.deletedAt)))
     if (q && q.length > 0) {
       const likePattern = `%${escapeLike(q)}%`
@@ -360,7 +376,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           }
         }
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const r = row as { id: number; user_id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null; short_id?: string | null }
+        const r = row as { id: number; user_id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null; short_id?: string | null; theme_color?: string | null }
         const isOwner = r.user_id === userIdNum
         let shortId = r.short_id ?? undefined
         if (!shortId) {
@@ -377,11 +393,17 @@ export async function presentationRoutes(app: FastifyInstance) {
             shortId = undefined
           }
         }
+        let content = normContent(r.slides_data)
+        if (r.theme_color != null && typeof content === 'object' && content !== null && !Array.isArray(content)) {
+          const c = content as { settings?: Record<string, string> }
+          c.settings = c.settings ?? {}
+          c.settings.themeColor = r.theme_color
+        }
         return reply.send({
           id: String(r.id),
           title: r.title,
           coverImage: r.cover_image ?? undefined,
-          content: normContent(r.slides_data),
+          content,
           updatedAt: toIsoDate(r.updated_at),
           status: r.status ?? 'draft',
           publicHash: r.public_hash ?? undefined,
@@ -402,6 +424,91 @@ export async function presentationRoutes(app: FastifyInstance) {
         updatedAt: toIsoDate(row.updatedAt as Date | string),
         status: (row as { status?: string }).status ?? 'draft',
       })
+    }
+  )
+
+  /** Копирование презентации (только черновики; создаёт новую с тем же контентом, статус draft). */
+  app.post<{ Params: { id: string } }>(
+    '/api/presentations/:id/duplicate',
+    { preHandler: [app.authenticate] },
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const userId = getUserId(req)
+      if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+      const { id } = req.params
+      if (useFileStore) {
+        const existing = fileStore.getPresentationById(id, userId)
+        if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const content = (existing as { content?: string }).content
+        const created = fileStore.createPresentation({
+          userId,
+          title: ((existing.title ?? '').trim() || 'Без названия') + ' (копия)',
+          coverImage: existing.coverImage ?? null,
+          content: content ?? '{}',
+        })
+        return reply.status(201).send({ id: created.id })
+      }
+      if (useMysql) {
+        const idNum = parseMysqlId(id)
+        if (idNum === null) return reply.status(400).send({ error: 'Неверный формат id презентации' })
+        const userIdNum = Number(userId)
+        if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const existing = await findPresentationForUser(mysqlDb, idNum, userIdNum)
+        if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
+        const e = existing as { title: string; cover_image: string | null; slides_data: string | null; status?: string }
+        if (e.status === 'published') {
+          return reply.status(400).send({ error: 'Копировать можно только черновики' })
+        }
+        const newTitle = (e.title?.trim() || 'Без названия') + ' (копия)'
+        let shortId = generatePresentationShortId()
+        for (let attempt = 0; attempt < 5; attempt++) {
+          try {
+            await mysqlDb.insert(mysqlSchema.presentations).values({
+              user_id: userIdNum,
+              title: newTitle,
+              cover_image: e.cover_image,
+              slides_data: e.slides_data,
+              status: 'draft',
+              short_id: shortId,
+            })
+            break
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err)
+            if (attempt < 4 && /Duplicate entry|unique constraint|unique index/i.test(msg)) {
+              shortId = generatePresentationShortId()
+              continue
+            }
+            throw err
+          }
+        }
+        const inserted = await mysqlDb.query.presentations.findFirst({
+          where: and(eq(mysqlSchema.presentations.user_id, userIdNum), eq(mysqlSchema.presentations.short_id, shortId)),
+          columns: { id: true },
+        })
+        if (!inserted) return reply.status(500).send({ error: 'Ошибка при копировании' })
+        return reply.status(201).send({ id: String((inserted as { id: number }).id) })
+      }
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const row = await pgDb.query.presentations.findFirst({
+        where: and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId)),
+      })
+      if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
+      const r = row as { title: string; coverImage: string | null; content: unknown; status?: string }
+      if (r.status === 'published') {
+        return reply.status(400).send({ error: 'Копировать можно только черновики' })
+      }
+      const [created] = await pgDb
+        .insert(pgSchema.presentations)
+        .values({
+          userId,
+          title: (r.title?.trim() || 'Без названия') + ' (копия)',
+          coverImage: r.coverImage,
+          content: r.content ?? { slides: [] },
+          status: 'draft',
+        })
+        .returning({ id: pgSchema.presentations.id })
+      if (!created) return reply.status(500).send({ error: 'Ошибка при копировании' })
+      return reply.status(201).send({ id: created.id })
     }
   )
 
@@ -619,14 +726,14 @@ export async function presentationRoutes(app: FastifyInstance) {
 
   app.put<{
     Params: { id: string }
-    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean }
+    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean; themeColor?: string }
   }>(
     '/api/presentations/:id',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Params: { id: string }; Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { id: string }; Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean; themeColor?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       const { id } = req.params
-      const { title, coverImage, content, status: bodyStatus, createNotification } = req.body ?? {}
+      const { title, coverImage, content, status: bodyStatus, createNotification, themeColor: bodyThemeColor } = req.body ?? {}
       if (useFileStore) {
         const updates: { title?: string; coverImage?: string | null; content?: string; updatedAt?: string } = { updatedAt: new Date().toISOString() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
@@ -666,11 +773,12 @@ export async function presentationRoutes(app: FastifyInstance) {
             // колонка tariff может отсутствовать
           }
         }
-        const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string; status?: string } = { updated_at: new Date() }
+        const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string; status?: string; theme_color?: string } = { updated_at: new Date() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
         if (coverImage !== undefined) updates.cover_image = coverImage || null
         if (content !== undefined) updates.slides_data = JSON.stringify(content)
         if ((req.body as { status?: string }).status !== undefined) updates.status = (req.body as { status: string }).status
+        if (bodyThemeColor !== undefined) updates.theme_color = typeof bodyThemeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(bodyThemeColor) ? bodyThemeColor : undefined
         await mysqlDb.update(mysqlSchema.presentations).set(updates).where(eq(mysqlSchema.presentations.id, mysqlId))
         const [updated] = await mysqlDb.query.presentations.findMany({
           where: eq(mysqlSchema.presentations.id, mysqlId),

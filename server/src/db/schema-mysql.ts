@@ -58,6 +58,7 @@ export const presentations = mysqlTable('presentations', {
   is_public: int('is_public', { unsigned: true }).notNull().default(0),
   public_url: varchar('public_url', { length: 255 }),
   short_id: varchar('short_id', { length: 6 }), // 6 символов A-Z0-9 для тех. поддержки
+  theme_color: varchar('theme_color', { length: 7 }), // цвет темы, напр. #2c7f8d
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
   deleted_at: timestamp('deleted_at'), // мягкое удаление; храним месяц, затем можно удалять

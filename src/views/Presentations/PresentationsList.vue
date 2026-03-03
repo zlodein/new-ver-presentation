@@ -35,13 +35,25 @@
             type="button"
             :class="[
               'rounded-md px-4 py-2 text-sm font-medium transition',
-              activeTab === 'active'
+              activeTab === 'published'
                 ? 'bg-white text-gray-900 shadow dark:bg-gray-700 dark:text-white'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
             ]"
-            @click="switchTab('active')"
+            @click="switchTab('published')"
           >
-            Активные
+            Опубликованные
+          </button>
+          <button
+            type="button"
+            :class="[
+              'rounded-md px-4 py-2 text-sm font-medium transition',
+              activeTab === 'draft'
+                ? 'bg-white text-gray-900 shadow dark:bg-gray-700 dark:text-white'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+            ]"
+            @click="switchTab('draft')"
+          >
+            Черновики
           </button>
           <button
             type="button"
@@ -58,10 +70,10 @@
         </div>
         <div class="flex items-center gap-4">
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ loading ? 'Загрузка...' : activeTab === 'active' ? 'Создавайте и редактируйте презентации' : 'Удалённые можно восстановить в течение месяца' }}
+            {{ loading ? 'Загрузка...' : activeTab === 'deleted' ? 'Удалённые можно восстановить в течение месяца' : activeTab === 'draft' ? 'Черновики можно редактировать и публиковать' : 'Опубликованные презентации' }}
           </p>
           <button
-            v-if="activeTab === 'active'"
+            v-if="activeTab === 'published' || activeTab === 'draft'"
             type="button"
             :disabled="!canCreatePresentation"
             class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
@@ -157,7 +169,25 @@
               </p>
             </div>
           </router-link>
-          <button
+          <div class="absolute right-2 top-2 flex gap-1">
+            <button
+              v-if="presentation.status === 'draft'"
+              type="button"
+              class="rounded-lg bg-white/90 p-2 text-gray-500 shadow-sm transition hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+              title="Копировать презентацию"
+              @click.stop="copyPresentation(presentation)"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-white/90 p-2 text-gray-500 shadow-sm transition hover:bg-green-50 hover:text-green-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-green-950 dark:hover:text-green-400"
+              title="Предпросмотр"
+              @click.stop="openPreview(presentation)"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+            </button>
+            <button
             type="button"
             class="absolute right-2 top-2 rounded-lg bg-white/90 p-2 text-gray-500 shadow-sm transition hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
             title="Удалить презентацию"
@@ -167,6 +197,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
+          </div>
           </template>
         </div>
       </div>
@@ -176,10 +207,10 @@
         class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-16 dark:border-gray-700"
       >
         <p class="text-gray-500 dark:text-gray-400">
-          {{ activeTab === 'deleted' ? 'Удалённых презентаций пока нет' : 'Презентаций пока нет' }}
+          {{ activeTab === 'deleted' ? 'Удалённых презентаций пока нет' : activeTab === 'draft' ? 'Черновиков пока нет' : 'Опубликованных презентаций пока нет' }}
         </p>
         <button
-          v-if="activeTab === 'active'"
+          v-if="activeTab === 'published' || activeTab === 'draft'"
           type="button"
           :disabled="!canCreatePresentation"
           :title="cannotCreateReason"
@@ -405,7 +436,7 @@ async function createAndOpenEditor(title = 'Новая презентация', 
   router.push(`/dashboard/presentations/${id}/edit`)
 }
 
-type TabKind = 'active' | 'deleted'
+type TabKind = 'published' | 'draft' | 'deleted'
 
 interface Presentation {
   id: string
@@ -420,7 +451,7 @@ interface PresentationWithDeleted extends Presentation {
   deletedAt: string
 }
 
-const activeTab = ref<TabKind>('active')
+const activeTab = ref<TabKind>('published')
 const presentations = ref<Presentation[]>([])
 const loading = ref(false)
 const error = ref('')
@@ -451,7 +482,7 @@ function switchTab(tab: TabKind) {
 async function loadFromApi() {
   loading.value = true
   error.value = ''
-  const filter = activeTab.value === 'deleted' ? 'deleted' : 'active'
+  const filter = activeTab.value === 'deleted' ? 'deleted' : activeTab.value === 'draft' ? 'draft' : 'published'
   try {
     const list = await api.get<PresentationListItem[]>(`/api/presentations?filter=${filter}`)
     if (isMounted) {
@@ -500,6 +531,28 @@ function loadPresentations() {
   }
 }
 
+function openPreview(presentation: Presentation) {
+  router.push(`/dashboard/presentations/${presentation.id}/view`)
+}
+
+async function copyPresentation(presentation: Presentation) {
+  const id = presentation?.id != null ? String(presentation.id) : ''
+  if (!id) {
+    error.value = 'Не удалось определить id презентации'
+    return
+  }
+  try {
+    const res = await api.post<{ id: string }>(`/api/presentations/${id}/duplicate`)
+    error.value = ''
+    await fetchUser()
+    await loadPresentations()
+    if (res?.id) router.push(`/dashboard/presentations/${res.id}/edit`)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Не удалось скопировать презентацию'
+    loadPresentations()
+  }
+}
+
 async function restorePresentation(presentation: Presentation) {
   const id = presentation?.id != null ? String(presentation.id) : ''
   if (!id) {
@@ -510,7 +563,7 @@ async function restorePresentation(presentation: Presentation) {
     await api.post('/api/presentations/restore', { id })
     error.value = ''
     await fetchUser()
-    activeTab.value = 'active'
+    activeTab.value = 'published'
     await loadPresentations()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Не удалось восстановить презентацию'

@@ -345,6 +345,24 @@
                     </span>
                   </div>
                 </div>
+                <div>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
+                  <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
+                    <input
+                      v-model="presentationSettings.themeColor"
+                      type="color"
+                      class="h-8 w-12 cursor-pointer rounded border-0 bg-transparent p-0"
+                      title="Выберите цвет"
+                    />
+                    <input
+                      v-model="presentationSettings.themeColor"
+                      type="text"
+                      class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90"
+                      placeholder="#2c7f8d"
+                      maxlength="7"
+                    />
+                  </div>
+                </div>
               </div>
               <button
                 type="button"
@@ -1386,6 +1404,24 @@
                       </span>
                     </div>
                   </div>
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
+                    <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
+                      <input
+                        v-model="presentationSettings.themeColor"
+                        type="color"
+                        class="h-8 w-12 cursor-pointer rounded border-0 bg-transparent p-0"
+                        title="Выберите цвет"
+                      />
+                      <input
+                        v-model="presentationSettings.themeColor"
+                        type="text"
+                        class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90"
+                        placeholder="#2c7f8d"
+                        maxlength="7"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -1826,6 +1862,7 @@ const FONT_SIZE_PRICE_OPTIONS = [
 const DEFAULT_PRESENTATION_SETTINGS = {
   fontFamily: 'system-ui',
   imageBorderRadius: '8px',
+  themeColor: '#2c7f8d',
   fontSizePresentationTitle: '38px',
   fontSizeHeading: '38px',
   fontSizeText: '22px',
@@ -1840,6 +1877,7 @@ function resetPresentationSettings() {
 const presentationStyle = computed(() => ({
   fontFamily: presentationSettings.value.fontFamily,
   '--booklet-image-radius': presentationSettings.value.imageBorderRadius,
+  '--theme-color': presentationSettings.value.themeColor || DEFAULT_PRESENTATION_SETTINGS.themeColor,
 } as Record<string, string>))
 
 /** Мета презентации: статус, публичная ссылка, shortId (только владелец) */
@@ -3019,6 +3057,7 @@ onMounted(async () => {
         const s = contentWithSettings.settings
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+        if (s.themeColor != null) presentationSettings.value.themeColor = s.themeColor
         if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
         if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading
         if (s.fontSizeText != null) presentationSettings.value.fontSizeText = s.fontSizeText
@@ -3072,6 +3111,7 @@ function loadFromLocalStorage() {
         const s = saved.settings as Record<string, string>
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+        if (s.themeColor != null) presentationSettings.value.themeColor = s.themeColor
         if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
         if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading
         if (s.fontSizeText != null) presentationSettings.value.fontSizeText = s.fontSizeText
@@ -3096,9 +3136,10 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
 
   if (hasApi() && getToken()) {
     try {
-      const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string; createNotification?: boolean } = { title, coverImage, content }
+      const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string; createNotification?: boolean; themeColor?: string } = { title, coverImage, content }
       if (status !== undefined) body.status = status
       if (createNotification) body.createNotification = true
+      if (presentationSettings.value.themeColor) body.themeColor = presentationSettings.value.themeColor
       const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string; shortId?: string }>(`/api/presentations/${presentationId.value}`, body)
       if (data?.status != null) presentationMeta.value.status = data.status
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic

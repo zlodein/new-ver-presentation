@@ -272,7 +272,7 @@
                 <img width="{231}" height="{48}" :src="logoUrl('auth-logo.svg')" alt="Logo" />
               </router-link>
               <p class="text-center text-gray-400 dark:text-white/60">
-                Бесплатный шаблон админ-панели на Tailwind CSS
+                Онлайн сервис по созданию презентаций объектов недвижимости
               </p>
             </div>
           </div>
