@@ -239,7 +239,6 @@ import {
   PieChartIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
-import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 import { useAuth } from "@/composables/useAuth";
 import { logoUrl } from "@/config/logos";
@@ -282,11 +281,6 @@ const menuGroups = computed(() => {
         icon: DocsIcon,
         name: "Презентации",
         path: "/dashboard/presentations",
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Компании",
-        path: "/dashboard/companies",
       },
     ]),
     ...(isTestDrive.value && !isAdmin.value ? [] : [

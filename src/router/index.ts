@@ -112,14 +112,6 @@ const router = createRouter({
       },
     },
     {
-      path: '/dashboard/companies',
-      name: 'Companies',
-      component: () => import('../views/Companies/CompaniesList.vue'),
-      meta: {
-        title: 'Компании',
-      },
-    },
-    {
       path: '/dashboard/profile',
       name: 'Profile',
       component: () => import('../views/Others/UserProfile.vue'),

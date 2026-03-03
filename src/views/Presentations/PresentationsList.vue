@@ -73,16 +73,6 @@
             {{ loading ? 'Загрузка...' : activeTab === 'deleted' ? 'Удалённые можно восстановить в течение месяца' : activeTab === 'draft' ? 'Черновики можно редактировать и публиковать' : 'Опубликованные презентации' }}
           </p>
           <template v-if="activeTab === 'published' || activeTab === 'draft'">
-            <select
-              v-model="selectedTemplateId"
-              class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-              title="Умные шаблоны: макет под тип недвижимости и аудиторию"
-            >
-              <option value="">Без шаблона</option>
-              <option v-for="t in SMART_TEMPLATES" :key="t.id" :value="t.id">
-                {{ t.name }}
-              </option>
-            </select>
             <button
               type="button"
               :disabled="!canCreatePresentation"
@@ -247,8 +237,6 @@ import { api, hasApi, getToken } from '@/api/client'
 import type { PresentationListItem } from '@/api/client'
 import { formatApiDate } from '@/composables/useApiDate'
 import { useAuth } from '@/composables/useAuth'
-import { SMART_TEMPLATES, getSmartTemplateById } from '@/data/smart-templates'
-
 const router = useRouter()
 const { currentUser, fetchUser } = useAuth()
 const userTariff = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff)
@@ -337,7 +325,6 @@ const presentationsLimitColor = computed(() => {
 const currentPageTitle = ref('Презентации')
 
 const creating = ref(false)
-const selectedTemplateId = ref<string>('')
 
 function genSlideId() {
   return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -419,17 +406,12 @@ async function createAndOpenEditor(title = 'Новая презентация', 
   const slides = buildDefaultSlides(finalTitle, subtitle)
   const content = { slides }
 
-  const template = getSmartTemplateById(selectedTemplateId.value)
-  const themeColor = template?.themeColor
-
   if (hasApi() && getToken()) {
     creating.value = true
     try {
       const created = await api.post<{ id: string }>('/api/presentations', {
         title: finalTitle,
         content,
-        ...(themeColor ? { themeColor } : {}),
-        ...(selectedTemplateId.value ? { templateId: selectedTemplateId.value } : {}),
       })
       await fetchUser()
       router.push(`/dashboard/presentations/${created.id}/edit`)
