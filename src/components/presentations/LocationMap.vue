@@ -1,7 +1,7 @@
 <template>
   <div class="location-map-container relative min-h-[140px] w-full flex-1 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
     <div
-      v-show="hasValidCoords"
+      v-show="hasValidCoords && mapReady"
       ref="mapEl"
       class="location-map h-full w-full min-h-[140px] rounded-lg"
     />
@@ -10,6 +10,18 @@
       class="flex h-full min-h-[140px] w-full items-center justify-center text-gray-500 text-sm"
     >
       Укажите адрес — карта появится здесь
+    </div>
+    <div
+      v-else-if="hasValidCoords && !mapReady && yandexLoadError"
+      class="flex h-full min-h-[140px] w-full items-center justify-center text-amber-600 text-sm px-2"
+    >
+      Не удалось загрузить Яндекс.Карты. Проверьте ключ VITE_YANDEX_MAPS_API_KEY.
+    </div>
+    <div
+      v-else-if="hasValidCoords && !mapReady"
+      class="flex h-full min-h-[140px] w-full items-center justify-center text-gray-500 text-sm"
+    >
+      Загрузка карты…
     </div>
   </div>
 </template>
@@ -30,9 +42,11 @@ let marker: L.Marker | null = null
 let yandexMap: unknown = null
 
 const hasValidCoords = ref(false)
-const useYandex = ref(false)
+const mapReady = ref(false)
+const yandexLoadError = ref(false)
 
 const yandexMapsApiKey = (import.meta as ImportMeta & { env: { VITE_YANDEX_MAPS_API_KEY?: string } }).env?.VITE_YANDEX_MAPS_API_KEY ?? ''
+const useYandexOnly = !!yandexMapsApiKey
 
 function isValidCoord(n: number): boolean {
   return typeof n === 'number' && !Number.isNaN(n) && n !== 0
@@ -65,8 +79,13 @@ function loadYandexMaps(): Promise<boolean> {
 }
 
 function initMap() {
-  if (!mapEl.value || !hasValidCoords.value || map) return
-  if (useYandex.value && (window as unknown as { ymaps?: unknown }).ymaps) {
+  if (!mapEl.value || !hasValidCoords.value || yandexMap || map) return
+  if (useYandexOnly) {
+    if (!(window as unknown as { ymaps?: unknown }).ymaps) {
+      yandexLoadError.value = true
+      mapReady.value = false
+      return
+    }
     const ymaps = (window as unknown as { ymaps: { Map: new (el: HTMLElement, opts: { center: number[]; zoom: number; type?: string }) => unknown; Placemark: new (center: number[], opts?: unknown) => unknown } }).ymaps
     yandexMap = new ymaps.Map(mapEl.value, {
       center: [props.lat, props.lng],
@@ -75,12 +94,13 @@ function initMap() {
     })
     const placemark = new ymaps.Placemark([props.lat, props.lng])
     ;(yandexMap as { geoObjects: { add: (p: unknown) => void } }).geoObjects.add(placemark)
+    mapReady.value = true
+    yandexLoadError.value = false
     return
   }
+  // Без ключа Яндекс.Карт — fallback на Leaflet (OpenStreetMap)
   map = L.map(mapEl.value, { attributionControl: false }).setView([props.lat, props.lng], 16)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-  }).addTo(map)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map)
   const icon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -89,6 +109,7 @@ function initMap() {
     iconAnchor: [12, 41],
   })
   marker = L.marker([props.lat, props.lng], { icon }).addTo(map!)
+  mapReady.value = true
 }
 
 function updateMap() {
@@ -123,15 +144,17 @@ function destroyMap() {
     map = null
     marker = null
   }
+  mapReady.value = false
+  yandexLoadError.value = false
 }
 
 checkValid()
 
 onMounted(() => {
   if (!hasValidCoords.value) return
-  if (yandexMapsApiKey) {
+  if (useYandexOnly) {
     loadYandexMaps().then((ok) => {
-      useYandex.value = ok
+      if (!ok) yandexLoadError.value = true
       nextTick(() => initMap())
     })
   } else {
@@ -144,8 +167,16 @@ watch(
   () => {
     checkValid()
     if (hasValidCoords.value) {
-      if (!map && !yandexMap) nextTick(() => initMap())
-      else updateMap()
+      if (!map && !yandexMap) {
+        if (useYandexOnly && !(window as unknown as { ymaps?: unknown }).ymaps) {
+          mapReady.value = false
+          yandexLoadError.value = true
+        } else {
+          nextTick(() => initMap())
+        }
+      } else {
+        updateMap()
+      }
     } else {
       destroyMap()
     }

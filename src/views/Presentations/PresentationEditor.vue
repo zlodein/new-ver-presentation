@@ -551,28 +551,14 @@
                             class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                             @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
                           />
-                          <div class="relative z-20 w-[4rem] shrink-0">
-                            <select
-                              :value="getBlockLayout(slide)"
-                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                              title="Раскладка"
-                              @input="setBlockLayout(slide, ($event.target as HTMLSelectElement).value)"
-                            >
-                              <option v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                          </div>
-                          <div class="relative z-20 w-[3.5rem] shrink-0">
-                            <select
-                              :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                              title="Сетка изображений"
-                              @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
-                            >
-                              <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                          </div>
+                          <button
+                            type="button"
+                            class="booklet-palette-btn flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            title="Макет и сетка изображений"
+                            @click="openPalettePopup(slide.id, $event)"
+                          >
+                            <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          </button>
                         </div>
                         <template v-else>
                           <input
@@ -642,28 +628,14 @@
                             placeholder="ИНФРАСТРУКТУРА"
                             class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                           />
-                          <div class="relative z-20 w-[4rem] shrink-0">
-                            <select
-                              :value="getBlockLayout(slide)"
-                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                              title="Раскладка"
-                              @input="setBlockLayout(slide, ($event.target as HTMLSelectElement).value)"
-                            >
-                              <option v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                          </div>
-                          <div class="relative z-20 w-[3.5rem] shrink-0">
-                            <select
-                              :value="getImageGrid(slide)"
-                              class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                              title="Сетка изображений"
-                              @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
-                            >
-                              <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select>
-                            <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                          </div>
+                          <button
+                            type="button"
+                            class="booklet-palette-btn flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            title="Макет и сетка изображений"
+                            @click="openPalettePopup(slide.id, $event)"
+                          >
+                            <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          </button>
                         </div>
                         <template v-else>
                           <input
@@ -861,17 +833,14 @@
                           placeholder="ГАЛЕРЕЯ"
                           class="booklet-galery__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <div class="relative z-20 w-[3.5rem] shrink-0">
-                          <select
-                            :value="getImageGrid(slide)"
-                            class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                            title="Сетка изображений"
-                            @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
-                          >
-                            <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                          </select>
-                          <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                        </div>
+                        <button
+                          type="button"
+                          class="booklet-palette-btn flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                          title="Сетка изображений"
+                          @click="openPalettePopup(slide.id, $event)"
+                        >
+                          <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        </button>
                       </div>
                       <template v-else>
                         <input
@@ -994,17 +963,14 @@
                           placeholder="ПЛАНИРОВКА"
                           class="booklet-layout__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <div class="relative z-20 w-[3.5rem] shrink-0">
-                          <select
-                            :value="getImageGrid(slide)"
-                            class="dark:bg-dark-900 h-7 w-full appearance-none rounded border border-gray-300 bg-transparent px-1.5 py-0.5 pr-5 text-xs text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                            title="Сетка изображений"
-                            @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
-                          >
-                            <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                          </select>
-                          <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-                        </div>
+                        <button
+                          type="button"
+                          class="booklet-palette-btn flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                          title="Сетка изображений"
+                          @click="openPalettePopup(slide.id, $event)"
+                        >
+                          <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        </button>
                       </div>
                       <template v-else>
                         <div class="booklet-layout__title-wrapper flex-shrink-0">
@@ -1640,6 +1606,54 @@ class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-b
         </aside>
       </main>
     </div>
+
+    <!-- Всплывающее окно палитры: макет и сетка изображений -->
+    <Teleport to="body">
+      <div
+        v-if="palettePopupSlideId && palettePopupAnchor && palettePopupSlide"
+        class="booklet-palette-popup fixed z-[99999] min-w-[200px] rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+        :style="{ top: `${palettePopupAnchor.top}px`, left: `${palettePopupAnchor.left}px` }"
+        role="dialog"
+        aria-label="Макет и сетка изображений"
+      >
+        <div class="flex flex-col gap-3">
+          <div v-if="palettePopupSlide.type === 'description' || palettePopupSlide.type === 'infrastructure'" class="flex flex-col gap-2">
+            <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Макет</label>
+            <select
+              :value="getBlockLayout(palettePopupSlide)"
+              class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              @input="setBlockLayout(palettePopupSlide, ($event.target as HTMLSelectElement).value)"
+            >
+              <option v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Сетка изображений</label>
+            <select
+              :value="getImageGrid(palettePopupSlide)"
+              class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              @input="setImageGrid(palettePopupSlide, ($event.target as HTMLSelectElement).value)"
+            >
+              <option v-for="opt in getGridOptionsForSlide(palettePopupSlide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="absolute right-2 top-2 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          aria-label="Закрыть"
+          @click="closePalettePopup"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div
+        v-if="palettePopupSlideId"
+        class="fixed inset-0 z-[99998]"
+        aria-hidden="true"
+        @click="closePalettePopup"
+      />
+    </Teleport>
   </AdminLayout>
 </template>
 
@@ -1834,6 +1848,28 @@ const showAddSlideMenu = ref(false)
 const showSettingsMenu = ref(false)
 const showMobSlidesNav = ref(false)
 const settingsMenuRef = ref<HTMLElement | null>(null)
+/** Палитра: слайд, для которого открыто окно макета/сетки; якорь для позиции всплывающего окна */
+const palettePopupSlideId = ref<string | null>(null)
+const palettePopupAnchor = ref<{ top: number; left: number } | null>(null)
+
+const palettePopupSlide = computed(() => {
+  const id = palettePopupSlideId.value
+  if (!id) return null
+  return slides.value.find((s) => s.id === id) ?? null
+})
+
+function openPalettePopup(slideId: string, event: MouseEvent) {
+  const el = event.currentTarget as HTMLElement
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  palettePopupSlideId.value = slideId
+  palettePopupAnchor.value = { top: rect.bottom + 4, left: Math.max(8, rect.left) }
+}
+
+function closePalettePopup() {
+  palettePopupSlideId.value = null
+  palettePopupAnchor.value = null
+}
 
 /** Настройки отображения презентации (редактор / просмотр / публичная ссылка / PDF). Шрифты с кириллицей (Google Fonts). */
 const FONT_OPTIONS = [
