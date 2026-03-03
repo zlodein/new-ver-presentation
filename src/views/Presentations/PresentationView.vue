@@ -258,7 +258,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
@@ -597,6 +597,17 @@ function getGalleryGlobalIndex(slideIndex: number, imageIndexInSlide: number): n
   return (starts[slideIndex] ?? 0) + imageIndexInSlide
 }
 
+/** Прокрутка к якорю (#block-0, #block-1, …) в режиме просмотра и по публичной ссылке */
+function scrollToHash() {
+  const hash = window.location.hash
+  if (!hash || !hash.startsWith('#block-')) return
+  const id = hash.slice(1)
+  nextTick(() => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
 const galleryOpen = ref(false)
 const galleryIndex = ref(0)
 
@@ -637,7 +648,20 @@ onMounted(async () => {
     error.value = 'Презентация не найдена'
   } finally {
     loading.value = false
+    scrollToHash()
   }
+})
+
+function onHashChange() {
+  scrollToHash()
+}
+
+onMounted(() => {
+  window.addEventListener('hashchange', onHashChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('hashchange', onHashChange)
 })
 </script>
 
