@@ -21,12 +21,14 @@
             :key="index"
             :href="'#block-' + index"
             class="rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            @click.prevent="goToBlock(index)"
           >
             {{ getBlockName(slide, index) }}
           </a>
         </nav>
       </div>
       <div
+        ref="viewScrollContainerRef"
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
       >
@@ -184,7 +186,7 @@
                   <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
                   <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
                     <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" class="shrink-0">
-                      <div class="flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">
+                      <div class="booklet-contacts__avatar flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">
                         <img :src="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" alt="" class="h-full w-full object-cover">
                       </div>
                     </div>
@@ -198,8 +200,9 @@
                   <div v-if="slide.data?.messengers && typeof slide.data.messengers === 'object' && Object.keys(slide.data.messengers as object).length" class="booklet-contacts__messengers">
                     <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" compact />
                   </div>
-                  <div v-if="slide.data?.aboutText" class="booklet-contacts__block flex flex-col gap-1">
-                    <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap">{{ slide.data.aboutText }}</p>
+                  <div v-if="aboutText(slide)" class="booklet-contacts__block flex flex-col gap-1">
+                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">О компании</p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ aboutText(slide) }}</p>
                   </div>
                   <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
                     <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
@@ -481,6 +484,12 @@ function formatDescriptionHtml(text: string): string {
     .join('')
 }
 
+/** Текст «О компании» / «Обо мне» (aboutText или about_text из API) */
+function aboutText(slide: ViewSlideItem): string {
+  const v = slide.data?.aboutText ?? slide.data?.about_text
+  return v != null ? String(v).trim() : ''
+}
+
 /** Контакты: одно изображение справа (contactImageUrl или images[0]) */
 function contactImageUrl(slide: ViewSlideItem): string | undefined {
   const url = slide.data?.contactImageUrl
@@ -597,15 +606,30 @@ function getGalleryGlobalIndex(slideIndex: number, imageIndexInSlide: number): n
   return (starts[slideIndex] ?? 0) + imageIndexInSlide
 }
 
-/** Прокрутка к якорю (#block-0, #block-1, …) в режиме просмотра и по публичной ссылке */
+const viewScrollContainerRef = ref<HTMLElement | null>(null)
+
+/** Прокрутка к блоку по индексу: скроллим контейнер просмотра, а не window */
+function goToBlock(index: number) {
+  const id = `block-${index}`
+  window.history.replaceState(null, '', `#${id}`)
+  nextTick(() => {
+    const el = document.getElementById(id)
+    const container = viewScrollContainerRef.value
+    if (!el || !container) return
+    const containerRect = container.getBoundingClientRect()
+    const elRect = el.getBoundingClientRect()
+    const scrollTop = container.scrollTop + (elRect.top - containerRect.top) - 16
+    container.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' })
+  })
+}
+
+/** Прокрутка к якорю по hash (при загрузке страницы с #block-N) */
 function scrollToHash() {
   const hash = window.location.hash
   if (!hash || !hash.startsWith('#block-')) return
   const id = hash.slice(1)
-  nextTick(() => {
-    const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  })
+  const index = parseInt(id.replace('block-', ''), 10)
+  if (!Number.isNaN(index)) goToBlock(index)
 }
 
 const galleryOpen = ref(false)
@@ -648,7 +672,7 @@ onMounted(async () => {
     error.value = 'Презентация не найдена'
   } finally {
     loading.value = false
-    scrollToHash()
+    nextTick(() => scrollToHash())
   }
 })
 

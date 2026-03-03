@@ -381,7 +381,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.contact_title || 'КОНТАКТЫ')
         const contactName = String(dataObj.contactName || dataObj.contact_name || '')
-        const aboutText = String(dataObj.aboutText || '')
+        const aboutText = String(dataObj.aboutText || dataObj.about_text || '')
         const phone = String(dataObj.phone || dataObj.contact_phone || '')
         const email = String(dataObj.email || dataObj.contact_email || '')
         const role = String(dataObj.contact_role || '')
@@ -400,7 +400,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     ${avatarUrl ? `<div class="booklet-contacts__avatar-wrap"><div class="booklet-contacts__avatar"><img src="${toAbsoluteImageUrl(avatarUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div></div>` : ''}
                     <div class="booklet-contacts__block booklet-contacts__content">
                       ${contactName ? `<p>${escapeHtml(contactName)}</p>` : ''}
-                      ${aboutText ? `<p>${escapeHtml(aboutText)}</p>` : ''}
+                      ${aboutText ? `<p class="booklet-contacts__about-label" style="margin:0 0 0.25rem 0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#666;">О компании</p><p style="margin:0;white-space:pre-wrap;">${escapeHtml(aboutText)}</p>` : ''}
                       ${phone ? `<p>${escapeHtml(phone)}</p>` : ''}
                       ${email ? `<p>${escapeHtml(email)}</p>` : ''}
                       ${role ? `<p>${escapeHtml(role)}</p>` : ''}
