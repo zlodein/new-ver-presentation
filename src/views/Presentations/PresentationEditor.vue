@@ -420,6 +420,7 @@
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
             class="presentation-slider-wrap booklet-view mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
+            :data-booklet-template="getTemplateStyleKey(presentationSettings.templateId)"
             :style="presentationStyle"
           >
             <Swiper
@@ -1660,6 +1661,7 @@ import type { PresentationFull } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
 import { usePhoneMask } from '@/composables/usePhoneMask'
 import { metroLineColor } from '@/data/metroLineColors'
+import { getTemplateStyleKey } from '@/data/smart-templates'
 
 const route = useRoute()
 const router = useRouter()
@@ -1882,6 +1884,7 @@ const DEFAULT_PRESENTATION_SETTINGS = {
   fontSizeHeading: '38px',
   fontSizeText: '22px',
   fontSizePrice: '18px',
+  templateId: '' as string,
 }
 const presentationSettings = ref({ ...DEFAULT_PRESENTATION_SETTINGS })
 
@@ -3073,6 +3076,7 @@ onMounted(async () => {
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
         if (s.themeColor != null) presentationSettings.value.themeColor = s.themeColor
+        if (s.templateId != null) presentationSettings.value.templateId = s.templateId
         if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
         if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading
         if (s.fontSizeText != null) presentationSettings.value.fontSizeText = s.fontSizeText
@@ -3127,6 +3131,7 @@ function loadFromLocalStorage() {
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
         if (s.themeColor != null) presentationSettings.value.themeColor = s.themeColor
+        if (s.templateId != null) presentationSettings.value.templateId = s.templateId
         if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
         if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading
         if (s.fontSizeText != null) presentationSettings.value.fontSizeText = s.fontSizeText
@@ -3151,10 +3156,11 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
 
   if (hasApi() && getToken()) {
     try {
-      const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string; createNotification?: boolean; themeColor?: string } = { title, coverImage, content }
+      const body: { title: string; coverImage?: string; content: { slides: SlideItem[] }; status?: string; createNotification?: boolean; themeColor?: string; templateId?: string } = { title, coverImage, content }
       if (status !== undefined) body.status = status
       if (createNotification) body.createNotification = true
       if (presentationSettings.value.themeColor) body.themeColor = presentationSettings.value.themeColor
+      if (presentationSettings.value.templateId) body.templateId = presentationSettings.value.templateId
       const data = await api.put<PresentationFull & { status?: string; isPublic?: boolean; publicUrl?: string; publicHash?: string; shortId?: string }>(`/api/presentations/${presentationId.value}`, body)
       if (data?.status != null) presentationMeta.value.status = data.status
       if (data?.isPublic != null) presentationMeta.value.isPublic = data.isPublic
@@ -3466,6 +3472,15 @@ async function exportToPDF() {
     min-width: 44px;
     min-height: 44px;
   }
+  /* Нижняя панель мобильного редактора: кнопки 35×35 */
+  .presentation-slider-wrap.booklet-view ~ * .mob-editor-buttons button,
+  .mob-editor-buttons button {
+    min-width: 35px !important;
+    min-height: 35px !important;
+    width: 35px !important;
+    height: 35px !important;
+    padding: 0 !important;
+  }
   
   /* Улучшаем поля ввода в слайдах (размер шрифта — из настроек презентации) */
   .presentation-slider-wrap.booklet-view .booklet-main__content input,
@@ -3490,6 +3505,15 @@ async function exportToPDF() {
           min-height: 44px;
           padding: 10px 16px;
           font-size: 15px;
+        }
+        /* Нижняя панель мобильного редактора: кнопки 35×35 */
+        .presentation-slider-wrap.booklet-view ~ * .mob-editor-buttons button,
+        .mob-editor-buttons button {
+          min-width: 35px !important;
+          min-height: 35px !important;
+          width: 35px !important;
+          height: 35px !important;
+          padding: 0 !important;
         }
       }
       

@@ -429,6 +429,7 @@ async function createAndOpenEditor(title = 'Новая презентация', 
         title: finalTitle,
         content,
         ...(themeColor ? { themeColor } : {}),
+        ...(selectedTemplateId.value ? { templateId: selectedTemplateId.value } : {}),
       })
       await fetchUser()
       router.push(`/dashboard/presentations/${created.id}/edit`)

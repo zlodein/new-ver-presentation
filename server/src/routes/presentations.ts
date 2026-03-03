@@ -74,6 +74,8 @@ type ContentSettings = {
   fontSizeHeading?: string
   fontSizeText?: string
   fontSizePrice?: string
+  themeColor?: string
+  templateId?: string
 }
 
 /** Для списка: заголовок карточки берём из booklet-main__center (первый слайд, data.subtitle), иначе — переданный title. */
@@ -143,9 +145,12 @@ function getContentSettings(c: unknown): ContentSettings | undefined {
   const fontSizeHeading = s.fontSizeHeading !== undefined && s.fontSizeHeading !== null ? String(s.fontSizeHeading) : undefined
   const fontSizeText = s.fontSizeText !== undefined && s.fontSizeText !== null ? String(s.fontSizeText) : undefined
   const fontSizePrice = s.fontSizePrice !== undefined && s.fontSizePrice !== null ? String(s.fontSizePrice) : undefined
+  const themeColor = typeof s.themeColor === 'string' ? s.themeColor : undefined
+  const templateId = typeof s.templateId === 'string' ? s.templateId : undefined
   if (
     fontFamily == null && imageBorderRadius == null &&
-    fontSizePresentationTitle == null && fontSizeHeading == null && fontSizeText == null && fontSizePrice == null
+    fontSizePresentationTitle == null && fontSizeHeading == null && fontSizeText == null && fontSizePrice == null &&
+    themeColor == null && templateId == null
   ) {
     return undefined
   }
@@ -156,6 +161,8 @@ function getContentSettings(c: unknown): ContentSettings | undefined {
     ...(fontSizeHeading != null ? { fontSizeHeading } : {}),
     ...(fontSizeText != null ? { fontSizeText } : {}),
     ...(fontSizePrice != null ? { fontSizePrice } : {}),
+    ...(themeColor != null ? { themeColor } : {}),
+    ...(templateId != null ? { templateId } : {}),
   }
 }
 
@@ -376,7 +383,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           }
         }
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const r = row as { id: number; user_id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null; short_id?: string | null; theme_color?: string | null }
+        const r = row as { id: number; user_id: number; title: string; cover_image: string | null; slides_data: string | null; updated_at: Date; status?: string; public_hash?: string | null; is_public?: number; public_url?: string | null; short_id?: string | null; theme_color?: string | null; template_id?: string | null }
         const isOwner = r.user_id === userIdNum
         let shortId = r.short_id ?? undefined
         if (!shortId) {
@@ -394,10 +401,11 @@ export async function presentationRoutes(app: FastifyInstance) {
           }
         }
         let content = normContent(r.slides_data)
-        if (r.theme_color != null && typeof content === 'object' && content !== null && !Array.isArray(content)) {
+        if (typeof content === 'object' && content !== null && !Array.isArray(content)) {
           const c = content as { settings?: Record<string, string> }
           c.settings = c.settings ?? {}
-          c.settings.themeColor = r.theme_color
+          if (r.theme_color != null) c.settings.themeColor = r.theme_color
+          if (r.template_id != null) c.settings.templateId = r.template_id
         }
         return reply.send({
           id: String(r.id),
@@ -517,16 +525,17 @@ export async function presentationRoutes(app: FastifyInstance) {
   )
 
   app.post<{
-    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string }
+    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string; templateId?: string }
   }>(
     '/api/presentations',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string; templateId?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-      const { title, coverImage, content, themeColor } = req.body ?? {}
+      const { title, coverImage, content, themeColor, templateId } = req.body ?? {}
       const contentVal = content ?? { slides: [] }
       const themeColorNorm = typeof themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(themeColor) ? themeColor : undefined
+      const templateIdNorm = typeof templateId === 'string' && /^(elite|apartment|commercial|general|elite-investors|elite-families|apartment-families|apartment-general|commercial-corporate)$/.test(templateId) ? templateId : undefined
       if (useFileStore) {
         const created = fileStore.createPresentation({
           userId,
@@ -614,11 +623,12 @@ export async function presentationRoutes(app: FastifyInstance) {
                 user_id: userIdNum,
                 title: title?.trim() || 'Без названия',
                 cover_image: coverImage || null,
-                slides_data: JSON.stringify(themeColorNorm && typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
-                  ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, themeColor: themeColorNorm } }
+                slides_data: JSON.stringify((themeColorNorm || templateIdNorm) && typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
+                  ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, ...(themeColorNorm ? { themeColor: themeColorNorm } : {}), ...(templateIdNorm ? { templateId: templateIdNorm } : {}) } }
                   : contentVal),
                 short_id: shortId,
                 ...(themeColorNorm ? { theme_color: themeColorNorm } : {}),
+                ...(templateIdNorm ? { template_id: templateIdNorm } : {}),
               })
             break
           } catch (err: unknown) {
@@ -701,8 +711,8 @@ export async function presentationRoutes(app: FastifyInstance) {
           return reply.status(400).send({ error: 'На тарифе «Тест драйв» допускается не более 4 слайдов. Создайте презентацию с 4 слайдами или перейдите на тариф «Эксперт».' })
         }
       }
-      const pgContent = themeColorNorm && typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
-        ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, themeColor: themeColorNorm } }
+      const pgContent = (themeColorNorm || templateIdNorm) && typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
+        ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, ...(themeColorNorm ? { themeColor: themeColorNorm } : {}), ...(templateIdNorm ? { templateId: templateIdNorm } : {}) } }
         : contentVal
       const [created] = await pgDb
         .insert(pgSchema.presentations)
@@ -737,14 +747,14 @@ export async function presentationRoutes(app: FastifyInstance) {
 
   app.put<{
     Params: { id: string }
-    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean; themeColor?: string }
+    Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean; themeColor?: string; templateId?: string }
   }>(
     '/api/presentations/:id',
     { preHandler: [app.authenticate] },
-    async (req: FastifyRequest<{ Params: { id: string }; Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean; themeColor?: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { id: string }; Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; status?: string; createNotification?: boolean; themeColor?: string; templateId?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       const { id } = req.params
-      const { title, coverImage, content, status: bodyStatus, createNotification, themeColor: bodyThemeColor } = req.body ?? {}
+      const { title, coverImage, content, status: bodyStatus, createNotification, themeColor: bodyThemeColor, templateId: bodyTemplateId } = req.body ?? {}
       if (useFileStore) {
         const updates: { title?: string; coverImage?: string | null; content?: string; updatedAt?: string } = { updatedAt: new Date().toISOString() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
@@ -784,12 +794,13 @@ export async function presentationRoutes(app: FastifyInstance) {
             // колонка tariff может отсутствовать
           }
         }
-        const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string; status?: string; theme_color?: string } = { updated_at: new Date() }
+        const updates: { updated_at: Date; title?: string; cover_image?: string | null; slides_data?: string; status?: string; theme_color?: string; template_id?: string } = { updated_at: new Date() }
         if (title !== undefined) updates.title = title.trim() || 'Без названия'
         if (coverImage !== undefined) updates.cover_image = coverImage || null
         if (content !== undefined) updates.slides_data = JSON.stringify(content)
         if ((req.body as { status?: string }).status !== undefined) updates.status = (req.body as { status: string }).status
         if (bodyThemeColor !== undefined) updates.theme_color = typeof bodyThemeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(bodyThemeColor) ? bodyThemeColor : undefined
+        if (bodyTemplateId !== undefined) updates.template_id = typeof bodyTemplateId === 'string' && /^(elite|apartment|commercial|general|elite-investors|elite-families|apartment-families|apartment-general|commercial-corporate)$/.test(bodyTemplateId) ? bodyTemplateId : undefined
         await mysqlDb.update(mysqlSchema.presentations).set(updates).where(eq(mysqlSchema.presentations.id, mysqlId))
         const [updated] = await mysqlDb.query.presentations.findMany({
           where: eq(mysqlSchema.presentations.id, mysqlId),
@@ -952,7 +963,14 @@ export async function presentationRoutes(app: FastifyInstance) {
         where: and(eq(mysqlSchema.presentations.short_id, shortId), eq(mysqlSchema.presentations.is_public, 1)),
       })
       if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-      const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
+      const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; theme_color?: string | null; template_id?: string | null }
+      let pubContent = normContent(r.slides_data)
+      if (typeof pubContent === 'object' && pubContent !== null && !Array.isArray(pubContent)) {
+        const c = pubContent as { settings?: Record<string, string> }
+        c.settings = c.settings ?? {}
+        if (r.theme_color != null) c.settings.themeColor = r.theme_color
+        if (r.template_id != null) c.settings.templateId = r.template_id
+      }
       try {
         const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || null
         const userAgent = req.headers['user-agent'] || null
@@ -970,7 +988,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         id: String(r.id),
         title: r.title,
         coverImage: r.cover_image ?? undefined,
-        content: normContent(r.slides_data),
+        content: pubContent,
       })
     }
   )
@@ -985,8 +1003,14 @@ export async function presentationRoutes(app: FastifyInstance) {
         where: and(eq(mysqlSchema.presentations.public_hash, hash), eq(mysqlSchema.presentations.is_public, 1)),
       })
       if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-      const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
-      
+      const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; theme_color?: string | null; template_id?: string | null }
+      let pubContentHash = normContent(r.slides_data)
+      if (typeof pubContentHash === 'object' && pubContentHash !== null && !Array.isArray(pubContentHash)) {
+        const c = pubContentHash as { settings?: Record<string, string> }
+        c.settings = c.settings ?? {}
+        if (r.theme_color != null) c.settings.themeColor = r.theme_color
+        if (r.template_id != null) c.settings.templateId = r.template_id
+      }
       // Записываем просмотр
       try {
         const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || null
@@ -1007,7 +1031,7 @@ export async function presentationRoutes(app: FastifyInstance) {
         id: String(r.id),
         title: r.title,
         coverImage: r.cover_image ?? undefined,
-        content: normContent(r.slides_data),
+        content: pubContentHash,
       })
     }
   )
@@ -1162,14 +1186,15 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const row = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
-        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null }
+        const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; theme_color?: string | null; template_id?: string | null }
         const rawContent = typeof r.slides_data === 'string' ? (() => { try { return JSON.parse(r.slides_data) } catch { return null } })() : r.slides_data
         const normalized = normContent(r.slides_data)
+        const pdfSettings = { ...getContentSettings(rawContent), ...(r.theme_color ? { themeColor: r.theme_color } : {}), ...(r.template_id ? { templateId: r.template_id } : {}) } as Record<string, string>
         presentationData = {
           id: String(r.id),
           title: r.title,
           coverImage: r.cover_image ?? undefined,
-          content: { slides: normalized.slides as ViewSlideItem[], settings: getContentSettings(rawContent) },
+          content: { slides: normalized.slides as ViewSlideItem[], settings: pdfSettings },
         }
       } else {
         const row = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.presentations.findFirst({

@@ -74,3 +74,10 @@ export function getSmartTemplateById(id: string | null | undefined): SmartTempla
   if (!id) return undefined
   return SMART_TEMPLATES.find((t) => t.id === id)
 }
+
+/** Ключ стиля для data-booklet-template: по id шаблона возвращает elite | apartment | commercial | general */
+export function getTemplateStyleKey(templateId: string | null | undefined): string {
+  if (!templateId) return 'general'
+  const t = getSmartTemplateById(templateId)
+  return t?.propertyType ?? 'general'
+}

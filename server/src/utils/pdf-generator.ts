@@ -18,7 +18,16 @@ interface PresentationData {
   id: string
   title: string
   coverImage?: string
-  content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string } }
+  content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; themeColor?: string; templateId?: string } }
+}
+
+/** Ключ стиля шаблона для data-booklet-template (elite | apartment | commercial | general) */
+function getTemplateStyleKey(templateId: string | null | undefined): string {
+  if (!templateId || typeof templateId !== 'string') return 'general'
+  if (templateId.startsWith('elite')) return 'elite'
+  if (templateId.startsWith('apartment')) return 'apartment'
+  if (templateId.startsWith('commercial')) return 'commercial'
+  return 'general'
 }
 
 // A4 альбомная в пикселях (96 DPI): 297mm × 210mm — один слайд = один лист
@@ -99,6 +108,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const fontFamilyRaw = (data.content?.settings?.fontFamily || '').trim()
   const fontFamily = fontFamilyRaw && fontFamilyRaw !== 'system-ui' ? fontFamilyRaw : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
   const settings = (data.content?.settings || {}) as Record<string, string>
+  const templateStyleKey = getTemplateStyleKey(settings.templateId)
+  const themeColor = typeof settings.themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(settings.themeColor) ? settings.themeColor : '#2c7f8d'
 
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {
@@ -467,7 +478,14 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-container { width: 100%; margin: 0; background: white; }
     .booklet-page { page-break-after: always; position: relative; width: 100vw; height: 100vh; min-height: 100vh; max-height: 100vh; background-color: #eeeeee; padding: 1rem; overflow: hidden; }
     .booklet-page:last-child { page-break-after: auto; }
-    .presentation-slider-wrap.booklet-view { --theme-main-color: #2c7f8d; }
+    .presentation-slider-wrap.booklet-view { --theme-main-color: ${themeColor}; }
+    .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] { --theme-main-color: #1a1a2e; }
+    .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-main__top, .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-main__center, .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-info__title, .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-stroen__title { font-family: Georgia, "Times New Roman", serif; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+    .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] { --theme-main-color: #2563eb; }
+    .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-main__top, .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-main__center, .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-info__title, .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-stroen__title { font-family: "Rubik", -apple-system, sans-serif; font-weight: 600; }
+    .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-main__img img, .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-galery__img img { border-radius: 12px; }
+    .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] { --theme-main-color: #0f766e; }
+    .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-main__top, .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-main__center, .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-info__title, .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-stroen__title { font-family: "Helvetica Neue", sans-serif; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; }
     .presentation-slider-wrap.booklet-view .booklet-page__inner { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; padding: 0; box-sizing: border-box; overflow: hidden; background: #fff; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root { position: absolute; left: 0; top: 0; width: 70.16%; height: 70.16%; transform: scale(1.42518); transform-origin: 0 0; padding: 1rem; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
@@ -598,7 +616,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   <style>${embeddedCSS}</style>
 </head>
 <body>
-  <div class="presentation-container presentation-slider-wrap booklet-view">
+  <div class="presentation-container presentation-slider-wrap booklet-view" data-booklet-template="${templateStyleKey}">
     ${slideHTML}
   </div>
 </body>

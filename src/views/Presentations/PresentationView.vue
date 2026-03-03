@@ -28,6 +28,7 @@
       </div>
       <div
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
+        :data-booklet-template="bookletTemplateStyleKey"
         :style="presentationStyle"
       >
       <div
@@ -265,6 +266,7 @@ import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
+import { getTemplateStyleKey } from '@/data/smart-templates'
 
 interface ViewSlideItem {
   type: string
@@ -282,6 +284,11 @@ const presentation = ref<{
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string } }
 } | null>(null)
 
+/** Ключ шаблона для визуального стиля (elite / apartment / commercial / general) */
+const bookletTemplateStyleKey = computed(() =>
+  getTemplateStyleKey((presentation.value?.content?.settings as Record<string, string> | undefined)?.templateId)
+)
+
 /** Стили отображения (шрифт, скругления, размеры шрифтов) из настроек презентации */
 const presentationStyle = computed<Record<string, string>>(() => {
   const s = presentation.value?.content?.settings as Record<string, string> | undefined
@@ -289,6 +296,7 @@ const presentationStyle = computed<Record<string, string>>(() => {
   return {
     ...(s.fontFamily ? { fontFamily: s.fontFamily } : {}),
     ...(s.imageBorderRadius != null ? { '--booklet-image-radius': s.imageBorderRadius } : {}),
+    ...(s.themeColor ? { '--theme-color': s.themeColor } : {}),
     ...(s.fontSizePresentationTitle != null ? { '--booklet-font-size-presentation-title': s.fontSizePresentationTitle } : {}),
     ...(s.fontSizeHeading != null ? { '--booklet-font-size-heading': s.fontSizeHeading } : {}),
     ...(s.fontSizeText != null ? { '--booklet-font-size-text': s.fontSizeText } : {}),
