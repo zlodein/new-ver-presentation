@@ -74,6 +74,7 @@
     height: 100%;
     transform: none;
     transform-origin: unset;
+    padding: 0;
   }
 }
 
@@ -344,7 +345,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,7 +396,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -437,7 +438,7 @@
   position: relative;
   min-height: 180px;
   overflow: visible;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -523,7 +524,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -614,6 +615,16 @@
   flex-shrink: 0;
 }
 
+/* Абзацы и жирный в описании/инфраструктуре (просмотр, публичная ссылка, PDF) */
+.presentation-slider-wrap.booklet-view .booklet-info__text--formatted .booklet-info__paragraph,
+.presentation-slider-wrap.booklet-view .booklet-stroen__text .booklet-info__paragraph {
+  margin: 0 0 0.5em 0;
+}
+.presentation-slider-wrap.booklet-view .booklet-info__text--formatted .booklet-info__paragraph:first-child,
+.presentation-slider-wrap.booklet-view .booklet-stroen__text .booklet-info__paragraph:first-child {
+  margin-top: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-info__grid {
   display: grid;
   grid-template-rows: 1fr 1fr;
@@ -626,7 +637,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -731,7 +742,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -874,7 +885,7 @@
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -891,7 +902,7 @@
   position: relative;
   min-height: 120px;
   overflow: hidden;
-  background: #e8e8e8;
+  background: var(--theme-color, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -72,7 +72,7 @@
               <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-info__block booklet-info__content">
                   <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
-                  <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text" v-html="String(slide.data?.text ?? slide.data?.content ?? '').replace(/\n/g, '<br>')" />
+                  <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.text ?? slide.data?.content ?? ''))" />
                 </div>
                 <div class="booklet-info__grid image-grid-bound" :data-image-grid="getEffectiveImageGrid(slide)">
                   <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-info__block booklet-info__img">
@@ -86,7 +86,7 @@
               <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-stroen__block booklet-stroen__content">
                   <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
-                  <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text" v-html="String(slide.data?.content ?? slide.data?.text ?? '').replace(/\n/g, '<br>')" />
+                  <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.content ?? slide.data?.text ?? ''))" />
                 </div>
                 <div class="booklet-stroen__grid image-grid-bound" :data-image-grid="getEffectiveImageGrid(slide)">
                   <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-stroen__block booklet-stroen__img">
@@ -190,15 +190,22 @@
                     </div>
                     <div class="min-w-0 flex-1">
                       <h4 v-if="slide.data?.contactName ?? slide.data?.contact_name" class="mb-2 text-lg font-semibold text-gray-800 dark:text-white/90">{{ slide.data?.contactName ?? slide.data?.contact_name }}</h4>
-                      <p v-if="slide.data?.aboutText" class="text-sm text-gray-500 dark:text-gray-400">{{ slide.data.aboutText }}</p>
                     </div>
-                  </div>
-                  <div v-if="slide.data?.messengers && typeof slide.data.messengers === 'object' && Object.keys(slide.data.messengers as object).length" class="flex items-center gap-2">
-                    <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" />
                   </div>
                   <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
                     <p v-if="slide.data?.phone ?? slide.data?.contact_phone">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
+                  </div>
+                  <div v-if="slide.data?.messengers && typeof slide.data.messengers === 'object' && Object.keys(slide.data.messengers as object).length" class="booklet-contacts__messengers">
+                    <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" compact />
+                  </div>
+                  <div v-if="slide.data?.aboutText" class="booklet-contacts__block flex flex-col gap-1">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap">{{ slide.data.aboutText }}</p>
+                  </div>
+                  <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
                     <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
+                    <p v-if="slide.data?.websiteUrl && String(slide.data.websiteUrl).trim()">
+                      <a :href="String(slide.data.websiteUrl).trim()" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline dark:text-brand-400">{{ slide.data.websiteUrl }}</a>
+                    </p>
                     <p v-if="slide.data?.address ?? slide.data?.contact_address">{{ slide.data?.address ?? slide.data?.contact_address }}</p>
                   </div>
                 </div>
@@ -457,6 +464,22 @@ function getEffectiveViewImageLimit(slide: ViewSlideItem): number {
   const grid = getEffectiveImageGrid(slide)
   const [c, r] = grid.split('x').map(Number)
   return (c || 1) * (r || 1)
+}
+
+/** Текст описания/инфраструктуры: абзацы (\n\n) с отступом и **жирный** в HTML для просмотра и PDF */
+function formatDescriptionHtml(text: string): string {
+  if (!text || !String(text).trim()) return ''
+  const raw = String(text)
+  const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const paragraphs = raw.split(/\n\n+/)
+  return paragraphs
+    .map((p) => {
+      const escaped = escape(p.trim())
+      const withBold = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      const withBr = withBold.replace(/\n/g, '<br>')
+      return `<p class="booklet-info__paragraph">${withBr}</p>`
+    })
+    .join('')
 }
 
 /** Контакты: одно изображение справа (contactImageUrl или images[0]) */

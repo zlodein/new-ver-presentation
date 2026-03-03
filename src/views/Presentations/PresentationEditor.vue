@@ -558,7 +558,6 @@
                               title="Раскладка"
                               @input="setBlockLayout(slide, ($event.target as HTMLSelectElement).value)"
                             >
-                              <option disabled value="">Раскладка</option>
                               <option v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                             <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
@@ -570,7 +569,6 @@
                               title="Сетка изображений"
                               @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
                             >
-                              <option disabled value="">Сетка</option>
                               <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                             <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
@@ -588,7 +586,7 @@
                         <div class="booklet-info__text relative">
                           <textarea
                             :value="String(slide.data?.text ?? '')"
-                            placeholder="Подробно опишите объект..."
+                            placeholder="Подробно опишите объект... Пустая строка — новый абзац. **жирный** — жирное начертание."
                             rows="6"
                             class="booklet-info__textarea w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pb-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400"
                             @input="(slide.data as Record<string, string>).text = ($event.target as HTMLTextAreaElement).value"
@@ -651,7 +649,6 @@
                               title="Раскладка"
                               @input="setBlockLayout(slide, ($event.target as HTMLSelectElement).value)"
                             >
-                              <option disabled value="">Раскладка</option>
                               <option v-for="opt in BLOCK_LAYOUT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                             <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
@@ -663,7 +660,6 @@
                               title="Сетка изображений"
                               @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
                             >
-                              <option disabled value="">Сетка</option>
                               <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                             <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
@@ -680,7 +676,7 @@
                         <div class="booklet-stroen__text relative">
                           <textarea
                             :value="String(slide.data?.content ?? '')"
-                            placeholder="Текст об инфраструктуре..."
+                            placeholder="Текст об инфраструктуре... Пустая строка — новый абзац. **жирный** — жирное начертание."
                             rows="6"
                             class="booklet-stroen__textarea w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pb-12 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400"
                             @input="(slide.data as Record<string, string>).content = ($event.target as HTMLTextAreaElement).value"
@@ -872,7 +868,6 @@
                             title="Сетка изображений"
                             @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
                           >
-                            <option disabled value="">Сетка</option>
                             <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                           </select>
                           <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
@@ -942,18 +937,20 @@
                           >
                             <div class="booklet-char__item">
                               <input
-                                v-model="item.label"
+                                :value="item.label"
                                 type="text"
                                 placeholder="Метка"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                @input="(e) => { const arr = slide.data?.items as Array<{ label: string; value: string }>; if (Array.isArray(arr) && arr[i]) arr[i].label = (e.target as HTMLInputElement).value }"
                               />
                             </div>
                             <div class="booklet-char__item">
                               <input
-                                v-model="item.value"
+                                :value="item.value"
                                 type="text"
                                 placeholder="Значение"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                @input="(e) => { const arr = slide.data?.items as Array<{ label: string; value: string }>; if (Array.isArray(arr) && arr[i]) arr[i].value = (e.target as HTMLInputElement).value }"
                               />
                             </div>
                             <button
@@ -1004,7 +1001,6 @@
                             title="Сетка изображений"
                             @input="setImageGrid(slide, ($event.target as HTMLSelectElement).value)"
                           >
-                            <option disabled value="">Сетка</option>
                             <option v-for="opt in getGridOptionsForSlide(slide)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                           </select>
                           <span class="absolute right-1 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="h-3 w-3 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
@@ -1077,16 +1073,7 @@
                               placeholder="ФИО или название организации"
                               class="mb-2 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-base font-semibold text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                             />
-                            <input
-                              v-model="slide.data.aboutText"
-                              type="text"
-                              placeholder="О себе"
-                              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-500 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                            />
                           </div>
-                        </div>
-                        <div v-if="slide.data?.messengers && Object.keys(slide.data.messengers as object).length" class="flex items-center gap-2">
-                          <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" />
                         </div>
                         <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
                           <input
@@ -1095,6 +1082,17 @@
                             placeholder="+7 (000) 000-00-00"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                             @input="onPhoneInput(slide, $event)"
+                          />
+                        </div>
+                        <div v-if="slide.data?.messengers && Object.keys(slide.data.messengers as object).length" class="booklet-contacts__messengers">
+                          <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" compact />
+                        </div>
+                        <div class="booklet-contacts__block flex flex-col gap-1">
+                          <textarea
+                            v-model="slide.data.aboutText"
+                            placeholder="О компании"
+                            rows="3"
+                            class="dark:bg-dark-900 min-h-[80px] w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-500 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                           <input
                             v-model="slide.data.email"
@@ -1107,6 +1105,12 @@
                             type="text"
                             placeholder="Адрес"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                          />
+                          <input
+                            v-model="slide.data.websiteUrl"
+                            type="url"
+                            placeholder="Сайт (выводится в просмотре только если заполнено)"
+                            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                         </div>
                       </div>
@@ -1163,6 +1167,13 @@
                         <span class="absolute right-4 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                       </div>
                     </div>
+                    <div>
+                      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
+                      <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
+                        <input v-model="presentationSettings.themeColor" type="color" class="h-8 w-12 cursor-pointer rounded border-0 bg-transparent p-0" title="Выберите цвет" />
+                        <input v-model="presentationSettings.themeColor" type="text" class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90" placeholder="#2c7f8d" maxlength="7" />
+                      </div>
+                    </div>
                   </div>
                   <button type="button" class="mt-4 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200" @click="resetPresentationSettings">Сбросить к исходным</button>
                 </div>
@@ -1187,7 +1198,7 @@
             <div class="mob-editor-buttons flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800">
             <button
               type="button"
-              class="mob-editor-buttons__prev inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition"
+              class="mob-editor-buttons__prev inline-flex h-[35px] w-[35px] flex-shrink-0 items-center justify-center rounded-lg border transition"
               :class="visibleSlideNumber <= 1
                 ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
                 : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'"
@@ -1201,7 +1212,7 @@
             </button>
             <button
               type="button"
-              class="mob-editor-buttons__next inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition"
+              class="mob-editor-buttons__next inline-flex h-[35px] w-[35px] flex-shrink-0 items-center justify-center rounded-lg border transition"
               :class="visibleSlideNumber >= visibleSlides.length
                 ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
                 : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'"
@@ -1217,7 +1228,7 @@
               type="button"
               :disabled="!canAddSlide"
               :title="!canAddSlide ? 'На тарифе «Тест драйв» допускается не более 4 слайдов' : 'Добавить слайд'"
-              class="mob-editor-buttons__add flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-700"
+              class="mob-editor-buttons__add flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-700"
               @click.stop="showSettingsMenu = false; showAddSlideMenu = canAddSlide ? !showAddSlideMenu : false"
             >
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1226,18 +1237,18 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Настройки отображения"
               @click.stop="showAddSlideMenu = false; showSettingsMenu = !showSettingsMenu"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
             <button
               type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Просмотр"
               @click="openViewPage"
             >
@@ -1247,7 +1258,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Сохранить"
               :disabled="saving"
               @click="savePresentation"
@@ -1259,8 +1270,8 @@
             <template v-if="presentationMeta.status === 'published' && !isAdmin">
               <button
                 type="button"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
-                title="Экспорт в PDF"
+class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+              title="Экспорт в PDF"
                 @click="exportToPDF"
               >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1271,7 +1282,7 @@
             <button
               v-else-if="presentationMeta.status !== 'published'"
               type="button"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+              class="inline-flex h-[35px] w-[35px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
               title="Опубликовать"
               @click="publishPresentation"
             >
@@ -2443,7 +2454,7 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
     case 'layout':
       return { heading: 'Планировка', imageGrid: '1x1', images: [] as string[] }
     case 'contacts':
-      return { heading: 'Контакты', contactName: '', aboutText: '', phone: '', email: '', address: '', messengers: {} as Record<string, string>, messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
+      return { heading: 'Контакты', contactName: '', aboutText: '', phone: '', email: '', address: '', websiteUrl: '', messengers: {} as Record<string, string>, messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
     default:
       return {}
   }
@@ -2476,16 +2487,12 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
     const url = toUrl(user.user_img)
     data.avatarUrl = url
     data.logoUrl = ''
-    data.contactImageUrl = url
-    if (!Array.isArray(data.images)) data.images = []
-    ;(data.images as string[])[0] = url
+    /* изображение только в аватарку (booklet-contacts__avatar), не в отдельный блок справа */
   } else if (prefs.avatarOrLogo === 'company' && user.company_logo) {
     const url = toUrl(user.company_logo)
     data.logoUrl = url
     data.avatarUrl = ''
-    data.contactImageUrl = url
-    if (!Array.isArray(data.images)) data.images = []
-    ;(data.images as string[])[0] = url
+    /* изображение только в аватарку */
   }
 
   data.heading = 'Контакты'
@@ -2501,6 +2508,10 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
 
   const email = prefs.nameOrOrg === 'company' && user.work_email ? user.work_email : user.email
   if (email) data.email = String(email).trim()
+
+  if (user.work_website && String(user.work_website).trim()) {
+    (data as Record<string, string>).websiteUrl = String(user.work_website).trim()
+  }
 
   const messengers = user.messengers && typeof user.messengers === 'object' ? user.messengers : null
   if (messengers) {
@@ -2924,11 +2935,11 @@ function contactsAvatarDisplayUrl(slide: SlideItem): string {
   return resolveImageUrl(profileContactsAvatarUrl())
 }
 
-/** Итоговый URL большого изображения справа в контактах: из слайда или из профиля */
+/** Итоговый URL большого изображения справа в контактах: только из слайда (не подставляем аватар из профиля) */
 function contactsImageDisplayUrl(slide: SlideItem): string {
   const fromSlide = contactImageUrl(slide)
   if (fromSlide) return resolveImageUrl(fromSlide)
-  return resolveImageUrl(profileContactsAvatarUrl())
+  return ''
 }
 
 async function onContactsAvatarUpload(slide: SlideItem, event: Event) {

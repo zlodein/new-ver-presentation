@@ -84,7 +84,7 @@
               <span class="flex h-5 w-5 items-center justify-center rounded-full border-[1.25px]" :class="prefsForm.aboutType === 'position' ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'">
                 <span class="w-2 h-2 bg-white rounded-full" :class="prefsForm.aboutType === 'position' ? 'block' : 'hidden'"></span>
               </span>
-              Должность
+              О компании
             </label>
           </div>
         </div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-2">
+  <div :class="compact ? 'grid grid-cols-6 gap-1.5' : 'flex items-center gap-2'">
     <a
       v-for="item in messengerItems"
       :key="item.key"
@@ -7,10 +7,12 @@
       :href="(messengers && messengers[item.key]) || '#'"
       target="_blank"
       rel="noopener"
-      class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300"
+      :class="compact
+        ? 'flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10'
+        : 'flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-300'"
       :title="item.title"
     >
-      <img :src="item.icon" :alt="item.title" class="w-5 h-5 flex-shrink-0 object-contain" />
+      <img :src="item.icon" :alt="item.title" :class="compact ? 'w-4 h-4 flex-shrink-0 object-contain' : 'w-5 h-5 flex-shrink-0 object-contain'" />
     </a>
   </div>
 </template>
@@ -29,5 +31,7 @@ const messengerItems = [
 
 defineProps<{
   messengers?: Record<string, string> | null
+  /** В блоке контактов: сетка 6 колонок, иконки меньше */
+  compact?: boolean
 }>()
 </script>

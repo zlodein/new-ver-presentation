@@ -54,7 +54,7 @@
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.company_name || '—' }}</p>
             </div>
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Должность</p>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">О компании</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ currentUser?.work_position || '—' }}</p>
             </div>
             <div>
@@ -126,12 +126,12 @@
 
                 <div class="col-span-2 lg:col-span-1">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Должность
+                    О компании
                   </label>
                   <input
                     v-model="formData.work_position"
                     type="text"
-                    placeholder="Должность"
+                    placeholder="О компании"
                     class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                   />
                   <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Пока не привязано к справочнику в базе</p>
