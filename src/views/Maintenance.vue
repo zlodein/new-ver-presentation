@@ -17,9 +17,18 @@
       <p class="mt-4 text-sm text-gray-400 dark:text-gray-500">
         Попробуйте зайти позже.
       </p>
+      <p class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <RouterLink
+          to="/signin"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+        >
+          Вход для администратора
+        </RouterLink>
+      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 </script>
