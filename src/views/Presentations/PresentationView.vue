@@ -608,22 +608,23 @@ function getGalleryGlobalIndex(slideIndex: number, imageIndexInSlide: number): n
 
 const viewScrollContainerRef = ref<HTMLElement | null>(null)
 
-/** Прокрутка к блоку по индексу: скроллим контейнер просмотра, а не window */
+/** Прокрутка к блоку: скроллим контейнер с overflow (presentation-view-fixed), т.к. scrollIntoView его не всегда прокручивает */
 function goToBlock(index: number) {
   const id = `block-${index}`
-  window.history.replaceState(null, '', `#${id}`)
+  if (window.location.hash !== `#${id}`) window.history.replaceState(null, '', `#${id}`)
   nextTick(() => {
     const el = document.getElementById(id)
     const container = viewScrollContainerRef.value
-    if (!el || !container) return
-    const containerRect = container.getBoundingClientRect()
-    const elRect = el.getBoundingClientRect()
-    const scrollTop = container.scrollTop + (elRect.top - containerRect.top) - 16
-    container.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' })
+    if (el && container) {
+      const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
+      container.scrollTo({ top: Math.max(0, top - 16), behavior: 'smooth' })
+    } else if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   })
 }
 
-/** Прокрутка к якорю по hash (при загрузке страницы с #block-N) */
+/** Прокрутка к якорю при загрузке с #block-N или при смене hash */
 function scrollToHash() {
   const hash = window.location.hash
   if (!hash || !hash.startsWith('#block-')) return
@@ -672,7 +673,7 @@ onMounted(async () => {
     error.value = 'Презентация не найдена'
   } finally {
     loading.value = false
-    nextTick(() => scrollToHash())
+    nextTick(() => { nextTick(scrollToHash) })
   }
 })
 
@@ -696,12 +697,13 @@ onBeforeUnmount(() => {
   width: 1123px;
   max-width: 100%;
 }
-/* Слайды в пропорции А4 альбом 1123×794 */
+/* Слайды в пропорции А4 альбом 1123×794; отступ при скролле к якорю, чтобы не уходить под шапку */
 .booklet-page--stacked {
   aspect-ratio: 1123 / 794;
   width: 100%;
   min-height: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  scroll-margin-top: 1rem;
 }
 .booklet-page--stacked .booklet-page__inner {
   width: 100%;
