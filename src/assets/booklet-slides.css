@@ -1257,12 +1257,11 @@
 }
 
 /* ========== Шаблоны по типу недвижимости (data-booklet-template) ========== */
+/* Шрифт везде берётся из настроек презентации (Настройки отображения). В шаблонах заданы только оформление, акценты и декоративные элементы. */
 
-/* Элитная недвижимость: классика, строгие формы, тёмный акцент, крупная типографика */
+/* Элитная недвижимость: классика, декоративная линия под заголовком, левый акцент, строгие формы, без скруглений */
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] {
   --theme-main-color: #1a1a2e;
-  --booklet-template-title-font: Georgia, "Times New Roman", serif;
-  --booklet-template-body-font: "Source Serif 4", Georgia, serif;
   --booklet-template-img-radius: 0;
   --booklet-template-page-bg: #f5f5f0;
 }
@@ -1277,15 +1276,25 @@
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-galery__title,
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-contacts__title,
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-layout__title {
-  font-family: var(--booklet-template-title-font);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 600;
 }
-.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-info__text,
-.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-stroen__text,
-.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-info__text--formatted .booklet-info__paragraph {
-  font-family: var(--booklet-template-body-font);
+.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-main__content {
+  border-left: 4px solid var(--theme-color, var(--theme-main-color));
+  padding-left: 1.5rem;
+}
+.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-main__top {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  margin-bottom: 0.25rem;
+}
+.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] input[type="text"],
+.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] textarea,
+.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] select {
+  border-radius: 0;
+  border-width: 1px;
+  border-color: rgba(0, 0, 0, 0.15);
 }
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-main__img img,
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-info__img img,
@@ -1293,15 +1302,13 @@
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-galery__img img,
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-char__img img,
 .presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-layout__img img,
-.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-contacts__img {
+.presentation-slider-wrap.booklet-view[data-booklet-template="elite"] .booklet-contacts__block.booklet-contacts__img img {
   border-radius: var(--booklet-template-img-radius);
 }
 
-/* Квартиры: современный, мягкие скругления, дружелюбный тон */
+/* Квартиры (городская): современный стиль, мягкие скругления, карточки с тенью, цветная полоска у заголовков */
 .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] {
   --theme-main-color: #2563eb;
-  --booklet-template-title-font: "Rubik", -apple-system, sans-serif;
-  --booklet-template-body-font: "Open Sans", -apple-system, sans-serif;
   --booklet-template-img-radius: 12px;
   --booklet-template-page-bg: #f8fafc;
 }
@@ -1316,13 +1323,27 @@
 .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-galery__title,
 .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-contacts__title,
 .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-layout__title {
-  font-family: var(--booklet-template-title-font);
   letter-spacing: 0.02em;
   font-weight: 600;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--theme-color, var(--theme-main-color));
 }
-.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-info__text,
-.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-stroen__text {
-  font-family: var(--booklet-template-body-font);
+.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-info__wrap,
+.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-stroen__wrap {
+  gap: 1.25rem;
+}
+.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-info__block.booklet-info__content,
+.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-stroen__block.booklet-stroen__content {
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] input[type="text"],
+.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] textarea,
+.presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] select {
+  border-radius: 10px;
+  border-width: 1px;
 }
 .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-main__img img,
 .presentation-slider-wrap.booklet-view[data-booklet-template="apartment"] .booklet-info__block.booklet-info__img img,
@@ -1334,16 +1355,18 @@
   border-radius: var(--booklet-template-img-radius);
 }
 
-/* Коммерческая недвижимость: деловой стиль, чёткие линии, минимум декора */
+/* Коммерческая недвижимость: деловой стиль, верхняя акцентная полоса, компактно, чёткие линии */
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] {
   --theme-main-color: #0f766e;
-  --booklet-template-title-font: "Source Sans 3", "Helvetica Neue", sans-serif;
-  --booklet-template-body-font: "Source Sans 3", "Helvetica Neue", sans-serif;
   --booklet-template-img-radius: 0;
   --booklet-template-page-bg: #ffffff;
 }
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-page {
   background-color: var(--booklet-template-page-bg);
+}
+.presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-main__content {
+  border-top: 4px solid var(--theme-color, var(--theme-main-color));
+  padding-top: 1rem;
 }
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-main__top,
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-main__center,
@@ -1353,7 +1376,6 @@
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-galery__title,
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-contacts__title,
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-layout__title {
-  font-family: var(--booklet-template-title-font);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   font-weight: 700;
@@ -1361,8 +1383,18 @@
 }
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-info__text,
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-stroen__text {
-  font-family: var(--booklet-template-body-font);
   font-size: 0.95em;
+}
+.presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-char__row,
+.presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-info__wrap,
+.presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-stroen__wrap {
+  gap: 0.5rem;
+}
+.presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] input[type="text"],
+.presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] textarea,
+.presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] select {
+  border-radius: 0;
+  border-width: 1px;
 }
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-main__img img,
 .presentation-slider-wrap.booklet-view[data-booklet-template="commercial"] .booklet-info__block.booklet-info__img img,
@@ -1374,7 +1406,7 @@
   border-radius: var(--booklet-template-img-radius);
 }
 
-/* Универсальный (general): нейтральный, текущие дефолты + лёгкое скругление */
+/* Универсальный (general): нейтральный, лёгкое скругление */
 .presentation-slider-wrap.booklet-view[data-booklet-template="general"] {
   --booklet-template-img-radius: 6px;
 }
