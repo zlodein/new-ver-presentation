@@ -113,7 +113,6 @@
   justify-content: center;
   background: #C4C4C4;
   box-sizing: border-box;
-  padding: 40px 0 40px 40px;
   border-radius: var(--booklet-image-radius, 8px);
 }
 
@@ -1007,7 +1006,6 @@
   .presentation-slider-wrap.booklet-view .booklet-main__img {
     flex: 0 0 auto;
     min-height: 200px;
-    padding: 20px 0 20px 20px;
   }
 
   .presentation-slider-wrap.booklet-view .booklet-main__content {
@@ -1042,7 +1040,6 @@
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__img {
     flex: 0 0 55%;
     min-height: 280px;
-    padding: 40px 0 40px 40px;
   }
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__content {
     flex: 1 1 45%;
