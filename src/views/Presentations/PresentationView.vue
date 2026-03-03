@@ -692,9 +692,9 @@ function onHashChange() {
 
 /* Когда слайды загрузились и в URL есть якорь — прокручиваем (режим просмотра и публичная ссылка) */
 watch(
-  () => [visibleSlides.value.length, route.hash],
+  () => [visibleSlides.value.length, String(route.hash ?? '')] as [number, string],
   ([len, hash]) => {
-    if (len > 0 && (hash?.startsWith('#block-') ?? window.location.hash.startsWith('#block-'))) {
+    if (len > 0 && (hash.startsWith('#block-') || window.location.hash.startsWith('#block-'))) {
       scheduleScrollToHash()
     }
   },
