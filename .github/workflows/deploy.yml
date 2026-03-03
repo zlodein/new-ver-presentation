@@ -37,6 +37,8 @@ jobs:
         env:
           # Пустой VITE_API_URL — на сайте запросы пойдут на относительный /api (ваш домен), а не на localhost
           VITE_API_URL: ''
+          # Яндекс.Карты JS API 2.1 — добавьте секрет VITE_YANDEX_MAPS_API_KEY в Settings → Secrets and variables → Actions
+          VITE_YANDEX_MAPS_API_KEY: ${{ secrets.VITE_YANDEX_MAPS_API_KEY }}
 
       - name: Setup Node.js for backend
         uses: actions/setup-node@v4
