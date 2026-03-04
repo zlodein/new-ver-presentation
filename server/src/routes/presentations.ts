@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not, lt } from 'drizzle-orm'
+import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not, lt, count } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -356,10 +356,13 @@ export async function presentationRoutes(app: FastifyInstance) {
       if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
       const base = eq(mysqlSchema.presentations.user_id, userIdNum)
+      const countSel = { count: count() }
+      const deletedCond = not(isNull(mysqlSchema.presentations.deleted_at))
+      const whereDeleted = and(base, deletedCond)
       const [publishedRow, draftRow, deletedRow] = await Promise.all([
-        mysqlDb.select({ count: sql<number>`COUNT(*)`.as('count') }).from(mysqlSchema.presentations).where(and(base, isNull(mysqlSchema.presentations.deleted_at), eq(mysqlSchema.presentations.status, 'published'))),
-        mysqlDb.select({ count: sql<number>`COUNT(*)`.as('count') }).from(mysqlSchema.presentations).where(and(base, isNull(mysqlSchema.presentations.deleted_at), eq(mysqlSchema.presentations.status, 'draft'))),
-        mysqlDb.select({ count: sql<number>`COUNT(*)`.as('count') }).from(mysqlSchema.presentations).where(and(base, not(isNull(mysqlSchema.presentations.deleted_at))))),
+        mysqlDb.select(countSel).from(mysqlSchema.presentations).where(and(base, isNull(mysqlSchema.presentations.deleted_at), eq(mysqlSchema.presentations.status, 'published'))),
+        mysqlDb.select(countSel).from(mysqlSchema.presentations).where(and(base, isNull(mysqlSchema.presentations.deleted_at), eq(mysqlSchema.presentations.status, 'draft'))),
+        mysqlDb.select(countSel).from(mysqlSchema.presentations).where(whereDeleted),
       ])
       return reply.send({
         published: Number(publishedRow[0]?.count ?? 0),
@@ -369,10 +372,13 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
     const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
     const base = eq(pgSchema.presentations.userId, userId)
+    const countSelPg = { count: count() }
+    const deletedCondPg = not(isNull(pgSchema.presentations.deletedAt))
+    const whereDeletedPg = and(base, deletedCondPg)
     const [publishedRow, draftRow, deletedRow] = await Promise.all([
-      pgDb.select({ count: sql<number>`count(*)`.as('count') }).from(pgSchema.presentations).where(and(base, isNull(pgSchema.presentations.deletedAt), eq(pgSchema.presentations.status, 'published'))),
-      pgDb.select({ count: sql<number>`count(*)`.as('count') }).from(pgSchema.presentations).where(and(base, isNull(pgSchema.presentations.deletedAt), eq(pgSchema.presentations.status, 'draft'))),
-      pgDb.select({ count: sql<number>`count(*)`.as('count') }).from(pgSchema.presentations).where(and(base, not(isNull(pgSchema.presentations.deletedAt))))),
+      pgDb.select(countSelPg).from(pgSchema.presentations).where(and(base, isNull(pgSchema.presentations.deletedAt), eq(pgSchema.presentations.status, 'published'))),
+      pgDb.select(countSelPg).from(pgSchema.presentations).where(and(base, isNull(pgSchema.presentations.deletedAt), eq(pgSchema.presentations.status, 'draft'))),
+      pgDb.select(countSelPg).from(pgSchema.presentations).where(whereDeletedPg),
     ])
     return reply.send({
       published: Number(publishedRow[0]?.count ?? 0),
