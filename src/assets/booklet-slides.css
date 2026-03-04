@@ -5,7 +5,7 @@
 
 /* Единый формат слайдов: 1123×794 px (A4 альбом, 96 DPI) — редактор, просмотр, публичная ссылка */
 .presentation-slider-wrap.booklet-view {
-  --theme-main-color: #2c7f8d;
+  --theme-main-color: #465FFF;
   max-width: 1123px;
   height: auto;
   aspect-ratio: 1123 / 794;
@@ -344,7 +344,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -396,7 +396,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -438,7 +438,7 @@
   position: relative;
   min-height: 180px;
   overflow: visible;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,7 +524,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -637,7 +637,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -742,7 +742,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -886,7 +886,7 @@
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -903,7 +903,7 @@
   position: relative;
   min-height: 120px;
   overflow: hidden;
-  background: var(--theme-color, #e8e8e8);
+  background: var(--theme-color, #465FFF);
   display: flex;
   align-items: center;
   justify-content: center;
