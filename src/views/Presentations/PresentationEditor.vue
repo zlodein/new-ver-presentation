@@ -422,11 +422,11 @@
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
             :style="presentationStyle"
           >
-            <!-- Кнопка палитры (макет/сетка): только на десктопе; пульсация вправо-вверх (только десктоп) -->
+            <!-- Кнопка палитры (макет/сетка): только на десктопе; волна идёт от кнопки влево и вниз -->
             <button
               v-if="currentSlide && ['description','infrastructure','gallery','layout'].includes(currentSlide.type) && canEditImages"
               type="button"
-              class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
+              class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-visible rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
               style="background-color: var(--color-green-600);"
               title="Макет и сетка изображений"
               @click="openPalettePopup(currentSlide.id, $event)"
@@ -3681,7 +3681,7 @@ async function exportToPDF() {
       }
     }
 
-/* Пульсация кнопки палитры (только десктоп): волна только вправо и вверх, не влево и вниз */
+/* Пульсация кнопки палитры (только десктоп): волна влево и вниз, хорошо заметная */
 @keyframes booklet-palette-ping {
   75%, 100% {
     transform: scale(1.8);
@@ -3691,9 +3691,12 @@ async function exportToPDF() {
 .booklet-palette-btn-ping {
   border-radius: inherit;
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.4);
+  /* Заливка и контур волны, чтобы волна была видна на зелёном фоне */
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
   opacity: 1;
-  transform-origin: 100% 0; /* правый верхний угол — волна расширяется только влево и вниз */
+  transform-origin: 100% 0; /* правый верхний угол — волна расширяется влево и вниз */
   animation: booklet-palette-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 /* Иконка в отдельном слое, чтобы не «пульсировала» вместе с волной */
