@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not, lt, count } from 'drizzle-orm'
+import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not, lt, lte, count } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -1073,17 +1073,18 @@ export async function presentationRoutes(app: FastifyInstance) {
     }
   )
 
-  /** Очистка презентаций, удалённых более 30 дней назад (безвозвратное удаление). Запускается по таймеру. */
+  /** Очистка презентаций, удалённых 30 и более дней назад (безвозвратное удаление).
+   * Запускается: сразу после старта, затем каждый час (при постоянно работающем сервере не нужно ждать 24 ч). */
   const PURGE_DAYS = 30
   const purgeDeletedPresentations = async (): Promise<void> => {
-    const olderThan = new Date(Date.now() - PURGE_DAYS * 24 * 60 * 60 * 1000)
+    const cutoff = new Date(Date.now() - PURGE_DAYS * 24 * 60 * 60 * 1000)
     if (useFileStore) return
     if (useMysql) {
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
       const toPurge = await mysqlDb
         .select({ id: mysqlSchema.presentations.id })
         .from(mysqlSchema.presentations)
-        .where(and(not(isNull(mysqlSchema.presentations.deleted_at)), lt(mysqlSchema.presentations.deleted_at, olderThan)))
+        .where(and(not(isNull(mysqlSchema.presentations.deleted_at)), lte(mysqlSchema.presentations.deleted_at, cutoff)))
       for (const row of toPurge) {
         const id = String(row.id)
         await mysqlDb.delete(mysqlSchema.presentationViews).where(eq(mysqlSchema.presentationViews.presentation_id, row.id))
@@ -1097,7 +1098,7 @@ export async function presentationRoutes(app: FastifyInstance) {
     const toPurge = await pgDb
       .select({ id: pgSchema.presentations.id })
       .from(pgSchema.presentations)
-      .where(and(not(isNull(pgSchema.presentations.deletedAt)), lt(pgSchema.presentations.deletedAt, olderThan)))
+      .where(and(not(isNull(pgSchema.presentations.deletedAt)), lte(pgSchema.presentations.deletedAt, cutoff)))
     for (const row of toPurge) {
       const id = row.id
       try { await deletePresentationImagesFolder(id) } catch { /* ignore */ }
@@ -1106,8 +1107,8 @@ export async function presentationRoutes(app: FastifyInstance) {
     if (toPurge.length > 0) app.log.info({ count: toPurge.length }, 'Purged old deleted presentations (PG)')
   }
 
-  const purgeIntervalMs = 24 * 60 * 60 * 1000
-  setTimeout(() => { purgeDeletedPresentations().catch((err) => app.log.error(err, 'Purge deleted presentations')) }, 60 * 1000)
+  const purgeIntervalMs = 60 * 60 * 1000
+  purgeDeletedPresentations().catch((err) => app.log.error(err, 'Purge deleted presentations (startup)'))
   setInterval(() => { purgeDeletedPresentations().catch((err) => app.log.error(err, 'Purge deleted presentations')) }, purgeIntervalMs)
 
   /** Мягкое удаление по id из тела запроса (deleted_at = now(); храним месяц). */
