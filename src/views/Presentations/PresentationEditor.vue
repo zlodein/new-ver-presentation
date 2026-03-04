@@ -3681,19 +3681,18 @@ async function exportToPDF() {
       }
     }
 
-/* Пульсация кнопки палитры (только десктоп): волна влево и вниз, хорошо заметная */
+/* Пульсация кнопки палитры (только десктоп): волна влево и вниз, ~половина размера, цвет как кнопка с прозрачностью */
 @keyframes booklet-palette-ping {
   75%, 100% {
-    transform: scale(1.8);
+    transform: scale(1.4);
     opacity: 0;
   }
 }
 .booklet-palette-btn-ping {
   border-radius: inherit;
   pointer-events: none;
-  /* Заливка и контур волны, чтобы волна была видна на зелёном фоне */
-  background: rgba(255, 255, 255, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--color-green-600) 45%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-green-600) 65%, transparent);
   box-sizing: border-box;
   opacity: 1;
   transform-origin: 100% 0; /* правый верхний угол — волна расширяется влево и вниз */
