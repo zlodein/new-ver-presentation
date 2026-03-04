@@ -1238,16 +1238,21 @@
   }
 
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__title,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__title input,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__title,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__title input,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-char__title,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__title,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__title,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__title input,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__title,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__title input,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) label.block {
     display: block;
     font-weight: 500;
     font-size: 16px;
     color: var(--mob-editor-muted);
-    margin-bottom: 8px;
+    margin: 0;
   }
 
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) textarea,

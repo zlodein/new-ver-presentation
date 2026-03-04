@@ -422,15 +422,16 @@
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
             :style="presentationStyle"
           >
-            <!-- Кнопка палитры (макет/сетка): только на десктопе, в правом верхнем углу; скругление только верхний правый и нижний левый угол -->
+            <!-- Кнопка палитры (макет/сетка): только на десктопе, в правом верхнем углу; фон #465fff, пульсация не выходит за кнопку -->
             <button
               v-if="currentSlide && ['description','infrastructure','gallery','layout'].includes(currentSlide.type) && canEditImages"
               type="button"
-              class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg border border-gray-300 bg-white text-gray-500 shadow-sm transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400 md:flex"
+              class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg bg-[#465fff] text-white transition-opacity hover:opacity-90 md:flex"
               title="Макет и сетка изображений"
               @click="openPalettePopup(currentSlide.id, $event)"
             >
-              <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span class="booklet-palette-btn-ping absolute inset-0 flex items-center justify-center bg-[#465fff]" aria-hidden="true" />
+              <svg class="relative z-10 h-[18px] w-[18px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             </button>
             <Swiper
               v-bind="swiperOptions"
@@ -565,11 +566,12 @@
                           <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                             <button
                               type="button"
-                              class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
                               title="Макет и сетка изображений"
                               @click="openPalettePopup(slide.id, $event)"
                             >
-                              <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                              <span class="booklet-palette-btn-ping absolute inset-0 flex items-center justify-center bg-[#465fff]" aria-hidden="true" />
+                              <svg class="relative z-10 h-[22px] w-[22px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                             </button>
                           </div>
                         </div>
@@ -644,11 +646,12 @@
                           <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                             <button
                               type="button"
-                              class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
                               title="Макет и сетка изображений"
                               @click="openPalettePopup(slide.id, $event)"
                             >
-                              <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                              <span class="booklet-palette-btn-ping absolute inset-0 flex items-center justify-center bg-[#465fff]" aria-hidden="true" />
+                              <svg class="relative z-10 h-[22px] w-[22px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                             </button>
                           </div>
                         </div>
@@ -851,11 +854,12 @@
                         <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                           <button
                             type="button"
-                            class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
                             title="Сетка изображений"
                             @click="openPalettePopup(slide.id, $event)"
                           >
-                            <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            <span class="booklet-palette-btn-ping absolute inset-0 flex items-center justify-center bg-[#465fff]" aria-hidden="true" />
+                            <svg class="relative z-10 h-[22px] w-[22px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                           </button>
                         </div>
                       </div>
@@ -983,11 +987,12 @@
                         <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                           <button
                             type="button"
-                            class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
                             title="Сетка изображений"
                             @click="openPalettePopup(slide.id, $event)"
                           >
-                            <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            <span class="booklet-palette-btn-ping absolute inset-0 flex items-center justify-center bg-[#465fff]" aria-hidden="true" />
+                            <svg class="relative z-10 h-[22px] w-[22px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                           </button>
                         </div>
                       </div>
@@ -3674,6 +3679,20 @@ async function exportToPDF() {
         padding-bottom: max(12px, env(safe-area-inset-bottom));
       }
     }
+
+/* Пульсация кнопки палитры: как animate-ping, но не выходит за кнопку (кнопка с overflow-hidden) */
+@keyframes booklet-palette-ping {
+  75%, 100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+.booklet-palette-btn-ping {
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.75;
+  animation: booklet-palette-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
 
 /* Шторка мобильной панели: выезд снизу вверх */
 .mob-sheet-enter-active,
