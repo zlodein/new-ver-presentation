@@ -99,7 +99,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const fontFamilyRaw = (data.content?.settings?.fontFamily || '').trim()
   const fontFamily = fontFamilyRaw && fontFamilyRaw !== 'system-ui' ? fontFamilyRaw : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
   const settings = (data.content?.settings || {}) as Record<string, string>
-  const themeColor = typeof settings.themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(settings.themeColor) ? settings.themeColor : '#2c7f8d'
+  const themeColor = typeof settings.themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(settings.themeColor) ? settings.themeColor : '#465FFF'
 
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {

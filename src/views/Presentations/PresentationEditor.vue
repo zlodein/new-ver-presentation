@@ -455,25 +455,25 @@
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
                         <div class="booklet-main__content">
-                          <!-- 1. Подзаголовок (одна строка) -->
+                          <!-- 1. Подзаголовок (перенос по словам) -->
                           <div class="booklet-main__top">
-                            <input
-                              type="text"
+                            <textarea
                               :value="String(slide.data?.title ?? '')"
+                              rows="2"
                               placeholder="ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ"
-                              class="booklet-main__top-input w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                              @input="(slide.data as Record<string, string>).title = ($event.target as HTMLInputElement).value"
-                            >
+                              class="booklet-main__top-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              @input="(slide.data as Record<string, string>).title = ($event.target as HTMLTextAreaElement).value"
+                            />
                           </div>
-                          <!-- 2. Название презентации (одна строка) -->
+                          <!-- 2. Название презентации (перенос по словам) -->
                           <div class="booklet-main__center">
-                            <input
-                              type="text"
+                            <textarea
                               :value="String(slide.data?.subtitle ?? '')"
+                              rows="2"
                               placeholder="АБСОЛЮТНО НОВЫЙ ТАУНХАУС НА ПЕРВОЙ ЛИНИИ"
-                              class="booklet-main__center-input w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                              @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLInputElement).value"
-                            >
+                              class="booklet-main__center-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
+                            />
                           </div>
                           <!-- Тип сделки, цена и валюта — единый блок: тип слева, инпут по центру, валюта справа -->
                           <div class="booklet-main__bottom">

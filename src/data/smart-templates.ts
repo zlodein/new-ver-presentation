@@ -66,7 +66,7 @@ export const SMART_TEMPLATES: SmartTemplate[] = [
     description: 'Любой тип объекта и аудитория',
     propertyType: 'general',
     audience: 'general',
-    themeColor: '#2c7f8d',
+    themeColor: '#465FFF',
   },
 ]
 

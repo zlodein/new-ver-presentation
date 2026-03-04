@@ -574,15 +574,19 @@ export async function presentationRoutes(app: FastifyInstance) {
     async (req: FastifyRequest<{ Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+      const DEFAULT_THEME_COLOR = '#465FFF'
       const { title, coverImage, content, themeColor } = req.body ?? {}
       const contentVal = content ?? { slides: [] }
-      const themeColorNorm = typeof themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(themeColor) ? themeColor : undefined
+      const themeColorNorm = typeof themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(themeColor) ? themeColor : DEFAULT_THEME_COLOR
       if (useFileStore) {
+        const contentWithTheme = typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
+          ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, themeColor: themeColorNorm } }
+          : contentVal
         const created = fileStore.createPresentation({
           userId,
           title: title?.trim() || 'Без названия',
           coverImage: coverImage || null,
-          content: JSON.stringify(contentVal),
+          content: JSON.stringify(contentWithTheme),
         })
         return reply.status(201).send({
           id: created.id,
@@ -664,11 +668,11 @@ export async function presentationRoutes(app: FastifyInstance) {
                 user_id: userIdNum,
                 title: title?.trim() || 'Без названия',
                 cover_image: coverImage || null,
-                slides_data: JSON.stringify(themeColorNorm && typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
+                slides_data: JSON.stringify(typeof contentVal === 'object' && contentVal !== null && !Array.isArray(contentVal)
                   ? { ...contentVal, settings: { ...(contentVal as { settings?: Record<string, unknown> }).settings, themeColor: themeColorNorm } }
                   : contentVal),
                 short_id: shortId,
-                ...(themeColorNorm ? { theme_color: themeColorNorm } : {}),
+                theme_color: themeColorNorm,
               })
             break
           } catch (err: unknown) {
