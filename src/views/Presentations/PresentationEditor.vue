@@ -3693,7 +3693,7 @@ async function exportToPDF() {
   pointer-events: none;
   background: rgba(255, 255, 255, 0.4);
   opacity: 1;
-  transform-origin: 0 100%; /* левый нижний угол — волна расширяется только вправо и вверх */
+  transform-origin: 100% 0; /* правый верхний угол — волна расширяется только влево и вниз */
   animation: booklet-palette-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 /* Иконка в отдельном слое, чтобы не «пульсировала» вместе с волной */
