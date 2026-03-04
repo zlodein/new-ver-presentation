@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not, lt, lte, count } from 'drizzle-orm'
+import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not, lt, count } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
