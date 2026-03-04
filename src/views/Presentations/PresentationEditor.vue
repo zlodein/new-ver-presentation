@@ -419,9 +419,19 @@
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
-            class="presentation-slider-wrap booklet-view mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
+            class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
             :style="presentationStyle"
           >
+            <!-- Кнопка палитры (макет/сетка): только на десктопе, в правом верхнем углу; скругление только верхний правый и нижний левый угол -->
+            <button
+              v-if="currentSlide && ['description','infrastructure','gallery','layout'].includes(currentSlide.type) && canEditImages"
+              type="button"
+              class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg border border-gray-300 bg-white text-gray-500 shadow-sm transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400 md:flex"
+              title="Макет и сетка изображений"
+              @click="openPalettePopup(currentSlide.id, $event)"
+            >
+              <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </button>
             <Swiper
               v-bind="swiperOptions"
               @swiper="onSwiper"
@@ -551,14 +561,17 @@
                             class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                             @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
                           />
-                          <button
-                            type="button"
-                            class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
-                            title="Макет и сетка изображений"
-                            @click="openPalettePopup(slide.id, $event)"
-                          >
-                            <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                          </button>
+                          <!-- Мобильная кнопка палитры: 50×50, по центру по вертикали с инпутом заголовка -->
+                          <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                            <button
+                              type="button"
+                              class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                              title="Макет и сетка изображений"
+                              @click="openPalettePopup(slide.id, $event)"
+                            >
+                              <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            </button>
+                          </div>
                         </div>
                         <template v-else>
                           <input
@@ -581,14 +594,14 @@
                             type="button"
                             :class="[
                               'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
-                              generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
+                              generateTextLoading === slide.id ? 'max-w-[10rem] md:max-w-[10rem]' : 'max-w-[2.5rem] md:max-w-[2rem] md:hover:max-w-[10rem]'
                             ]"
                             :disabled="generateTextLoading === slide.id"
                             @click="generateTextWithAI(slide, 'description')"
                           >
                             <img src="/images/icons/gigachat-logo.svg" alt="" class="h-4 w-4 shrink-0" width="16" height="16" />
-                            <span v-if="generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse">Генерация...</span>
-                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap">сгенерировать</span>
+                            <span v-if="generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse hidden md:inline">Генерация...</span>
+                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap hidden md:inline">сгенерировать</span>
                           </button>
                         </div>
                       </div>
@@ -628,14 +641,16 @@
                             placeholder="ИНФРАСТРУКТУРА"
                             class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                           />
-                          <button
-                            type="button"
-                            class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
-                            title="Макет и сетка изображений"
-                            @click="openPalettePopup(slide.id, $event)"
-                          >
-                            <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                          </button>
+                          <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                            <button
+                              type="button"
+                              class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                              title="Макет и сетка изображений"
+                              @click="openPalettePopup(slide.id, $event)"
+                            >
+                              <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            </button>
+                          </div>
                         </div>
                         <template v-else>
                           <input
@@ -657,14 +672,14 @@
                             type="button"
                             :class="[
                               'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
-                              generateTextLoading === slide.id ? 'max-w-[10rem]' : 'max-w-[2rem] hover:max-w-[10rem]'
+                              generateTextLoading === slide.id ? 'max-w-[10rem] md:max-w-[10rem]' : 'max-w-[2.5rem] md:max-w-[2rem] md:hover:max-w-[10rem]'
                             ]"
                             :disabled="generateTextLoading === slide.id"
                             @click="generateTextWithAI(slide, 'infrastructure')"
                           >
                             <img src="/images/icons/gigachat-logo.svg" alt="" class="h-4 w-4 shrink-0" width="16" height="16" />
-                            <span v-if="generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse">Генерация...</span>
-                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap">сгенерировать</span>
+                            <span v-if="generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse hidden md:inline">Генерация...</span>
+                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap hidden md:inline">сгенерировать</span>
                           </button>
                         </div>
                       </div>
@@ -833,14 +848,16 @@
                           placeholder="ГАЛЕРЕЯ"
                           class="booklet-galery__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <button
-                          type="button"
-                          class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
-                          title="Сетка изображений"
-                          @click="openPalettePopup(slide.id, $event)"
-                        >
-                          <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                        </button>
+                        <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                          <button
+                            type="button"
+                            class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            title="Сетка изображений"
+                            @click="openPalettePopup(slide.id, $event)"
+                          >
+                            <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          </button>
+                        </div>
                       </div>
                       <template v-else>
                         <input
@@ -963,14 +980,16 @@
                           placeholder="ПЛАНИРОВКА"
                           class="booklet-layout__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
-                        <button
-                          type="button"
-                          class="booklet-palette-btn flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
-                          title="Сетка изображений"
-                          @click="openPalettePopup(slide.id, $event)"
-                        >
-                          <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                        </button>
+                        <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                          <button
+                            type="button"
+                            class="booklet-palette-btn flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:bg-brand-950/50 dark:hover:text-brand-400"
+                            title="Сетка изображений"
+                            @click="openPalettePopup(slide.id, $event)"
+                          >
+                            <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          </button>
+                        </div>
                       </div>
                       <template v-else>
                         <div class="booklet-layout__title-wrapper flex-shrink-0">
@@ -1108,7 +1127,7 @@
             <Transition name="mob-sheet">
               <div
                 v-if="showSettingsMenu || (showAddSlideMenu && canAddSlide)"
-                class="mob-editor-sheet w-full max-h-[70vh] overflow-y-auto border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+                class="mob-editor-sheet z-0 w-full max-h-[70vh] overflow-y-auto border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
                 @click.stop
               >
                 <!-- Контент: настройки -->
@@ -1160,8 +1179,8 @@
                 </div>
               </div>
             </Transition>
-            <!-- Кнопки панели -->
-            <div class="mob-editor-buttons flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800">
+            <!-- Кнопки панели (z-10 чтобы шторка настройки/добавить слайд выезжала за панелью) -->
+            <div class="mob-editor-buttons relative z-10 flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-3 safe-area-pb dark:border-gray-700 dark:bg-gray-800">
             <button
               type="button"
               class="mob-editor-buttons__prev inline-flex h-[25px] w-[25px] flex-shrink-0 items-center justify-center rounded-lg border transition"
@@ -1854,12 +1873,16 @@ const palettePopupSlide = computed(() => {
   return slides.value.find((s) => s.id === id) ?? null
 })
 
+const PALETTE_POPUP_WIDTH = 220
+
 function openPalettePopup(slideId: string, event: MouseEvent) {
   const el = event.currentTarget as HTMLElement
   if (!el) return
   const rect = el.getBoundingClientRect()
   palettePopupSlideId.value = slideId
-  palettePopupAnchor.value = { top: rect.bottom + 4, left: Math.max(8, rect.left) }
+  // На мобильных не уводить попап вправо за экран — держать в области видимости
+  const left = Math.min(rect.left, typeof window !== 'undefined' ? window.innerWidth - PALETTE_POPUP_WIDTH - 16 : rect.left)
+  palettePopupAnchor.value = { top: rect.bottom + 4, left: Math.max(8, left) }
 }
 
 function closePalettePopup() {

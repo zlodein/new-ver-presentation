@@ -29,6 +29,9 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+
+const INIT_RETRY_MS = 150
+const INIT_RETRY_ATTEMPTS = 20
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -39,6 +42,7 @@ const props = defineProps<{
 
 const mapEl = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
+let resizeObserver: ResizeObserver | null = null
 let marker: L.Marker | null = null
 let yandexMap: unknown = null
 
@@ -79,8 +83,15 @@ function loadYandexMaps(): Promise<boolean> {
   })
 }
 
+function containerHasSize(): boolean {
+  if (!mapEl.value) return false
+  const r = mapEl.value.getBoundingClientRect()
+  return r.width > 0 && r.height > 0
+}
+
 function initMap() {
   if (!mapEl.value || !hasValidCoords.value || yandexMap || map) return
+  if (!containerHasSize()) return
   if (useYandexOnly) {
     if (!(window as unknown as { ymaps?: unknown }).ymaps) {
       yandexLoadError.value = true
@@ -151,15 +162,33 @@ function destroyMap() {
 
 checkValid()
 
+function scheduleInitWhenReady(attempt = 0) {
+  if (attempt >= INIT_RETRY_ATTEMPTS) return
+  nextTick(() => {
+    if (containerHasSize()) {
+      initMap()
+    } else {
+      setTimeout(() => scheduleInitWhenReady(attempt + 1), INIT_RETRY_MS)
+    }
+  })
+}
+
 onMounted(() => {
   if (!hasValidCoords.value) return
   if (useYandexOnly) {
     loadYandexMaps().then((ok) => {
       if (!ok) yandexLoadError.value = true
-      nextTick(() => initMap())
+      scheduleInitWhenReady()
     })
   } else {
-    nextTick(() => initMap())
+    scheduleInitWhenReady()
+  }
+  const el = mapEl.value
+  if (el && hasValidCoords.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (containerHasSize() && !map && !yandexMap) scheduleInitWhenReady(0)
+    })
+    resizeObserver.observe(el)
   }
 })
 
@@ -172,10 +201,10 @@ watch(
         if (useYandexOnly && !(window as unknown as { ymaps?: unknown }).ymaps) {
           loadYandexMaps().then((ok) => {
             if (!ok) yandexLoadError.value = true
-            nextTick(() => initMap())
+            scheduleInitWhenReady(0)
           })
         } else {
-          nextTick(() => initMap())
+          scheduleInitWhenReady(0)
         }
       } else {
         updateMap()
@@ -187,6 +216,10 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (resizeObserver && mapEl.value) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
   destroyMap()
 })
 </script>
