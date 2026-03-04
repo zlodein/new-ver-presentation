@@ -192,6 +192,7 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 1rem;
+  padding: 0 25px;
 }
 
 /* Обложка: top = подзаголовок (heading), center = название презентации (presentation title) */
@@ -1083,6 +1084,7 @@
   }
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-main__content {
     flex: 1 1 45%;
+    padding: 0 25px;
   }
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-img__wrap,
   .presentation-view-fixed.presentation-slider-wrap.booklet-view .booklet-galery__wrap {
