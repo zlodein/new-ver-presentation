@@ -8,7 +8,7 @@
     </div>
     <div
       v-else
-      class="w-full p-4 pb-20 md:mx-auto md:max-w-(--breakpoint-2xl) md:p-6 md:pb-6"
+      class="w-full pt-0 px-4 pb-20 md:mx-auto md:max-w-(--breakpoint-2xl) md:pt-0 md:px-6 md:pb-6"
     >
       <!-- Навигационная шапка по блокам (та же ширина, что и контент) -->
       <div
@@ -255,6 +255,14 @@
           <span class="absolute bottom-4 left-1/2 -translate-x-1/2 rounded bg-black/50 px-3 py-1 text-sm text-white">{{ galleryIndex + 1 }} / {{ allImageUrls.length }}</span>
         </div>
       </Teleport>
+      <!-- Подвал: копирайт и ссылки (режим просмотра и публичная ссылка) -->
+      <footer class="mt-6 border-t border-gray-200 py-4 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+        <p class="mb-2">© 2026 E-Presentation. Все права защищены.</p>
+        <p class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <a href="/privacy" class="hover:text-gray-700 dark:hover:text-gray-300">Политика конфиденциальности</a>
+          <a href="/terms" class="hover:text-gray-700 dark:hover:text-gray-300">Правила и условия</a>
+        </p>
+      </footer>
     </div>
   </div>
 </template>

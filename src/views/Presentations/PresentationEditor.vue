@@ -3284,8 +3284,9 @@ function onPasteStripFormat(e: ClipboardEvent) {
   target.setSelectionRange(pos, pos)
 }
 
-/** Открыть страницу просмотра (владелец: по id; или публичная по hash) */
-function openViewPage() {
+/** Открыть страницу просмотра (сначала сохраняем, затем открываем) */
+async function openViewPage() {
+  await savePresentation()
   if (presentationMeta.value.isPublic && presentationMeta.value.publicHash) {
     window.open(`/view/${presentationMeta.value.publicHash}`, '_blank')
   } else {
