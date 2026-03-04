@@ -422,16 +422,17 @@
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
             :style="presentationStyle"
           >
-            <!-- Кнопка палитры (макет/сетка): только на десктопе; фон #465fff, пульсация — светлое свечение (только десктоп) -->
+            <!-- Кнопка палитры (макет/сетка): только на десктопе; пульсация вправо-вверх (только десктоп) -->
             <button
               v-if="currentSlide && ['description','infrastructure','gallery','layout'].includes(currentSlide.type) && canEditImages"
               type="button"
-              class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg bg-[#465fff] text-white transition-opacity hover:opacity-90 md:flex"
+              class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
+              style="background-color: var(--color-green-600);"
               title="Макет и сетка изображений"
               @click="openPalettePopup(currentSlide.id, $event)"
             >
               <span class="booklet-palette-btn-ping absolute inset-0 z-0" aria-hidden="true" />
-              <svg class="relative z-10 h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
+              <svg class="relative z-10 isolate h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
             </button>
             <Swiper
               v-bind="swiperOptions"
@@ -566,7 +567,8 @@
                           <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                             <button
                               type="button"
-                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
+                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                              style="background-color: var(--color-green-600);"
                               title="Макет и сетка изображений"
                               @click="openPalettePopup(slide.id, $event)"
                             >
@@ -645,7 +647,8 @@
                           <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                             <button
                               type="button"
-                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
+                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                              style="background-color: var(--color-green-600);"
                               title="Макет и сетка изображений"
                               @click="openPalettePopup(slide.id, $event)"
                             >
@@ -852,7 +855,8 @@
                         <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                           <button
                             type="button"
-                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
+                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                            style="background-color: var(--color-green-600);"
                             title="Сетка изображений"
                             @click="openPalettePopup(slide.id, $event)"
                           >
@@ -984,7 +988,8 @@
                         <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
                           <button
                             type="button"
-                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg bg-[#465fff] text-white transition-opacity hover:opacity-90"
+                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                            style="background-color: var(--color-green-600);"
                             title="Сетка изображений"
                             @click="openPalettePopup(slide.id, $event)"
                           >
@@ -3676,7 +3681,7 @@ async function exportToPDF() {
       }
     }
 
-/* Пульсация кнопки палитры (только десктоп): светлое свечение, не выходит за кнопку */
+/* Пульсация кнопки палитры (только десктоп): волна только вправо и вверх, не влево и вниз */
 @keyframes booklet-palette-ping {
   75%, 100% {
     transform: scale(1.8);
@@ -3686,9 +3691,15 @@ async function exportToPDF() {
 .booklet-palette-btn-ping {
   border-radius: inherit;
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.4);
   opacity: 1;
+  transform-origin: 0 100%; /* левый нижний угол — волна расширяется только вправо и вверх */
   animation: booklet-palette-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+/* Иконка в отдельном слое, чтобы не «пульсировала» вместе с волной */
+.booklet-palette-btn .relative.z-10 {
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 /* Шторка мобильной панели: выезд снизу вверх */
