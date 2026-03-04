@@ -52,8 +52,8 @@
                   >
                 </div>
                 <div class="booklet-main__content">
-                  <div class="booklet-main__top" v-html="(slide.data?.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ').toString().replace(/\n/g, '<br>')" />
-                  <div class="booklet-main__center" v-html="(slide.data?.subtitle || '').toString().replace(/\n/g, '<br>')" />
+                  <div v-if="(slide.data?.title || '').toString().trim()" class="booklet-main__top" v-html="(slide.data?.title || '').toString().trim().replace(/\n/g, '<br>')" />
+                  <div v-if="(slide.data?.subtitle || '').toString().trim()" class="booklet-main__center" v-html="(slide.data?.subtitle || '').toString().trim().replace(/\n/g, '<br>')" />
                   <div class="booklet-main__bottom booklet-main__bottom--view text-right">
                     <div class="booklet-main__deal-type booklet-main__bottom-line">{{ slide.data?.deal_type || 'Аренда' }}</div>
                     <div class="booklet-main__price booklet-main__bottom-line font-semibold text-gray-800">

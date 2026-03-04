@@ -334,11 +334,11 @@ function genSlideId() {
 
 const SLIDE_TYPES = [
   { type: 'cover', label: 'Обложка' },
+  { type: 'characteristics', label: 'Характеристики' },
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
   { type: 'location', label: 'Местоположение' },
   { type: 'gallery', label: 'Галерея' },
-  { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
   { type: 'contacts', label: 'Контакты' },
 ]

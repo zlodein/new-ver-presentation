@@ -455,25 +455,25 @@
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
                         <div class="booklet-main__content">
-                          <!-- 1. Подзаголовок (перенос по словам) -->
+                          <!-- 1. Подзаголовок (одна строка) -->
                           <div class="booklet-main__top">
-                            <textarea
+                            <input
+                              type="text"
                               :value="String(slide.data?.title ?? '')"
-                              rows="2"
                               placeholder="ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ"
-                              class="booklet-main__top-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                              @input="(slide.data as Record<string, string>).title = ($event.target as HTMLTextAreaElement).value"
-                            />
+                              class="booklet-main__top-input w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              @input="(slide.data as Record<string, string>).title = ($event.target as HTMLInputElement).value"
+                            >
                           </div>
-                          <!-- 2. Название презентации (перенос по словам) -->
+                          <!-- 2. Название презентации (одна строка) -->
                           <div class="booklet-main__center">
-                            <textarea
+                            <input
+                              type="text"
                               :value="String(slide.data?.subtitle ?? '')"
-                              rows="2"
                               placeholder="АБСОЛЮТНО НОВЫЙ ТАУНХАУС НА ПЕРВОЙ ЛИНИИ"
-                              class="booklet-main__center-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                              @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
-                            />
+                              class="booklet-main__center-input w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                              @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLInputElement).value"
+                            >
                           </div>
                           <!-- Тип сделки, цена и валюта — единый блок: тип слева, инпут по центру, валюта справа -->
                           <div class="booklet-main__bottom">
@@ -1784,25 +1784,25 @@ function getImageGridLimit(slide: SlideItem): number {
   return cols * rows
 }
 
-/** Набор готовых типов слайдов для добавления (уникальные) */
+/** Набор готовых типов слайдов для добавления (уникальные). Характеристики по умолчанию сразу после обложки. */
 const SLIDE_TYPE_OPTIONS = [
   { type: 'cover', label: 'Обложка' },
+  { type: 'characteristics', label: 'Характеристики' },
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
   { type: 'location', label: 'Местоположение' },
   { type: 'gallery', label: 'Галерея' },
-  { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
   { type: 'contacts', label: 'Контакты' },
 ]
 
 const SLIDE_TYPES = [
   { type: 'cover', label: 'Обложка' },
+  { type: 'characteristics', label: 'Характеристики' },
   { type: 'description', label: 'Описание' },
   { type: 'infrastructure', label: 'Инфраструктура' },
   { type: 'location', label: 'Местоположение' },
   { type: 'gallery', label: 'Галерея' },
-  { type: 'characteristics', label: 'Характеристики' },
   { type: 'layout', label: 'Планировка' },
   { type: 'contacts', label: 'Контакты' },
 ] as const
@@ -2333,16 +2333,30 @@ const generateTextLoading = ref<string | null>(null)
 
 async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infrastructure') {
   const cover = slides.value.find((s) => s.type === 'cover')
-  const objectTitle = (cover?.data?.title ? String(cover.data.title) : '').trim() || 'объект недвижимости'
-  // Всегда передаём только название объекта, чтобы при повторной генерации получать новый вариант, а не дополнение к старому
-  const prompt = objectTitle
+  const charSlide = slides.value.find((s) => s.type === 'characteristics')
+  const center = (cover?.data?.subtitle != null ? String(cover.data.subtitle) : '').trim()
+  const top = (cover?.data?.title != null ? String(cover.data.title) : '').trim()
+  const objectTitle = top || center || 'объект недвижимости'
+  const characteristics = Array.isArray(charSlide?.data?.items)
+    ? (charSlide.data.items as Array<{ label?: string; value?: string }>).map((item) => ({
+        label: item?.label != null ? String(item.label) : '',
+        value: item?.value != null ? String(item.value) : '',
+      }))
+    : undefined
 
   generateTextLoading.value = slide.id
   try {
     const res = await fetch(`${EDITOR_API_BASE}/generate_text`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, prompt, object_title: objectTitle }),
+      body: JSON.stringify({
+        type,
+        prompt: objectTitle,
+        object_title: objectTitle,
+        center: center || undefined,
+        top: top || undefined,
+        characteristics: characteristics?.length ? characteristics : undefined,
+      }),
     })
     const text = await res.text()
     let data: { text?: string; error?: string }

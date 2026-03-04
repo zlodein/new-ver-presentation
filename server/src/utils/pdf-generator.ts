@@ -106,8 +106,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'cover': {
         const dataObj = slide.data || {}
         const coverImage = String(dataObj.coverImageUrl || dataObj.background_image || data.coverImage || '')
-        const title = String(dataObj.title || 'ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ')
-        const subtitle = String(dataObj.subtitle || '')
+        const title = String(dataObj.title ?? '').trim()
+        const subtitle = String(dataObj.subtitle ?? '').trim()
         const dealType = String(dataObj.deal_type || 'Аренда')
         const price = Number(dataObj.price_value || 0)
         const currency = String(dataObj.currency || 'RUB')
@@ -145,8 +145,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     ${coverImage ? `<img src="${toAbsoluteImageUrl(coverImage, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}
                   </div>
                   <div class="booklet-main__content">
-                    <div class="booklet-main__top">${title.replace(/\n/g, '<br>')}</div>
-                    <div class="booklet-main__center">${subtitle.replace(/\n/g, '<br>')}</div>
+                    ${title ? `<div class="booklet-main__top">${title.replace(/\n/g, '<br>')}</div>` : ''}
+                    ${subtitle ? `<div class="booklet-main__center">${subtitle.replace(/\n/g, '<br>')}</div>` : ''}
                     <div class="booklet-main__bottom booklet-main__bottom--view text-right">
                       <div class="booklet-main__deal-type booklet-main__bottom-line">${escapeHtml(dealType)}</div>
                       <div class="booklet-main__price booklet-main__bottom-line font-semibold text-gray-800">

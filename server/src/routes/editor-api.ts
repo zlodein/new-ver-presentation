@@ -26,10 +26,13 @@ async function gigachatGetToken(log?: { error: (e: unknown) => void }): Promise<
   return data.access_token ?? null
 }
 
+type GenerateTextContext = { center?: string; top?: string; characteristics?: Array<{ label?: string; value?: string }> }
+
 async function gigachatGenerateText(
   prompt: string,
   type: 'description' | 'infrastructure',
-  log?: { error: (e: unknown) => void }
+  log?: { error: (e: unknown) => void },
+  context?: GenerateTextContext
 ): Promise<{ success: boolean; text?: string; error?: string }> {
   if (!GIGACHAT_AUTH_KEY) {
     return { success: false, error: 'GigaChat не настроен. Задайте GIGACHAT_AUTH_KEY в .env на сервере.' }
@@ -41,10 +44,20 @@ async function gigachatGenerateText(
 
   const systemPrompt =
     type === 'description'
-      ? 'Ты помощник по описанию недвижимости. Кратко и по делу опиши объект для слайда презентации: транспортная доступность, местоположение, планировка, особенности. Пиши на русском, без заголовков, одним связным текстом до 3–4 предложений. Каждый раз формулируй описание по-разному: используй другие формулировки, акценты и порядок мыслей, не повторяй одни и те же шаблонные фразы.'
-      : 'Ты помощник по описанию инфраструктуры рядом с объектом недвижимости. Кратко перечисли, что находится рядом: детский сад, школа, магазины, торговые центры, транспорт. Пиши на русском, без заголовков, одним связным текстом до 3–4 предложений. Каждый раз формулируй по-разному, не повторяй одни и те же формулировки.'
+      ? 'Ты помощник по описанию недвижимости. Кратко и по делу опиши объект для слайда презентации: транспортная доступность, местоположение, планировка, особенности. Пиши на русском, без заголовков, одним связным текстом до 3–4 предложений. Каждый раз формулируй описание по-разному: используй другие формулировки, акценты и порядок мыслей, не повторяй одни и те же шаблонные фразы. Опирайся в первую очередь на подзаголовок и заголовок с обложки, затем на характеристики объекта.'
+      : 'Ты помощник по описанию инфраструктуры рядом с объектом недвижимости. Кратко перечисли, что находится рядом: детский сад, школа, магазины, торговые центры, транспорт. Пиши на русском, без заголовков, одним связным текстом до 3–4 предложений. Каждый раз формулируй по-разному, не повторяй одни и те же формулировки. Опирайся в первую очередь на подзаголовок и заголовок с обложки, затем на характеристики объекта.'
 
-  const userMessage = prompt.trim() || 'Опиши объект недвижимости в общих чертах.'
+  const parts: string[] = []
+  if (context?.center?.trim()) parts.push('Подзаголовок (основной контекст): ' + context.center.trim())
+  if (context?.top?.trim()) parts.push('Заголовок: ' + context.top.trim())
+  if (context?.characteristics?.length) {
+    const lines = context.characteristics
+      .filter((item) => item?.label != null || item?.value != null)
+      .map((item) => `${String(item.label ?? '').trim() || '—'}: ${String(item.value ?? '').trim() || '—'}`)
+    if (lines.length) parts.push('Характеристики: ' + lines.join(', '))
+  }
+  const contextBlock = parts.length ? 'Контекст объекта:\n' + parts.join('\n') + '\n\n' : ''
+  const userMessage = contextBlock + (prompt.trim() ? `Название объекта: ${prompt.trim()}\n\nСгенерируй ${type === 'description' ? 'описание' : 'текст об инфраструктуре'} на основе контекста выше.` : 'Опиши объект недвижимости в общих чертах.')
 
   const res = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
     method: 'POST',
@@ -272,11 +285,16 @@ export async function editorApiRoutes(app: FastifyInstance) {
     }
   })
 
-  app.post<{ Body: { type?: string; prompt?: string; object_title?: string } }>('/generate_text', async (req: FastifyRequest<{ Body: { type?: string; prompt?: string; object_title?: string } }>, reply: FastifyReply) => {
+  app.post<{ Body: { type?: string; prompt?: string; object_title?: string; center?: string; top?: string; characteristics?: Array<{ label?: string; value?: string }> } }>('/generate_text', async (req: FastifyRequest<{ Body: { type?: string; prompt?: string; object_title?: string; center?: string; top?: string; characteristics?: Array<{ label?: string; value?: string }> } }>, reply: FastifyReply) => {
     const type = (req.body?.type === 'infrastructure' ? 'infrastructure' : 'description') as 'description' | 'infrastructure'
     const prompt = String(req.body?.prompt ?? req.body?.object_title ?? '').trim() || 'объект недвижимости'
+    const context: GenerateTextContext = {
+      center: req.body?.center != null ? String(req.body.center) : undefined,
+      top: req.body?.top != null ? String(req.body.top) : undefined,
+      characteristics: Array.isArray(req.body?.characteristics) ? req.body.characteristics : undefined,
+    }
     try {
-      const result = await gigachatGenerateText(prompt, type, app.log)
+      const result = await gigachatGenerateText(prompt, type, app.log, context)
       if (result.success && result.text) {
         return reply.send({ text: result.text })
       }
