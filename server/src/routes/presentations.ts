@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not } from 'drizzle-orm'
+import { eq, and, or, desc, gte, lte, like, sql, inArray, isNull, not, lt } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
@@ -339,6 +339,46 @@ export async function presentationRoutes(app: FastifyInstance) {
         }
       })
     )
+  })
+
+  /** Счётчики по вкладкам (опубликованные / черновики / удалённые) для текущего пользователя */
+  app.get('/api/presentations/counts', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = getUserId(req)
+    if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
+    if (useFileStore) {
+      const list = fileStore.getPresentationsByUserId(userId)
+      const published = list.filter((p) => (p as { status?: string }).status === 'published').length
+      const draft = list.filter((p) => (p as { status?: string }).status !== 'published').length
+      return reply.send({ published, draft, deleted: 0 })
+    }
+    if (useMysql) {
+      const userIdNum = Number(userId)
+      if (Number.isNaN(userIdNum)) return reply.status(401).send({ error: 'Не авторизован' })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const base = eq(mysqlSchema.presentations.user_id, userIdNum)
+      const [publishedRow, draftRow, deletedRow] = await Promise.all([
+        mysqlDb.select({ count: sql<number>`COUNT(*)`.as('count') }).from(mysqlSchema.presentations).where(and(base, isNull(mysqlSchema.presentations.deleted_at), eq(mysqlSchema.presentations.status, 'published'))),
+        mysqlDb.select({ count: sql<number>`COUNT(*)`.as('count') }).from(mysqlSchema.presentations).where(and(base, isNull(mysqlSchema.presentations.deleted_at), eq(mysqlSchema.presentations.status, 'draft'))),
+        mysqlDb.select({ count: sql<number>`COUNT(*)`.as('count') }).from(mysqlSchema.presentations).where(and(base, not(isNull(mysqlSchema.presentations.deleted_at))))),
+      ])
+      return reply.send({
+        published: Number(publishedRow[0]?.count ?? 0),
+        draft: Number(draftRow[0]?.count ?? 0),
+        deleted: Number(deletedRow[0]?.count ?? 0),
+      })
+    }
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    const base = eq(pgSchema.presentations.userId, userId)
+    const [publishedRow, draftRow, deletedRow] = await Promise.all([
+      pgDb.select({ count: sql<number>`count(*)`.as('count') }).from(pgSchema.presentations).where(and(base, isNull(pgSchema.presentations.deletedAt), eq(pgSchema.presentations.status, 'published'))),
+      pgDb.select({ count: sql<number>`count(*)`.as('count') }).from(pgSchema.presentations).where(and(base, isNull(pgSchema.presentations.deletedAt), eq(pgSchema.presentations.status, 'draft'))),
+      pgDb.select({ count: sql<number>`count(*)`.as('count') }).from(pgSchema.presentations).where(and(base, not(isNull(pgSchema.presentations.deletedAt))))),
+    ])
+    return reply.send({
+      published: Number(publishedRow[0]?.count ?? 0),
+      draft: Number(draftRow[0]?.count ?? 0),
+      deleted: Number(deletedRow[0]?.count ?? 0),
+    })
   })
 
   app.get<{ Params: { id: string } }>(
@@ -1026,6 +1066,43 @@ export async function presentationRoutes(app: FastifyInstance) {
       })
     }
   )
+
+  /** Очистка презентаций, удалённых более 30 дней назад (безвозвратное удаление). Запускается по таймеру. */
+  const PURGE_DAYS = 30
+  const purgeDeletedPresentations = async (): Promise<void> => {
+    const olderThan = new Date(Date.now() - PURGE_DAYS * 24 * 60 * 60 * 1000)
+    if (useFileStore) return
+    if (useMysql) {
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const toPurge = await mysqlDb
+        .select({ id: mysqlSchema.presentations.id })
+        .from(mysqlSchema.presentations)
+        .where(and(not(isNull(mysqlSchema.presentations.deleted_at)), lt(mysqlSchema.presentations.deleted_at, olderThan)))
+      for (const row of toPurge) {
+        const id = String(row.id)
+        await mysqlDb.delete(mysqlSchema.presentationViews).where(eq(mysqlSchema.presentationViews.presentation_id, row.id))
+        try { await deletePresentationImagesFolder(id) } catch { /* ignore */ }
+        await mysqlDb.delete(mysqlSchema.presentations).where(eq(mysqlSchema.presentations.id, row.id))
+      }
+      if (toPurge.length > 0) app.log.info({ count: toPurge.length }, 'Purged old deleted presentations (MySQL)')
+      return
+    }
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    const toPurge = await pgDb
+      .select({ id: pgSchema.presentations.id })
+      .from(pgSchema.presentations)
+      .where(and(not(isNull(pgSchema.presentations.deletedAt)), lt(pgSchema.presentations.deletedAt, olderThan)))
+    for (const row of toPurge) {
+      const id = row.id
+      try { await deletePresentationImagesFolder(id) } catch { /* ignore */ }
+      await pgDb.delete(pgSchema.presentations).where(eq(pgSchema.presentations.id, id))
+    }
+    if (toPurge.length > 0) app.log.info({ count: toPurge.length }, 'Purged old deleted presentations (PG)')
+  }
+
+  const purgeIntervalMs = 24 * 60 * 60 * 1000
+  setTimeout(() => { purgeDeletedPresentations().catch((err) => app.log.error(err, 'Purge deleted presentations')) }, 60 * 1000)
+  setInterval(() => { purgeDeletedPresentations().catch((err) => app.log.error(err, 'Purge deleted presentations')) }, purgeIntervalMs)
 
   /** Мягкое удаление по id из тела запроса (deleted_at = now(); храним месяц). */
   app.post<{ Body: { id?: string } }>(

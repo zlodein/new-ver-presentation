@@ -42,6 +42,7 @@
             @click="switchTab('published')"
           >
             Опубликованные
+            <span v-if="counts !== null" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-gray-200 px-1.5 text-xs font-medium text-gray-600 dark:bg-gray-600 dark:text-gray-300" :class="{ 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300': activeTab === 'published' }">{{ counts.published }}</span>
           </button>
           <button
             type="button"
@@ -54,6 +55,7 @@
             @click="switchTab('draft')"
           >
             Черновики
+            <span v-if="counts !== null" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-gray-200 px-1.5 text-xs font-medium text-gray-600 dark:bg-gray-600 dark:text-gray-300" :class="{ 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300': activeTab === 'draft' }">{{ counts.draft }}</span>
           </button>
           <button
             type="button"
@@ -66,11 +68,12 @@
             @click="switchTab('deleted')"
           >
             Удалённые
+            <span v-if="counts !== null" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-gray-200 px-1.5 text-xs font-medium text-gray-600 dark:bg-gray-600 dark:text-gray-300" :class="{ 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300': activeTab === 'deleted' }">{{ counts.deleted }}</span>
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-4">
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ loading ? 'Загрузка...' : activeTab === 'deleted' ? 'Удалённые можно восстановить в течение месяца' : activeTab === 'draft' ? 'Черновики можно редактировать и публиковать' : 'Опубликованные презентации' }}
+          <p v-if="activeTab !== 'published'" class="text-sm text-gray-500 dark:text-gray-400">
+            {{ loading ? 'Загрузка...' : activeTab === 'deleted' ? 'Удалённые можно восстановить в течение месяца' : 'Черновики можно редактировать и публиковать' }}
           </p>
           <template v-if="activeTab === 'published' || activeTab === 'draft'">
             <button
@@ -455,6 +458,7 @@ const activeTab = ref<TabKind>('published')
 const presentations = ref<Presentation[]>([])
 const loading = ref(false)
 const error = ref('')
+const counts = ref<{ published: number; draft: number; deleted: number } | null>(null)
 
 /** Оставляем только id презентации: при формате "1:1" (id:user_id) берём часть до двоеточия. */
 function normalizePresentationId(id: string | number | undefined): string {
@@ -464,10 +468,21 @@ function normalizePresentationId(id: string | number | undefined): string {
   return part
 }
 
+async function loadCounts() {
+  if (!hasApi() || !getToken()) return
+  try {
+    const data = await api.get<{ published: number; draft: number; deleted: number }>('/api/presentations/counts')
+    if (isMounted) counts.value = data
+  } catch {
+    if (isMounted) counts.value = null
+  }
+}
+
 let isMounted = false
 onMounted(() => {
   isMounted = true
   loadPresentations()
+  loadCounts()
 })
 onUnmounted(() => {
   isMounted = false
@@ -497,7 +512,10 @@ async function loadFromApi() {
       presentations.value = []
     }
   } finally {
-    if (isMounted) loading.value = false
+    if (isMounted) {
+      loading.value = false
+      loadCounts()
+    }
   }
 }
 
@@ -565,9 +583,11 @@ async function restorePresentation(presentation: Presentation) {
     await fetchUser()
     activeTab.value = 'published'
     await loadPresentations()
+    await loadCounts()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Не удалось восстановить презентацию'
     loadPresentations()
+    loadCounts()
   }
 }
 
@@ -585,9 +605,11 @@ async function confirmDelete(presentation: Presentation) {
       await api.post('/api/presentations/delete', { id })
       presentations.value = presentations.value.filter((p) => p.id !== presentation.id)
       error.value = ''
+      loadCounts()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Не удалось удалить презентацию. Если в консоли есть «Tracking Prevention» — разрешите доступ к сайту в настройках браузера или войдите снова.'
       loadPresentations()
+      loadCounts()
     }
   } else {
     try {
