@@ -291,12 +291,11 @@ const presentationsLimitRemaining = computed(() => {
   if (isExpert.value) return Math.max(0, expertPlanQuantity.value - expertPresentationsUsed.value)
   return null
 })
-/** Количество удалённых презентаций (учитываются в лимите, но не в списке) — только для тарифа Эксперт */
+/** Количество удалённых презентаций (учитываются в лимите) — только для тарифа Эксперт. Берём из API counts, чтобы число было одинаковым на всех вкладках. */
 const presentationsDeletedCount = computed(() => {
   if (!isExpert.value) return 0
-  const used = expertPresentationsUsed.value
-  const current = presentations.value.length
-  return Math.max(0, used - current)
+  if (counts.value != null) return counts.value.deleted
+  return 0
 })
 
 /** Текст рядом с заголовком: «доступна 1 презентация», «доступно 3 из 5 презентаций (из них удалено 2)» и т.д. */
@@ -468,11 +467,22 @@ function normalizePresentationId(id: string | number | undefined): string {
   return part
 }
 
+const initialTabChosen = ref(false)
+
 async function loadCounts() {
   if (!hasApi() || !getToken()) return
   try {
     const data = await api.get<{ published: number; draft: number; deleted: number }>('/api/presentations/counts')
-    if (isMounted) counts.value = data
+    if (isMounted) {
+      counts.value = data
+      if (!initialTabChosen.value) {
+        initialTabChosen.value = true
+        if (data.published === 0 && data.draft > 0 && activeTab.value === 'published') {
+          activeTab.value = 'draft'
+          loadPresentations()
+        }
+      }
+    }
   } catch {
     if (isMounted) counts.value = null
   }
