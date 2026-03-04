@@ -963,7 +963,7 @@
   border-radius: 50%;
 }
 
-/* Поверх изображения: затемнение 7px, белая линия 2px; скругление как у блока (inherit от родителя с --booklet-image-radius) */
+/* Поверх изображения: обводка 4px, белая линия 2px, внутренняя 6px; скругление как у блока (inherit от родителя с --booklet-image-radius) */
 .presentation-slider-wrap.booklet-view .booklet-main__img::after,
 .presentation-slider-wrap.booklet-view .booklet-img__img::after,
 .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img::after,
@@ -979,24 +979,23 @@
   pointer-events: none;
   z-index: 2;
   box-sizing: border-box;
-  border: 7px solid rgba(0, 0, 0, 0.3);
-  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 9px #0000004d;
+  border: 4px solid rgba(0, 0, 0, .3);
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px #0000004d;
 }
+
+/* Аватар контактов: без обводки и линии поверх изображения */
 .presentation-slider-wrap.booklet-view .booklet-contacts__avatar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 2;
-  box-sizing: border-box;
-  border: 7px solid rgba(0, 0, 0, 0.3);
-  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 9px #0000004d;
+  display: none;
 }
 
 /* Контакты: эффект наведения на аватарку как на остальные области изображений */
 .presentation-slider-wrap.booklet-view .booklet-contacts__avatar .booklet-upload-btn {
   opacity: 0.5;
+}
+.presentation-slider-wrap.booklet-view .booklet-contacts__avatar .booklet-upload-btn::after {
+  width: 30px;
+  height: 30px;
+  background-size: 30px;
 }
 .presentation-slider-wrap.booklet-view .booklet-contacts__avatar:hover .booklet-upload-btn {
   opacity: 1;
