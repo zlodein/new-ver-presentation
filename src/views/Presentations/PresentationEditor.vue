@@ -372,7 +372,7 @@
                       v-model="presentationSettings.themeColor"
                       type="text"
                       class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90"
-                      placeholder="#465FFF"
+                      placeholder="#f7f7f7"
                       maxlength="7"
                     />
                   </div>
@@ -1187,7 +1187,7 @@
                       <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
                       <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
                         <input v-model="presentationSettings.themeColor" type="color" class="h-8 w-12 cursor-pointer rounded border-0 bg-transparent p-0" title="Выберите цвет" />
-                        <input v-model="presentationSettings.themeColor" type="text" class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90" placeholder="#465FFF" maxlength="7" />
+                        <input v-model="presentationSettings.themeColor" type="text" class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90" placeholder="#f7f7f7" maxlength="7" />
                       </div>
                     </div>
                   </div>
@@ -1458,7 +1458,7 @@ class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-b
                         v-model="presentationSettings.themeColor"
                         type="text"
                         class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90"
-                        placeholder="#465FFF"
+                        placeholder="#f7f7f7"
                         maxlength="7"
                       />
                     </div>
@@ -2012,9 +2012,9 @@ const FONT_SIZE_PRICE_OPTIONS = [
 ]
 const DEFAULT_PRESENTATION_SETTINGS = {
   fontFamily: 'system-ui',
-  imageBorderRadius: '8px',
-  imageFrame: 'default',
-  themeColor: '#465FFF',
+  imageBorderRadius: '0',
+  imageFrame: 'none',
+  themeColor: '#f7f7f7',
   fontSizePresentationTitle: '38px',
   fontSizeHeading: '38px',
   fontSizeText: '22px',
@@ -3550,6 +3550,17 @@ async function exportToPDF() {
   border-color: #d1d5db !important;
 }
 
+/* Десктоп: текстовые области без отступов и обводки (как в обложке) */
+@media (min-width: 769px) {
+  .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-info__text textarea,
+  .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-stroen__text textarea {
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
 /* Оптимизация мобильного редактора */
 @media (max-width: 768px) {
   /* Увеличиваем размеры кнопок загрузки изображений для удобства на мобильных; по умолчанию полупрозрачны */
@@ -3641,6 +3652,16 @@ async function exportToPDF() {
   .presentation-slider-wrap.booklet-view select {
     min-height: 44px;
     padding: 8px 12px;
+  }
+
+  /* Обложка: селекты «Продажа/Аренда» и «Валюта» — больше места, чтобы стрелка не наезжала на текст */
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-main__price-block > div:first-child select {
+    min-width: 5.5rem;
+    padding-right: 2rem;
+  }
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-main__price-block > div:last-child select {
+    min-width: 4rem;
+    padding-right: 2rem;
   }
   
         /* Улучшаем область загрузки изображений */
