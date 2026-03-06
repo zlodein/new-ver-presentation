@@ -334,9 +334,10 @@ const handleSubmit = async () => {
       password: password.value,
       name: name.value.trim() || undefined,
       last_name: last_name.value.trim() || undefined,
-    }) as { pendingVerification?: boolean; email?: string } | unknown
-    if (result && typeof result === 'object' && 'pendingVerification' in result && result.pendingVerification && result.email) {
-      router.push({ path: '/verify', query: { type: 'email_verification', email: result.email } })
+    })
+    const pending = result as { pendingVerification?: boolean; email?: string }
+    if (pending?.pendingVerification && pending?.email) {
+      router.push({ path: '/verify', query: { type: 'email_verification', email: pending.email } })
       return
     }
     await fetchUser()
