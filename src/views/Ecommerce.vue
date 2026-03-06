@@ -1,9 +1,9 @@
 <template>
   <admin-layout>
-    <div class="grid grid-cols-12 gap-4 md:gap-6">
-      <!-- Левая колонка, ряд 1: Предстоящие события / Задачи (как у TailAdmin CRM) -->
-      <div class="col-span-12 xl:col-span-7">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
+    <div class="grid grid-cols-12 gap-4 md:gap-6" style="grid-template-rows: minmax(190px, auto) minmax(190px, auto) auto;">
+      <!-- Левая колонка, ряд 1: Предстоящие события / Задачи (высота как у «Ваш тариф») -->
+      <div class="col-span-12 xl:col-span-7 min-h-0 h-full">
+        <div class="grid h-full grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
           <upcoming-schedule />
           <dashboard-tasks-list />
         </div>
@@ -12,8 +12,8 @@
       <div class="col-span-12 xl:col-span-5 xl:row-span-2">
         <monthly-target />
       </div>
-      <!-- Второй ряд: заглушка того же размера, что и блок «Продажи за месяц» -->
-      <div class="col-span-12 xl:col-span-7 w-full">
+      <!-- Второй ряд: заглушка (высота как у «Ваш тариф») -->
+      <div class="col-span-12 xl:col-span-7 w-full min-h-0 h-full">
         <dashboard-placeholder />
       </div>
 

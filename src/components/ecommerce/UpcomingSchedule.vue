@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex min-h-[220px] flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
+    class="flex h-full min-h-[160px] flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
   >
     <div class="flex shrink-0 items-center justify-between">
       <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
@@ -25,7 +25,7 @@
       Нет предстоящих событий
     </div>
 
-    <div v-else class="custom-scrollbar mt-4 max-h-[320px] min-h-0 flex-1 overflow-y-auto pr-1">
+    <div v-else class="custom-scrollbar mt-4 max-h-[140px] min-h-0 flex-1 overflow-y-auto pr-1">
       <ul class="space-y-4">
         <li
           v-for="event in upcomingEvents"
