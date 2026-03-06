@@ -8,6 +8,9 @@
         <p v-if="selectedPresentationTitle" class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ selectedPresentationTitle }}
         </p>
+        <p v-else-if="!selectedPresentationId && publicPresentations.length > 0" class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          Все открытые презентации
+        </p>
         <p v-else class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
           Статистика просмотров презентаций
         </p>
@@ -20,7 +23,7 @@
             @change="loadStatistics"
             class="h-10 px-3 rounded-lg border border-gray-200 bg-white text-theme-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:focus:border-brand-800 min-w-[200px]"
           >
-            <option value="">Презентации</option>
+            <option value="">Все открытые презентации</option>
             <option v-for="pres in publicPresentations" :key="pres.id" :value="pres.id">
               {{ pres.title }}
             </option>
@@ -62,29 +65,29 @@
       <span class="text-gray-500">Загрузка...</span>
     </div>
     <template v-else>
-      <div v-if="selectedPresentationId && totalViews !== null && totalViews > 0" class="mb-4">
+      <div v-if="totalViews !== null && totalViews > 0" class="mb-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           Всего просмотров: <span class="font-semibold text-gray-800 dark:text-white">{{ totalViews }}</span>
         </p>
       </div>
-      <div v-if="selectedPresentationId && totalViews !== null && totalViews > 0" class="max-w-full overflow-x-auto custom-scrollbar">
+      <div v-if="totalViews !== null && totalViews > 0" class="max-w-full overflow-x-auto custom-scrollbar">
         <div id="chartThree" class="-ml-4 min-w-[1000px] xl:min-w-full pl-2">
           <VueApexCharts type="area" height="310" :options="chartOptions" :series="series" />
         </div>
       </div>
-      <div v-else-if="selectedPresentationId && totalViews === 0 && date && Array.isArray(date) && date.length === 2" class="flex items-center justify-center h-[310px]">
+      <div v-else-if="totalViews === 0 && date && Array.isArray(date) && date.length === 2" class="flex items-center justify-center h-[310px]">
         <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
-          За выбранный период, данных нет
+          За выбранный период данных нет
         </p>
       </div>
-      <div v-else-if="selectedPresentationId && totalViews === 0" class="flex items-center justify-center h-[310px]">
+      <div v-else-if="totalViews === 0" class="flex items-center justify-center h-[310px]">
         <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
-          Статистика начнет собираться, после того как вы поделитесь презентацией
+          Статистика начнёт собираться после того, как вы поделитесь презентацией
         </p>
       </div>
       <div v-else-if="publicPresentations.length === 0" class="flex items-center justify-center h-[310px]">
         <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
-          Статистика начнет собираться, после того как вы поделитесь презентацией
+          Статистика начнёт собираться после того, как вы поделитесь презентацией
         </p>
       </div>
       <div v-else class="flex items-center justify-center h-[310px] text-gray-500 dark:text-gray-400">
@@ -132,16 +135,15 @@ const flatpickrConfig = computed(() => {
 })
 
 const series = computed(() => {
-  if (!selectedPresentationId.value || Object.keys(viewsByDate.value).length === 0) {
+  if (Object.keys(viewsByDate.value).length === 0) {
     return [{
       name: 'Просмотры',
       data: [],
     }]
   }
   
-  // Сортируем даты
   const sortedDates = Object.keys(viewsByDate.value).sort()
-  const data = sortedDates.map(date => viewsByDate.value[date])
+  const data = sortedDates.map(d => viewsByDate.value[d])
   
   return [{
     name: 'Просмотры',
@@ -246,12 +248,7 @@ async function loadPresentations() {
   try {
     const data = await api.get<Array<{ id: string; title: string; isPublic?: boolean; publicUrl?: string }>>('/api/presentations')
     presentations.value = data
-    // Автоматически выбираем первую публичную презентацию, если есть
-    const publicPres = data.find(p => p.isPublic && p.publicUrl)
-    if (publicPres && !selectedPresentationId.value) {
-      selectedPresentationId.value = publicPres.id
-      loadStatistics()
-    }
+    loadStatistics()
   } catch (err) {
     console.error('Ошибка загрузки презентаций:', err)
   }
@@ -260,13 +257,12 @@ async function loadPresentations() {
 let loadStatisticsTimeout: ReturnType<typeof setTimeout> | null = null
 
 async function loadStatistics() {
-  if (!selectedPresentationId.value || !hasApi() || !getToken()) {
+  if (!hasApi() || !getToken()) {
     totalViews.value = null
     viewsByDate.value = {}
     return
   }
   
-  // Отменяем предыдущий запрос, если он еще не выполнен
   if (loadStatisticsTimeout) {
     clearTimeout(loadStatisticsTimeout)
     loadStatisticsTimeout = null
@@ -293,14 +289,35 @@ async function loadStatistics() {
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
     
-    const data = await api.get<{
-      totalViews: number
-      viewsByDate: Record<string, number>
-      views: Array<{ id: number; viewedAt: string; ipAddress?: string }>
-    }>(`/api/presentations/${selectedPresentationId.value}/views?${params.toString()}`)
-    
-    totalViews.value = data.totalViews
-    viewsByDate.value = data.viewsByDate
+    if (selectedPresentationId.value) {
+      const data = await api.get<{
+        totalViews: number
+        viewsByDate: Record<string, number>
+      }>(`/api/presentations/${selectedPresentationId.value}/views?${params.toString()}`)
+      totalViews.value = data.totalViews
+      viewsByDate.value = data.viewsByDate
+    } else {
+      const publicPres = publicPresentations.value
+      if (publicPres.length === 0) {
+        totalViews.value = 0
+        viewsByDate.value = {}
+      } else {
+        let total = 0
+        const aggregated: Record<string, number> = {}
+        for (const pres of publicPres) {
+          const data = await api.get<{
+            totalViews: number
+            viewsByDate: Record<string, number>
+          }>(`/api/presentations/${pres.id}/views?${params.toString()}`)
+          total += data.totalViews
+          for (const [d, count] of Object.entries(data.viewsByDate)) {
+            aggregated[d] = (aggregated[d] ?? 0) + count
+          }
+        }
+        totalViews.value = total
+        viewsByDate.value = aggregated
+      }
+    }
   } catch (err) {
     console.error('Ошибка загрузки статистики:', err)
     totalViews.value = 0
