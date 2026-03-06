@@ -100,6 +100,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const fontFamily = fontFamilyRaw && fontFamilyRaw !== 'system-ui' ? fontFamilyRaw : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
   const settings = (data.content?.settings || {}) as Record<string, string>
   const themeColor = typeof settings.themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(settings.themeColor) ? settings.themeColor : '#465FFF'
+  const imageFrame = settings.imageFrame === 'none' ? 'none' : 'default'
 
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {
@@ -582,6 +583,17 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; background: #e8e8e8; }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .map-placeholder { width: 100%; height: 100%; min-height: 180px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.875rem; }
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-main__img::after,
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-img__img::after,
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-info__block.booklet-info__img::after,
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-stroen__block.booklet-stroen__img::after,
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-char__img::after,
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-galery__img::after,
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-layout__img::after,
+    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-contacts__block.booklet-contacts__img::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      border: 4px solid rgba(0, 0, 0, .3); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px #0000004d;
+    }
     @media print {
       .booklet-page { page-break-after: always; height: 100vh; min-height: 100vh; max-height: 100vh; }
       body { padding: 0; }
@@ -599,8 +611,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   <style>${embeddedCSS}</style>
 </head>
 <body>
-  <div class="presentation-container presentation-slider-wrap booklet-view">
-    ${slideHTML}
+  <div class="presentation-container presentation-slider-wrap booklet-view" data-image-frame="${imageFrame}">
+   ${slideHTML}
   </div>
 </body>
 </html>`

@@ -346,6 +346,20 @@
                   </div>
                 </div>
                 <div>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Рамка изображения</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select
+                      v-model="presentationSettings.imageFrame"
+                      class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                    >
+                      <option v-for="f in IMAGE_FRAME_OPTIONS" :key="f.value" :value="f.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ f.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
+                </div>
+                <div>
                   <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
                   <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
                     <input
@@ -414,6 +428,7 @@
       <!-- Область превью слайдов: на ПК — слайдер слева + сайдбар справа -->
       <main class="w-full flex-1 min-h-0 md:flex md:gap-4 md:items-start md:flex-initial">
         <div
+          ref="editorSliderWrapRef"
           class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
           @paste.capture="onPasteStripFormat"
         >
@@ -421,6 +436,7 @@
           <div
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
             :style="presentationStyle"
+            :data-image-frame="presentationSettings.imageFrame"
           >
             <!-- Кнопка палитры (макет/сетка): только на десктопе; волна идёт от кнопки влево и вниз -->
             <button
@@ -1159,6 +1175,15 @@
                       </div>
                     </div>
                     <div>
+                      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Рамка изображения</label>
+                      <div class="relative z-20">
+                        <select v-model="presentationSettings.imageFrame" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                          <option v-for="f in IMAGE_FRAME_OPTIONS" :key="f.value" :value="f.value">{{ f.label }}</option>
+                        </select>
+                        <span class="absolute right-4 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                      </div>
+                    </div>
+                    <div>
                       <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
                       <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
                         <input v-model="presentationSettings.themeColor" type="color" class="h-8 w-12 cursor-pointer rounded border-0 bg-transparent p-0" title="Выберите цвет" />
@@ -1392,22 +1417,36 @@ class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-b
                       </span>
                     </div>
                   </div>
-                  <div>
-                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Скругление изображений</label>
-                    <div class="relative z-20 bg-transparent">
-                      <select
-                        v-model="presentationSettings.imageBorderRadius"
-                        class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-                      >
-                        <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ r.label }}</option>
-                      </select>
-                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
-                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                      </span>
-                    </div>
+                <div>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Скругление изображений</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select
+                      v-model="presentationSettings.imageBorderRadius"
+                      class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                    >
+                      <option v-for="r in RADIUS_OPTIONS" :key="r.value" :value="r.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ r.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
                   </div>
-                  <div>
-                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
+                </div>
+                <div>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Рамка изображения</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select
+                      v-model="presentationSettings.imageFrame"
+                      class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                    >
+                      <option v-for="f in IMAGE_FRAME_OPTIONS" :key="f.value" :value="f.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ f.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
                     <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
                       <input
                         v-model="presentationSettings.themeColor"
@@ -1880,15 +1919,48 @@ const palettePopupSlide = computed(() => {
 })
 
 const PALETTE_POPUP_WIDTH = 220
+const PALETTE_POPUP_HEIGHT = 140
+
+const editorSliderWrapRef = ref<HTMLElement | null>(null)
 
 function openPalettePopup(slideId: string, event: MouseEvent) {
   const el = event.currentTarget as HTMLElement
   if (!el) return
   const rect = el.getBoundingClientRect()
+  const editorWrap = editorSliderWrapRef.value
+  const editorRect = editorWrap?.getBoundingClientRect()
   palettePopupSlideId.value = slideId
-  // На мобильных не уводить попап вправо за экран — держать в области видимости
-  const left = Math.min(rect.left, typeof window !== 'undefined' ? window.innerWidth - PALETTE_POPUP_WIDTH - 16 : rect.left)
-  palettePopupAnchor.value = { top: rect.bottom + 4, left: Math.max(8, left) }
+
+  let top = rect.bottom + 4
+  let left = rect.left
+
+  if (editorRect && typeof window !== 'undefined') {
+    const pad = 8
+    const spaceRight = editorRect.right - rect.left
+    const spaceLeft = rect.right - editorRect.left
+    const spaceBelow = editorRect.bottom - rect.bottom
+    const spaceAbove = rect.top - editorRect.top
+
+    if (spaceRight < PALETTE_POPUP_WIDTH && spaceLeft >= PALETTE_POPUP_WIDTH) {
+      left = rect.right - PALETTE_POPUP_WIDTH
+    } else if (spaceRight < PALETTE_POPUP_WIDTH) {
+      left = Math.max(editorRect.left + pad, editorRect.right - PALETTE_POPUP_WIDTH - pad)
+    } else {
+      left = Math.max(editorRect.left + pad, Math.min(left, editorRect.right - PALETTE_POPUP_WIDTH - pad))
+    }
+
+    if (spaceBelow < PALETTE_POPUP_HEIGHT && spaceAbove >= PALETTE_POPUP_HEIGHT) {
+      top = rect.top - PALETTE_POPUP_HEIGHT - 4
+    } else if (spaceBelow < PALETTE_POPUP_HEIGHT) {
+      top = Math.max(editorRect.top + pad, editorRect.bottom - PALETTE_POPUP_HEIGHT - pad)
+    } else {
+      top = Math.max(editorRect.top + pad, Math.min(top, editorRect.bottom - PALETTE_POPUP_HEIGHT - pad))
+    }
+  } else {
+    left = Math.max(8, Math.min(left, window.innerWidth - PALETTE_POPUP_WIDTH - 16))
+  }
+
+  palettePopupAnchor.value = { top, left }
 }
 
 function closePalettePopup() {
@@ -1911,6 +1983,10 @@ const RADIUS_OPTIONS = [
   { value: '8px', label: '8 px' },
   { value: '12px', label: '12 px' },
   { value: '16px', label: '16 px' },
+]
+const IMAGE_FRAME_OPTIONS = [
+  { value: 'none', label: 'Без рамок' },
+  { value: 'default', label: 'Вариант 1' },
 ]
 const FONT_SIZE_HEADING_OPTIONS = [
   { value: '28px', label: '28 px' },
@@ -1937,6 +2013,7 @@ const FONT_SIZE_PRICE_OPTIONS = [
 const DEFAULT_PRESENTATION_SETTINGS = {
   fontFamily: 'system-ui',
   imageBorderRadius: '8px',
+  imageFrame: 'default',
   themeColor: '#465FFF',
   fontSizePresentationTitle: '38px',
   fontSizeHeading: '38px',
@@ -3146,6 +3223,7 @@ onMounted(async () => {
         const s = contentWithSettings.settings
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+        if (s.imageFrame != null) presentationSettings.value.imageFrame = s.imageFrame
         if (s.themeColor != null) presentationSettings.value.themeColor = s.themeColor
         if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
         if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading
@@ -3200,6 +3278,7 @@ function loadFromLocalStorage() {
         const s = saved.settings as Record<string, string>
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
+        if (s.imageFrame != null) presentationSettings.value.imageFrame = s.imageFrame
         if (s.themeColor != null) presentationSettings.value.themeColor = s.themeColor
         if (s.fontSizePresentationTitle != null) presentationSettings.value.fontSizePresentationTitle = s.fontSizePresentationTitle
         if (s.fontSizeHeading != null) presentationSettings.value.fontSizeHeading = s.fontSizeHeading

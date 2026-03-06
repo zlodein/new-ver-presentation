@@ -30,6 +30,7 @@
       <div
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
+        :data-image-frame="presentation.content?.settings?.imageFrame ?? 'default'"
       >
       <div
         v-for="(slide, index) in visibleSlides"

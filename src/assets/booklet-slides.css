@@ -964,14 +964,15 @@
 }
 
 /* Поверх изображения: обводка 4px, белая линия 2px, внутренняя 6px; скругление как у блока (inherit от родителя с --booklet-image-radius) */
-.presentation-slider-wrap.booklet-view .booklet-main__img::after,
-.presentation-slider-wrap.booklet-view .booklet-img__img::after,
-.presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img::after,
-.presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img::after,
-.presentation-slider-wrap.booklet-view .booklet-char__img::after,
-.presentation-slider-wrap.booklet-view .booklet-galery__img::after,
-.presentation-slider-wrap.booklet-view .booklet-layout__img::after,
-.presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img::after {
+/* Рамка скрыта при data-image-frame="none" */
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-main__img::after,
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-img__img::after,
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-info__block.booklet-info__img::after,
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-stroen__block.booklet-stroen__img::after,
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-char__img::after,
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-galery__img::after,
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-layout__img::after,
+.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-contacts__block.booklet-contacts__img::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1117,37 +1118,115 @@
     --mob-editor-placeholder: #6b7280;
   }
 
+  /* Мобильная сетка изображений: grid — 3x1 = 3 в ряд, 3x2 = 3×2, 2x3 = 2×3 и т.д. */
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid {
+    display: grid;
     gap: 8px;
     margin-top: 8px;
+    width: 100%;
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="1x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="1x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="1x1"] {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="2x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="2x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="2x1"] {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="1x2"] {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="2x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="2x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="2x2"] {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="3x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="3x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="3x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="3x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="3x1"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="3x1"] {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr;
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="1x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="1x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="1x3"] {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, 1fr);
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="3x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="3x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="3x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="3x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="3x2"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="3x2"] {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="2x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="2x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x3"],
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="2x3"] {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
   }
 
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__block.booklet-info__img,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__block.booklet-stroen__img,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__img,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__img,
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid-img,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-contacts__block.booklet-contacts__img {
     position: relative;
-    width: 80px;
-    height: 80px;
-    min-width: 80px;
-    min-height: 80px;
+    min-height: 120px;
+    aspect-ratio: 1;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
-    flex-shrink: 0;
     background: var(--mob-editor-bg);
   }
 
-  /* Одно изображение на весь блок: обложка, характеристики, планировка */
+  /* Одно изображение на весь блок: обложка, характеристики (layout — в сетке) */
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-main__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-char__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__img {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-char__img {
     position: relative;
     width: 100%;
     min-width: 100%;
@@ -1167,66 +1246,6 @@
   }
 
   /* Сетка по количеству изображений: 1 — колонка, 2–4 — как в шаблоне */
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x1"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x1"] .booklet-stroen__block.booklet-stroen__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x1"] .booklet-galery__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x1"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="1x1"] .booklet-galery__img {
-    width: 100%;
-    min-width: 100%;
-    height: 250px;
-    min-height: 250px;
-  }
-
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="1x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x2"] {
-    flex-direction: column;
-  }
-
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x2"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x2"] .booklet-stroen__block.booklet-stroen__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x2"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x2"] .booklet-stroen__block.booklet-stroen__img {
-    width: 100%;
-    min-width: 100%;
-    height: 200px;
-    min-height: 200px;
-  }
-
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="2x1"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="2x1"] .booklet-galery__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x1"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x1"] .booklet-galery__img {
-    width: calc(50% - 4px);
-    height: 200px;
-    min-height: 200px;
-  }
-
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="2x2"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="2x2"] .booklet-galery__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x2"] .booklet-info__block.booklet-info__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x2"] .booklet-galery__img {
-    width: calc(50% - 4px);
-    height: 200px;
-    min-height: 200px;
-  }
-
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="3x1"] .booklet-galery__img:nth-child(3),
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="3x1"] .booklet-galery__img:nth-child(3) {
-    width: 100%;
-  }
-
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="3x1"] .booklet-galery__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="3x1"] .booklet-galery__img {
-    width: calc(50% - 4px);
-    height: 200px;
-    min-height: 200px;
-  }
-
   /* Поля ввода и блоки (TailAdmin-адаптация) */
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__block.booklet-info__content,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__block.booklet-stroen__content,
