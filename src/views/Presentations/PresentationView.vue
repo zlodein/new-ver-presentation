@@ -30,7 +30,7 @@
       <div
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
-        :data-image-frame="presentation.content?.settings?.imageFrame ?? 'default'"
+        :data-image-frame="presentation?.content?.settings?.imageFrame ?? 'default'"
       >
       <div
         v-for="(slide, index) in visibleSlides"
@@ -289,7 +289,7 @@ const presentation = ref<{
   id: string
   title: string
   coverImage?: string
-  content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string } }
+  content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string; imageFrame?: string } }
 } | null>(null)
 
 /** Стили отображения (шрифт, скругления, размеры шрифтов) из настроек презентации */
