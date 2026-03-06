@@ -138,8 +138,18 @@ const series = computed(() => {
   return [Math.min(100, Math.max(0, pct))]
 })
 
-const chartOptions = {
-  colors: ['#465FFF'],
+/** Цвет как на /dashboard/presentations: много — success, половина или меньше — warning, закончились — error */
+const chartColor = computed(() => {
+  const tot = total.value
+  const rem = remaining.value
+  if (tot <= 0 || rem == null) return '#667085'
+  if (rem === 0) return '#f04438'
+  if (rem <= tot / 2) return '#f79009'
+  return '#12b76a'
+})
+
+const chartOptions = computed(() => ({
+  colors: [chartColor.value],
   chart: {
     fontFamily: 'Outfit, sans-serif',
     sparkline: { enabled: true },
@@ -168,10 +178,10 @@ const chartOptions = {
       },
     },
   },
-  fill: { type: 'solid', colors: ['#465FFF'] },
+  fill: { type: 'solid', colors: [chartColor.value] },
   stroke: { lineCap: 'round' },
   labels: ['Progress'],
-}
+}))
 
 onMounted(() => {
   fetchUser()

@@ -372,7 +372,7 @@
                       v-model="presentationSettings.themeColor"
                       type="text"
                       class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90"
-                      placeholder="#f7f7f7"
+                      placeholder="#465FFF"
                       maxlength="7"
                     />
                   </div>
@@ -1187,7 +1187,7 @@
                       <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Цвет темы</label>
                       <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:bg-gray-900">
                         <input v-model="presentationSettings.themeColor" type="color" class="h-8 w-12 cursor-pointer rounded border-0 bg-transparent p-0" title="Выберите цвет" />
-                        <input v-model="presentationSettings.themeColor" type="text" class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90" placeholder="#f7f7f7" maxlength="7" />
+                        <input v-model="presentationSettings.themeColor" type="text" class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90" placeholder="#465FFF" maxlength="7" />
                       </div>
                     </div>
                   </div>
@@ -1458,7 +1458,7 @@ class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-b
                         v-model="presentationSettings.themeColor"
                         type="text"
                         class="min-w-0 flex-1 rounded border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 focus:outline-none dark:text-white/90"
-                        placeholder="#f7f7f7"
+                        placeholder="#465FFF"
                         maxlength="7"
                       />
                     </div>
@@ -2014,7 +2014,7 @@ const DEFAULT_PRESENTATION_SETTINGS = {
   fontFamily: 'system-ui',
   imageBorderRadius: '0',
   imageFrame: 'none',
-  themeColor: '#f7f7f7',
+  themeColor: '#465FFF',
   fontSizePresentationTitle: '38px',
   fontSizeHeading: '38px',
   fontSizeText: '22px',
