@@ -382,6 +382,8 @@ const loadEvents = async () => {
         extendedProps: {
           calendar: e.extendedProps?.calendar ?? 'Primary',
           notes: e.extendedProps?.notes ?? '',
+          type: e.extendedProps?.type,
+          taskId: e.extendedProps?.taskId,
         },
       }
     })
