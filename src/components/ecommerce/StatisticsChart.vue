@@ -65,22 +65,22 @@
       <span class="text-gray-500">Загрузка...</span>
     </div>
     <template v-else>
-      <div v-if="totalViews !== null && totalViews > 0" class="mb-4">
+      <div v-if="totalViews !== null" class="mb-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           Всего просмотров: <span class="font-semibold text-gray-800 dark:text-white">{{ totalViews }}</span>
         </p>
       </div>
-      <div v-if="totalViews !== null && totalViews > 0" class="max-w-full overflow-x-auto custom-scrollbar">
+      <div v-if="(totalViews !== null && totalViews > 0) || viewsByPresentation.length > 0" class="max-w-full overflow-x-auto custom-scrollbar">
         <div id="chartThree" class="-ml-4 min-w-[1000px] xl:min-w-full pl-2">
-          <VueApexCharts type="area" height="310" :options="chartOptions" :series="series" />
+          <VueApexCharts :type="chartType" height="310" :options="chartOptions" :series="series" />
         </div>
       </div>
-      <div v-else-if="totalViews === 0 && date && Array.isArray(date) && date.length === 2" class="flex items-center justify-center h-[310px]">
+      <div v-else-if="(totalViews === 0 || totalViews === null) && viewsByPresentation.length === 0 && date && Array.isArray(date) && date.length === 2" class="flex items-center justify-center h-[310px]">
         <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
           За выбранный период данных нет
         </p>
       </div>
-      <div v-else-if="totalViews === 0" class="flex items-center justify-center h-[310px]">
+      <div v-else-if="(totalViews === 0 || totalViews === null) && viewsByPresentation.length === 0" class="flex items-center justify-center h-[310px]">
         <p class="text-center text-gray-500 dark:text-gray-400 max-w-md">
           Статистика начнёт собираться после того, как вы поделитесь презентацией
         </p>
@@ -110,6 +110,7 @@ const date = ref<Date[] | string | null>(null)
 const loading = ref(false)
 const totalViews = ref<number | null>(null)
 const viewsByDate = ref<Record<string, number>>({})
+const viewsByPresentation = ref<Array<{ id: string; title: string; viewsByDate: Record<string, number>; totalViews: number }>>([])
 
 const publicPresentations = computed(() => {
   return presentations.value.filter(p => p.isPublic && p.publicUrl)
@@ -134,45 +135,66 @@ const flatpickrConfig = computed(() => {
   }
 })
 
+const CHART_COLORS = ['#465FFF', '#12B76A', '#F79009', '#F04438', '#7C3AED', '#0EA5E9', '#EC4899', '#14B8A6']
+
+const chartType = computed(() =>
+  !selectedPresentationId.value && viewsByPresentation.value.length > 0 ? 'line' : 'area'
+)
+
 const series = computed(() => {
-  if (Object.keys(viewsByDate.value).length === 0) {
-    return [{
-      name: 'Просмотры',
-      data: [],
-    }]
+  if (selectedPresentationId.value) {
+    if (Object.keys(viewsByDate.value).length === 0) {
+      return [{ name: 'Просмотры', data: [] }]
+    }
+    const sortedDates = Object.keys(viewsByDate.value).sort()
+    const data = sortedDates.map(d => viewsByDate.value[d])
+    return [{ name: 'Просмотры', data }]
   }
-  
-  const sortedDates = Object.keys(viewsByDate.value).sort()
-  const data = sortedDates.map(d => viewsByDate.value[d])
-  
-  return [{
-    name: 'Просмотры',
-    data,
-  }]
+  if (viewsByPresentation.value.length === 0) {
+    return []
+  }
+  const allDates = new Set<string>()
+  viewsByPresentation.value.forEach(p => Object.keys(p.viewsByDate).forEach(d => allDates.add(d)))
+  const sortedDates = Array.from(allDates).sort()
+  return viewsByPresentation.value.map((p, i) => ({
+    name: p.title,
+    data: sortedDates.map(d => p.viewsByDate[d] ?? 0),
+  }))
+})
+
+const chartCategories = computed(() => {
+  if (selectedPresentationId.value) {
+    return Object.keys(viewsByDate.value).sort()
+  }
+  const allDates = new Set<string>()
+  viewsByPresentation.value.forEach(p => Object.keys(p.viewsByDate).forEach(d => allDates.add(d)))
+  return Array.from(allDates).sort()
 })
 
 const chartOptions = computed(() => {
-  const categories = Object.keys(viewsByDate.value).sort()
-  const formattedCategories = categories.map(date => {
-    const d = new Date(date)
-    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+  const categories = chartCategories.value
+  const formattedCategories = categories.map(d => {
+    const date = new Date(d)
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
   })
-  
+  const isMultiSeries = !selectedPresentationId.value && viewsByPresentation.value.length > 0
+
   return {
     legend: {
-      show: false,
+      show: isMultiSeries,
       position: 'top',
       horizontalAlign: 'left',
+      fontSize: '12px',
     },
-    colors: ['#465FFF'],
+    colors: isMultiSeries ? CHART_COLORS : ['#465FFF'],
     chart: {
       fontFamily: 'Outfit, sans-serif',
-      type: 'area',
+      type: isMultiSeries ? 'line' : 'area',
       toolbar: {
         show: false,
       },
     },
-    fill: {
+    fill: isMultiSeries ? {} : {
       gradient: {
         enabled: true,
         opacityFrom: 0.55,
@@ -186,7 +208,7 @@ const chartOptions = computed(() => {
     markers: {
       size: 5,
       strokeWidth: 2,
-      strokeColors: ['#465FFF'],
+      strokeColors: isMultiSeries ? CHART_COLORS : ['#465FFF'],
       fillColors: ['#FFFFFF'],
       hover: {
         size: 7,
@@ -260,6 +282,7 @@ async function loadStatistics() {
   if (!hasApi() || !getToken()) {
     totalViews.value = null
     viewsByDate.value = {}
+    viewsByPresentation.value = []
     return
   }
   
@@ -296,26 +319,27 @@ async function loadStatistics() {
       }>(`/api/presentations/${selectedPresentationId.value}/views?${params.toString()}`)
       totalViews.value = data.totalViews
       viewsByDate.value = data.viewsByDate
+      viewsByPresentation.value = []
     } else {
       const publicPres = publicPresentations.value
       if (publicPres.length === 0) {
         totalViews.value = 0
         viewsByDate.value = {}
+        viewsByPresentation.value = []
       } else {
         let total = 0
-        const aggregated: Record<string, number> = {}
+        const perPres: Array<{ id: string; title: string; viewsByDate: Record<string, number>; totalViews: number }> = []
         for (const pres of publicPres) {
           const data = await api.get<{
             totalViews: number
             viewsByDate: Record<string, number>
           }>(`/api/presentations/${pres.id}/views?${params.toString()}`)
           total += data.totalViews
-          for (const [d, count] of Object.entries(data.viewsByDate)) {
-            aggregated[d] = (aggregated[d] ?? 0) + count
-          }
+          perPres.push({ id: pres.id, title: pres.title, viewsByDate: data.viewsByDate, totalViews: data.totalViews })
         }
         totalViews.value = total
-        viewsByDate.value = aggregated
+        viewsByDate.value = {}
+        viewsByPresentation.value = perPres
       }
     }
   } catch (err) {
