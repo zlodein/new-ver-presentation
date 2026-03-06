@@ -1,8 +1,8 @@
 <template>
   <div
-    class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
+    class="flex min-h-[220px] flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
   >
-    <div class="flex items-center justify-between">
+    <div class="flex shrink-0 items-center justify-between">
       <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
         Задачи
       </h3>
@@ -14,48 +14,50 @@
       </router-link>
     </div>
 
-    <div v-if="loading" class="mt-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+    <div v-if="loading" class="mt-4 flex flex-1 items-center justify-center py-8 text-center text-sm text-gray-500 dark:text-gray-400">
       Загрузка...
     </div>
 
     <div
       v-else-if="!hasApi()"
-      class="mt-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+      class="mt-4 flex flex-1 items-center justify-center py-8 text-center text-sm text-gray-500 dark:text-gray-400"
     >
       Для работы с задачами требуется авторизация.
     </div>
 
     <div
       v-else-if="!tasks.length"
-      class="mt-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+      class="mt-4 flex flex-1 items-center justify-center py-8 text-center text-sm text-gray-500 dark:text-gray-400"
     >
       Нет задач
     </div>
 
-    <ul v-else class="mt-4 space-y-3">
-      <li
-        v-for="task in tasks"
-        :key="task.id"
-        class="flex items-center gap-3 rounded-lg border border-gray-100 py-2.5 px-3 dark:border-gray-800"
-      >
-        <span
-          class="inline-flex h-2 w-2 shrink-0 rounded-full"
-          :class="getStatusDotClass(task.status)"
-        />
-        <router-link
-          :to="`/dashboard/tasks`"
-          class="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 hover:text-brand-500 dark:text-white/90 dark:hover:text-brand-400"
+    <div v-else class="custom-scrollbar mt-4 max-h-[320px] min-h-0 flex-1 overflow-y-auto pr-1">
+      <ul class="space-y-3">
+        <li
+          v-for="task in tasks"
+          :key="task.id"
+          class="flex items-center gap-3 rounded-lg border border-gray-100 py-2.5 px-3 dark:border-gray-800"
         >
-          {{ task.title }}
-        </router-link>
-        <span
-          class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-          :class="getStatusBadgeClass(task.status)"
-        >
-          {{ statusLabel(task.status) }}
-        </span>
-      </li>
-    </ul>
+          <span
+            class="inline-flex h-2 w-2 shrink-0 rounded-full"
+            :class="getStatusDotClass(task.status)"
+          />
+          <router-link
+            :to="`/dashboard/tasks`"
+            class="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 hover:text-brand-500 dark:text-white/90 dark:hover:text-brand-400"
+          >
+            {{ task.title }}
+          </router-link>
+          <span
+            class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+            :class="getStatusBadgeClass(task.status)"
+          >
+            {{ statusLabel(task.status) }}
+          </span>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -110,7 +112,7 @@ async function loadTasks() {
   loading.value = true
   try {
     const list = await api.get('/api/tasks')
-    tasks.value = list.slice(0, 6)
+    tasks.value = list.slice(0, 10)
   } catch (err) {
     console.error('Ошибка загрузки задач:', err)
     tasks.value = []
