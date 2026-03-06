@@ -1,10 +1,29 @@
 /**
  * Шаблоны писем для уведомлений на info@e-presentation.ru
+ * Стилизация по образцу examples-templates.php
  */
 
 const SITE_NAME = 'E-Presentation'
 
-function wrapHtml(body: string, title: string): string {
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+type WrapOptions = {
+  headerTitle: string
+  headerColor?: string
+  badge?: { text: string; class: string }
+}
+
+function wrapHtml(body: string, title: string, options: WrapOptions): string {
+  const headerColor = options.headerColor ?? '#2c7f8d'
+  const badgeHtml = options.badge
+    ? `<p><span class="${options.badge.class}">${escapeHtml(options.badge.text)}</span></p>`
+    : ''
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -12,43 +31,57 @@ function wrapHtml(body: string, title: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { color: #2c7f8d; font-size: 18px; font-weight: 600; margin-bottom: 20px; }
-    .block { margin-bottom: 16px; }
-    .label { font-weight: 600; color: #555; }
-    .footer { margin-top: 24px; font-size: 12px; color: #888; }
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; background-color: #f9f9f9; }
+    .info-row { margin: 10px 0; padding: 10px; background-color: white; border-left: 3px solid ${headerColor}; }
+    .label { font-weight: bold; color: #2c7f8d; }
+    .success-badge { display: inline-block; padding: 5px 15px; background-color: #28a745; color: white; border-radius: 5px; font-weight: bold; }
+    .error-badge { display: inline-block; padding: 5px 15px; background-color: #dc3545; color: white; border-radius: 5px; font-weight: bold; }
+    .reason-box { padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; margin: 15px 0; }
+    .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
   </style>
 </head>
 <body>
-  <div class="header">${SITE_NAME}</div>
-  ${body}
-  <div class="footer">Это автоматическое уведомление. Не отвечайте на это письмо.</div>
+  <div class="container">
+    <div class="header" style="background-color: ${headerColor};">
+      <h1 style="margin: 0; font-size: 24px;">${escapeHtml(options.headerTitle)}</h1>
+    </div>
+    <div class="content">
+      ${badgeHtml}
+      ${body}
+    </div>
+    <div class="footer">
+      <p>Это письмо отправлено автоматически, пожалуйста, не отвечайте на него.</p>
+      <p>&copy; ${new Date().getFullYear()} ${SITE_NAME}. Все права защищены.</p>
+    </div>
+  </div>
 </body>
 </html>`
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+function infoRow(label: string, value: string): string {
+  return `<div class="info-row"><span class="label">${escapeHtml(label)}:</span> ${escapeHtml(value)}</div>`
 }
 
 /** Шаблон: новый пользователь зарегистрировался */
 export function getRegistrationEmail(data: { email: string; name?: string | null; lastName?: string | null }) {
-  const fullName = [data.name, data.lastName].filter(Boolean).join(' ').trim() || '—'
+  const fullName = [data.name, data.lastName].filter(Boolean).join(' ').trim() || 'Не указано'
   const title = 'Новая регистрация на сайте'
   const body = `
-    <h2>Новая регистрация</h2>
-    <div class="block"><span class="label">Email:</span> ${escapeHtml(data.email)}</div>
-    <div class="block"><span class="label">Имя:</span> ${escapeHtml(fullName)}</div>
-    <div class="block"><span class="label">Дата:</span> ${escapeHtml(new Date().toLocaleString('ru-RU'))}</div>
+    <p>На сайте зарегистрирован новый пользователь:</p>
+    ${infoRow('Имя', fullName)}
+    ${infoRow('Email', data.email)}
+    ${infoRow('Дата регистрации', new Date().toLocaleString('ru-RU'))}
   `
-  return { subject: `[${SITE_NAME}] ${title}`, html: wrapHtml(body, title) }
+  return {
+    subject: `[${SITE_NAME}] ${title}`,
+    html: wrapHtml(body, title, { headerTitle: 'Новая регистрация', headerColor: '#2c7f8d' }),
+  }
 }
 
-/** Шаблон: оплата тарифа */
+/** Шаблон: оплата тарифа (успешная) */
 export function getPaymentEmail(data: {
   email: string
   name?: string | null
@@ -59,16 +92,24 @@ export function getPaymentEmail(data: {
 }) {
   const fullName = [data.name, data.lastName].filter(Boolean).join(' ').trim() || '—'
   const title = 'Оплата тарифа'
+  const amountStr = data.amount != null ? String(data.amount).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽' : '—'
   const body = `
-    <h2>Оплата тарифа</h2>
-    <div class="block"><span class="label">Пользователь:</span> ${escapeHtml(fullName)}</div>
-    <div class="block"><span class="label">Email:</span> ${escapeHtml(data.email)}</div>
-    <div class="block"><span class="label">Тариф:</span> ${escapeHtml(String(data.tariffName))}</div>
-    ${data.amount != null ? `<div class="block"><span class="label">Сумма:</span> ${escapeHtml(String(data.amount))}</div>` : ''}
-    ${data.paymentId ? `<div class="block"><span class="label">ID платежа:</span> ${escapeHtml(data.paymentId)}</div>` : ''}
-    <div class="block"><span class="label">Дата:</span> ${escapeHtml(new Date().toLocaleString('ru-RU'))}</div>
+    <p>Детали платежа:</p>
+    ${data.paymentId ? infoRow('ID платежа', data.paymentId) : ''}
+    ${infoRow('Тариф', data.tariffName)}
+    ${infoRow('Сумма', amountStr)}
+    ${infoRow('Пользователь', fullName)}
+    ${infoRow('Email', data.email)}
+    ${infoRow('Дата оплаты', new Date().toLocaleString('ru-RU'))}
   `
-  return { subject: `[${SITE_NAME}] ${title} — ${data.email}`, html: wrapHtml(body, title) }
+  return {
+    subject: `[${SITE_NAME}] ${title} — ${data.email}`,
+    html: wrapHtml(body, title, {
+      headerTitle: '✅ Успешная оплата',
+      headerColor: '#28a745',
+      badge: { text: 'ПЛАТЕЖ УСПЕШНО ОБРАБОТАН', class: 'success-badge' },
+    }),
+  }
 }
 
 /** Шаблон: запрос от пользователя (тикет поддержки) */
@@ -80,14 +121,24 @@ export function getSupportRequestEmail(data: {
   ticketId?: string
 }) {
   const title = 'Запрос от пользователя'
+  const fromName = data.userName || data.userEmail
+  const messageBlock = data.message
+    ? `<div class="info-row"><span class="label">Сообщение:</span><br><pre style="white-space:pre-wrap;margin:8px 0 0;font-family:inherit;">${escapeHtml(data.message)}</pre></div>`
+    : ''
   const body = `
-    <h2>Новый запрос в поддержку</h2>
-    ${data.ticketId ? `<div class="block"><span class="label">Тикет:</span> ${escapeHtml(data.ticketId)}</div>` : ''}
-    <div class="block"><span class="label">От:</span> ${escapeHtml(data.userName || data.userEmail)}</div>
-    <div class="block"><span class="label">Email:</span> ${escapeHtml(data.userEmail)}</div>
-    <div class="block"><span class="label">Тема:</span> ${escapeHtml(data.subject)}</div>
-    ${data.message ? `<div class="block"><span class="label">Сообщение:</span><br><pre style="white-space:pre-wrap;background:#f5f5f5;padding:12px;border-radius:6px;">${escapeHtml(data.message)}</pre></div>` : ''}
-    <div class="block"><span class="label">Дата:</span> ${escapeHtml(new Date().toLocaleString('ru-RU'))}</div>
+    <p>Новый запрос в поддержку:</p>
+    ${data.ticketId ? infoRow('Тикет', data.ticketId) : ''}
+    ${infoRow('От', fromName)}
+    ${infoRow('Email', data.userEmail)}
+    ${infoRow('Тема', data.subject)}
+    ${messageBlock}
+    ${infoRow('Дата', new Date().toLocaleString('ru-RU'))}
   `
-  return { subject: `[${SITE_NAME}] ${title} — ${data.subject}`, html: wrapHtml(body, title) }
+  return {
+    subject: `[${SITE_NAME}] ${title} — ${data.subject}`,
+    html: wrapHtml(body, title, {
+      headerTitle: 'Новый запрос в поддержку',
+      headerColor: '#2c7f8d',
+    }),
+  }
 }
