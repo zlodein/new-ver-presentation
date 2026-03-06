@@ -10,8 +10,19 @@ interface User {
   passwordHash: string
   firstName: string | null
   lastName: string | null
+  emailVerified?: string
   createdAt: string
   updatedAt: string
+}
+
+interface VerificationCode {
+  id: string
+  email: string
+  code: string
+  type: string
+  userId?: string
+  expiresAt: string
+  createdAt: string
 }
 
 interface Presentation {
@@ -36,6 +47,7 @@ interface StoreData {
   users: User[]
   presentations: Presentation[]
   passwordResetTokens: PasswordResetToken[]
+  verificationCodes: VerificationCode[]
 }
 
 function uuid(): string {
@@ -48,13 +60,15 @@ function uuid(): string {
 
 function load(): StoreData {
   if (!existsSync(STORE_PATH)) {
-    return { users: [], presentations: [], passwordResetTokens: [] }
+    return { users: [], presentations: [], passwordResetTokens: [], verificationCodes: [] }
   }
   const raw = readFileSync(STORE_PATH, 'utf-8')
   try {
-    return JSON.parse(raw) as StoreData
+    const d = JSON.parse(raw) as StoreData
+    if (!Array.isArray(d.verificationCodes)) d.verificationCodes = []
+    return d
   } catch {
-    return { users: [], presentations: [], passwordResetTokens: [] }
+    return { users: [], presentations: [], passwordResetTokens: [], verificationCodes: [] }
   }
 }
 
@@ -73,7 +87,7 @@ export const fileStore = {
   findUserById(id: string): User | undefined {
     return load().users.find((u) => u.id === id)
   },
-  createUser(data: { email: string; passwordHash: string; firstName?: string | null; lastName?: string | null }): User {
+  createUser(data: { email: string; passwordHash: string; firstName?: string | null; lastName?: string | null; emailVerified?: string }): User {
     const d = load()
     const user: User = {
       id: uuid(),
@@ -81,6 +95,7 @@ export const fileStore = {
       passwordHash: data.passwordHash,
       firstName: data.firstName ?? null,
       lastName: data.lastName ?? null,
+      emailVerified: data.emailVerified ?? 'false',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -88,16 +103,41 @@ export const fileStore = {
     save(d)
     return user
   },
-  updateUser(id: string, data: Partial<Pick<User, 'passwordHash' | 'firstName' | 'lastName' | 'updatedAt'>>): void {
+  updateUser(id: string, data: Partial<Pick<User, 'passwordHash' | 'firstName' | 'lastName' | 'emailVerified' | 'updatedAt'>>): void {
     const d = load()
     const u = d.users.find((x) => x.id === id)
     if (u) {
       if (data.passwordHash != null) u.passwordHash = data.passwordHash
       if (data.firstName != null) u.firstName = data.firstName
       if (data.lastName != null) u.lastName = data.lastName
+      if (data.emailVerified != null) u.emailVerified = data.emailVerified
       u.updatedAt = (data.updatedAt as string) ?? new Date().toISOString()
       save(d)
     }
+  },
+  createVerificationCode(data: { email: string; code: string; type: string; userId?: string; expiresAt: Date }): void {
+    const d = load()
+    d.verificationCodes.push({
+      id: uuid(),
+      email: data.email.toLowerCase(),
+      code: data.code,
+      type: data.type,
+      userId: data.userId,
+      expiresAt: data.expiresAt.toISOString(),
+      createdAt: new Date().toISOString(),
+    })
+    save(d)
+  },
+  findValidVerificationCode(email: string, code: string, type: string): VerificationCode | undefined {
+    const now = new Date().toISOString()
+    return load().verificationCodes.find(
+      (v) => v.email === email.toLowerCase() && v.code === code && v.type === type && v.expiresAt > now
+    )
+  },
+  deleteVerificationCode(id: string): void {
+    const d = load()
+    d.verificationCodes = d.verificationCodes.filter((v) => v.id !== id)
+    save(d)
   },
   getPresentationsByUserId(userId: string): Presentation[] {
     return load().presentations.filter((p) => p.userId === userId).sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1))

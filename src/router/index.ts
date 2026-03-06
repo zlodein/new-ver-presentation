@@ -443,6 +443,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/verify',
+      name: 'TwoStepVerification',
+      component: () => import('../views/Auth/TwoStepVerification.vue'),
+      meta: {
+        title: 'Подтверждение',
+      },
+    },
+    {
       path: '/maintenance',
       name: 'Maintenance',
       component: () => import('../views/Maintenance.vue'),
@@ -499,8 +507,8 @@ router.beforeEach(async (to, from, next) => {
     const siteDisabled = !!data?.siteDisabled
 
     if (siteDisabled) {
-      // Вход и регистрация разрешены, чтобы админ мог войти
-      if (to.path === '/signin' || to.path === '/signup') {
+      // Вход, регистрация и подтверждение разрешены
+      if (to.path === '/signin' || to.path === '/signup' || to.path === '/verify' || to.path === '/reset-password') {
         const title = to.meta?.title
         document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
         next()

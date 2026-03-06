@@ -19,7 +19,7 @@
               {{ hasToken ? 'Новый пароль' : 'Восстановление пароля' }}
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ hasToken ? 'Введите новый пароль (не менее 6 символов)' : 'Введите email — мы отправим ссылку для сброса пароля (в режиме разработки ссылка появится на странице)' }}
+              {{ hasToken ? 'Введите новый пароль (не менее 6 символов)' : 'Введите email — мы отправим 6-значный код подтверждения на почту' }}
             </p>
           </div>
 
@@ -30,7 +30,6 @@
             </div>
             <div v-if="requestSuccess" class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300">
               {{ requestSuccess }}
-              <a v-if="resetLink" :href="resetLink" class="mt-2 block break-all text-brand-500 hover:underline">{{ resetLink }}</a>
             </div>
             <div>
               <label for="email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email<span class="text-error-500">*</span></label>
@@ -47,7 +46,7 @@
               :disabled="loading"
               class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-60"
             >
-              {{ loading ? 'Отправка...' : 'Отправить ссылку' }}
+              {{ loading ? 'Отправка...' : 'Отправить код' }}
             </button>
           </form>
 
@@ -86,18 +85,18 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import { api, hasApi, ApiError } from '@/api/client'
 
 const route = useRoute()
+const router = useRouter()
 const email = ref('')
 const newPassword = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
 const requestError = ref('')
 const requestSuccess = ref('')
-const resetLink = ref('')
 const resetError = ref('')
 const resetSuccess = ref('')
 
@@ -112,7 +111,6 @@ onMounted(() => {
 async function requestReset() {
   requestError.value = ''
   requestSuccess.value = ''
-  resetLink.value = ''
   if (!email.value?.trim()) {
     requestError.value = 'Введите email'
     return
@@ -123,9 +121,9 @@ async function requestReset() {
   }
   loading.value = true
   try {
-    const res = await api.post<{ message: string; resetLink?: string; token?: string }>('/api/auth/forgot-password', { email: email.value.trim() })
-    requestSuccess.value = res.message || 'Готово. В режиме разработки ссылка ниже.'
-    if (res.resetLink) resetLink.value = res.resetLink
+    const res = await api.post<{ message: string }>('/api/auth/forgot-password', { email: email.value.trim() })
+    requestSuccess.value = res.message || 'Код отправлен на указанный email.'
+    router.push({ path: '/verify', query: { type: 'password_reset', email: email.value.trim() } })
   } catch (e) {
     requestError.value = e instanceof ApiError ? e.message : 'Ошибка запроса'
   } finally {

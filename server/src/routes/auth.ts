@@ -12,7 +12,7 @@ import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
-import { sendRegistrationNotification } from '../services/mailer.js'
+import { sendRegistrationNotification, sendVerificationCodeEmail, sendPasswordResetCodeEmail } from '../services/mailer.js'
 import { createSession } from './sessions.js'
 
 const SALT_ROUNDS = 10
@@ -28,10 +28,10 @@ function getDbErr(): string {
   return 'Ошибка сервера. В server/.env задайте DATABASE_URL: для MySQL — mysql://user:pass@host:3306/e_presentati (таблицы — server/sql/). Точная причина — в логах бэкенда.'
 }
 
-/** Признак ошибки "колонка не существует" в MySQL */
+/** Признак ошибки "колонка/таблица не существует" в MySQL */
 function isUnknownColumnError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
-  return /Unknown column|doesn't exist/i.test(msg)
+  return /Unknown column|doesn't exist|Table.*doesn't exist/i.test(msg)
 }
 
 /** Форматирует телефон в +7 (000) 000-00-00 для сохранения в personal_phone */
@@ -83,6 +83,13 @@ function generatePkce(): { codeVerifier: string; codeChallenge: string } {
 const PKCE_COOKIE_NAME = 'oauth_pkce_verifier'
 const VK_STATE_COOKIE_NAME = 'oauth_vk_state'
 const PKCE_COOKIE_MAX_AGE = 600 // 10 минут
+
+/** Генерация 6-значного кода подтверждения */
+function generate6DigitCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000))
+}
+
+const CODE_EXPIRY_MINUTES = 15
 
 export async function authRoutes(app: FastifyInstance) {
   // ——— OAuth: редирект на провайдера ———
@@ -428,16 +435,16 @@ export async function authRoutes(app: FastifyInstance) {
           passwordHash,
           firstName: firstName?.trim() || null,
           lastName: lastName?.trim() || null,
+          emailVerified: 'false',
         })
-        console.log('[auth] Регистрация (fileStore), отправка уведомления на почту:', user.email)
-        sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch((err) => {
-          console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
+        const code = generate6DigitCode()
+        const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000)
+        fileStore.createVerificationCode({ email: normalizedEmail, code, type: 'email_verification', userId: user.id, expiresAt })
+        sendVerificationCodeEmail({ email: user.email, code, name: user.firstName || user.lastName }).catch((err) => {
+          console.error('[auth] Код подтверждения не отправлен:', err instanceof Error ? err.message : err)
         })
-        const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
-        return reply.send({
-          user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
-          token,
-        })
+        sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch(() => {})
+        return reply.send({ pendingVerification: true, email: normalizedEmail })
       }
       let existing: { id: unknown } | undefined
       if (useMysql) {
@@ -456,40 +463,50 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
       if (useMysql) {
-        const inserted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.users).values({
-          email: normalizedEmail,
-          password: passwordHash,
-          name: name?.trim() || firstName?.trim() || '',
-          last_name: last_name?.trim() || lastName?.trim() || null,
-          middle_name: middle_name?.trim() || null,
-          user_img: user_img?.trim() || null,
-        }).$returningId()
-        const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
-        if (newId == null) return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
-        console.log('[auth] Регистрация (MySQL), отправка уведомления на почту:', normalizedEmail)
-        sendRegistrationNotification({
-          email: normalizedEmail,
-          name: name?.trim() || firstName?.trim() || null,
-          lastName: last_name?.trim() || lastName?.trim() || null,
-        }).catch((err) => {
-          console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
-        })
-        const { sessionId } = await createSession(req, String(newId), reply)
-        const token = await reply.jwtSign({ sub: String(newId), email: normalizedEmail, sid: sessionId }, { expiresIn: '7d' })
-        return reply.send({
-          user: { 
-            id: String(newId), 
-            email: normalizedEmail, 
-            name: name?.trim() || firstName?.trim() || null,
+        let inserted: unknown
+        try {
+          inserted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.users).values({
+            email: normalizedEmail,
+            password: passwordHash,
+            name: name?.trim() || firstName?.trim() || '',
             last_name: last_name?.trim() || lastName?.trim() || null,
             middle_name: middle_name?.trim() || null,
             user_img: user_img?.trim() || null,
-            // Для обратной совместимости
-            firstName: name?.trim() || firstName?.trim() || null,
-            lastName: last_name?.trim() || lastName?.trim() || null,
-          },
-          token,
+            email_verified: 'false',
+          }).$returningId()
+        } catch (err) {
+          if (isUnknownColumnError(err)) {
+            inserted = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.users).values({
+              email: normalizedEmail,
+              password: passwordHash,
+              name: name?.trim() || firstName?.trim() || '',
+              last_name: last_name?.trim() || lastName?.trim() || null,
+              middle_name: middle_name?.trim() || null,
+              user_img: user_img?.trim() || null,
+            }).$returningId()
+          } else throw err
+        }
+        const newId = Array.isArray(inserted) ? (inserted as { id: number }[])[0]?.id : (inserted as { id: number })?.id
+        if (newId == null) return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
+        const code = generate6DigitCode()
+        const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000)
+        try {
+          await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.verificationCodes).values({
+            email: normalizedEmail,
+            code,
+            type: 'email_verification',
+            user_id: newId,
+            expires_at: expiresAt,
+          })
+        } catch (err) {
+          if (!isUnknownColumnError(err) && !/Table.*doesn't exist/i.test(String(err))) throw err
+          req.log.warn({ err }, 'verification_codes table missing, run migrate_verification_codes.sql')
+        }
+        sendVerificationCodeEmail({ email: normalizedEmail, code, name: name?.trim() || firstName?.trim() || null }).catch((err) => {
+          console.error('[auth] Код подтверждения не отправлен:', err instanceof Error ? err.message : err)
         })
+        sendRegistrationNotification({ email: normalizedEmail, name: name?.trim() || firstName?.trim() || null, lastName: last_name?.trim() || lastName?.trim() || null }).catch(() => {})
+        return reply.send({ pendingVerification: true, email: normalizedEmail })
       }
       const [user] = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>)
         .insert(pgSchema.users)
@@ -503,25 +520,187 @@ export async function authRoutes(app: FastifyInstance) {
       if (!user) {
         return reply.status(500).send({ error: 'Ошибка при создании пользователя' })
       }
-      console.log('[auth] Регистрация (PostgreSQL), отправка уведомления на почту:', user.email)
-      sendRegistrationNotification({
-        email: user.email,
-        name: user.firstName,
-        lastName: user.lastName,
-      }).catch((err) => {
-        console.error('[auth] Уведомление о регистрации не отправлено:', err instanceof Error ? err.message : err)
+      const code = generate6DigitCode()
+      const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000)
+      try {
+        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).insert(pgSchema.verificationCodes).values({
+          email: normalizedEmail,
+          code,
+          type: 'email_verification',
+          userId: user.id,
+          expiresAt,
+        })
+      } catch (err) {
+        req.log.warn({ err }, 'verification_codes table missing, run migrate_verification_codes_pg.sql')
+      }
+      sendVerificationCodeEmail({ email: user.email, code, name: user.firstName || user.lastName }).catch((err) => {
+        console.error('[auth] Код подтверждения не отправлен:', err instanceof Error ? err.message : err)
       })
-      const { sessionId } = await createSession(req, user.id, reply)
-      const token = await reply.jwtSign({ sub: user.id, email: user.email, sid: sessionId }, { expiresIn: '7d' })
-      return reply.send({
-        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
-        token,
-      })
+      sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch(() => {})
+      return reply.send({ pendingVerification: true, email: normalizedEmail })
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
         error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
       })
+    }
+  })
+
+  /** Подтверждение email — ввод 6-значного кода после регистрации */
+  app.post<{ Body: { email: string; code: string } }>('/api/auth/verify-email', async (req: FastifyRequest<{ Body: { email: string; code: string } }>, reply: FastifyReply) => {
+    try {
+      const { email, code } = req.body
+      if (!email?.trim() || !code?.trim()) {
+        return reply.status(400).send({ error: 'Укажите email и код' })
+      }
+      const normalizedEmail = email.trim().toLowerCase()
+      const codeStr = String(code).trim().replace(/\D/g, '').slice(0, 6)
+      if (codeStr.length !== 6) {
+        return reply.status(400).send({ error: 'Код должен содержать 6 цифр' })
+      }
+      if (useFileStore) {
+        const vc = fileStore.findValidVerificationCode(normalizedEmail, codeStr, 'email_verification')
+        if (!vc) return reply.status(400).send({ error: 'Неверный или истёкший код. Запросите новый.' })
+        const user = fileStore.findUserByEmail(normalizedEmail)
+        if (!user) return reply.status(400).send({ error: 'Пользователь не найден' })
+        fileStore.updateUser(user.id, { emailVerified: 'true' })
+        fileStore.deleteVerificationCode(vc.id)
+        const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
+        return reply.send({
+          user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
+          token,
+        })
+      }
+      if (useMysql) {
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const rows = await mysqlDb.query.verificationCodes.findMany({
+          where: and(
+            eq(mysqlSchema.verificationCodes.email, normalizedEmail),
+            eq(mysqlSchema.verificationCodes.code, codeStr),
+            eq(mysqlSchema.verificationCodes.type, 'email_verification'),
+            gt(mysqlSchema.verificationCodes.expires_at, new Date())
+          ),
+          columns: { id: true, user_id: true },
+        })
+        const vc = rows[0]
+        if (!vc) return reply.status(400).send({ error: 'Неверный или истёкший код. Запросите новый.' })
+        try {
+          await mysqlDb.update(mysqlSchema.users).set({ email_verified: 'true' }).where(eq(mysqlSchema.users.id, vc.user_id!))
+        } catch (err) {
+          if (!isUnknownColumnError(err)) throw err
+        }
+        await mysqlDb.delete(mysqlSchema.verificationCodes).where(eq(mysqlSchema.verificationCodes.id, vc.id))
+        const user = await mysqlDb.query.users.findFirst({
+          where: eq(mysqlSchema.users.id, vc.user_id!),
+          columns: { id: true, email: true, name: true, last_name: true },
+        })
+        if (!user) return reply.status(500).send({ error: 'Ошибка сервера' })
+        const { sessionId } = await createSession(req, String(user.id), reply)
+        const token = await reply.jwtSign({ sub: String(user.id), email: user.email, sid: sessionId }, { expiresIn: '7d' })
+        return reply.send({
+          user: { id: String(user.id), email: user.email, name: user.name, last_name: user.last_name, firstName: user.name, lastName: user.last_name },
+          token,
+        })
+      }
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const rows = await pgDb.query.verificationCodes.findMany({
+        where: and(
+          eq(pgSchema.verificationCodes.email, normalizedEmail),
+          eq(pgSchema.verificationCodes.code, codeStr),
+          eq(pgSchema.verificationCodes.type, 'email_verification'),
+          gt(pgSchema.verificationCodes.expiresAt, new Date())
+        ),
+        columns: { id: true, userId: true },
+      })
+      const vc = rows[0]
+      if (!vc || !vc.userId) return reply.status(400).send({ error: 'Неверный или истёкший код. Запросите новый.' })
+      await pgDb.update(pgSchema.users).set({ emailVerified: 'true' }).where(eq(pgSchema.users.id, vc.userId))
+      await pgDb.delete(pgSchema.verificationCodes).where(eq(pgSchema.verificationCodes.id, vc.id))
+      const user = await pgDb.query.users.findFirst({
+        where: eq(pgSchema.users.id, vc.userId),
+        columns: { id: true, email: true, firstName: true, lastName: true },
+      })
+      if (!user) return reply.status(500).send({ error: 'Ошибка сервера' })
+      const { sessionId } = await createSession(req, user.id, reply)
+      const token = await reply.jwtSign({ sub: user.id, email: user.email, sid: sessionId }, { expiresIn: '7d' })
+      return reply.send({ user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName }, token })
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({ error: getDbErr() })
+    }
+  })
+
+  /** Повторная отправка кода подтверждения */
+  app.post<{ Body: { email: string; type: string } }>('/api/auth/resend-code', async (req: FastifyRequest<{ Body: { email: string; type: string } }>, reply: FastifyReply) => {
+    try {
+      const { email, type } = req.body
+      const t = (type || 'email_verification').trim()
+      if (t !== 'email_verification' && t !== 'password_reset') {
+        return reply.status(400).send({ error: 'Неверный тип' })
+      }
+      if (!email?.trim()) return reply.status(400).send({ error: 'Укажите email' })
+      const normalizedEmail = email.trim().toLowerCase()
+      const code = generate6DigitCode()
+      const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000)
+      if (useFileStore) {
+        const user = fileStore.findUserByEmail(normalizedEmail)
+        if (t === 'email_verification' && !user) return reply.status(404).send({ error: 'Пользователь не найден' })
+        if (t === 'password_reset' && !user) return reply.send({ message: 'Если email зарегистрирован, код отправлен' })
+        fileStore.createVerificationCode({ email: normalizedEmail, code, type: t, userId: user?.id, expiresAt })
+        if (t === 'email_verification') {
+          sendVerificationCodeEmail({ email: normalizedEmail, code, name: user?.firstName || user?.lastName }).catch(() => {})
+        } else {
+          sendPasswordResetCodeEmail({ email: normalizedEmail, code, name: user?.firstName || user?.lastName }).catch(() => {})
+        }
+        return reply.send({ message: 'Код отправлен на указанный email' })
+      }
+      if (useMysql) {
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const user = await mysqlDb.query.users.findFirst({
+          where: eq(mysqlSchema.users.email, normalizedEmail),
+          columns: { id: true, name: true, last_name: true },
+        })
+        if (t === 'email_verification' && !user) return reply.status(404).send({ error: 'Пользователь не найден' })
+        if (t === 'password_reset' && !user) return reply.send({ message: 'Если email зарегистрирован, код отправлен' })
+        await mysqlDb.delete(mysqlSchema.verificationCodes).where(and(eq(mysqlSchema.verificationCodes.email, normalizedEmail), eq(mysqlSchema.verificationCodes.type, t)))
+        await mysqlDb.insert(mysqlSchema.verificationCodes).values({
+          email: normalizedEmail,
+          code,
+          type: t,
+          user_id: user?.id ?? null,
+          expires_at: expiresAt,
+        })
+        if (t === 'email_verification') {
+          sendVerificationCodeEmail({ email: normalizedEmail, code, name: user?.name || user?.last_name }).catch(() => {})
+        } else {
+          sendPasswordResetCodeEmail({ email: normalizedEmail, code, name: user?.name || user?.last_name }).catch(() => {})
+        }
+        return reply.send({ message: 'Код отправлен на указанный email' })
+      }
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const user = await pgDb.query.users.findFirst({
+        where: eq(pgSchema.users.email, normalizedEmail),
+        columns: { id: true, firstName: true, lastName: true },
+      })
+      if (t === 'email_verification' && !user) return reply.status(404).send({ error: 'Пользователь не найден' })
+      if (t === 'password_reset' && !user) return reply.send({ message: 'Если email зарегистрирован, код отправлен' })
+      await pgDb.delete(pgSchema.verificationCodes).where(and(eq(pgSchema.verificationCodes.email, normalizedEmail), eq(pgSchema.verificationCodes.type, t)))
+      await pgDb.insert(pgSchema.verificationCodes).values({
+        email: normalizedEmail,
+        code,
+        type: t,
+        userId: user?.id ?? null,
+        expiresAt,
+      })
+      if (t === 'email_verification') {
+        sendVerificationCodeEmail({ email: normalizedEmail, code, name: user?.firstName || user?.lastName }).catch(() => {})
+      } else {
+        sendPasswordResetCodeEmail({ email: normalizedEmail, code, name: user?.firstName || user?.lastName }).catch(() => {})
+      }
+      return reply.send({ message: 'Код отправлен на указанный email' })
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({ error: getDbErr() })
     }
   })
 
@@ -537,6 +716,9 @@ export async function authRoutes(app: FastifyInstance) {
         if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
           return reply.status(401).send({ error: 'Неверный email или пароль' })
         }
+        if (user.emailVerified === 'false') {
+          return reply.status(403).send({ error: 'Подтвердите email. Проверьте почту — мы отправили код.', code: 'email_not_verified' })
+        }
         const token = await reply.jwtSign({ sub: user.id, email: user.email }, { expiresIn: '7d' })
         return reply.send({
           user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
@@ -544,15 +726,30 @@ export async function authRoutes(app: FastifyInstance) {
         })
       }
       if (useMysql) {
-        const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
-          where: eq(mysqlSchema.users.email, normalizedEmail),
-          columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true },
-        })
+        let user: { id: number; email: string; name: string; last_name: string | null; password: string; auth_provider?: string; email_verified?: string } | null
+        try {
+          user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+            where: eq(mysqlSchema.users.email, normalizedEmail),
+            columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true, email_verified: true },
+          }) as typeof user
+        } catch (err) {
+          if (isUnknownColumnError(err)) {
+            user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+              where: eq(mysqlSchema.users.email, normalizedEmail),
+              columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true },
+            }) as typeof user
+          } else throw err
+        }
         if (!user || (user as { is_active?: number }).is_active === 0) {
           return reply.status(401).send({ error: 'Неверный email или пароль' })
         }
         if (!(await bcrypt.compare(password, user.password))) {
           return reply.status(401).send({ error: 'Неверный email или пароль' })
+        }
+        const authProvider = user.auth_provider
+        const emailVerified = user.email_verified
+        if (!authProvider && emailVerified === 'false') {
+          return reply.status(403).send({ error: 'Подтвердите email. Проверьте почту — мы отправили код.', code: 'email_not_verified' })
         }
         try {
           await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>)
@@ -586,10 +783,13 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
         where: eq(pgSchema.users.email, normalizedEmail),
-        columns: { id: true, email: true, firstName: true, lastName: true, passwordHash: true },
+        columns: { id: true, email: true, firstName: true, lastName: true, passwordHash: true, emailVerified: true },
       })
       if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
         return reply.status(401).send({ error: 'Неверный email или пароль' })
+      }
+      if (user.emailVerified === 'false') {
+        return reply.status(403).send({ error: 'Подтвердите email. Проверьте почту — мы отправили код.', code: 'email_not_verified' })
       }
       const { sessionId } = await createSession(req, user.id, reply)
       const token = await reply.jwtSign({ sub: user.id, email: user.email, sid: sessionId }, { expiresIn: '7d' })
@@ -792,52 +992,134 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Укажите email' })
       }
       const normalizedEmail = email.trim().toLowerCase()
+      const code = generate6DigitCode()
+      const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000)
       if (useFileStore) {
         const user = fileStore.findUserByEmail(normalizedEmail)
-        if (!user) {
-          return reply.send({ message: 'Если такой email зарегистрирован, на него придёт ссылка для сброса пароля.' })
-        }
-        const token = crypto.randomBytes(32).toString('hex')
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
-        fileStore.createPasswordResetToken(user.id, token, expiresAt)
-        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`
-        if (process.env.NODE_ENV === 'development') {
-          return reply.send({ message: 'Токен для сброса (только dev)', resetLink, token })
-        }
-        return reply.send({ message: 'Если такой email зарегистрирован, на него придёт ссылка для сброса пароля.' })
+        if (!user) return reply.send({ message: 'Если такой email зарегистрирован, на него придёт код подтверждения.' })
+        fileStore.createVerificationCode({ email: normalizedEmail, code, type: 'password_reset', userId: user.id, expiresAt })
+        sendPasswordResetCodeEmail({ email: normalizedEmail, code, name: user.firstName || user.lastName }).catch((err) => {
+          console.error('[auth] Код восстановления не отправлен:', err instanceof Error ? err.message : err)
+        })
+        return reply.send({ message: 'Если такой email зарегистрирован, на него придёт 6-значный код.' })
       }
-      const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
-        where: eq(pgSchema.users.email, normalizedEmail),
-        columns: { id: true },
-      })
-      if (!user) {
-        return reply.send({ message: 'Если такой email зарегистрирован, на него придёт ссылка для сброса пароля.' })
-      }
-      const token = crypto.randomBytes(32).toString('hex')
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+      let userId: string | number | undefined
+      let userName: string | null = null
       if (useMysql) {
-        await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).insert(mysqlSchema.passwordResetTokens).values({
-          user_id: Number(user.id),
-          token,
+        const user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
+          where: eq(mysqlSchema.users.email, normalizedEmail),
+          columns: { id: true, name: true, last_name: true },
+        })
+        if (!user) return reply.send({ message: 'Если такой email зарегистрирован, на него придёт 6-значный код.' })
+        userId = user.id
+        userName = user.name || user.last_name
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        await mysqlDb.delete(mysqlSchema.verificationCodes).where(and(eq(mysqlSchema.verificationCodes.email, normalizedEmail), eq(mysqlSchema.verificationCodes.type, 'password_reset')))
+        await mysqlDb.insert(mysqlSchema.verificationCodes).values({
+          email: normalizedEmail,
+          code,
+          type: 'password_reset',
+          user_id: user.id,
           expires_at: expiresAt,
         })
       } else {
-        await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).insert(pgSchema.passwordResetTokens).values({
+        const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
+          where: eq(pgSchema.users.email, normalizedEmail),
+          columns: { id: true, firstName: true, lastName: true },
+        })
+        if (!user) return reply.send({ message: 'Если такой email зарегистрирован, на него придёт 6-значный код.' })
+        userId = user.id
+        userName = user.firstName || user.lastName
+        const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+        await pgDb.delete(pgSchema.verificationCodes).where(and(eq(pgSchema.verificationCodes.email, normalizedEmail), eq(pgSchema.verificationCodes.type, 'password_reset')))
+        await pgDb.insert(pgSchema.verificationCodes).values({
+          email: normalizedEmail,
+          code,
+          type: 'password_reset',
           userId: user.id,
-          token,
           expiresAt,
         })
       }
-      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`
-      if (process.env.NODE_ENV === 'development') {
-        return reply.send({ message: 'Токен для сброса (только dev)', resetLink, token })
-      }
-      return reply.send({ message: 'Если такой email зарегистрирован, на него придёт ссылка для сброса пароля.' })
+      sendPasswordResetCodeEmail({ email: normalizedEmail, code, name: userName }).catch((err) => {
+        console.error('[auth] Код восстановления не отправлен:', err instanceof Error ? err.message : err)
+      })
+      return reply.send({ message: 'Если такой email зарегистрирован, на него придёт 6-значный код.' })
     } catch (err) {
       req.log.error(err)
       return reply.status(500).send({
         error: useFileStore ? (err instanceof Error ? err.message : SERVER_ERR) : (process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : getDbErr()),
       })
+    }
+  })
+
+  /** Проверка кода восстановления — возвращает токен для установки нового пароля */
+  app.post<{ Body: { email: string; code: string } }>('/api/auth/verify-reset-code', async (req: FastifyRequest<{ Body: { email: string; code: string } }>, reply: FastifyReply) => {
+    try {
+      const { email, code } = req.body
+      if (!email?.trim() || !code?.trim()) {
+        return reply.status(400).send({ error: 'Укажите email и код' })
+      }
+      const normalizedEmail = email.trim().toLowerCase()
+      const codeStr = String(code).trim().replace(/\D/g, '').slice(0, 6)
+      if (codeStr.length !== 6) {
+        return reply.status(400).send({ error: 'Код должен содержать 6 цифр' })
+      }
+      if (useFileStore) {
+        const vc = fileStore.findValidVerificationCode(normalizedEmail, codeStr, 'password_reset')
+        if (!vc || !vc.userId) return reply.status(400).send({ error: 'Неверный или истёкший код. Запросите новый.' })
+        fileStore.deleteVerificationCode(vc.id)
+        const token = crypto.randomBytes(32).toString('hex')
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+        fileStore.createPasswordResetToken(vc.userId, token, expiresAt)
+        return reply.send({ token, resetLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}` })
+      }
+      if (useMysql) {
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const rows = await mysqlDb.query.verificationCodes.findMany({
+          where: and(
+            eq(mysqlSchema.verificationCodes.email, normalizedEmail),
+            eq(mysqlSchema.verificationCodes.code, codeStr),
+            eq(mysqlSchema.verificationCodes.type, 'password_reset'),
+            gt(mysqlSchema.verificationCodes.expires_at, new Date())
+          ),
+          columns: { id: true, user_id: true },
+        })
+        const vc = rows[0]
+        if (!vc || !vc.user_id) return reply.status(400).send({ error: 'Неверный или истёкший код. Запросите новый.' })
+        await mysqlDb.delete(mysqlSchema.verificationCodes).where(eq(mysqlSchema.verificationCodes.id, vc.id))
+        const token = crypto.randomBytes(32).toString('hex')
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+        await mysqlDb.insert(mysqlSchema.passwordResetTokens).values({
+          user_id: vc.user_id,
+          token,
+          expires_at: expiresAt,
+        })
+        return reply.send({ token, resetLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}` })
+      }
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const rows = await pgDb.query.verificationCodes.findMany({
+        where: and(
+          eq(pgSchema.verificationCodes.email, normalizedEmail),
+          eq(pgSchema.verificationCodes.code, codeStr),
+          eq(pgSchema.verificationCodes.type, 'password_reset'),
+          gt(pgSchema.verificationCodes.expiresAt, new Date())
+        ),
+        columns: { id: true, userId: true },
+      })
+      const vc = rows[0]
+      if (!vc || !vc.userId) return reply.status(400).send({ error: 'Неверный или истёкший код. Запросите новый.' })
+      await pgDb.delete(pgSchema.verificationCodes).where(eq(pgSchema.verificationCodes.id, vc.id))
+      const token = crypto.randomBytes(32).toString('hex')
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+      await pgDb.insert(pgSchema.passwordResetTokens).values({
+        userId: vc.userId,
+        token,
+        expiresAt,
+      })
+      return reply.send({ token, resetLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}` })
+    } catch (err) {
+      req.log.error(err)
+      return reply.status(500).send({ error: getDbErr() })
     }
   })
 

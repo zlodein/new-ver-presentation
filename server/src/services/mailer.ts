@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
-import { getRegistrationEmail, getPaymentEmail, getSupportRequestEmail } from '../emails/templates.js'
+import { getRegistrationEmail, getPaymentEmail, getSupportRequestEmail, getVerificationCodeEmail, getPasswordResetCodeEmail } from '../emails/templates.js'
 
 /** Опции SMTP для createTransport (типы nodemailer различаются по версиям) */
 interface SmtpConnectionOptions {
@@ -131,6 +131,26 @@ export async function sendPaymentNotification(data: {
 }): Promise<void> {
   const { subject, html } = getPaymentEmail(data)
   await sendMail({ subject, html })
+}
+
+/** Отправить код подтверждения регистрации на email пользователя */
+export async function sendVerificationCodeEmail(data: {
+  email: string
+  code: string
+  name?: string | null
+}): Promise<void> {
+  const { subject, html } = getVerificationCodeEmail(data)
+  await sendMail({ to: data.email, subject, html })
+}
+
+/** Отправить код восстановления пароля на email пользователя */
+export async function sendPasswordResetCodeEmail(data: {
+  email: string
+  code: string
+  name?: string | null
+}): Promise<void> {
+  const { subject, html } = getPasswordResetCodeEmail(data)
+  await sendMail({ to: data.email, subject, html })
 }
 
 /** Уведомление о новом запросе в поддержку */

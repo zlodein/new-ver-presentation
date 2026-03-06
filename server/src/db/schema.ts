@@ -19,6 +19,7 @@ export const users = pgTable(
     lastName: varchar('last_name', { length: 120 }),
     tariff: varchar('tariff', { length: 20 }), // null | 'test_drive' | 'expert'
     testDriveUsed: varchar('test_drive_used', { length: 10 }).notNull().default('false'), // 'true' | 'false' для совместимости
+    emailVerified: varchar('email_verified', { length: 10 }).notNull().default('false'), // подтверждение email при регистрации
     expertPlanQuantity: varchar('expert_plan_quantity', { length: 5 }).default('1'), // лимит презентаций на тарифе Эксперт (1–100), varchar для совместимости
     expertPresentationsUsed: varchar('expert_presentations_used', { length: 10 }).notNull().default('0'), // сколько уже создано
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -76,6 +77,20 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
 }, (table) => [
   index('password_reset_tokens_token_idx').on(table.token),
   index('password_reset_tokens_expires_at_idx').on(table.expiresAt),
+])
+
+// Коды подтверждения (6 цифр) для регистрации и восстановления пароля
+export const verificationCodes = pgTable('verification_codes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: varchar('email', { length: 255 }).notNull(),
+  code: varchar('code', { length: 6 }).notNull(),
+  type: varchar('type', { length: 32 }).notNull().default('email_verification'),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('verification_codes_email_idx').on(table.email),
+  index('verification_codes_expires_idx').on(table.expiresAt),
 ])
 
 // Календарные события

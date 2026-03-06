@@ -337,6 +337,11 @@ const handleSubmit = async () => {
     }
   } catch (e) {
     if (e instanceof ApiError) {
+      const payload = e.payload as { code?: string } | undefined
+      if (e.status === 403 && payload?.code === 'email_not_verified') {
+        router.push({ path: '/verify', query: { type: 'email_verification', email: email.value.trim() } })
+        return
+      }
       error.value = e.message || 'Ошибка входа'
     } else {
       error.value = 'Ошибка соединения с сервером'

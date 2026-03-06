@@ -40,6 +40,7 @@ function wrapHtml(body: string, title: string, options: WrapOptions): string {
     .success-badge { display: inline-block; padding: 5px 15px; background-color: #28a745; color: white; border-radius: 5px; font-weight: bold; }
     .error-badge { display: inline-block; padding: 5px 15px; background-color: #dc3545; color: white; border-radius: 5px; font-weight: bold; }
     .reason-box { padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; margin: 15px 0; }
+    .code-box { font-size: 28px; font-weight: bold; letter-spacing: 8px; padding: 20px; background: #fff; border: 2px dashed #2c7f8d; border-radius: 8px; text-align: center; margin: 20px 0; color: #2c7f8d; }
     .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
   </style>
 </head>
@@ -109,6 +110,40 @@ export function getPaymentEmail(data: {
       headerColor: '#28a745',
       badge: { text: 'ПЛАТЕЖ УСПЕШНО ОБРАБОТАН', class: 'success-badge' },
     }),
+  }
+}
+
+/** Шаблон: код подтверждения регистрации (6 цифр) */
+export function getVerificationCodeEmail(data: { email: string; code: string; name?: string | null }) {
+  const name = data.name?.trim() || 'Пользователь'
+  const title = 'Подтверждение регистрации'
+  const body = `
+    <p>Здравствуйте, ${escapeHtml(name)}!</p>
+    <p>Ваш код подтверждения регистрации на сайте ${SITE_NAME}:</p>
+    <div class="code-box">${escapeHtml(data.code)}</div>
+    <p>Введите этот код на странице подтверждения. Код действителен 15 минут.</p>
+    <div class="reason-box"><strong>Важно:</strong> Никому не сообщайте этот код. Если вы не регистрировались, проигнорируйте это письмо.</div>
+  `
+  return {
+    subject: `[${SITE_NAME}] ${title} — код ${data.code}`,
+    html: wrapHtml(body, title, { headerTitle: 'Подтверждение регистрации', headerColor: '#2c7f8d' }),
+  }
+}
+
+/** Шаблон: код восстановления пароля (6 цифр) */
+export function getPasswordResetCodeEmail(data: { email: string; code: string; name?: string | null }) {
+  const name = data.name?.trim() || 'Пользователь'
+  const title = 'Восстановление пароля'
+  const body = `
+    <p>Здравствуйте, ${escapeHtml(name)}!</p>
+    <p>Ваш код для восстановления пароля на сайте ${SITE_NAME}:</p>
+    <div class="code-box">${escapeHtml(data.code)}</div>
+    <p>Введите этот код на странице восстановления. Код действителен 15 минут.</p>
+    <div class="reason-box"><strong>Важно:</strong> Никому не сообщайте этот код. Если вы не запрашивали восстановление пароля, проигнорируйте это письмо.</div>
+  `
+  return {
+    subject: `[${SITE_NAME}] ${title} — код ${data.code}`,
+    html: wrapHtml(body, title, { headerTitle: 'Восстановление пароля', headerColor: '#2c7f8d' }),
   }
 }
 

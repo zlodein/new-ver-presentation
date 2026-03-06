@@ -329,12 +329,16 @@ const handleSubmit = async () => {
   }
   loading.value = true
   try {
-    await register({
+    const result = await register({
       email: email.value.trim(),
       password: password.value,
       name: name.value.trim() || undefined,
       last_name: last_name.value.trim() || undefined,
-    })
+    }) as { pendingVerification?: boolean; email?: string } | unknown
+    if (result && typeof result === 'object' && 'pendingVerification' in result && result.pendingVerification && result.email) {
+      router.push({ path: '/verify', query: { type: 'email_verification', email: result.email } })
+      return
+    }
     await fetchUser()
     const redirect = (route.query.redirect as string) || '/dashboard'
     const goToTariffs = redirect === '/tariffs' || redirect.startsWith('/tariffs?')

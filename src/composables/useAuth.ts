@@ -46,7 +46,10 @@ export function useAuth() {
     middle_name?: string
     user_img?: string
   }) {
-    const res = await api.post<AuthResponse>('/api/auth/register', data)
+    const res = await api.post<AuthResponse & { pendingVerification?: boolean; email?: string }>('/api/auth/register', data)
+    if (res.pendingVerification && res.email) {
+      return { pendingVerification: true, email: res.email } as unknown as AuthUser
+    }
     setToken(res.token)
     token.value = res.token
     user.value = res.user

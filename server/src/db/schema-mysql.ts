@@ -34,6 +34,7 @@ export const users = mysqlTable('users', {
   work_website: varchar('work_website', { length: 512 }),
   presentation_display_preferences: longtext('presentation_display_preferences'), // JSON: настройки подстановки в блок контактов
   auth_provider: varchar('auth_provider', { length: 50 }), // yandex | vk | google | ... — при входе через соцсети
+  email_verified: varchar('email_verified', { length: 10 }).notNull().default('false'), // 'true' | 'false' для регистрации через почту
   role_id: int('role_id').default(1),
   last_login_at: timestamp('last_login_at'),
   is_active: int('is_active', { unsigned: true }).default(1),
@@ -96,6 +97,19 @@ export const passwordResetTokens = mysqlTable('password_reset_tokens', {
 }, (table) => ({
   tokenIdx: index('password_reset_tokens_token_idx').on(table.token),
   expiresIdx: index('password_reset_tokens_expires_at_idx').on(table.expires_at),
+}))
+
+export const verificationCodes = mysqlTable('verification_codes', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  email: varchar('email', { length: 255 }).notNull(),
+  code: varchar('code', { length: 6 }).notNull(),
+  type: varchar('type', { length: 32 }).notNull().default('email_verification'),
+  user_id: int('user_id', { unsigned: true }),
+  expires_at: datetime('expires_at').notNull(),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index('verification_codes_email_idx').on(table.email),
+  expiresIdx: index('verification_codes_expires_idx').on(table.expires_at),
 }))
 
 export const presentationViews = mysqlTable('presentation_views', {
