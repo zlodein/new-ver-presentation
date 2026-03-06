@@ -726,21 +726,36 @@ export async function authRoutes(app: FastifyInstance) {
         })
       }
       if (useMysql) {
-        let user: { id: number; email: string; name: string; last_name: string | null; password: string; auth_provider?: string; email_verified?: string } | null
+        type MysqlUserRow = {
+          id: number
+          email: string
+          name: string
+          last_name: string | null
+          middle_name?: string | null
+          user_img?: string | null
+          personal_phone?: string | null
+          position?: string | null
+          messengers?: string | null
+          password: string
+          is_active?: number
+          auth_provider?: string | null
+          email_verified?: string
+        }
+        let user: MysqlUserRow | null
         try {
           user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
             where: eq(mysqlSchema.users.email, normalizedEmail),
             columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true, email_verified: true },
-          }) as typeof user
+          }) as MysqlUserRow | null
         } catch (err) {
           if (isUnknownColumnError(err)) {
             user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
               where: eq(mysqlSchema.users.email, normalizedEmail),
               columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true },
-            }) as typeof user
+            }) as MysqlUserRow | null
           } else throw err
         }
-        if (!user || (user as { is_active?: number }).is_active === 0) {
+        if (!user || user.is_active === 0) {
           return reply.status(401).send({ error: 'Неверный email или пароль' })
         }
         if (!(await bcrypt.compare(password, user.password))) {
