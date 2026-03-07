@@ -1114,7 +1114,6 @@
                           />
                         </div>
                         <div v-else-if="(slide.data?.aboutText && String((slide.data as Record<string, unknown>).aboutText).trim())" class="booklet-contacts__block w-full">
-                          <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">О себе / о компании</p>
                           <p class="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{{ (slide.data as Record<string, unknown>).aboutText }}</p>
                         </div>
                         <div v-if="hasCompanyWebsite" class="booklet-contacts__block w-full">
@@ -2730,6 +2729,24 @@ function mergeProfileIntoContactsSlides() {
     if (!hasAbout && (aboutType === 'about' || aboutType === 'position')) {
       if (aboutType === 'about' && user.position) data.aboutText = String(user.position).trim()
       else if (aboutType === 'position' && user.work_position) data.aboutText = String(user.work_position).trim()
+    }
+    const existingMessengers = data.messengers && typeof data.messengers === 'object' ? (data.messengers as Record<string, string>) : null
+    const hasMessengers = existingMessengers && Object.values(existingMessengers).some((v) => v && String(v).trim())
+    if (!hasMessengers) {
+      const userMessengers = user.messengers && typeof user.messengers === 'object' ? user.messengers : null
+      if (userMessengers) {
+        const keysToShow = prefs.showMessengerKeys?.length
+          ? (prefs.showMessengerKeys as string[])
+          : prefs.showMessengers
+            ? Object.keys(userMessengers)
+            : []
+        const out: Record<string, string> = {}
+        keysToShow.forEach((k) => {
+          const v = userMessengers[k]
+          if (v && String(v).trim()) out[k] = String(v).trim()
+        })
+        if (Object.keys(out).length) data.messengers = out
+      }
     }
   })
 }

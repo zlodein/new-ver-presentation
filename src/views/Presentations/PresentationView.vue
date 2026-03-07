@@ -205,7 +205,6 @@
                     <p>{{ slide.data?.address ?? slide.data?.contact_address }}</p>
                   </div>
                   <div v-if="aboutText(slide)" class="booklet-contacts__block w-full">
-                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">О себе / о компании</p>
                     <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ aboutText(slide) }}</p>
                   </div>
                   <div v-if="slide.data?.websiteUrl && String(slide.data.websiteUrl).trim()" class="booklet-contacts__block w-full">

@@ -404,7 +404,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const messengersBlock = hasMessengers ? `<div class="booklet-contacts__messengers" style="width:100%;">${Object.entries(messengers!).map(([k, v]) => v ? `<span style="margin-right:0.5rem;">${escapeHtml(k)}: ${escapeHtml(String(v))}</span>` : '').filter(Boolean).join('')}</div>` : ''
         const emailBlock = email ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;">${escapeHtml(email)}</p></div>` : ''
         const addressBlock = address ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;">${escapeHtml(address)}</p></div>` : ''
-        const aboutBlock = aboutText ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0 0 0.25rem 0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#666;">О себе / о компании</p><p style="margin:0;white-space:pre-wrap;">${escapeHtml(aboutText)}</p></div>` : ''
+        const aboutBlock = aboutText ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;white-space:pre-wrap;">${escapeHtml(aboutText)}</p></div>` : ''
         const websiteBlock = websiteUrl ? `<div class="booklet-contacts__block" style="width:100%;"><a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener">${escapeHtml(websiteUrl)}</a></div>` : ''
 
         return `
