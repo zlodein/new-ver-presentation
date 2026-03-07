@@ -574,7 +574,7 @@ export async function presentationRoutes(app: FastifyInstance) {
     async (req: FastifyRequest<{ Body: { title?: string; coverImage?: string; content?: { slides: unknown[] }; themeColor?: string } }>, reply: FastifyReply) => {
       const userId = getUserId(req)
       if (!userId) return reply.status(401).send({ error: 'Не авторизован' })
-      const DEFAULT_THEME_COLOR = '#465FFF'
+      const DEFAULT_THEME_COLOR = '#fcfcfc'
       const { title, coverImage, content, themeColor } = req.body ?? {}
       const contentVal = content ?? { slides: [] }
       const themeColorNorm = typeof themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(themeColor) ? themeColor : DEFAULT_THEME_COLOR

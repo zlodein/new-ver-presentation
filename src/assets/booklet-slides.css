@@ -5,7 +5,7 @@
 
 /* Единый формат слайдов: 1123×794 px (A4 альбом, 96 DPI) — редактор, просмотр, публичная ссылка */
 .presentation-slider-wrap.booklet-view {
-  --theme-main-color: #465FFF;
+  --theme-main-color: #fcfcfc;
   max-width: 1123px;
   height: auto;
   aspect-ratio: 1123 / 794;
@@ -100,6 +100,7 @@
   height: 100%;
   min-height: 0;
   max-height: 100%;
+  background: var(--theme-color, #fcfcfc);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__img {
@@ -111,7 +112,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #C4C4C4;
+  background: var(--theme-color, #fcfcfc);
   box-sizing: border-box;
   border-radius: var(--booklet-image-radius, 8px);
 }
@@ -344,7 +345,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -396,7 +397,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -438,7 +439,7 @@
   position: relative;
   min-height: 180px;
   overflow: visible;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,7 +525,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -637,7 +638,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -742,7 +743,7 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -899,7 +900,7 @@
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -916,7 +917,7 @@
   position: relative;
   min-height: 120px;
   overflow: hidden;
-  background: var(--theme-color, #465FFF);
+  background: var(--theme-color, #fcfcfc);
   display: flex;
   align-items: center;
   justify-content: center;
