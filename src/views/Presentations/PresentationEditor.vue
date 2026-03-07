@@ -1058,8 +1058,8 @@
                           placeholder="Контакты"
                           class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
                         />
-                        <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
-                          <div class="relative shrink-0">
+                        <div class="booklet-contacts__top row flex items-start gap-4">
+                          <div class="booklet-contacts__avatar-wrap shrink-0 flex justify-center">
                             <div class="booklet-contacts__avatar group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-brand-500 text-2xl font-semibold text-white dark:border-gray-800">
                               <template v-if="canEditImages">
                                 <label class="booklet-upload-btn absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50">
@@ -1069,35 +1069,26 @@
                               <img v-if="contactsAvatarDisplayUrl(slide)" :src="contactsAvatarDisplayUrl(slide)" alt="" class="h-full w-full object-cover">
                             </div>
                           </div>
-                          <div class="order-3 min-w-0 flex-1 xl:order-2">
+                          <div class="booklet-contacts__name-phone flex min-w-0 flex-1 flex-col gap-2">
                             <input
                               v-model="slide.data.contactName"
                               type="text"
                               placeholder="ФИО или название организации"
-                              class="mb-2 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-base text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                              class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-base text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            />
+                            <input
+                              :value="slide.data.phone"
+                              type="text"
+                              placeholder="+7 (000) 000-00-00"
+                              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                              @input="onPhoneInput(slide, $event)"
                             />
                           </div>
                         </div>
-                        <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
-                          <input
-                            :value="slide.data.phone"
-                            type="text"
-                            placeholder="+7 (000) 000-00-00"
-                            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                            @input="onPhoneInput(slide, $event)"
-                          />
-                        </div>
-                        <div v-if="slide.data?.messengers && Object.keys(slide.data.messengers as object).length" class="booklet-contacts__messengers">
+                        <div v-if="slide.data?.messengers && Object.keys(slide.data.messengers as object).length" class="booklet-contacts__messengers w-full">
                           <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" compact />
                         </div>
-                        <div class="booklet-contacts__block flex flex-col gap-1">
-                          <textarea
-                            :value="(slide.data as Record<string, unknown>)?.aboutText as string ?? ''"
-                            placeholder="О компании"
-                            rows="3"
-                            class="dark:bg-dark-900 min-h-[80px] w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-500 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                            @input="(slide.data as Record<string, string>).aboutText = ($event.target as HTMLTextAreaElement).value"
-                          />
+                        <div class="booklet-contacts__block booklet-contacts__content flex w-full flex-col gap-1">
                           <input
                             :value="(slide.data as Record<string, unknown>)?.email as string ?? ''"
                             @input="(slide.data as Record<string, string>).email = ($event.target as HTMLInputElement).value"
@@ -1112,11 +1103,26 @@
                             placeholder="Адрес"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
+                        </div>
+                        <div v-if="showAdditionalTextInput" class="booklet-contacts__block w-full flex flex-col gap-1">
+                          <textarea
+                            :value="(slide.data as Record<string, unknown>)?.aboutText as string ?? ''"
+                            placeholder="Дополнительный текст"
+                            rows="3"
+                            class="dark:bg-dark-900 min-h-[80px] w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-500 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                            @input="(slide.data as Record<string, string>).aboutText = ($event.target as HTMLTextAreaElement).value"
+                          />
+                        </div>
+                        <div v-else-if="(slide.data?.aboutText && String((slide.data as Record<string, unknown>).aboutText).trim())" class="booklet-contacts__block w-full">
+                          <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">О себе / о компании</p>
+                          <p class="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{{ (slide.data as Record<string, unknown>).aboutText }}</p>
+                        </div>
+                        <div v-if="hasCompanyWebsite" class="booklet-contacts__block w-full">
                           <input
                             :value="(slide.data as Record<string, unknown>)?.websiteUrl as string ?? ''"
                             @input="(slide.data as Record<string, string>).websiteUrl = ($event.target as HTMLInputElement).value"
                             type="url"
-                            placeholder="Сайт (выводится в просмотре только если заполнено)"
+                            placeholder="Сайт компании"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                         </div>
@@ -2622,6 +2628,16 @@ const canEditImages = computed(() => !isPublished.value || isAdmin.value)
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
 
+/** Тип «о себе» из настроек профиля: none | about | position */
+const profileAboutType = computed(() => {
+  const prefs = currentUser.value?.presentation_display_preferences
+  return prefs?.aboutType ?? (prefs?.showAbout ? 'about' : 'none')
+})
+/** Поле «Дополнительный текст» показываем только если в профиле не выбрано выводить текст о себе или о компании */
+const showAdditionalTextInput = computed(() => profileAboutType.value === 'none')
+/** Инпут сайта в редакторе показываем только если в профиле заполнен «Сайт компании» */
+const hasCompanyWebsite = computed(() => !!(currentUser.value?.work_website && String(currentUser.value.work_website).trim()))
+
 /** Подстановка данных профиля в слайд «Контакты» по настройкам «Выводить в презентации». */
 function applyProfileToContactsSlide(data: Record<string, unknown>) {
   const user = currentUser.value
@@ -2682,6 +2698,40 @@ function applyProfileToContactsSlide(data: Record<string, unknown>) {
     })
     if (Object.keys(out).length) data.messengers = out
   }
+}
+
+/** Дополняет слайды «Контакты» данными из профиля только для пустых полей (аватар/лого, aboutText), чтобы в просмотре/публичной ссылке/PDF они отображались. */
+function mergeProfileIntoContactsSlides() {
+  const user = currentUser.value
+  const prefs = user?.presentation_display_preferences
+  if (!user || !prefs) return
+  const toUrl = (v: string | null | undefined) => {
+    if (!v || !String(v).trim()) return ''
+    const s = String(v).trim()
+    if (s.startsWith('http://') || s.startsWith('https://')) return s
+    if (s.startsWith('/uploads/') || s.startsWith('/')) return s
+    return `/${s}`
+  }
+  slides.value.forEach((slide) => {
+    if (slide.type !== 'contacts' || !slide.data) return
+    const data = slide.data as Record<string, unknown>
+    const hasAvatar = !!(data.avatarUrl && String(data.avatarUrl).trim()) || !!(data.logoUrl && String(data.logoUrl).trim())
+    if (!hasAvatar) {
+      if (prefs.avatarOrLogo === 'personal' && user.user_img) {
+        data.avatarUrl = toUrl(user.user_img)
+        data.logoUrl = ''
+      } else if (prefs.avatarOrLogo === 'company' && user.company_logo) {
+        data.logoUrl = toUrl(user.company_logo)
+        data.avatarUrl = ''
+      }
+    }
+    const aboutType = prefs.aboutType ?? (prefs.showAbout ? 'about' : 'none')
+    const hasAbout = !!(data.aboutText && String(data.aboutText).trim())
+    if (!hasAbout && (aboutType === 'about' || aboutType === 'position')) {
+      if (aboutType === 'about' && user.position) data.aboutText = String(user.position).trim()
+      else if (aboutType === 'position' && user.work_position) data.aboutText = String(user.work_position).trim()
+    }
+  })
 }
 
 function addSlide(type: string) {
@@ -3207,6 +3257,7 @@ onMounted(async () => {
           id: s.id ?? genSlideId(),
           hidden: s.hidden ?? false,
         }))
+        mergeProfileIntoContactsSlides()
       }
       const coverSlide = slides.value.find((s) => s.type === 'cover')
       if (coverSlide && data?.coverImage) {
@@ -3292,6 +3343,7 @@ function loadFromLocalStorage() {
 }
 
 async function doSave(options?: { status?: string; skipRedirect?: boolean; createNotification?: boolean }) {
+  mergeProfileIntoContactsSlides()
   const cover = slides.value.find((s) => s.type === 'cover')
   const title = (cover?.type === 'cover' && cover.data?.title)
     ? String(cover.data.title).trim() || 'Без названия'

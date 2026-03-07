@@ -380,15 +380,32 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       }
       case 'contacts': {
         const dataObj = slide.data || {}
-        const heading = String(dataObj.heading || dataObj.contact_title || 'КОНТАКТЫ')
-        const contactName = String(dataObj.contactName || dataObj.contact_name || '')
-        const aboutText = String(dataObj.aboutText || dataObj.about_text || '')
-        const phone = String(dataObj.phone || dataObj.contact_phone || '')
-        const email = String(dataObj.email || dataObj.contact_email || '')
-        const role = String(dataObj.contact_role || '')
-        const address = String(dataObj.address || dataObj.contact_address || '')
-        const avatarUrl = String(dataObj.avatarUrl || dataObj.logoUrl || '')
-        const contactImageUrl = String(dataObj.contactImageUrl || (Array.isArray(dataObj.images) && dataObj.images[0] ? dataObj.images[0] : ''))
+        const heading = String(dataObj.heading || dataObj.contact_title || 'КОНТАКТЫ').trim() || 'КОНТАКТЫ'
+        const contactName = String(dataObj.contactName || dataObj.contact_name || '').trim()
+        const aboutText = String(dataObj.aboutText || dataObj.about_text || '').trim()
+        const phone = String(dataObj.phone || dataObj.contact_phone || '').trim()
+        const email = String(dataObj.email || dataObj.contact_email || '').trim()
+        const address = String(dataObj.address || dataObj.contact_address || '').trim()
+        const websiteUrl = String(dataObj.websiteUrl || '').trim()
+        const avatarUrl = String(dataObj.avatarUrl || dataObj.logoUrl || '').trim()
+        const contactImageUrl = String(dataObj.contactImageUrl || (Array.isArray(dataObj.images) && dataObj.images[0] ? dataObj.images[0] : '')).trim()
+        const messengers = dataObj.messengers && typeof dataObj.messengers === 'object' ? dataObj.messengers as Record<string, string> : null
+        const hasMessengers = messengers && Object.keys(messengers).length > 0
+
+        const hasTopRow = avatarUrl || contactName || phone
+        const topRow = hasTopRow ? `
+          <div class="booklet-contacts__top" style="display:flex;align-items:flex-start;gap:1rem;">
+            ${avatarUrl ? `<div class="booklet-contacts__avatar-wrap" style="flex-shrink:0;display:flex;justify-content:center;"><div class="booklet-contacts__avatar"><img src="${toAbsoluteImageUrl(avatarUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div></div>` : ''}
+            <div class="booklet-contacts__name-phone" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.25rem;">
+              ${contactName ? `<p style="margin:0;font-size:1.125rem;font-weight:600;">${escapeHtml(contactName)}</p>` : ''}
+              ${phone ? `<p style="margin:0;">${escapeHtml(phone)}</p>` : ''}
+            </div>
+          </div>` : ''
+        const messengersBlock = hasMessengers ? `<div class="booklet-contacts__messengers" style="width:100%;">${Object.entries(messengers!).map(([k, v]) => v ? `<span style="margin-right:0.5rem;">${escapeHtml(k)}: ${escapeHtml(String(v))}</span>` : '').filter(Boolean).join('')}</div>` : ''
+        const emailBlock = email ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;">${escapeHtml(email)}</p></div>` : ''
+        const addressBlock = address ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;">${escapeHtml(address)}</p></div>` : ''
+        const aboutBlock = aboutText ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0 0 0.25rem 0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#666;">О себе / о компании</p><p style="margin:0;white-space:pre-wrap;">${escapeHtml(aboutText)}</p></div>` : ''
+        const websiteBlock = websiteUrl ? `<div class="booklet-contacts__block" style="width:100%;"><a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener">${escapeHtml(websiteUrl)}</a></div>` : ''
 
         return `
           <div class="booklet-page">
@@ -398,15 +415,12 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 <div class="booklet-contacts__wrap">
                   <div class="booklet-contacts__left">
                     <h2 class="booklet-contacts__title">${escapeHtml(heading)}</h2>
-                    ${avatarUrl ? `<div class="booklet-contacts__avatar-wrap"><div class="booklet-contacts__avatar"><img src="${toAbsoluteImageUrl(avatarUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div></div>` : ''}
-                    <div class="booklet-contacts__block booklet-contacts__content">
-                      ${contactName ? `<p>${escapeHtml(contactName)}</p>` : ''}
-                      ${aboutText ? `<p class="booklet-contacts__about-label" style="margin:0 0 0.25rem 0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#666;">О компании</p><p style="margin:0;white-space:pre-wrap;">${escapeHtml(aboutText)}</p>` : ''}
-                      ${phone ? `<p>${escapeHtml(phone)}</p>` : ''}
-                      ${email ? `<p>${escapeHtml(email)}</p>` : ''}
-                      ${role ? `<p>${escapeHtml(role)}</p>` : ''}
-                      ${address ? `<p>${escapeHtml(address)}</p>` : ''}
-                    </div>
+                    ${topRow}
+                    ${messengersBlock}
+                    ${emailBlock}
+                    ${addressBlock}
+                    ${aboutBlock}
+                    ${websiteBlock}
                   </div>
                   ${contactImageUrl ? `<div class="booklet-contacts__block booklet-contacts__img"><img src="${toAbsoluteImageUrl(contactImageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
                 </div>

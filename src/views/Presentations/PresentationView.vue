@@ -179,37 +179,37 @@
                 </div>
               </div>
             </div>
-            <!-- 9. Контакты: заголовок «Контакты», блок аватар+имя/о себе, мессенджеры, телефон, email -->
+            <!-- 9. Контакты: лого/аватар слева по центру, справа ФИО и телефон; соцсети, email, адрес, доп. текст, сайт. Пустые поля не выводим. -->
             <div v-else-if="slide.type === 'contacts'" class="booklet-content booklet-contacts">
               <div class="booklet-contacts__wrap">
                 <div class="booklet-contacts__left flex flex-col gap-4">
                   <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
-                  <div class="flex flex-col items-start gap-4 xl:flex-row xl:items-center">
-                    <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" class="shrink-0">
+                  <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide)) || (slide.data?.contactName ?? slide.data?.contact_name) || (slide.data?.phone ?? slide.data?.contact_phone)" class="booklet-contacts__top row flex items-start gap-4">
+                    <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" class="booklet-contacts__avatar-wrap shrink-0 flex justify-center">
                       <div class="booklet-contacts__avatar flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">
                         <img :src="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" alt="" class="h-full w-full object-cover">
                       </div>
                     </div>
-                    <div class="min-w-0 flex-1">
-                      <h4 v-if="slide.data?.contactName ?? slide.data?.contact_name" class="mb-2 text-lg font-semibold text-gray-800 dark:text-white/90">{{ slide.data?.contactName ?? slide.data?.contact_name }}</h4>
+                    <div class="booklet-contacts__name-phone min-w-0 flex-1 flex flex-col gap-1">
+                      <h4 v-if="slide.data?.contactName ?? slide.data?.contact_name" class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ slide.data?.contactName ?? slide.data?.contact_name }}</h4>
+                      <p v-if="slide.data?.phone ?? slide.data?.contact_phone" class="text-gray-700 dark:text-gray-300">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
                     </div>
                   </div>
-                  <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
-                    <p v-if="slide.data?.phone ?? slide.data?.contact_phone">{{ slide.data?.phone ?? slide.data?.contact_phone }}</p>
-                  </div>
-                  <div v-if="slide.data?.messengers && typeof slide.data.messengers === 'object' && Object.keys(slide.data.messengers as object).length" class="booklet-contacts__messengers">
+                  <div v-if="slide.data?.messengers && typeof slide.data.messengers === 'object' && Object.keys(slide.data.messengers as object).length" class="booklet-contacts__messengers w-full">
                     <MessengerIcons :messengers="(slide.data.messengers as Record<string, string>) || undefined" compact />
                   </div>
-                  <div v-if="aboutText(slide)" class="booklet-contacts__block flex flex-col gap-1">
-                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">О компании</p>
+                  <div v-if="(slide.data?.email ?? slide.data?.contact_email)" class="booklet-contacts__block booklet-contacts__content w-full">
+                    <p>{{ slide.data?.email ?? slide.data?.contact_email }}</p>
+                  </div>
+                  <div v-if="(slide.data?.address ?? slide.data?.contact_address)" class="booklet-contacts__block booklet-contacts__content w-full">
+                    <p>{{ slide.data?.address ?? slide.data?.contact_address }}</p>
+                  </div>
+                  <div v-if="aboutText(slide)" class="booklet-contacts__block w-full">
+                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">О себе / о компании</p>
                     <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ aboutText(slide) }}</p>
                   </div>
-                  <div class="booklet-contacts__block booklet-contacts__content flex flex-col gap-1">
-                    <p v-if="slide.data?.email ?? slide.data?.contact_email">{{ slide.data?.email ?? slide.data?.contact_email }}</p>
-                    <p v-if="slide.data?.websiteUrl && String(slide.data.websiteUrl).trim()">
-                      <a :href="String(slide.data.websiteUrl).trim()" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline dark:text-brand-400">{{ slide.data.websiteUrl }}</a>
-                    </p>
-                    <p v-if="slide.data?.address ?? slide.data?.contact_address">{{ slide.data?.address ?? slide.data?.contact_address }}</p>
+                  <div v-if="slide.data?.websiteUrl && String(slide.data.websiteUrl).trim()" class="booklet-contacts__block w-full">
+                    <a :href="String(slide.data.websiteUrl).trim()" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline dark:text-brand-400">{{ slide.data.websiteUrl }}</a>
                   </div>
                 </div>
                 <div v-if="contactImageUrl(slide)" class="booklet-contacts__block booklet-contacts__img">
