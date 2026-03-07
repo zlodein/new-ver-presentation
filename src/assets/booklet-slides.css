@@ -1069,9 +1069,7 @@
   opacity: 0.5;
 }
 .presentation-slider-wrap.booklet-view .booklet-contacts__avatar .booklet-upload-btn::after {
-  width: 20px;
-  height: 20px;
-  background-size: 20px;
+  display: none;
 }
 .presentation-slider-wrap.booklet-view .booklet-contacts__avatar:hover .booklet-upload-btn {
   opacity: 1;
