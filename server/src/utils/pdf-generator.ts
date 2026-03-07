@@ -100,7 +100,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const fontFamily = fontFamilyRaw && fontFamilyRaw !== 'system-ui' ? fontFamilyRaw : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
   const settings = (data.content?.settings || {}) as Record<string, string>
   const themeColor = typeof settings.themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(settings.themeColor) ? settings.themeColor : '#465FFF'
-  const imageFrame = settings.imageFrame === 'none' ? 'none' : 'default'
+  const frameValue = (settings.imageFrame || '').trim()
+  const imageFrame = ['default', 'minimal', 'vintage', 'polaroid'].includes(frameValue) ? frameValue : (frameValue === 'none' ? 'none' : 'default')
 
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {
@@ -597,16 +598,49 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; background: #e8e8e8; }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .map-placeholder { width: 100%; height: 100%; min-height: 180px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.875rem; }
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-main__img::after,
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-img__img::after,
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-info__block.booklet-info__img::after,
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-stroen__block.booklet-stroen__img::after,
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-char__img::after,
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-galery__img::after,
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-layout__img::after,
-    .presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-contacts__block.booklet-contacts__img::after {
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-main__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-img__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-info__block.booklet-info__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-stroen__block.booklet-stroen__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-char__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-galery__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-layout__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-contacts__block.booklet-contacts__img::after {
       content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
-      border: 4px solid rgba(0, 0, 0, .3); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px #0000004d;
+      border: 4px solid rgba(0,0,0,.3); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px rgba(0,0,0,.3);
+    }
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-main__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-img__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-info__block.booklet-info__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-stroen__block.booklet-stroen__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-char__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-galery__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-layout__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-contacts__block.booklet-contacts__img::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      border: 1px solid rgba(0,0,0,.12); box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-main__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-img__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-info__block.booklet-info__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-stroen__block.booklet-stroen__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-char__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-galery__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-layout__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-contacts__block.booklet-contacts__img::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      border: 2px solid #c9b896; box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
+    }
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-main__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-img__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-info__block.booklet-info__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-stroen__block.booklet-stroen__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-char__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-galery__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-layout__img::after,
+    .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-contacts__block.booklet-contacts__img::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      border: 3px solid #f2ebe0; box-shadow: 0 2px 8px rgba(0,0,0,.1);
     }
     @media print {
       .booklet-page { page-break-after: always; height: 100vh; min-height: 100vh; max-height: 100vh; }

@@ -1097,6 +1097,7 @@
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                           <input
+                            v-if="hasCompanyBlockFilled"
                             :value="(slide.data as Record<string, unknown>)?.address as string ?? ''"
                             @input="(slide.data as Record<string, string>).address = ($event.target as HTMLInputElement).value"
                             type="text"
@@ -1991,7 +1992,10 @@ const RADIUS_OPTIONS = [
 ]
 const IMAGE_FRAME_OPTIONS = [
   { value: 'none', label: 'Без рамок' },
-  { value: 'default', label: 'Вариант 1' },
+  { value: 'default', label: 'Классическая' },
+  { value: 'minimal', label: 'Тонкая' },
+  { value: 'vintage', label: 'Винтаж' },
+  { value: 'polaroid', label: 'Поляроид' },
 ]
 const FONT_SIZE_HEADING_OPTIONS = [
   { value: '28px', label: '28 px' },
@@ -2636,6 +2640,18 @@ const profileAboutType = computed(() => {
 const showAdditionalTextInput = computed(() => profileAboutType.value === 'none')
 /** Инпут сайта в редакторе показываем только если в профиле заполнен «Сайт компании» */
 const hasCompanyWebsite = computed(() => !!(currentUser.value?.work_website && String(currentUser.value.work_website).trim()))
+/** Инпут адреса в редакторе показываем только если в профиле заполнен блок о компании (хотя бы одно поле) */
+const hasCompanyBlockFilled = computed(() => {
+  const u = currentUser.value
+  return !!(
+    (u?.company_name && String(u.company_name).trim()) ||
+    (u?.work_position && String(u.work_position).trim()) ||
+    (u?.company_logo && String(u.company_logo).trim()) ||
+    (u?.work_email && String(u.work_email).trim()) ||
+    (u?.work_phone && String(u.work_phone).trim()) ||
+    (u?.work_website && String(u.work_website).trim())
+  )
+})
 
 /** Подстановка данных профиля в слайд «Контакты» по настройкам «Выводить в презентации». */
 function applyProfileToContactsSlide(data: Record<string, unknown>) {

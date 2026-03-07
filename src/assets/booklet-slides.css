@@ -976,16 +976,17 @@
   border-radius: 50%;
 }
 
-/* Поверх изображения: обводка 4px, белая линия 2px, внутренняя 6px; скругление как у блока (inherit от родителя с --booklet-image-radius) */
-/* Рамка скрыта при data-image-frame="none" */
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-main__img::after,
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-img__img::after,
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-info__block.booklet-info__img::after,
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-stroen__block.booklet-stroen__img::after,
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-char__img::after,
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-galery__img::after,
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-layout__img::after,
-.presentation-slider-wrap.booklet-view:not([data-image-frame="none"]) .booklet-contacts__block.booklet-contacts__img::after {
+/* Рамки для изображений: скругление inherit от родителя (--booklet-image-radius). Рамка скрыта при data-image-frame="none" */
+
+/* Классическая: двойная обводка с внутренней тенью */
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-main__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-img__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-info__block.booklet-info__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-stroen__block.booklet-stroen__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-char__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-galery__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-layout__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-contacts__block.booklet-contacts__img::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -994,7 +995,67 @@
   z-index: 2;
   box-sizing: border-box;
   border: 4px solid rgba(0, 0, 0, .3);
-  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px #0000004d;
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px rgba(0, 0, 0, .3);
+}
+
+/* Тонкая: минимальная обводка и лёгкая тень */
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-main__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-img__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-info__block.booklet-info__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-stroen__block.booklet-stroen__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-char__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-galery__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-layout__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-contacts__block.booklet-contacts__img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 1px solid rgba(0, 0, 0, .12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+/* Винтаж: тёплая бежевая рамка */
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-main__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-img__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-info__block.booklet-info__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-stroen__block.booklet-stroen__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-char__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-galery__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-layout__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-contacts__block.booklet-contacts__img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 2px solid #c9b896;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4);
+}
+
+/* Поляроид: светлая рамка и мягкая тень */
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-main__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-img__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-info__block.booklet-info__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-stroen__block.booklet-stroen__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-char__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-galery__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-layout__img::after,
+.presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-contacts__block.booklet-contacts__img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 3px solid #f2ebe0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
 }
 
 /* Аватар контактов: без обводки и линии поверх изображения */
