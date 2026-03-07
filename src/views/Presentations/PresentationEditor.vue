@@ -434,7 +434,7 @@
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
-            class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white"
+            class="presentation-slider-wrap booklet-view relative w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
           >
@@ -3600,9 +3600,12 @@ async function exportToPDF() {
   height: 100%;
 }
 
-/* Блоки в слайдере редактора: без обводки/подсветки при фокусе и без затемнения в ночном режиме */
+/* Блоки в слайдере редактора: без обводки/подсветки при фокусе и без затемнения в ночном режиме; без отступов */
 .editor-slider-wrap .presentation-slider-wrap.booklet-view {
   background-color: #fff !important;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-scale-root {
+  padding: 0 !important;
 }
 .editor-slider-wrap .presentation-slider-wrap.booklet-view input,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view select,
