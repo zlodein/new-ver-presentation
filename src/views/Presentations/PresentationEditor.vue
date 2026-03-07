@@ -429,12 +429,12 @@
       <main class="w-full flex-1 min-h-0 md:flex md:gap-4 md:items-start md:flex-initial">
         <div
           ref="editorSliderWrapRef"
-          class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
+          class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50"
           @paste.capture="onPasteStripFormat"
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
-            class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
+            class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
           >
