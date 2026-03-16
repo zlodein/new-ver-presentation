@@ -88,6 +88,93 @@ async function gigachatGenerateText(
   return { success: false, error: 'Пустой ответ GigaChat' }
 }
 
+type LayoutSlideInput = {
+  type?: string
+  title?: string
+  subtitle?: string
+  data?: Record<string, unknown>
+}
+
+type LayoutResponse = {
+  title?: string
+  slides?: LayoutSlideInput[]
+}
+
+async function gigachatGenerateLayout(
+  prompt: string,
+  log?: { error: (e: unknown) => void }
+): Promise<{ success: boolean; layout?: LayoutResponse; error?: string }> {
+  if (!GIGACHAT_AUTH_KEY) {
+    return { success: false, error: 'GigaChat не настроен. Задайте GIGACHAT_AUTH_KEY в .env на сервере.' }
+  }
+  const token = await gigachatGetToken(log)
+  if (!token) {
+    return { success: false, error: 'Не удалось получить токен GigaChat. Проверьте GIGACHAT_AUTH_KEY и доступ к ngw.devices.sberbank.ru.' }
+  }
+
+  const systemPrompt =
+    'Ты помощник по созданию презентаций по недвижимости. ' +
+    'Сгенерируй структуру презентации в строгом JSON формате без объяснений и текста вне JSON. ' +
+    'Разрешённые типы слайдов: "cover", "characteristics", "description", "infrastructure", "location", "gallery", "layout", "contacts". ' +
+    'Ответ должен быть объектом вида {"title": string, "slides": Array<{ "type": string, "title"?: string, "subtitle"?: string, "data"?: object }]}. ' +
+    'Не используй Markdown, не добавляй комментарии, только чистый JSON.'
+
+  const userMessage =
+    (prompt.trim()
+      ? `Описание объекта/задачи для презентации:\n${prompt.trim()}\n\nСгенерируй структуру презентации для риелторской презентации.`
+      : 'Сгенерируй универсальную структуру презентации по объекту недвижимости.') + '\nОтветь строго в JSON.'
+
+  const res = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: 'Bearer ' + token,
+    },
+    body: JSON.stringify({
+      model: 'GigaChat',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: 0.7,
+      max_tokens: 2048,
+    }),
+  })
+
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: { message?: string } }
+    return { success: false, error: err.error?.message ?? 'Ошибка запроса к GigaChat при генерации макета' }
+  }
+
+  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }
+  const raw = data.choices?.[0]?.message?.content ?? ''
+  const text = raw.trim()
+  if (!text) return { success: false, error: 'Пустой ответ GigaChat' }
+
+  let jsonText = text
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    jsonText = codeBlockMatch[1].trim()
+  }
+  const firstBrace = jsonText.indexOf('{')
+  const lastBrace = jsonText.lastIndexOf('}')
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    jsonText = jsonText.slice(firstBrace, lastBrace + 1)
+  }
+
+  try {
+    const parsed = JSON.parse(jsonText) as LayoutResponse
+    if (!parsed || typeof parsed !== 'object') {
+      return { success: false, error: 'Некорректный формат макета от GigaChat' }
+    }
+    return { success: true, layout: parsed }
+  } catch (e) {
+    log?.error?.(e)
+    return { success: false, error: 'Не удалось разобрать JSON макета от GigaChat' }
+  }
+}
+
 type SuggestItem = { display_name: string; address: string; lat?: number; lon?: number }
 
 /** Подсказки по адресам через Dadata (https://dadata.ru/api/suggest/address/) */
@@ -302,6 +389,24 @@ export async function editorApiRoutes(app: FastifyInstance) {
     } catch (e) {
       app.log.error(e)
       return reply.status(500).send({ error: 'Ошибка сервера при генерации текста' })
+    }
+  })
+
+  app.post<{ Body: { prompt?: string } }>('/generate_layout', async (req: FastifyRequest<{ Body: { prompt?: string } }>, reply: FastifyReply) => {
+    const prompt = String(req.body?.prompt ?? '').trim()
+    try {
+      const result = await gigachatGenerateLayout(prompt, app.log)
+      if (result.success && result.layout) {
+        const title = typeof result.layout.title === 'string' && result.layout.title.trim().length
+          ? result.layout.title.trim()
+          : prompt || 'Новая презентация'
+        const slides = Array.isArray(result.layout.slides) ? result.layout.slides : []
+        return reply.send({ title, slides })
+      }
+      return reply.status(400).send({ error: result.error ?? 'Не удалось сгенерировать макет презентации' })
+    } catch (e) {
+      app.log.error(e)
+      return reply.status(500).send({ error: 'Ошибка сервера при генерации макета' })
     }
   })
 }

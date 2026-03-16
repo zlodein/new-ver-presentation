@@ -66,6 +66,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/presentations/ai-generation',
+      name: 'PresentationAiGeneration',
+      component: () => import('../views/Presentations/PresentationAIGeneration.vue'),
+      meta: {
+        title: 'AI-генерация презентации',
+      },
+    },
+    {
       path: '/dashboard/presentations/:id/edit',
       name: 'PresentationEdit',
       component: () => import('../views/Presentations/PresentationEditor.vue'),
