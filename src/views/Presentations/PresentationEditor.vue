@@ -2498,7 +2498,6 @@ async function findNearestMetro(slide: SlideItem) {
   }
 }
 
-
 // Генерация текста (GigaChat)
 const generateTextLoading = ref<string | null>(null)
 

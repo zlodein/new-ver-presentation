@@ -87,13 +87,6 @@
                 <PlusIcon />
                 Создать презентацию
               </button>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 rounded-lg border border-brand-500 px-4 py-2.5 text-sm font-medium text-brand-600 transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-brand-400 dark:text-brand-300 dark:hover:bg-brand-900/30"
-                @click="goToAiGeneration()"
-              >
-                AI-генерация
-              </button>
             </div>
           </template>
         </div>
@@ -336,10 +329,6 @@ const presentationsLimitColor = computed(() => {
 const currentPageTitle = ref('Презентации')
 
 const creating = ref(false)
-
-function goToAiGeneration() {
-  router.push('/dashboard/presentations/ai-generation')
-}
 
 function genSlideId() {
   return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
