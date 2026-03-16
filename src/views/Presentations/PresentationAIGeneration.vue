@@ -71,25 +71,37 @@ const helperMessage = computed(() => {
   return 'Будет использован настроенный ключ GigaChat на сервере. После генерации откроется редактор с макетом.'
 })
 
-function buildSlidesFromAiResponse(rawSlides: unknown): unknown[] {
-  if (!Array.isArray(rawSlides)) return []
-  return rawSlides
-    .filter((item) => item && typeof item === 'object')
-    .map((item) => {
-      const anyItem = item as { type?: string; title?: string; subtitle?: string; data?: Record<string, unknown> }
-      const type = typeof anyItem.type === 'string' ? anyItem.type : 'description'
-      const id = `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-      const base = {
-        id,
-        type,
-        hidden: false,
-      }
-      const data: Record<string, unknown> = anyItem.data && typeof anyItem.data === 'object' ? { ...anyItem.data } : {}
-      if (!data.title && anyItem.title) data.title = anyItem.title
-      if (!data.subtitle && anyItem.subtitle) data.subtitle = anyItem.subtitle
+/** Преобразует страницы AI-макета в слайды редактора (type: 'custom', data с layoutMode, pageName, pageStyle, blocks). */
+function buildSlidesFromAiPages(rawPages: unknown): unknown[] {
+  if (!Array.isArray(rawPages)) return []
+  return rawPages
+    .filter((p) => p && typeof p === 'object')
+    .map((page, i) => {
+      const p = page as { id?: string; name?: string; style?: Record<string, unknown>; blocks?: unknown[] }
+      const id = `slide-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 9)}`
+      const blocks = Array.isArray(p.blocks)
+        ? p.blocks.map((b, j) => {
+            const block = b && typeof b === 'object' ? (b as Record<string, unknown>) : {}
+            return {
+              id: block.id ?? `b-${j}`,
+              type: typeof block.type === 'string' ? block.type : 'text',
+              content: block.content != null ? String(block.content) : '',
+              items: Array.isArray(block.items) ? block.items.map((x) => String(x)) : undefined,
+              columns: block.columns,
+              style: block.style && typeof block.style === 'object' ? block.style : {},
+            }
+          })
+        : []
       return {
-        ...base,
-        data,
+        id,
+        type: 'custom',
+        hidden: false,
+        data: {
+          layoutMode: 'ai',
+          pageName: typeof p.name === 'string' ? p.name : `Страница ${i + 1}`,
+          pageStyle: p.style && typeof p.style === 'object' ? p.style : {},
+          blocks,
+        },
       }
     })
 }
@@ -110,13 +122,13 @@ async function handleGenerate() {
 
   submitting.value = true
   try {
-    const aiResult = await api.post<{ title?: string; slides?: unknown[] }>('/api/generate_layout', {
+    const aiResult = await api.post<{ title?: string; pages?: unknown[] }>('/api/generate_layout', {
       prompt: trimmed,
     })
 
-    const slides = buildSlidesFromAiResponse(aiResult?.slides)
+    const slides = buildSlidesFromAiPages(aiResult?.pages)
     if (!slides.length) {
-      throw new Error('Не удалось получить структуру слайдов от AI')
+      throw new Error('Не удалось получить структуру макета от AI')
     }
 
     const finalTitle = (aiResult?.title && String(aiResult.title).trim()) || trimmed || 'Новая презентация'

@@ -88,22 +88,32 @@ async function gigachatGenerateText(
   return { success: false, error: 'Пустой ответ GigaChat' }
 }
 
-type LayoutSlideInput = {
-  type?: string
-  title?: string
-  subtitle?: string
-  data?: Record<string, unknown>
+/** Блок на странице AI-макета: тип, контент, стили (CSS-подобные ключи в camelCase). */
+type AiLayoutBlock = {
+  id?: string
+  type: string
+  content?: string
+  items?: string[]
+  style?: Record<string, string | number>
 }
 
-type LayoutResponse = {
+/** Страница AI-макета: название, стили страницы, массив блоков. */
+type AiLayoutPage = {
+  id?: string
+  name?: string
+  style?: Record<string, string | number>
+  blocks?: AiLayoutBlock[]
+}
+
+type AiLayoutResponse = {
   title?: string
-  slides?: LayoutSlideInput[]
+  pages?: AiLayoutPage[]
 }
 
 async function gigachatGenerateLayout(
   prompt: string,
   log?: { error: (e: unknown) => void }
-): Promise<{ success: boolean; layout?: LayoutResponse; error?: string }> {
+): Promise<{ success: boolean; layout?: AiLayoutResponse; error?: string }> {
   if (!GIGACHAT_AUTH_KEY) {
     return { success: false, error: 'GigaChat не настроен. Задайте GIGACHAT_AUTH_KEY в .env на сервере.' }
   }
@@ -113,16 +123,18 @@ async function gigachatGenerateLayout(
   }
 
   const systemPrompt =
-    'Ты помощник по созданию презентаций по недвижимости. ' +
-    'Сгенерируй структуру презентации в строгом JSON формате без объяснений и текста вне JSON. ' +
-    'Разрешённые типы слайдов: "cover", "characteristics", "description", "infrastructure", "location", "gallery", "layout", "contacts". ' +
-    'Ответ должен быть объектом вида {"title": string, "slides": Array<{ "type": string, "title"?: string, "subtitle"?: string, "data"?: object }]}. ' +
-    'Не используй Markdown, не добавляй комментарии, только чистый JSON.'
+    'Ты дизайнер презентаций. Твоя задача — придумать УНИКАЛЬНУЮ структуру макета презентации: свои страницы, расположение элементов и стили. ' +
+    'Не используй готовые шаблоны типа "обложка, описание, контакты". Придумай свой набор страниц и блоков на каждой странице. ' +
+    'Ответ — строго один JSON без Markdown и комментариев. ' +
+    'Формат: {"title": "Название презентации", "pages": [{"id": "page-1", "name": "Название страницы", "style": {...}, "blocks": [{"id": "b1", "type": "...", "content": "...", "style": {...}}]}]}. ' +
+    'Типы блоков: heading (заголовок), title (крупный заголовок), subtitle (подзаголовок), text (абзац), list (список — у блока поле "items": ["пункт1","пункт2"]), quote (цитата), divider (разделитель), image_placeholder (блок под картинку), columns (два столбца — у блока "columns": [{"type":"text","content":"..."},{"type":"text","content":"..."}]). ' +
+    'В style для страницы и блоков используй только допустимые CSS-свойства в camelCase: display, flexDirection, alignItems, justifyContent, padding, gap, backgroundColor, color, fontSize, fontWeight, textAlign, lineHeight, marginTop, marginBottom, borderBottom, borderRadius, width, maxWidth. Значения — строки или числа. ' +
+    'Создай 3–6 страниц с разным оформлением: разный фон, выравнивание, размеры шрифтов, отступы. Каждая страница — уникальный макет.'
 
   const userMessage =
     (prompt.trim()
-      ? `Описание объекта/задачи для презентации:\n${prompt.trim()}\n\nСгенерируй структуру презентации для риелторской презентации.`
-      : 'Сгенерируй универсальную структуру презентации по объекту недвижимости.') + '\nОтветь строго в JSON.'
+      ? `Запрос пользователя:\n${prompt.trim()}\n\nСгенерируй уникальный макет презентации под этот запрос: свои страницы, блоки и стили. Ответ — только JSON.`
+      : 'Сгенерируй уникальный макет презентации по недвижимости: 4–5 страниц со своим расположением блоков и стилями. Ответ — только JSON.')
 
   const res = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
     method: 'POST',
@@ -137,8 +149,8 @@ async function gigachatGenerateLayout(
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
       ],
-      temperature: 0.7,
-      max_tokens: 2048,
+      temperature: 0.8,
+      max_tokens: 4096,
     }),
   })
 
@@ -164,9 +176,12 @@ async function gigachatGenerateLayout(
   }
 
   try {
-    const parsed = JSON.parse(jsonText) as LayoutResponse
+    const parsed = JSON.parse(jsonText) as AiLayoutResponse
     if (!parsed || typeof parsed !== 'object') {
       return { success: false, error: 'Некорректный формат макета от GigaChat' }
+    }
+    if (!Array.isArray(parsed.pages) || parsed.pages.length === 0) {
+      return { success: false, error: 'В ответе GigaChat нет массива pages' }
     }
     return { success: true, layout: parsed }
   } catch (e) {
@@ -400,8 +415,8 @@ export async function editorApiRoutes(app: FastifyInstance) {
         const title = typeof result.layout.title === 'string' && result.layout.title.trim().length
           ? result.layout.title.trim()
           : prompt || 'Новая презентация'
-        const slides = Array.isArray(result.layout.slides) ? result.layout.slides : []
-        return reply.send({ title, slides })
+        const pages = Array.isArray(result.layout.pages) ? result.layout.pages : []
+        return reply.send({ title, pages })
       }
       return reply.status(400).send({ error: result.error ?? 'Не удалось сгенерировать макет презентации' })
     } catch (e) {

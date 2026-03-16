@@ -1138,6 +1138,47 @@
                     </div>
                   </div>
 
+                  <!-- AI-макет: уникальная структура страницы с блоками и стилями -->
+                  <div
+                    v-else-if="slide.type === 'custom' && slide.data?.layoutMode === 'ai'"
+                    class="booklet-content booklet-ai-layout h-full w-full overflow-auto"
+                    :style="customSlidePageStyle(slide)"
+                  >
+                    <template v-for="(block, bi) in (slide.data?.blocks as Array<Record<string, unknown>>) || []" :key="String(block.id ?? bi)">
+                      <component
+                        :is="customBlockTag(block.type as string)"
+                        v-if="block.type !== 'divider' && block.type !== 'image_placeholder'"
+                        class="booklet-ai-block"
+                        :style="customBlockStyle(block.style)"
+                      >
+                        <template v-if="block.type === 'list' && Array.isArray(block.items)">
+                          <li v-for="(item, ii) in block.items" :key="ii">{{ item }}</li>
+                        </template>
+                        <template v-else-if="block.type === 'columns' && Array.isArray(block.columns)">
+                          <div
+                            v-for="(col, ci) in block.columns"
+                            :key="ci"
+                            class="booklet-ai-column"
+                            :style="customBlockStyle((col as Record<string, unknown>).style)"
+                          >
+                            {{ (col as Record<string, unknown>).content }}
+                          </div>
+                        </template>
+                        <template v-else>
+                          {{ block.content }}
+                        </template>
+                      </component>
+                      <hr v-else-if="block.type === 'divider'" class="booklet-ai-divider" :style="customBlockStyle(block.style)">
+                      <div
+                        v-else-if="block.type === 'image_placeholder'"
+                        class="booklet-ai-image-placeholder flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500"
+                        :style="customBlockStyle(block.style)"
+                      >
+                        <span class="text-sm">Изображение</span>
+                      </div>
+                    </template>
+                  </div>
+
                   <!-- Fallback -->
                   <div v-else class="flex h-full items-center justify-center p-8 text-gray-500">
                     Слайд: {{ slide.type }}
@@ -1753,6 +1794,7 @@ const SLIDE_TYPE_LABELS: Record<string, string> = {
   characteristics: 'Характеристики',
   layout: 'Планировка',
   contacts: 'Контакты',
+  custom: 'AI макет',
 }
 
 /** Метаданные сеток (колонки × строки) — только используемые в зависимостях раскладки */
@@ -2584,7 +2626,45 @@ const defaultCharItems = [
 ]
 
 function getSlideLabel(slide: SlideItem): string {
+  if (slide.type === 'custom' && slide.data?.pageName && typeof slide.data.pageName === 'string') {
+    return slide.data.pageName
+  }
   return SLIDE_TYPE_LABELS[slide.type] ?? slide.type
+}
+
+/** Стиль страницы AI-макета (custom slide) для редактора. */
+function customSlidePageStyle(slide: SlideItem): Record<string, string | number> {
+  const style = slide.data?.pageStyle
+  if (!style || typeof style !== 'object') return { display: 'flex', flexDirection: 'column', padding: '1.5rem', gap: '1rem' }
+  return style as Record<string, string | number>
+}
+
+/** Стиль блока AI-макета: только допустимые CSS-свойства. */
+function customBlockStyle(style: unknown): Record<string, string | number> {
+  if (!style || typeof style !== 'object') return {}
+  const s = style as Record<string, string | number>
+  const allowed = new Set([
+    'display', 'flexDirection', 'alignItems', 'justifyContent', 'padding', 'gap', 'backgroundColor', 'color',
+    'fontSize', 'fontWeight', 'textAlign', 'lineHeight', 'marginTop', 'marginBottom', 'borderBottom', 'borderRadius',
+    'width', 'maxWidth', 'opacity', 'letterSpacing', 'textTransform',
+  ])
+  const out: Record<string, string | number> = {}
+  for (const [k, v] of Object.entries(s)) {
+    if (allowed.has(k) && (typeof v === 'string' || typeof v === 'number')) out[k] = v
+  }
+  return out
+}
+
+/** HTML-тег по типу блока AI-макета. */
+function customBlockTag(blockType: string): string {
+  switch (blockType) {
+    case 'heading': return 'h2'
+    case 'title': return 'h1'
+    case 'subtitle': return 'p'
+    case 'quote': return 'blockquote'
+    case 'list': return 'ul'
+    default: return 'p'
+  }
 }
 
 function getDefaultDataForType(type: string): Record<string, unknown> {
