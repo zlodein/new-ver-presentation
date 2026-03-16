@@ -1159,17 +1159,19 @@
                             :style="customBlockStyle((col as Record<string, unknown>).style)"
                           >
                             <textarea
-                              v-model="(col as Record<string, unknown>).content"
+                              :value="String((col as Record<string, unknown>).content ?? '')"
                               rows="2"
                               class="w-full resize-none border-0 bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-0 dark:text-gray-100"
+                              @input="(col as Record<string, unknown>).content = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
                         </template>
                         <template v-else>
                           <textarea
-                            v-model="(block as Record<string, unknown>).content"
+                            :value="String((block as Record<string, unknown>).content ?? '')"
                             :rows="block.type === 'title' ? 2 : block.type === 'quote' ? 3 : 2"
                             class="w-full resize-none border-0 bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-0 dark:text-gray-100"
+                            @input="(block as Record<string, unknown>).content = ($event.target as HTMLTextAreaElement).value"
                           />
                         </template>
                       </component>
@@ -1181,10 +1183,11 @@
                       >
                         <span class="text-sm">Изображение</span>
                         <input
-                          v-model="(block as Record<string, unknown>).imageUrl"
+                          :value="String((block as Record<string, unknown>).imageUrl ?? '')"
                           type="url"
                           placeholder="Вставьте ссылку на изображение"
                           class="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm focus:border-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500/40 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
+                          @input="(block as Record<string, unknown>).imageUrl = ($event.target as HTMLInputElement).value"
                         />
                       </div>
                     </template>
