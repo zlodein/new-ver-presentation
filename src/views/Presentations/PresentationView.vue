@@ -229,8 +229,8 @@
                   class="booklet-ai-block"
                   :style="customBlockStyle(block.style)"
                 >
-                  <template v-if="block.type === 'list' && Array.isArray(block.items)">
-                    <li v-for="(item, ii) in block.items" :key="ii">{{ item }}</li>
+                  <template v-if="block.type === 'list'">
+                    <li v-for="(item, ii) in customListItems(block)" :key="ii">{{ item }}</li>
                   </template>
                   <template v-else-if="block.type === 'columns' && Array.isArray(block.columns)">
                     <div
@@ -252,7 +252,13 @@
                   class="booklet-ai-image-placeholder flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500"
                   :style="customBlockStyle(block.style)"
                 >
-                  <span class="text-sm">Изображение</span>
+                  <img
+                    v-if="block.imageUrl"
+                    :src="String(block.imageUrl)"
+                    alt=""
+                    class="max-h-48 w-auto object-contain rounded"
+                  >
+                  <span v-else class="text-sm">Изображение</span>
                 </div>
               </template>
             </div>
@@ -434,6 +440,14 @@ function customBlockTag(blockType: string): string {
     case 'list': return 'ul'
     default: return 'p'
   }
+}
+
+function customListItems(block: Record<string, unknown>): string[] {
+  if (Array.isArray(block.items)) {
+    return (block.items as unknown[]).map((v) => String(v)).filter((v) => v.trim().length > 0)
+  }
+  const text = block.content != null ? String(block.content) : ''
+  return text.split(/\r?\n+/).map((v) => v.trim()).filter((v) => v.length > 0)
 }
 
 function formatPrice(num: number): string {

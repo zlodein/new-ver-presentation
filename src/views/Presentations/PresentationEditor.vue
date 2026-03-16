@@ -1151,30 +1151,41 @@
                         class="booklet-ai-block"
                         :style="customBlockStyle(block.style)"
                       >
-                        <template v-if="block.type === 'list' && Array.isArray(block.items)">
-                          <li v-for="(item, ii) in block.items" :key="ii">{{ item }}</li>
-                        </template>
-                        <template v-else-if="block.type === 'columns' && Array.isArray(block.columns)">
+                        <template v-if="block.type === 'columns' && Array.isArray(block.columns)">
                           <div
                             v-for="(col, ci) in block.columns"
                             :key="ci"
                             class="booklet-ai-column"
                             :style="customBlockStyle((col as Record<string, unknown>).style)"
                           >
-                            {{ (col as Record<string, unknown>).content }}
+                            <textarea
+                              v-model="(col as Record<string, unknown>).content"
+                              rows="2"
+                              class="w-full resize-none border-0 bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-0 dark:text-gray-100"
+                            />
                           </div>
                         </template>
                         <template v-else>
-                          {{ block.content }}
+                          <textarea
+                            v-model="(block as Record<string, unknown>).content"
+                            :rows="block.type === 'title' ? 2 : block.type === 'quote' ? 3 : 2"
+                            class="w-full resize-none border-0 bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-0 dark:text-gray-100"
+                          />
                         </template>
                       </component>
                       <hr v-else-if="block.type === 'divider'" class="booklet-ai-divider" :style="customBlockStyle(block.style)">
                       <div
                         v-else-if="block.type === 'image_placeholder'"
-                        class="booklet-ai-image-placeholder flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500"
+                        class="booklet-ai-image-placeholder flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-3 text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500"
                         :style="customBlockStyle(block.style)"
                       >
                         <span class="text-sm">Изображение</span>
+                        <input
+                          v-model="(block as Record<string, unknown>).imageUrl"
+                          type="url"
+                          placeholder="Вставьте ссылку на изображение"
+                          class="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm focus:border-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500/40 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
+                        />
                       </div>
                     </template>
                   </div>

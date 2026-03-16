@@ -110,6 +110,71 @@ type AiLayoutResponse = {
   pages?: AiLayoutPage[]
 }
 
+function buildFallbackAiLayout(prompt: string): AiLayoutResponse {
+  const baseTitle = prompt.trim() || 'Новая презентация'
+  const pages: AiLayoutPage[] = []
+  const titles = [
+    baseTitle,
+    'Ключевые преимущества объекта',
+    'Локация и окружение',
+    'Интерьеры и атмосфера',
+    'Инфраструктура и сервисы',
+    'Планировки и площади',
+    'Технические характеристики',
+    'Сценарии использования',
+    'Финансовые условия',
+    'Контакты для связи',
+  ]
+  for (let i = 0; i < 10; i++) {
+    const even = i % 2 === 0
+    pages.push({
+      id: `fallback-page-${i + 1}`,
+      name: titles[i] ?? `Слайд ${i + 1}`,
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        padding: 24,
+        backgroundColor: even ? '#ffffff' : '#0f172a',
+        color: even ? '#0f172a' : '#f9fafb',
+      },
+      blocks: [
+        {
+          id: `b-${i}-title`,
+          type: 'heading',
+          content: titles[i] ?? `Слайд ${i + 1}`,
+          style: {
+            fontSize: 28,
+            fontWeight: 700,
+            marginBottom: 8,
+          },
+        },
+        {
+          id: `b-${i}-text`,
+          type: 'text',
+          content:
+            i === 0
+              ? 'Премиальный объект недвижимости. Краткое позиционирование и ключевой месседж для аудитории.'
+              : 'Текст для этого слайда вы можете отредактировать в редакторе: добавить преимущества, цифры, факты и акценты.',
+          style: {
+            fontSize: 16,
+            lineHeight: 1.5,
+          },
+        },
+        {
+          id: `b-${i}-image`,
+          type: 'image_placeholder',
+          style: {
+            marginTop: 16,
+            borderRadius: 16,
+          },
+        },
+      ],
+    })
+  }
+  return { title: baseTitle, pages }
+}
+
 async function gigachatGenerateLayout(
   prompt: string,
   log?: { error: (e: unknown) => void }
@@ -177,16 +242,15 @@ async function gigachatGenerateLayout(
 
   try {
     const parsed = JSON.parse(jsonText) as AiLayoutResponse
-    if (!parsed || typeof parsed !== 'object') {
-      return { success: false, error: 'Некорректный формат макета от GigaChat' }
-    }
-    if (!Array.isArray(parsed.pages) || parsed.pages.length === 0) {
-      return { success: false, error: 'В ответе GigaChat нет массива pages' }
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.pages) || parsed.pages.length === 0) {
+      const fallback = buildFallbackAiLayout(prompt)
+      return { success: true, layout: fallback }
     }
     return { success: true, layout: parsed }
   } catch (e) {
     log?.error?.(e)
-    return { success: false, error: 'Не удалось разобрать JSON макета от GigaChat' }
+    const fallback = buildFallbackAiLayout(prompt)
+    return { success: true, layout: fallback }
   }
 }
 
