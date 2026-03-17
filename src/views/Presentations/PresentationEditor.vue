@@ -3675,6 +3675,10 @@ async function exportToPDF() {
 .editor-slider-wrap .presentation-slider-wrap.booklet-view {
   background-color: #fff !important;
 }
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__content {
+  padding: 25px 25px !important;
+  background: #ffffff !important;
+}
 .editor-slider-wrap .presentation-slider-wrap.booklet-view input,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view select,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea {

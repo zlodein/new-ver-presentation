@@ -194,7 +194,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 25px 25px;
-  background: #ffffff;
+  background: #ffffff !important;
 }
 
 /* Обложка: top = подзаголовок (heading), center = название презентации (presentation title) */
@@ -1125,7 +1125,7 @@
   }
 
   .presentation-slider-wrap.booklet-view .booklet-main__content {
-    padding: 30px 20px;
+    padding: 25px 25px;
   }
 
   /* Обложка в мобильном редакторе: без боковых отступов */
