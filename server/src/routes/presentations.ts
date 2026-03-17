@@ -68,7 +68,6 @@ function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>
   return match ? decodeURIComponent(match[1]) : ''
 }
 type ContentSettings = {
-  templateId?: string
   exportEnabled?: string
   fontFamily?: string
   imageBorderRadius?: string
@@ -141,7 +140,6 @@ function getContentSettings(c: unknown): ContentSettings | undefined {
   const obj = c as { settings?: Record<string, unknown> }
   if (!obj.settings || typeof obj.settings !== 'object') return undefined
   const s = obj.settings
-  const templateId = typeof s.templateId === 'string' ? s.templateId : undefined
   const exportEnabled = typeof s.exportEnabled === 'string' ? s.exportEnabled : undefined
   const fontFamily = typeof s.fontFamily === 'string' ? s.fontFamily : undefined
   const imageBorderRadius = s.imageBorderRadius !== undefined && s.imageBorderRadius !== null ? String(s.imageBorderRadius) : undefined
@@ -152,14 +150,13 @@ function getContentSettings(c: unknown): ContentSettings | undefined {
   const fontSizePrice = s.fontSizePrice !== undefined && s.fontSizePrice !== null ? String(s.fontSizePrice) : undefined
   const themeColor = typeof s.themeColor === 'string' ? s.themeColor : undefined
   if (
-    templateId == null && exportEnabled == null && fontFamily == null && imageBorderRadius == null && imageFrame == null &&
+    exportEnabled == null && fontFamily == null && imageBorderRadius == null && imageFrame == null &&
     fontSizePresentationTitle == null && fontSizeHeading == null && fontSizeText == null && fontSizePrice == null &&
     themeColor == null
   ) {
     return undefined
   }
   return {
-    ...(templateId != null ? { templateId } : {}),
     ...(exportEnabled != null ? { exportEnabled } : {}),
     ...(fontFamily != null ? { fontFamily } : {}),
     ...(imageBorderRadius != null ? { imageBorderRadius } : {}),

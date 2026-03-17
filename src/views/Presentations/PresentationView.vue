@@ -29,7 +29,6 @@
       </div>
       <div
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
-        :class="themeClass"
         :style="presentationStyle"
         :data-image-frame="(presentation?.content?.settings as Record<string, string> | undefined)?.imageFrame ?? 'none'"
       >
@@ -41,37 +40,9 @@
       >
         <div class="booklet-page__inner">
           <div class="booklet-scale-root w-full h-full">
-            <!-- Обложка: шаблон №1 (pixel-perfect из PPTX) или базовая -->
-            <div v-if="slide.type === 'cover'" class="booklet-content booklet-main relative">
-              <Template1Cover v-if="(presentation?.content?.settings as Record<string, string> | undefined)?.templateId === 'template-1'">
-                <template #image>
-                  <img
-                    v-if="coverImageUrl(slide)"
-                    :src="coverImageUrl(slide)!"
-                    alt=""
-                    class="cursor-pointer w-full h-full object-cover"
-                    @click="openGallery(getGalleryGlobalIndex(index, 0))"
-                  >
-                </template>
-                <template #title>
-                  <div v-if="(slide.data?.title || '').toString().trim()" class="booklet-main__top" v-html="(slide.data?.title || '').toString().trim().replace(/\n/g, '<br>')" />
-                  <div v-if="(slide.data?.subtitle || '').toString().trim()" class="booklet-main__center" v-html="(slide.data?.subtitle || '').toString().trim().replace(/\n/g, '<br>')" />
-                </template>
-                <template #price>
-                  <div class="booklet-main__bottom booklet-main__bottom--view text-right" :style="priceLineStyle">
-                    <div class="booklet-main__deal-type booklet-main__bottom-line">{{ slide.data?.deal_type || 'Аренда' }}</div>
-                    <div class="booklet-main__price booklet-main__bottom-line font-semibold text-gray-800">
-                      {{ formatPrice(Number(slide.data?.price_value) || 0) }}
-                      {{ currencySymbol(slide.data?.currency) }}
-                      <span v-if="slide.data?.deal_type === 'Аренда'" class="booklet-main__price-suffix font-normal">/ месяц</span>
-                    </div>
-                    <div v-if="slide.data?.show_all_currencies" class="booklet-main__bottom-line booklet-main__currencies-grid mt-2 inline-grid grid-cols-2 gap-x-4 gap-y-1 justify-items-end text-sm text-gray-600">
-                      <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
-                    </div>
-                  </div>
-                </template>
-              </Template1Cover>
-              <div v-else class="booklet-main__wrap">
+            <!-- Обложка -->
+            <div v-if="slide.type === 'cover'" class="booklet-content booklet-main">
+              <div class="booklet-main__wrap">
                 <div class="booklet-main__img">
                   <img
                     v-if="coverImageUrl(slide)"
@@ -346,15 +317,10 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
-import '@/assets/theme-default.css'
-import '@/assets/theme-template-1.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
-import Template1Cover from '@/components/presentations/Template1Cover.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
-import { getTemplateThemeCssVars } from '@/data/presentation-templates'
-
 interface ViewSlideItem {
   type: string
   data?: Record<string, unknown>
@@ -371,17 +337,11 @@ const presentation = ref<{
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string; imageFrame?: string } }
 } | null>(null)
 
-const themeClass = computed(() => {
-  const s = presentation.value?.content?.settings as Record<string, string> | undefined
-  return s?.templateId === 'template-1' ? 'booklet-theme-template-1' : 'booklet-theme-default'
-})
-
-/** Стили отображения (шаблон, шрифт, скругления, размеры шрифтов) из настроек презентации */
+/** Стили отображения (шрифт, скругления, размеры шрифтов) из настроек презентации */
 const presentationStyle = computed<Record<string, string>>(() => {
   const s = presentation.value?.content?.settings as Record<string, string> | undefined
   if (!s) return {}
   return {
-    ...getTemplateThemeCssVars(s.templateId),
     ...(s.fontFamily ? { fontFamily: s.fontFamily } : {}),
     ...(s.imageBorderRadius != null ? { '--booklet-image-radius': s.imageBorderRadius } : {}),
     ...(s.themeColor ? { '--theme-color': s.themeColor } : {}),
