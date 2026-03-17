@@ -1,0 +1,12 @@
+/* ============================================
+   Шаблон №1: оформление из pptx-json (themeColors).
+   Цветные подложки, при необходимости — декоративные элементы.
+   ============================================ */
+
+.presentation-slider-wrap.booklet-view.booklet-theme-template-1 .booklet-main__wrap {
+  background: var(--theme-color-1, var(--theme-color, #632423));
+}
+
+.presentation-slider-wrap.booklet-view.booklet-theme-template-1 .booklet-main__img {
+  background: var(--theme-color-1, var(--theme-color, #632423));
+}

@@ -91,6 +91,7 @@
 }
 
 /* ---------- Обложка (booklet-main) ---------- */
+/* Фон задаётся в theme-default.css / theme-template-1.css по классу темы */
 .presentation-slider-wrap.booklet-view .booklet-main__wrap {
   display: flex;
   flex-wrap: nowrap;
@@ -100,7 +101,6 @@
   height: 100%;
   min-height: 0;
   max-height: 100%;
-  background: var(--theme-color, #fcfcfc);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__img {
@@ -112,7 +112,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--theme-color, #fcfcfc);
   box-sizing: border-box;
   border-radius: var(--booklet-image-radius, 8px);
 }

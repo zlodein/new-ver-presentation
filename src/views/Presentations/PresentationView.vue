@@ -29,6 +29,7 @@
       </div>
       <div
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
+        :class="themeClass"
         :style="presentationStyle"
         :data-image-frame="(presentation?.content?.settings as Record<string, string> | undefined)?.imageFrame ?? 'none'"
       >
@@ -317,6 +318,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
+import '@/assets/theme-default.css'
+import '@/assets/theme-template-1.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
@@ -338,6 +341,11 @@ const presentation = ref<{
   coverImage?: string
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string; imageFrame?: string } }
 } | null>(null)
+
+const themeClass = computed(() => {
+  const s = presentation.value?.content?.settings as Record<string, string> | undefined
+  return s?.templateId === 'template-1' ? 'booklet-theme-template-1' : 'booklet-theme-default'
+})
 
 /** Стили отображения (шаблон, шрифт, скругления, размеры шрифтов) из настроек презентации */
 const presentationStyle = computed<Record<string, string>>(() => {

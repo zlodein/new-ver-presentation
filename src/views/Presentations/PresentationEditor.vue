@@ -450,6 +450,7 @@
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
+            :class="themeClass"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
           >
@@ -1350,36 +1351,13 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700 disabled:opacity-50"
               title="Сохранить"
               :disabled="saving"
               @click="savePresentation"
             >
               <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
-            </button>
-            <template v-if="presentationMeta.status === 'published' && !isAdmin">
-              <button
-                type="button"
-class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
-              title="Экспорт в PDF"
-                @click="exportToPDF"
-              >
-                <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </button>
-            </template>
-            <button
-              v-else-if="presentationMeta.status !== 'published'"
-              type="button"
-              class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
-              title="Опубликовать"
-              @click="publishPresentation"
-            >
-              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </button>
           </div>
@@ -1678,7 +1656,7 @@ class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-b
             </draggable>
           </div>
 
-          <!-- Кнопки Просмотр, Сохранить, Опубликовать / Экспорт в PDF (для не-админа: 2 в ряд + полная ширина снизу) -->
+          <!-- Кнопки: Просмотр и Сохранить (зелёная) в ряд; ниже — Экспорт в PDF (после первого сохранения) или Опубликовать -->
           <div class="flex flex-col gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
             <template v-if="!isAdmin">
               <div class="grid grid-cols-2 gap-2">
@@ -1691,7 +1669,7 @@ class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-b
                 </button>
                 <button
                   type="button"
-                  class="h-8 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
                   :disabled="saving"
                   @click="savePresentation"
                 >
@@ -1699,9 +1677,9 @@ class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-b
                 </button>
               </div>
               <button
-                v-if="presentationMeta.status === 'published'"
+                v-if="presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published'"
                 type="button"
-                class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                 @click="exportToPDF"
                 title="Экспортировать презентацию в PDF"
               >
@@ -1710,48 +1688,47 @@ class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg bg-b
               <button
                 v-else-if="presentationMeta.status !== 'published'"
                 type="button"
-                class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700"
                 @click="publishPresentation"
               >
                 Опубликовать
               </button>
             </template>
             <template v-else>
-              <div class="flex w-full flex-wrap gap-2">
+              <div class="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  class="h-8 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   @click="openViewPage"
                 >
                   Просмотр
                 </button>
                 <button
                   type="button"
-                  class="h-8 flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
                   :disabled="saving"
                   @click="savePresentation"
                 >
                   Сохранить
                 </button>
-                <template v-if="presentationMeta.status === 'published'">
-                  <button
-                    type="button"
-                    class="h-8 flex-1 min-w-0 rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-                    @click="exportToPDF"
-                    title="Экспортировать презентацию в PDF"
-                  >
-                    Экспорт в PDF
-                  </button>
-                </template>
-                <button
-                  v-else-if="presentationMeta.status !== 'published'"
-                  type="button"
-                  class="h-8 flex-1 min-w-0 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
-                  @click="publishPresentation"
-                >
-                  Опубликовать
-                </button>
               </div>
+              <button
+                v-if="presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published'"
+                type="button"
+                class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                @click="exportToPDF"
+                title="Экспортировать презентацию в PDF"
+              >
+                Экспорт в PDF
+              </button>
+              <button
+                v-else-if="presentationMeta.status !== 'published'"
+                type="button"
+                class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700"
+                @click="publishPresentation"
+              >
+                Опубликовать
+              </button>
             </template>
           </div>
         </aside>
@@ -1816,6 +1793,8 @@ import type { Swiper as SwiperType } from 'swiper'
 import draggable from 'vuedraggable'
 import 'swiper/css'
 import '@/assets/booklet-slides.css'
+import '@/assets/theme-default.css'
+import '@/assets/theme-template-1.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
@@ -2116,6 +2095,7 @@ const DEFAULT_PRESENTATION_SETTINGS = {
   fontSizeHeading: '38px',
   fontSizeText: '22px',
   fontSizePrice: '18px',
+  exportEnabled: '0',
 }
 const presentationSettings = ref<Record<string, string>>({ ...DEFAULT_PRESENTATION_SETTINGS })
 
@@ -2128,6 +2108,10 @@ function onTemplateChange(newTemplateId: string) {
   const applied = applyTemplateToSettings({ ...presentationSettings.value }, newTemplateId)
   presentationSettings.value = { ...applied, templateId: newTemplateId }
 }
+
+const themeClass = computed(() =>
+  presentationSettings.value.templateId === 'template-1' ? 'booklet-theme-template-1' : 'booklet-theme-default'
+)
 
 const presentationStyle = computed(() => ({
   ...getTemplateThemeCssVars(presentationSettings.value.templateId),
@@ -3438,6 +3422,7 @@ onMounted(async () => {
       if (contentWithSettings?.settings && typeof contentWithSettings.settings === 'object') {
         const s = contentWithSettings.settings
         if (s.templateId != null) presentationSettings.value.templateId = s.templateId
+        if (s.exportEnabled != null) presentationSettings.value.exportEnabled = s.exportEnabled
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
         if (s.imageFrame != null) presentationSettings.value.imageFrame = s.imageFrame
@@ -3494,6 +3479,7 @@ function loadFromLocalStorage() {
       if (saved.settings && typeof saved.settings === 'object') {
         const s = saved.settings as Record<string, string>
         if (s.templateId != null) presentationSettings.value.templateId = s.templateId
+        if (s.exportEnabled != null) presentationSettings.value.exportEnabled = s.exportEnabled
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
         if (s.imageFrame != null) presentationSettings.value.imageFrame = s.imageFrame
@@ -3553,7 +3539,10 @@ async function savePresentation() {
   try {
     const ok = await doSave({ skipRedirect: true, createNotification: false })
     autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
-    if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    if (ok) {
+      presentationSettings.value.exportEnabled = '1'
+      setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+    }
   } finally {
     saving.value = false
   }
