@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { CSSProperties } from 'vue'
 import { getTemplate1Slide, toPercent, getShapeStyle as getShapeStyleFn } from '@/data/template-1-layout-utils'
 import type { LayoutElement } from '@/data/template-1-layout-utils'
 
@@ -41,47 +42,36 @@ const coverLayout = computed(() => getTemplate1Slide(0))
 
 const layoutShapes = computed<LayoutElement[]>(() => coverLayout.value?.layoutElements ?? [])
 
-function getShapeStyle(el: LayoutElement) {
-  return getShapeStyleFn(el)
+function getShapeStyle(el: LayoutElement): CSSProperties {
+  return getShapeStyleFn(el) as CSSProperties
 }
 
-const imageStyle = computed(() => {
+function slotStyle(p: { left: number; top: number; width: number; height: number }): CSSProperties {
+  return {
+    position: 'absolute',
+    left: `${p.left}%`,
+    top: `${p.top}%`,
+    width: `${p.width}%`,
+    height: `${p.height}%`,
+  }
+}
+
+const imageStyle = computed<CSSProperties | null>(() => {
   const el = coverLayout.value?.elements?.[0]
   if (!el || el.type !== 'image') return null
-  const p = toPercent(el.left, el.top, el.width, el.height)
-  return {
-    position: 'absolute',
-    left: `${p.left}%`,
-    top: `${p.top}%`,
-    width: `${p.width}%`,
-    height: `${p.height}%`,
-  }
+  return slotStyle(toPercent(el.left, el.top, el.width, el.height))
 })
 
-const titleStyle = computed(() => {
+const titleStyle = computed<CSSProperties | null>(() => {
   const el = coverLayout.value?.elements?.[1]
   if (!el) return null
-  const p = toPercent(el.left, el.top, el.width, el.height)
-  return {
-    position: 'absolute',
-    left: `${p.left}%`,
-    top: `${p.top}%`,
-    width: `${p.width}%`,
-    height: `${p.height}%`,
-  }
+  return slotStyle(toPercent(el.left, el.top, el.width, el.height))
 })
 
-const priceStyle = computed(() => {
+const priceStyle = computed<CSSProperties | null>(() => {
   const el = coverLayout.value?.elements?.[2]
   if (!el) return null
-  const p = toPercent(el.left, el.top, el.width, el.height)
-  return {
-    position: 'absolute',
-    left: `${p.left}%`,
-    top: `${p.top}%`,
-    width: `${p.width}%`,
-    height: `${p.height}%`,
-  }
+  return slotStyle(toPercent(el.left, el.top, el.width, el.height))
 })
 </script>
 
