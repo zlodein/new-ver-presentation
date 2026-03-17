@@ -479,12 +479,99 @@
                 >
                   <div class="booklet-page__inner">
                     <div class="booklet-scale-root w-full h-full">
-                    <!-- 1. Обложка (как на presentation-realty.ru/view) -->
+                    <!-- 1. Обложка: шаблон №1 (pixel-perfect из PPTX) или базовая -->
                     <div
                       v-if="slide.type === 'cover'"
-                      class="booklet-content booklet-main"
+                      class="booklet-content booklet-main relative"
                     >
-                      <div class="booklet-main__wrap">
+                      <Template1Cover v-if="presentationSettings.templateId === 'template-1'">
+                        <template #image>
+                          <template v-if="canEditImages">
+                            <label class="booklet-upload-btn cursor-pointer w-full h-full flex items-center justify-center">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                class="hidden"
+                                @change="onSingleImageUpload(slide, $event, 'coverImageUrl')"
+                              />
+                            </label>
+                          </template>
+                          <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
+                        </template>
+                        <template #title>
+                          <div class="booklet-main__top">
+                            <textarea
+                              :value="String(slide.data?.title ?? '')"
+                              rows="2"
+                              placeholder="ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ"
+                              class="booklet-main__top-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0 text-[length:var(--booklet-font-size-heading,28px)]"
+                              @input="(slide.data as Record<string, string>).title = ($event.target as HTMLTextAreaElement).value"
+                            />
+                            <textarea
+                              :value="String(slide.data?.subtitle ?? '')"
+                              rows="2"
+                              placeholder="АБСОЛЮТНО НОВЫЙ ТАУНХАУС НА ПЕРВОЙ ЛИНИИ"
+                              class="booklet-main__center-input w-full resize-none border-0 bg-transparent p-0 mt-1 focus:outline-none focus:ring-0 text-[length:var(--booklet-font-size-heading,28px)]"
+                              @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
+                            />
+                          </div>
+                        </template>
+                        <template #price>
+                          <div class="booklet-main__bottom text-right">
+                            <div class="booklet-main__price-block flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-white/95 shadow-theme-xs">
+                              <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
+                                <select
+                                  v-model="slide.data.deal_type"
+                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-3 pr-7 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
+                                >
+                                  <option value="Аренда">Аренда</option>
+                                  <option value="Продажа">Продажа</option>
+                                </select>
+                                <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                  <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                </span>
+                              </div>
+                              <div class="booklet-main__price flex-1 min-w-0">
+                                <input
+                                  :value="coverPriceValue(slide)"
+                                  type="text"
+                                  :placeholder="coverPricePlaceholder(slide)"
+                                  class="dark:bg-dark-900 h-11 w-full border-0 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                                  @input="onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
+                                />
+                              </div>
+                              <div class="relative z-20 flex shrink-0 items-center border-l border-gray-300 bg-transparent dark:border-gray-700">
+                                <select
+                                  :value="slide.data.currency"
+                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-2 pr-6 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
+                                  @change="onCoverCurrencyChange(slide, $event)"
+                                >
+                                  <option v-for="c in CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
+                                </select>
+                                <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                  <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                </span>
+                              </div>
+                            </div>
+                            <label class="mt-2 flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400 justify-end">
+                              <input v-model="slide.data.show_all_currencies" type="checkbox" class="sr-only" />
+                              <span class="mr-2">Показывать все валюты</span>
+                              <div
+                                :class="slide.data.show_all_currencies ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
+                                class="flex h-5 w-5 items-center justify-center rounded border-[1.25px]"
+                              >
+                                <span :class="slide.data.show_all_currencies ? '' : 'opacity-0'">
+                                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                </span>
+                              </div>
+                            </label>
+                            <div v-if="slide.data?.show_all_currencies" class="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-sm text-gray-600 justify-items-end">
+                              <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
+                            </div>
+                          </div>
+                        </template>
+                      </Template1Cover>
+                      <div v-else class="booklet-main__wrap">
                         <div class="booklet-main__img">
                           <template v-if="canEditImages">
                             <label class="booklet-upload-btn cursor-pointer">
@@ -499,7 +586,6 @@
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
                         <div class="booklet-main__content">
-                          <!-- 1. Подзаголовок (перенос по словам) -->
                           <div class="booklet-main__top">
                             <textarea
                               :value="String(slide.data?.title ?? '')"
@@ -509,7 +595,6 @@
                               @input="(slide.data as Record<string, string>).title = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
-                          <!-- 2. Название презентации (перенос по словам) -->
                           <div class="booklet-main__center">
                             <textarea
                               :value="String(slide.data?.subtitle ?? '')"
@@ -519,7 +604,6 @@
                               @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
-                          <!-- Тип сделки, цена и валюта — единый блок: тип слева, инпут по центру, валюта справа -->
                           <div class="booklet-main__bottom">
                             <div class="booklet-main__price-block flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs">
                               <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
@@ -1797,6 +1881,7 @@ import '@/assets/theme-default.css'
 import '@/assets/theme-template-1.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
+import Template1Cover from '@/components/presentations/Template1Cover.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { SuccessIcon, ErrorIcon, InfoCircleIcon } from '@/icons'
 import { api, hasApi, getToken, getApiBase, ApiError } from '@/api/client'
