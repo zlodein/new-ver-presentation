@@ -68,8 +68,10 @@ function getIdFromDeleteRequest(req: FastifyRequest<{ Params: { id?: string } }>
   return match ? decodeURIComponent(match[1]) : ''
 }
 type ContentSettings = {
+  templateId?: string
   fontFamily?: string
   imageBorderRadius?: string
+  imageFrame?: string
   fontSizePresentationTitle?: string
   fontSizeHeading?: string
   fontSizeText?: string
@@ -138,23 +140,27 @@ function getContentSettings(c: unknown): ContentSettings | undefined {
   const obj = c as { settings?: Record<string, unknown> }
   if (!obj.settings || typeof obj.settings !== 'object') return undefined
   const s = obj.settings
+  const templateId = typeof s.templateId === 'string' ? s.templateId : undefined
   const fontFamily = typeof s.fontFamily === 'string' ? s.fontFamily : undefined
   const imageBorderRadius = s.imageBorderRadius !== undefined && s.imageBorderRadius !== null ? String(s.imageBorderRadius) : undefined
+  const imageFrame = typeof s.imageFrame === 'string' ? s.imageFrame : undefined
   const fontSizePresentationTitle = s.fontSizePresentationTitle !== undefined && s.fontSizePresentationTitle !== null ? String(s.fontSizePresentationTitle) : undefined
   const fontSizeHeading = s.fontSizeHeading !== undefined && s.fontSizeHeading !== null ? String(s.fontSizeHeading) : undefined
   const fontSizeText = s.fontSizeText !== undefined && s.fontSizeText !== null ? String(s.fontSizeText) : undefined
   const fontSizePrice = s.fontSizePrice !== undefined && s.fontSizePrice !== null ? String(s.fontSizePrice) : undefined
   const themeColor = typeof s.themeColor === 'string' ? s.themeColor : undefined
   if (
-    fontFamily == null && imageBorderRadius == null &&
+    templateId == null && fontFamily == null && imageBorderRadius == null && imageFrame == null &&
     fontSizePresentationTitle == null && fontSizeHeading == null && fontSizeText == null && fontSizePrice == null &&
     themeColor == null
   ) {
     return undefined
   }
   return {
+    ...(templateId != null ? { templateId } : {}),
     ...(fontFamily != null ? { fontFamily } : {}),
     ...(imageBorderRadius != null ? { imageBorderRadius } : {}),
+    ...(imageFrame != null ? { imageFrame } : {}),
     ...(fontSizePresentationTitle != null ? { fontSizePresentationTitle } : {}),
     ...(fontSizeHeading != null ? { fontSizeHeading } : {}),
     ...(fontSizeText != null ? { fontSizeText } : {}),

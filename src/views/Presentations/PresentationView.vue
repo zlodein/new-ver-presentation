@@ -321,6 +321,8 @@ import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
+import { getTemplateThemeCssVars } from '@/data/presentation-templates'
+
 interface ViewSlideItem {
   type: string
   data?: Record<string, unknown>
@@ -337,11 +339,12 @@ const presentation = ref<{
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string; imageFrame?: string } }
 } | null>(null)
 
-/** Стили отображения (шрифт, скругления, размеры шрифтов) из настроек презентации */
+/** Стили отображения (шаблон, шрифт, скругления, размеры шрифтов) из настроек презентации */
 const presentationStyle = computed<Record<string, string>>(() => {
   const s = presentation.value?.content?.settings as Record<string, string> | undefined
   if (!s) return {}
   return {
+    ...getTemplateThemeCssVars(s.templateId),
     ...(s.fontFamily ? { fontFamily: s.fontFamily } : {}),
     ...(s.imageBorderRadius != null ? { '--booklet-image-radius': s.imageBorderRadius } : {}),
     ...(s.themeColor ? { '--theme-color': s.themeColor } : {}),
