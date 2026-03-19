@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { randomUUID } from 'node:crypto'
 import { eq, and, ne, desc, inArray } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
@@ -6,8 +7,9 @@ function isUnknownColumnError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
   return /Unknown column|doesn't exist/i.test(msg)
 }
-import { db, useMysql, useFileStore } from '../db/index.js'
+import { db, useMysql, usePg, useFileStore } from '../db/index.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
+import * as pgSchema from '../db/schema.js'
 import { fileStore } from '../db/file-store.js'
 import { deletePresentationImagesFolder, deleteSupportTicketFolder, deleteUploadFileByDbPath } from './upload.js'
 import { sendTestMail } from '../services/mailer.js'
@@ -542,4 +544,159 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: 'Ошибка обновления тарифа' })
     }
   })
+
+  type SlideTemplatePayload = { slides: unknown[]; settings: Record<string, string> }
+
+  function normalizeTemplateSettings(value: unknown): Record<string, string> {
+    if (!value || typeof value !== 'object') return {}
+    const out: Record<string, string> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (typeof v === 'string') out[k] = v
+      else if (v != null) out[k] = String(v)
+    }
+    return out
+  }
+
+  function parseSlideTemplatePayload(raw: unknown): SlideTemplatePayload | null {
+    if (!raw || typeof raw !== 'object') return null
+    const o = raw as Record<string, unknown>
+    if (!Array.isArray(o.slides)) return null
+    return { slides: o.slides, settings: normalizeTemplateSettings(o.settings) }
+  }
+
+  /** GET /api/admin/templates — именованные шаблоны групп слайдов */
+  app.get('/api/admin/templates', { preHandler: [requireAdmin] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      if (useFileStore || !db) return reply.send({ templates: [] })
+      if (useMysql) {
+        const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+        const rows = await mysqlDb
+          .select()
+          .from(mysqlSchema.templates)
+          .orderBy(desc(mysqlSchema.templates.created_at))
+        const templates = rows.map((r) => {
+          let payload: SlideTemplatePayload = { slides: [], settings: {} }
+          try {
+            const parsed = JSON.parse(r.content) as unknown
+            payload = parseSlideTemplatePayload(parsed) ?? { slides: [], settings: {} }
+          } catch {
+            /* ignore */
+          }
+          return {
+            id: r.id,
+            name: r.name,
+            createdAt:
+              r.created_at instanceof Date ? r.created_at.toISOString() : toIsoDate(r.created_at as Date),
+            slides: payload.slides,
+            settings: payload.settings,
+          }
+        })
+        return reply.send({ templates })
+      }
+      if (usePg) {
+        const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+        const rows = await pgDb
+          .select()
+          .from(pgSchema.templates)
+          .orderBy(desc(pgSchema.templates.createdAt))
+        const templates = rows.map((r) => {
+          const c = r.content
+          const payload =
+            c && typeof c === 'object' && Array.isArray((c as SlideTemplatePayload).slides)
+              ? (c as SlideTemplatePayload)
+              : { slides: [] as unknown[], settings: {} as Record<string, string> }
+          return {
+            id: String(r.id),
+            name: r.name,
+            createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
+            slides: payload.slides,
+            settings: normalizeTemplateSettings(payload.settings),
+          }
+        })
+        return reply.send({ templates })
+      }
+      return reply.send({ templates: [] })
+    } catch (err) {
+      if (isUnknownColumnError(err)) {
+        req.log.warn({ err }, 'templates table missing — run server/sql/migrate_templates(.sql)')
+        return reply.send({ templates: [] })
+      }
+      req.log.error(err)
+      return reply.status(500).send({ error: 'Ошибка загрузки шаблонов' })
+    }
+  })
+
+  /** POST /api/admin/templates — сохранить шаблон { name, slides, settings } */
+  app.post<{ Body: { name?: string; slides?: unknown; settings?: unknown } }>(
+    '/api/admin/templates',
+    { preHandler: [requireAdmin] },
+    async (req: FastifyRequest<{ Body: { name?: string; slides?: unknown; settings?: unknown } }>, reply: FastifyReply) => {
+      try {
+        if (useFileStore || !db) return reply.status(501).send({ error: 'Недоступно без базы данных' })
+        const body = req.body ?? {}
+        const name = typeof body.name === 'string' ? body.name.trim() : ''
+        if (!name) return reply.status(400).send({ error: 'Введите имя шаблона' })
+        const slides = Array.isArray(body.slides) ? body.slides : []
+        const settings = normalizeTemplateSettings(body.settings)
+        const content: SlideTemplatePayload = { slides, settings }
+
+        if (useMysql) {
+          const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+          const id = randomUUID()
+          await mysqlDb.insert(mysqlSchema.templates).values({
+            id,
+            name,
+            content: JSON.stringify(content),
+          })
+          return reply.send({ success: true, id })
+        }
+        if (usePg) {
+          const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+          const [row] = await pgDb
+            .insert(pgSchema.templates)
+            .values({
+              name,
+              content,
+            })
+            .returning({ id: pgSchema.templates.id })
+          return reply.send({ success: true, id: row ? String(row.id) : '' })
+        }
+        return reply.status(501).send({ error: 'База данных не поддерживается' })
+      } catch (err) {
+        if (isUnknownColumnError(err)) {
+          return reply.status(503).send({ error: 'Таблица templates не создана. Выполните миграцию server/sql/migrate_templates.sql' })
+        }
+        req.log.error(err)
+        return reply.status(500).send({ error: 'Ошибка сохранения шаблона' })
+      }
+    }
+  )
+
+  /** DELETE /api/admin/templates/:id */
+  app.delete<{ Params: { id: string } }>(
+    '/api/admin/templates/:id',
+    { preHandler: [requireAdmin] },
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        if (useFileStore || !db) return reply.status(501).send({ error: 'Недоступно без базы данных' })
+        const id = req.params.id
+        if (!id) return reply.status(400).send({ error: 'Нет id' })
+
+        if (useMysql) {
+          const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+          await mysqlDb.delete(mysqlSchema.templates).where(eq(mysqlSchema.templates.id, id))
+          return reply.send({ success: true })
+        }
+        if (usePg) {
+          const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+          await pgDb.delete(pgSchema.templates).where(eq(pgSchema.templates.id, id))
+          return reply.send({ success: true })
+        }
+        return reply.status(501).send({ error: 'База данных не поддерживается' })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({ error: 'Ошибка удаления шаблона' })
+      }
+    }
+  )
 }

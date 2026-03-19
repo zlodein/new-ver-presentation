@@ -89,28 +89,8 @@ function containerHasSize(): boolean {
   return r.width > 0 && r.height > 0
 }
 
-function initMap() {
-  if (!mapEl.value || !hasValidCoords.value || yandexMap || map) return
-  if (!containerHasSize()) return
-  if (useYandexOnly) {
-    if (!(window as unknown as { ymaps?: unknown }).ymaps) {
-      yandexLoadError.value = true
-      mapReady.value = false
-      return
-    }
-    const ymaps = (window as unknown as { ymaps: { Map: new (el: HTMLElement, opts: { center: number[]; zoom: number; type?: string }) => unknown; Placemark: new (center: number[], opts?: unknown) => unknown } }).ymaps
-    yandexMap = new ymaps.Map(mapEl.value, {
-      center: [props.lat, props.lng],
-      zoom: 16,
-      type: 'yandex#map',
-    })
-    const placemark = new ymaps.Placemark([props.lat, props.lng])
-    ;(yandexMap as { geoObjects: { add: (p: unknown) => void } }).geoObjects.add(placemark)
-    mapReady.value = true
-    yandexLoadError.value = false
-    return
-  }
-  // Без ключа Яндекс.Карт — fallback на Leaflet (OpenStreetMap)
+function initLeafletFallback() {
+  if (!mapEl.value || !hasValidCoords.value || map) return
   map = L.map(mapEl.value, { attributionControl: false }).setView([props.lat, props.lng], 16)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map)
   const icon = L.icon({
@@ -124,14 +104,54 @@ function initMap() {
   mapReady.value = true
 }
 
+function initMap() {
+  if (!mapEl.value || !hasValidCoords.value || yandexMap || map) return
+  if (!containerHasSize()) return
+
+  const win = window as unknown as {
+    ymaps?: {
+      Map?: new (el: HTMLElement, opts: { center: number[]; zoom: number; type?: string }) => unknown
+      Placemark?: new (center: number[], opts?: unknown) => unknown
+    }
+  }
+
+  if (useYandexOnly && win.ymaps && typeof win.ymaps.Map === 'function' && typeof win.ymaps.Placemark === 'function') {
+    try {
+      yandexMap = new win.ymaps.Map!(mapEl.value, {
+        center: [props.lat, props.lng],
+        zoom: 16,
+        type: 'yandex#map',
+      })
+      const placemark = new win.ymaps.Placemark!([props.lat, props.lng])
+      ;(yandexMap as { geoObjects: { add: (p: unknown) => void } }).geoObjects.add(placemark)
+      mapReady.value = true
+      yandexLoadError.value = false
+      return
+    } catch (e) {
+      console.warn('[LocationMap] Yandex Maps init failed, fallback to Leaflet', e)
+      yandexMap = null
+      yandexLoadError.value = true
+    }
+  } else if (useYandexOnly) {
+    yandexLoadError.value = true
+    mapReady.value = false
+  }
+
+  initLeafletFallback()
+}
+
 function updateMap() {
   if (yandexMap) {
     const y = yandexMap as { setCenter: (c: number[]) => void; geoObjects: { removeAll: () => void; add: (p: unknown) => void } }
     y.setCenter([props.lat, props.lng])
-    const ymaps = (window as unknown as { ymaps: { Placemark: new (center: number[]) => unknown } }).ymaps
-    if (ymaps) {
-      y.geoObjects.removeAll()
-      y.geoObjects.add(new ymaps.Placemark([props.lat, props.lng]))
+    const ym = (window as unknown as { ymaps?: { Placemark?: new (center: number[]) => unknown } }).ymaps
+    if (ym && typeof ym.Placemark === 'function') {
+      try {
+        y.geoObjects.removeAll()
+        y.geoObjects.add(new ym.Placemark([props.lat, props.lng]))
+      } catch {
+        /* ignore */
+      }
     }
     return
   }

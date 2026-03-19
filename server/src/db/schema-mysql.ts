@@ -204,6 +204,17 @@ export const companies = mysqlTable('companies', {
   userIdIdx: index('companies_user_id_idx').on(table.user_id),
 }))
 
+/** Именованные шаблоны групп слайдов (админка «Слайды»): JSON { slides, settings } */
+export const templates = mysqlTable('templates', {
+  id: varchar('id', { length: 64 }).primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  content: longtext('content').notNull(),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  createdIdx: index('templates_created_at_idx').on(table.created_at),
+}))
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
@@ -223,5 +234,7 @@ export type SupportReplyMySQL = typeof supportReplies.$inferSelect
 export type NewSupportReplyMySQL = typeof supportReplies.$inferInsert
 export type CompanyMySQL = typeof companies.$inferSelect
 export type NewCompanyMySQL = typeof companies.$inferInsert
+export type TemplateMySQL = typeof templates.$inferSelect
+export type NewTemplateMySQL = typeof templates.$inferInsert
 export type UserSessionMySQL = typeof userSessions.$inferSelect
 export type NewUserSessionMySQL = typeof userSessions.$inferInsert

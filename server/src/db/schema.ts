@@ -167,6 +167,21 @@ export const supportReplies = pgTable('support_replies', {
   index('support_replies_request_id_idx').on(table.supportRequestId),
 ])
 
+/** Именованные шаблоны групп слайдов (админка) */
+export const templates = pgTable(
+  'templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    content: jsonb('content')
+      .$type<{ slides: unknown[]; settings: Record<string, string> }>()
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('templates_created_at_idx').on(table.createdAt)],
+)
+
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
 export type User = typeof users.$inferSelect
@@ -184,3 +199,5 @@ export type SupportReply = typeof supportReplies.$inferSelect
 export type NewSupportReply = typeof supportReplies.$inferInsert
 export type UserSession = typeof userSessions.$inferSelect
 export type NewUserSession = typeof userSessions.$inferInsert
+export type TemplatePg = typeof templates.$inferSelect
+export type NewTemplatePg = typeof templates.$inferInsert

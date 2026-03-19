@@ -52,4 +52,4 @@ if (connectionString) {
   console.log('[db] DATABASE_URL не задан — используется файловое хранилище (server/data/store.json)')
 }
 
-export { db, schema, isSqlite, useFileStore, useMysql, mysqlSchema, pgSchema }
+export { db, schema, isSqlite, useFileStore, useMysql, usePg, mysqlSchema, pgSchema }
