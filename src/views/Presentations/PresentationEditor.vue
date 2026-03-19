@@ -215,7 +215,173 @@
 
         <!-- ПК: плитка слайдов по левому краю -->
         <div class="hidden md:flex md:flex-1 md:items-center md:gap-1.5">
-          <div class="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 border-r border-gray-200 pr-2 dark:border-gray-700">
+          <template v-if="isAdminSlidesGridMode">
+            <div class="flex min-w-0 flex-1 flex-col items-start gap-2 border-r border-gray-200 pr-2 dark:border-gray-700 overflow-y-auto max-h-[60vh]">
+              <draggable
+                v-model="slides"
+                item-key="id"
+                handle=".slide-drag-handle"
+                @end="onDragEnd"
+                @move="onDragMove"
+                class="slides-grid grid grid-cols-2 gap-2"
+              >
+                <template #item="{ element: slide, index }">
+                  <div
+                    :data-slide-index="index"
+                    :class="[
+                      'relative cursor-pointer rounded-lg border px-2 py-2 transition shrink-0',
+                      activeSlideIndex === index
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
+                        : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
+                      slide.hidden ? 'opacity-60' : '',
+                      adminSlidesSelectionUIEnabled && adminSlidesSelectionIds.includes(slide.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-950' : '',
+                    ]"
+                    @click="goToSlide(index)"
+                  >
+                    <label
+                      v-if="adminSlidesSelectionUIEnabled"
+                      class="absolute left-2 top-2 z-10"
+                      @click.stop
+                    >
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900"
+                        :checked="adminSlidesSelectionIds.includes(slide.id)"
+                        @change="toggleAdminSlideSelected(slide.id)"
+                      />
+                    </label>
+
+                    <div class="flex items-start justify-between gap-2">
+                      <span
+                        v-if="!adminSlidesSelectionUIEnabled"
+                        class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        title="Перетащить"
+                        @click.stop
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                        </svg>
+                      </span>
+
+                      <button
+                        v-if="!adminSlidesSelectionUIEnabled"
+                        type="button"
+                        class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                        :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
+                        @click.stop="toggleSlideVisibility(index)"
+                      >
+                        <svg v-if="slide.hidden" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.0002 13.8619C7.23361 13.8619 4.86803 12.1372 3.92328 9.70241C4.86804 7.26761 7.23361 5.54297 10.0002 5.54297C12.7667 5.54297 15.1323 7.26762 16.0771 9.70243C15.1323 12.1372 12.7667 13.8619 10.0002 13.8619ZM10.0002 4.04297C6.48191 4.04297 3.49489 6.30917 2.4155 9.4593C2.3615 9.61687 2.3615 9.78794 2.41549 9.94552C3.49488 13.0957 6.48191 15.3619 10.0002 15.3619C13.5184 15.3619 16.5055 13.0957 17.5849 9.94555C17.6389 9.78797 17.6389 9.6169 17.5849 9.45932C16.5055 6.30919 13.5184 4.04297 10.0002 4.04297ZM9.99151 7.84413C8.96527 7.84413 8.13333 8.67606 8.13333 9.70231C8.13333 10.7286 8.96527 11.5605 9.99151 11.5605H10.0064C11.0326 11.5605 11.8646 10.7286 11.8646 9.70231C11.8646 8.67606 11.0326 7.84413 10.0064 7.84413H9.99151Z" />
+                        </svg>
+                        <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262M4.031 11.117A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.05 10.05 0 01-1.563 3.029m5.858-.908a3 3 0 11-4.243-4.243M9.88 9.88a4.5 4.5 0 106.262-6.262" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div class="mt-2 flex items-center gap-2">
+                      <div class="relative h-16 w-16 overflow-hidden rounded-md border border-gray-200 bg-white dark:border-gray-700">
+                        <img
+                          v-if="getSlideThumbnailUrl(slide)"
+                          :src="getSlideThumbnailUrl(slide)"
+                          alt=""
+                          class="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                        <div v-else class="flex h-full w-full items-center justify-center text-[10px] text-gray-400">
+                          Слайд
+                        </div>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <div
+                          class="truncate text-sm font-medium"
+                          :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
+                        >
+                          {{ getSlideLabel(slide) }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div v-if="!adminSlidesSelectionUIEnabled" class="mt-1 flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        :disabled="!canAddSlide"
+                        :title="!canAddSlide ? 'На тарифе «Тест драйв» не более 4 слайдов' : 'Дублировать'"
+                        class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                        @click.stop="canAddSlide && duplicateSlide(index)"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+
+                      <button
+                        v-if="slides.length > 1"
+                        type="button"
+                        class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                        title="Удалить"
+                        @click.stop="deleteSlide(index)"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+              </draggable>
+
+              <div
+                v-if="adminSlidesSelectionUIEnabled"
+                class="w-full border-t border-gray-200 pt-2 dark:border-gray-700 px-1.5"
+              >
+                <div class="flex items-center justify-between gap-2 pb-2">
+                  <p class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                    Выбрано: {{ adminSlidesSelectionIds.length }}
+                  </p>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                      @click.stop="setAdminSlidesSelectionToAll"
+                    >
+                      Все
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                      @click.stop="adminSlidesSelectionIds = []"
+                    >
+                      Сброс
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="w-full rounded-lg border border-brand-500 bg-brand-500 px-3 py-2 text-xs font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-brand-600"
+                  :disabled="adminSlidesSelectionIds.length === 0"
+                  @click.stop="openAdminSlidesGroupEditorFromSelection"
+                >
+                  Редактировать выбранные
+                </button>
+              </div>
+
+              <div
+                v-else-if="adminSlidesGroupEditorMode && !adminSlidesTemplatePreviewMode && adminSlidesGroupEditorSlidesBackup"
+                class="w-full border-t border-gray-200 pt-2 dark:border-gray-700 px-1.5"
+              >
+                <button
+                  type="button"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  @click.stop="exitAdminSlidesGroupEditorToSelection"
+                >
+                  Назад к выбору
+                </button>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 border-r border-gray-200 pr-2 dark:border-gray-700">
             <draggable
               v-model="slides"
               item-key="id"
@@ -291,7 +457,8 @@
                 </div>
               </template>
             </draggable>
-          </div>
+            </div>
+          </template>
         </div>
 
         <!-- Шестерёнка и кнопка "Добавить" — только на мобильных (на ПК в сайдбаре) -->
@@ -435,6 +602,7 @@
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
+            :class="{ 'admin-template-preview-mode': adminSlidesTemplatePreviewMode }"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
           >
@@ -1695,6 +1863,83 @@
               >
                 Опубликовать
               </button>
+
+              <!-- Админский режим: шаблоны группы слайдов (localStorage, без подключения к публичному редактору) -->
+              <div
+                v-if="isAdminSlidesGridMode"
+                class="mt-2 rounded-lg border border-gray-200 bg-white/60 p-3 dark:border-gray-700 dark:bg-gray-900/30"
+              >
+                <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Шаблоны группы слайдов</p>
+                <template v-if="!adminSlidesTemplatePreviewMode">
+                  <div class="mt-2 flex items-center gap-2">
+                    <input
+                      v-model="slidesTemplateName"
+                      type="text"
+                      class="h-9 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                      placeholder="Название шаблона"
+                    />
+                    <button
+                      type="button"
+                      class="h-9 shrink-0 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                      :disabled="slidesTemplateSaving || !slidesTemplateName.trim()"
+                      @click="saveSlidesGroupTemplate"
+                    >
+                      {{ slidesTemplateSaving ? 'Сохранение...' : 'Сохранить' }}
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="slidesTemplateError"
+                    class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300"
+                  >
+                    {{ slidesTemplateError }}
+                  </div>
+                  <div
+                    v-else-if="slidesTemplateSaved"
+                    class="mt-2 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-800 dark:bg-green-950/30 dark:text-green-300"
+                  >
+                    Шаблон сохранен
+                  </div>
+                </template>
+
+                <div v-if="slidesGroupTemplates.length" class="mt-3 space-y-2">
+                  <div
+                    v-for="t in slidesGroupTemplates"
+                    :key="t.id"
+                    class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white/70 px-2 py-2 dark:border-gray-700 dark:bg-gray-900/30"
+                  >
+                    <div class="min-w-0 flex-1">
+                      <div class="truncate text-left text-sm font-medium text-gray-800 dark:text-gray-200">{{ t.name }}</div>
+                      <div class="mt-1 flex items-center gap-1">
+                        <button
+                          type="button"
+                          class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                          @click="loadSlidesGroupTemplate(t.id, { preview: false })"
+                        >
+                          Редактор
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                          @click="loadSlidesGroupTemplate(t.id, { preview: true, skipConfirm: true })"
+                        >
+                          Предпросмотр
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      v-if="!adminSlidesTemplatePreviewMode"
+                      type="button"
+                      class="shrink-0 rounded border border-transparent px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                      title="Удалить шаблон"
+                      @click="deleteSlidesGroupTemplate(t.id)"
+                    >
+                      Удалить
+                    </button>
+                  </div>
+                </div>
+              </div>
             </template>
           </div>
         </aside>
@@ -2618,6 +2863,50 @@ function getSlideLabel(slide: SlideItem): string {
   return SLIDE_TYPE_LABELS[slide.type] ?? slide.type
 }
 
+/** Для миниатюр: data-URL не трогаем, а относительные/URL приводим к финальному абсолютному. */
+function resolveImageUrlForThumb(url: string | null | undefined): string {
+  if (!url) return ''
+  const s = String(url).trim()
+  if (!s) return ''
+  if (s.startsWith('data:')) return s
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  return resolveImageUrl(s)
+}
+
+function getSlideThumbnailUrl(slide: SlideItem): string {
+  const pickFirstResolved = (urls: string[]): string => {
+    const first = urls.find((u) => !!u && String(u).trim()) ?? ''
+    return resolveImageUrlForThumb(first)
+  }
+
+  switch (slide.type) {
+    case 'cover':
+      return resolveImageUrlForThumb((slide.data as Record<string, unknown> | undefined)?.coverImageUrl as string | undefined)
+    case 'description':
+      return pickFirstResolved(descriptionImages(slide))
+    case 'infrastructure':
+      return pickFirstResolved(infrastructureImages(slide))
+    case 'gallery':
+      return pickFirstResolved(galleryImages3(slide))
+    case 'layout':
+      return pickFirstResolved(layoutImages(slide))
+    case 'location':
+      return pickFirstResolved(locationImages(slide))
+    case 'contacts':
+      return resolveImageUrlForThumb(contactImageUrl(slide))
+    case 'characteristics': {
+      const u = slide.data?.charImageUrl ?? slide.data?.image
+      return resolveImageUrlForThumb(typeof u === 'string' ? u : undefined)
+    }
+    case 'image': {
+      const u = slide.data?.imageUrl ?? slide.data?.image
+      return resolveImageUrlForThumb(typeof u === 'string' ? u : undefined)
+    }
+    default:
+      return ''
+  }
+}
+
 /** Стиль страницы AI-макета (custom slide) для редактора. */
 function customSlidePageStyle(slide: SlideItem): Record<string, string | number> {
   const style = slide.data?.pageStyle
@@ -2692,10 +2981,272 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
 
 const { currentUser } = useAuth()
 const isAdmin = computed(() => (currentUser.value as { role_id?: number } | undefined)?.role_id === 2)
+const isAdminSlidesGridMode = computed(() => isAdmin.value && String(route.path ?? '').startsWith('/dashboard/admin/slides'))
+
+// Админ: режим предварительного просмотра шаблона группы.
+// В этом режиме отключаем редактирование контента (частично/полностью) и скрываем сохранение шаблонов.
+const adminSlidesTemplatePreviewMode = ref(false)
+
+// Админ: редактируем только подмножество слайдов (выбранная группа).
+const adminSlidesGroupEditorMode = ref(false)
+
+// Админ: выбор группы слайдов из текущей презентации галочками.
+const adminSlidesSelectionIds = ref<string[]>([])
+const adminSlidesSelectionUIEnabled = computed(() => isAdminSlidesGridMode.value && !adminSlidesGroupEditorMode.value && !adminSlidesTemplatePreviewMode.value)
+
+// Бэкап для режима "редактировать выбранную группу"
+const adminSlidesGroupEditorSlidesBackup = ref<SlideItem[] | null>(null)
+const adminSlidesGroupEditorSettingsBackup = ref<Record<string, string> | null>(null)
 /** Редактирование изображений: либо черновик, либо зашёл администратор */
-const canEditImages = computed(() => !isPublished.value || isAdmin.value)
+const canEditImages = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
+
+// Админский режим: сохраняем редактируемую группу слайдов в локальные "шаблоны" (пока без подключения к редактору).
+const SLIDES_GROUP_TEMPLATES_LS_KEY = 'admin-slides-group-templates-v1'
+type SlidesGroupTemplate = {
+  id: string
+  name: string
+  createdAt: string
+  slides: SlideItem[]
+  settings: Record<string, string>
+}
+const slidesTemplateName = ref('')
+const slidesTemplateSaving = ref(false)
+const slidesTemplateSaved = ref(false)
+const slidesTemplateError = ref('')
+const slidesGroupTemplates = ref<SlidesGroupTemplate[]>([])
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+function genSlidesGroupTemplateId(): string {
+  const c = (globalThis as any).crypto
+  if (c?.randomUUID && typeof c.randomUUID === 'function') return c.randomUUID()
+  return `tpl_${Date.now()}_${Math.random().toString(16).slice(2)}`
+}
+
+function normalizeSettings(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object') return {}
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === 'string') out[k] = v
+    else if (v != null) out[k] = String(v)
+  }
+  return out
+}
+
+function normalizeSlideItemForTemplate(value: unknown): SlideItem | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Record<string, unknown>
+  const id = typeof raw.id === 'string' ? raw.id : genSlideId()
+  const hidden = raw.hidden == null ? false : Boolean(raw.hidden)
+  return { ...(raw as SlideItem), id, hidden }
+}
+
+function readSlidesGroupTemplatesFromLS(): SlidesGroupTemplate[] {
+  try {
+    const raw = localStorage.getItem(SLIDES_GROUP_TEMPLATES_LS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+
+    const normalized = parsed
+      .map((t) => {
+        if (!t || typeof t !== 'object') return null
+        const obj = t as Record<string, unknown>
+        const id = typeof obj.id === 'string' ? obj.id : null
+        const name = typeof obj.name === 'string' ? obj.name : null
+        const createdAt = typeof obj.createdAt === 'string' ? obj.createdAt : null
+        const slidesRaw = obj.slides
+        const settings = normalizeSettings(obj.settings)
+        if (!id || !name || !createdAt) return null
+        if (!Array.isArray(slidesRaw)) return { id, name, createdAt, slides: [], settings }
+
+        const slides = slidesRaw.map((s) => normalizeSlideItemForTemplate(s)).filter((x): x is SlideItem => !!x)
+        return { id, name, createdAt, slides, settings }
+      })
+      .filter((x): x is SlidesGroupTemplate => !!x)
+
+    // Самое свежее — наверху
+    return normalized.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  } catch {
+    return []
+  }
+}
+
+function writeSlidesGroupTemplatesToLS(templates: SlidesGroupTemplate[]) {
+  localStorage.setItem(SLIDES_GROUP_TEMPLATES_LS_KEY, JSON.stringify(templates))
+}
+
+function refreshSlidesGroupTemplates() {
+  slidesGroupTemplates.value = readSlidesGroupTemplatesFromLS()
+}
+
+watch(isAdminSlidesGridMode, (v) => {
+  if (v) refreshSlidesGroupTemplates()
+}, { immediate: true })
+
+watch(
+  () => adminSlidesSelectionUIEnabled.value,
+  (enabled) => {
+    if (!enabled) return
+    if (adminSlidesSelectionIds.value.length) return
+    if (!slides.value.length) return
+    adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
+  },
+  { immediate: true },
+)
+
+watch(
+  () => slides.value.length,
+  () => {
+    if (!adminSlidesSelectionUIEnabled.value) return
+    if (adminSlidesSelectionIds.value.length) return
+    if (!slides.value.length) return
+    adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
+  },
+  { immediate: false },
+)
+
+function saveSlidesGroupTemplate() {
+  if (!isAdminSlidesGridMode.value || adminSlidesTemplatePreviewMode.value) return
+
+  slidesTemplateError.value = ''
+  slidesTemplateSaved.value = false
+
+  const name = slidesTemplateName.value.trim()
+  if (!name) {
+    slidesTemplateError.value = 'Введите имя шаблона'
+    return
+  }
+
+  slidesTemplateSaving.value = true
+  try {
+    const template: SlidesGroupTemplate = {
+      id: genSlidesGroupTemplateId(),
+      name,
+      createdAt: new Date().toISOString(),
+      slides: cloneJson(slides.value),
+      settings: { ...presentationSettings.value },
+    }
+
+    const list = readSlidesGroupTemplatesFromLS()
+    writeSlidesGroupTemplatesToLS([template, ...list])
+    refreshSlidesGroupTemplates()
+
+    slidesTemplateSaved.value = true
+    slidesTemplateName.value = ''
+    setTimeout(() => { slidesTemplateSaved.value = false }, 2500)
+  } catch (e) {
+    slidesTemplateError.value = e instanceof Error ? e.message : 'Не удалось сохранить шаблон'
+  } finally {
+    slidesTemplateSaving.value = false
+  }
+}
+
+function loadSlidesGroupTemplate(templateId: string, options?: { preview?: boolean; skipConfirm?: boolean }) {
+  if (!isAdminSlidesGridMode.value) return
+
+  const preview = !!options?.preview
+  const skipConfirm = !!options?.skipConfirm
+
+  slidesTemplateError.value = ''
+  slidesTemplateSaved.value = false
+
+  const list = readSlidesGroupTemplatesFromLS()
+  const t = list.find((x) => x.id === templateId)
+  if (!t) {
+    refreshSlidesGroupTemplates()
+    slidesTemplateError.value = 'Шаблон не найден'
+    return
+  }
+
+  if (!skipConfirm && !confirm('Заменить текущие слайды содержимым шаблона?')) return
+
+  adminSlidesTemplatePreviewMode.value = preview
+  adminSlidesGroupEditorMode.value = true
+  adminSlidesGroupEditorSlidesBackup.value = null
+  adminSlidesGroupEditorSettingsBackup.value = null
+
+  slides.value = t.slides.map((s) => ({
+    ...s,
+    id: s.id ?? genSlideId(),
+    hidden: s.hidden ?? false,
+  }))
+  presentationSettings.value = { ...DEFAULT_PRESENTATION_SETTINGS, ...(t.settings ?? {}) }
+  activeSlideIndex.value = 0
+  adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
+
+  slidesTemplateSaved.value = true
+  setTimeout(() => { slidesTemplateSaved.value = false }, 2000)
+}
+
+function deleteSlidesGroupTemplate(templateId: string) {
+  if (!isAdminSlidesGridMode.value || adminSlidesTemplatePreviewMode.value) return
+
+  const list = readSlidesGroupTemplatesFromLS()
+  const exists = list.some((x) => x.id === templateId)
+  if (!exists) return
+
+  if (!confirm('Удалить шаблон?')) return
+
+  const next = list.filter((x) => x.id !== templateId)
+  writeSlidesGroupTemplatesToLS(next)
+  refreshSlidesGroupTemplates()
+}
+
+function toggleAdminSlideSelected(slideId: string) {
+  if (!adminSlidesSelectionUIEnabled.value) return
+  const list = adminSlidesSelectionIds.value
+  const idx = list.indexOf(slideId)
+  if (idx >= 0) list.splice(idx, 1)
+  else list.push(slideId)
+  adminSlidesSelectionIds.value = list
+}
+
+function setAdminSlidesSelectionToAll() {
+  if (!adminSlidesSelectionUIEnabled.value) return
+  adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
+}
+
+function openAdminSlidesGroupEditorFromSelection() {
+  if (!adminSlidesSelectionUIEnabled.value) return
+
+  if (!adminSlidesSelectionIds.value.length) {
+    alert('Выберите хотя бы один слайд')
+    return
+  }
+
+  adminSlidesTemplatePreviewMode.value = false
+  adminSlidesGroupEditorMode.value = true
+  adminSlidesGroupEditorSlidesBackup.value = cloneJson(slides.value)
+  adminSlidesGroupEditorSettingsBackup.value = cloneJson(presentationSettings.value)
+
+  const idSet = new Set(adminSlidesSelectionIds.value)
+  slides.value = slides.value
+    .filter((s) => idSet.has(s.id))
+    .map((s) => ({ ...cloneJson(s) }))
+
+  activeSlideIndex.value = 0
+}
+
+function exitAdminSlidesGroupEditorToSelection() {
+  if (!adminSlidesGroupEditorMode.value) return
+  if (!adminSlidesGroupEditorSlidesBackup.value || !adminSlidesGroupEditorSettingsBackup.value) return
+
+  adminSlidesTemplatePreviewMode.value = false
+  adminSlidesGroupEditorMode.value = false
+
+  slides.value = cloneJson(adminSlidesGroupEditorSlidesBackup.value)
+  presentationSettings.value = cloneJson(adminSlidesGroupEditorSettingsBackup.value)
+  adminSlidesGroupEditorSlidesBackup.value = null
+  adminSlidesGroupEditorSettingsBackup.value = null
+
+  adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
+  activeSlideIndex.value = 0
+}
 
 /** Тип «о себе» из настроек профиля: none | about | position */
 const profileAboutType = computed(() => {
@@ -3972,5 +4523,10 @@ async function exportToPDF() {
 .mob-sheet-enter-from,
 .mob-sheet-leave-to {
   transform: translateY(100%);
+}
+
+/* Админ: предпросмотр шаблонов группы (делаем область слайдов read-only) */
+.admin-template-preview-mode {
+  pointer-events: none;
 }
 </style>

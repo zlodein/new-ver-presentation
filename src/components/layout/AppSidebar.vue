@@ -261,6 +261,7 @@ const adminPanelItem = {
   subItems: [
     { name: "Пользователи", path: "/dashboard/admin/users" },
     { name: "Презентации", path: "/dashboard/admin/presentations" },
+    { name: "Слайды", path: "/dashboard/admin/slides" },
     { name: "Запросы", path: "/dashboard/admin/requests" },
     { name: "Тарифы", path: "/dashboard/admin/tariffs" },
     { name: "Платежи", path: "/dashboard/admin/payments" },

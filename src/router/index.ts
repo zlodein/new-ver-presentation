@@ -252,6 +252,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/admin/slides',
+      name: 'Admin Slides',
+      component: () => import('../views/Admin/AdminSlides.vue'),
+      meta: {
+        title: 'Слайды',
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/dashboard/admin/slides/:id',
+      name: 'Admin Slides Editor',
+      component: () => import('../views/Presentations/PresentationEditor.vue'),
+      meta: {
+        title: 'Редактор слайдов',
+        requiresAdmin: true,
+      },
+    },
+    {
       path: '/dashboard/admin/tariffs',
       name: 'Admin Tariffs',
       component: () => import('../views/Admin/AdminTariffs.vue'),
