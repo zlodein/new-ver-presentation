@@ -672,27 +672,46 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   )
 
+  async function deleteTemplateById(idRaw: string, req: FastifyRequest, reply: FastifyReply) {
+    const id = String(idRaw ?? '').trim()
+    if (!id) return reply.status(400).send({ error: 'Нет id' })
+    if (useFileStore || !db) return reply.status(501).send({ error: 'Недоступно без базы данных' })
+
+    if (useMysql) {
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      await mysqlDb.delete(mysqlSchema.templates).where(eq(mysqlSchema.templates.id, id))
+      return reply.send({ success: true })
+    }
+    if (usePg) {
+      const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      await pgDb.delete(pgSchema.templates).where(eq(pgSchema.templates.id, id))
+      return reply.send({ success: true })
+    }
+    return reply.status(501).send({ error: 'База данных не поддерживается' })
+  }
+
+  /** POST /api/admin/templates/delete — тело { id } (надёжнее DELETE за прокси/CDN) */
+  app.post<{ Body: { id?: string } }>(
+    '/api/admin/templates/delete',
+    { preHandler: [requireAdmin] },
+    async (req: FastifyRequest<{ Body: { id?: string } }>, reply: FastifyReply) => {
+      try {
+        const id = typeof req.body?.id === 'string' ? req.body.id : ''
+        return await deleteTemplateById(id, req, reply)
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({ error: 'Ошибка удаления шаблона' })
+      }
+    }
+  )
+
   /** DELETE /api/admin/templates/:id */
   app.delete<{ Params: { id: string } }>(
     '/api/admin/templates/:id',
     { preHandler: [requireAdmin] },
     async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
-        if (useFileStore || !db) return reply.status(501).send({ error: 'Недоступно без базы данных' })
-        const id = req.params.id
-        if (!id) return reply.status(400).send({ error: 'Нет id' })
-
-        if (useMysql) {
-          const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-          await mysqlDb.delete(mysqlSchema.templates).where(eq(mysqlSchema.templates.id, id))
-          return reply.send({ success: true })
-        }
-        if (usePg) {
-          const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
-          await pgDb.delete(pgSchema.templates).where(eq(pgSchema.templates.id, id))
-          return reply.send({ success: true })
-        }
-        return reply.status(501).send({ error: 'База данных не поддерживается' })
+        return await deleteTemplateById(req.params.id, req, reply)
       } catch (err) {
         req.log.error(err)
         return reply.status(500).send({ error: 'Ошибка удаления шаблона' })

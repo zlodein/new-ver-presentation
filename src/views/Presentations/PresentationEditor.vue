@@ -604,6 +604,7 @@
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
+            ref="presentationSliderScrollRef"
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 rounded-xl bg-white shadow-lg"
             :class="{
               'overflow-hidden': !isAdminSlidesGridMode,
@@ -654,6 +655,7 @@
                 v-for="slide in visibleSlides"
                 :key="slide.id"
                 class="admin-slide-block relative w-full shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-white shadow-md transition-colors dark:border-gray-700"
+                :data-admin-slide-id="slide.id"
                 :class="adminSlidesSelectionUIEnabled && adminSlidesSelectionIds.includes(slide.id) ? '!border-brand-500 ring-2 ring-brand-500/30 dark:!border-brand-500' : ''"
               >
                 <label
@@ -669,6 +671,17 @@
                   />
                   <span class="text-gray-700 dark:text-gray-300">В группу</span>
                 </label>
+                <button
+                  v-if="['description','infrastructure','gallery','layout'].includes(slide.type) && canEditImages"
+                  type="button"
+                  class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-[35] hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-visible rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
+                  style="background-color: var(--color-green-600);"
+                  title="Макет и сетка изображений"
+                  @click="openPalettePopup(slide.id, $event)"
+                >
+                  <span class="booklet-palette-btn-ping absolute inset-0 z-0" aria-hidden="true" />
+                  <svg class="relative z-10 isolate h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
+                </button>
                 <div
                   class="booklet-page h-full w-full"
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
@@ -1180,7 +1193,7 @@
                 Опубликовать
               </button>
 
-              <!-- Админский режим: шаблоны группы слайдов (localStorage, без подключения к публичному редактору) -->
+              <!-- Админский режим: шаблоны группы слайдов (БД + запасной localStorage) -->
               <div
                 v-if="isAdminSlidesGridMode"
                 class="admin-slides-templates-panel mt-2 rounded-lg border border-gray-200 bg-white/60 p-3 dark:border-gray-700 dark:bg-gray-900/30"
@@ -1515,6 +1528,24 @@ const PALETTE_POPUP_WIDTH = 220
 const PALETTE_POPUP_HEIGHT = 140
 
 const editorSliderWrapRef = ref<HTMLElement | null>(null)
+/** Прокручиваемый контейнер слайдов (админский стек + предпросмотр) */
+const presentationSliderScrollRef = ref<HTMLElement | null>(null)
+
+function escapeSlideIdForSelector(slideId: string): string {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(slideId)
+  return slideId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+function scrollAdminSlideIntoView(slideId: string) {
+  const root = presentationSliderScrollRef.value
+  if (!root) return
+  try {
+    const el = root.querySelector(`[data-admin-slide-id="${escapeSlideIdForSelector(slideId)}"]`) as HTMLElement | null
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  } catch {
+    /* ignore invalid selector */
+  }
+}
 
 function openPalettePopup(slideId: string, event: MouseEvent) {
   const el = event.currentTarget as HTMLElement
@@ -2109,7 +2140,13 @@ function goToSlide(fullIndex: number) {
   const slide = slides.value[fullIndex]
   if (slide && !slide.hidden) {
     const visibleIdx = visibleSlides.value.findIndex((s) => s.id === slide.id)
-    if (visibleIdx >= 0) swiperInstance.value?.slideTo(visibleIdx)
+    if (visibleIdx >= 0) {
+      if (isAdminSlidesGridMode.value) {
+        nextTick(() => scrollAdminSlideIntoView(slide.id))
+      } else {
+        swiperInstance.value?.slideTo(visibleIdx)
+      }
+    }
   }
 }
 
@@ -2289,9 +2326,69 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
       return { heading: 'Планировка', imageGrid: '1x1', images: [] as string[] }
     case 'contacts':
       return { heading: 'Контакты', contactName: '', aboutText: '', phone: '', email: '', address: '', websiteUrl: '', messengers: {} as Record<string, string>, messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
+    case 'custom':
+      return {}
     default:
       return {}
   }
+}
+
+/** Очистка данных шаблона при загрузке: структура (сетки, макет) сохраняется, тексты и картинки — нет */
+function cleanAiLayoutBlocks(blocks: unknown[]): unknown[] {
+  if (!Array.isArray(blocks)) return []
+  return blocks.map((raw) => {
+    if (!raw || typeof raw !== 'object') return raw
+    const b = JSON.parse(JSON.stringify(raw)) as Record<string, unknown>
+    if (b.type === 'columns' && Array.isArray(b.columns)) {
+      b.columns = b.columns.map((col) => {
+        if (!col || typeof col !== 'object') return col
+        return { ...(col as Record<string, unknown>), content: '' }
+      })
+    } else if (b.type === 'image_placeholder') {
+      b.imageUrl = ''
+    } else if (b.type !== 'divider') {
+      b.content = ''
+    }
+    return b
+  })
+}
+
+function buildCleanSlidesFromTemplate(source: SlideItem[]): SlideItem[] {
+  return source.map((s) => {
+    const id = genSlideId()
+    const baseData: Record<string, unknown> = { ...getDefaultDataForType(s.type) }
+    const prev = (s.data || {}) as Record<string, unknown>
+
+    if (typeof prev.blockLayout === 'string') baseData.blockLayout = prev.blockLayout
+    if (typeof prev.imageGrid === 'string') baseData.imageGrid = prev.imageGrid
+
+    if (s.type === 'cover') {
+      baseData.title = ''
+      baseData.subtitle = ''
+      baseData.coverImageUrl = ''
+    }
+
+    if (s.type === 'characteristics' && Array.isArray(baseData.items)) {
+      baseData.items = (baseData.items as Array<{ label?: string; value?: string }>).map((row) => ({
+        label: row.label ?? '',
+        value: '',
+      }))
+    }
+
+    if (s.type === 'custom') {
+      if (prev.layoutMode === 'ai' && Array.isArray(prev.blocks)) {
+        baseData.layoutMode = 'ai'
+        if (typeof prev.pageName === 'string') baseData.pageName = prev.pageName
+        baseData.blocks = cleanAiLayoutBlocks(prev.blocks)
+        if (prev.pageStyle != null && typeof prev.pageStyle === 'object')
+          baseData.pageStyle = JSON.parse(JSON.stringify(prev.pageStyle)) as Record<string, unknown>
+      } else {
+        return { id, type: s.type, data: {}, hidden: s.hidden ?? false }
+      }
+    }
+
+    return { id, type: s.type, data: baseData, hidden: s.hidden ?? false }
+  })
 }
 
 const { currentUser } = useAuth()
@@ -2550,11 +2647,7 @@ async function loadSlidesGroupTemplate(templateId: string, options?: { preview?:
   adminSlidesGroupEditorSlidesBackup.value = null
   adminSlidesGroupEditorSettingsBackup.value = null
 
-  slides.value = t.slides.map((s) => ({
-    ...s,
-    id: s.id ?? genSlideId(),
-    hidden: s.hidden ?? false,
-  }))
+  slides.value = buildCleanSlidesFromTemplate(t.slides)
   presentationSettings.value = { ...DEFAULT_PRESENTATION_SETTINGS, ...(t.settings ?? {}) }
   activeSlideIndex.value = 0
   adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
@@ -2565,25 +2658,40 @@ async function loadSlidesGroupTemplate(templateId: string, options?: { preview?:
 
 async function deleteSlidesGroupTemplate(templateId: string) {
   if (!isAdminSlidesGridMode.value || adminSlidesTemplatePreviewMode.value) return
-
-  const inMemory = slidesGroupTemplates.value.some((x) => x.id === templateId)
-  const inLs = readSlidesGroupTemplatesFromLS().some((x) => x.id === templateId)
-  if (!inMemory && !inLs) return
+  if (!templateId) return
 
   if (!confirm('Удалить шаблон?')) return
 
+  slidesTemplateError.value = ''
+
   if (hasApi() && getToken()) {
+    let removedOnServer = false
     try {
-      await api.delete(`/api/admin/templates/${encodeURIComponent(templateId)}`)
+      await api.post<{ success?: boolean }>('/api/admin/templates/delete', { id: templateId })
+      removedOnServer = true
+    } catch (e) {
+      try {
+        await api.delete(`/api/admin/templates/${encodeURIComponent(templateId)}`)
+        removedOnServer = true
+      } catch (e2) {
+        slidesTemplateError.value =
+          e2 instanceof ApiError
+            ? (typeof e2.payload === 'object' && e2.payload && 'error' in (e2.payload as object)
+                ? String((e2.payload as { error?: string }).error)
+                : e2.message)
+            : 'Не удалось удалить шаблон на сервере'
+      }
+    }
+    if (removedOnServer) {
+      const list = readSlidesGroupTemplatesFromLS()
+      writeSlidesGroupTemplatesToLS(list.filter((x) => x.id !== templateId))
       await refreshSlidesGroupTemplates()
-    } catch {
-      /* только LS */
+      return
     }
   }
 
   const list = readSlidesGroupTemplatesFromLS()
-  const next = list.filter((x) => x.id !== templateId)
-  writeSlidesGroupTemplatesToLS(next)
+  writeSlidesGroupTemplatesToLS(list.filter((x) => x.id !== templateId))
   await refreshSlidesGroupTemplates()
 }
 
@@ -3988,8 +4096,11 @@ async function exportToPDF() {
   transform: translateY(100%);
 }
 
-/* Админ: предпросмотр шаблонов группы (делаем область слайдов read-only) */
-.admin-template-preview-mode {
+/* Админ: предпросмотр — контент без кликов, но колесо прокручивает область (pointer-events:none на всём блоке ломал wheel) */
+.presentation-slider-wrap.booklet-view.admin-template-preview-mode {
+  pointer-events: auto;
+}
+.presentation-slider-wrap.booklet-view.admin-template-preview-mode .admin-slides-stack {
   pointer-events: none;
 }
 
