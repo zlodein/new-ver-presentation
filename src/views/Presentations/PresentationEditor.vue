@@ -593,7 +593,10 @@
       </div>
 
       <!-- Область превью слайдов: на ПК — слайдер слева + сайдбар справа -->
-      <main class="w-full flex-1 min-h-0 md:flex md:gap-4 md:items-start md:flex-initial">
+      <main
+        class="w-full flex-1 min-h-0 md:flex md:gap-4 md:items-start md:flex-initial"
+        :class="{ 'admin-template-preview-mode-root': adminSlidesTemplatePreviewMode }"
+      >
         <div
           ref="editorSliderWrapRef"
           class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
@@ -602,7 +605,10 @@
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 overflow-hidden rounded-xl bg-white shadow-lg"
-            :class="{ 'admin-template-preview-mode': adminSlidesTemplatePreviewMode }"
+            :class="{
+              'admin-template-preview-mode': adminSlidesTemplatePreviewMode,
+              'admin-slides-vertical-list-mode': isAdminSlidesGridMode,
+            }"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
           >
@@ -1492,7 +1498,8 @@
               type="button"
               class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Просмотр"
-              @click="openViewPage"
+              :disabled="isAdminSlidesGridMode || adminSlidesTemplatePreviewMode"
+              @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && openViewPage"
             >
               <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -1502,8 +1509,8 @@
               type="button"
               class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700 disabled:opacity-50"
               title="Сохранить"
-              :disabled="saving"
-              @click="savePresentation"
+              :disabled="saving || adminSlidesTemplatePreviewMode || isAdminSlidesGridMode"
+              @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && savePresentation"
             >
               <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -1797,21 +1804,22 @@
                 <button
                   type="button"
                   class="h-8 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                  @click="openViewPage"
+                  :disabled="isAdminSlidesGridMode || adminSlidesTemplatePreviewMode"
+                  @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && openViewPage"
                 >
                   Просмотр
                 </button>
                 <button
                   type="button"
                   class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-                  :disabled="saving"
-                  @click="savePresentation"
+                  :disabled="saving || isAdminSlidesGridMode || adminSlidesTemplatePreviewMode"
+                  @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && savePresentation"
                 >
                   Сохранить
                 </button>
               </div>
               <button
-                v-if="presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published'"
+                v-if="!isAdminSlidesGridMode && (presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published')"
                 type="button"
                 class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                 @click="exportToPDF"
@@ -1820,7 +1828,7 @@
                 Экспорт в PDF
               </button>
               <button
-                v-else-if="presentationMeta.status !== 'published'"
+                v-else-if="!isAdminSlidesGridMode && presentationMeta.status !== 'published'"
                 type="button"
                 class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700"
                 @click="publishPresentation"
@@ -1867,7 +1875,7 @@
               <!-- Админский режим: шаблоны группы слайдов (localStorage, без подключения к публичному редактору) -->
               <div
                 v-if="isAdminSlidesGridMode"
-                class="mt-2 rounded-lg border border-gray-200 bg-white/60 p-3 dark:border-gray-700 dark:bg-gray-900/30"
+                class="admin-slides-templates-panel mt-2 rounded-lg border border-gray-200 bg-white/60 p-3 dark:border-gray-700 dark:bg-gray-900/30"
               >
                 <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Шаблоны группы слайдов</p>
                 <template v-if="!adminSlidesTemplatePreviewMode">
@@ -2770,11 +2778,12 @@ async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infra
   }
 }
 
-const swiperOptions = {
+const swiperOptions = computed(() => ({
   spaceBetween: 0,
-  allowTouchMove: false,
+  allowTouchMove: !isAdminSlidesGridMode.value,
   initialSlide: 0,
-}
+  direction: (isAdminSlidesGridMode.value ? 'vertical' : 'horizontal') as 'vertical' | 'horizontal',
+}))
 
 function onSwiper(swiper: SwiperType) {
   swiperInstance.value = swiper
@@ -4529,5 +4538,33 @@ async function exportToPDF() {
 /* Админ: предпросмотр шаблонов группы (делаем область слайдов read-only) */
 .admin-template-preview-mode {
   pointer-events: none;
+}
+
+/* Админ: предпросмотр шаблонов группы — блокируем клики/ввод во всей правой панели,
+   но оставляем кликабельным только список шаблонов. */
+.admin-template-preview-mode-root .editor-sidebar {
+  pointer-events: none;
+}
+.admin-template-preview-mode-root .admin-slides-templates-panel,
+.admin-template-preview-mode-root .admin-slides-templates-panel * {
+  pointer-events: auto;
+}
+
+/* Админ: визуально показываем все слайды вертикальным списком (disable swipe transform) */
+.admin-slides-vertical-list-mode {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+.admin-slides-vertical-list-mode .presentation-swiper,
+.admin-slides-vertical-list-mode .swiper,
+.admin-slides-vertical-list-mode .swiper-wrapper {
+  height: auto !important;
+}
+.admin-slides-vertical-list-mode .swiper-wrapper {
+  flex-direction: column !important;
+  transform: none !important;
+}
+.admin-slides-vertical-list-mode .swiper-slide {
+  height: auto !important;
 }
 </style>
