@@ -3042,7 +3042,8 @@ function normalizeSlideItemForTemplate(value: unknown): SlideItem | null {
   const raw = value as Record<string, unknown>
   const id = typeof raw.id === 'string' ? raw.id : genSlideId()
   const hidden = raw.hidden == null ? false : Boolean(raw.hidden)
-  return { ...(raw as SlideItem), id, hidden }
+  // Шаблоны лежат в localStorage и приходят как `unknown`, поэтому приводим через `unknown` чтобы пройти TS.
+  return { ...(raw as unknown as SlideItem), id, hidden }
 }
 
 function readSlidesGroupTemplatesFromLS(): SlidesGroupTemplate[] {
