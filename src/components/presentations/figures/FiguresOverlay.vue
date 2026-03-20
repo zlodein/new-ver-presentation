@@ -787,6 +787,7 @@ function startGlobalListeners() {
             class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
             title="На перед"
             aria-label="На перед"
+            @pointerdown.stop.prevent
             @click.stop.prevent="emit('layerMove', { id: inst.id, delta: 1 })"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -798,6 +799,7 @@ function startGlobalListeners() {
             class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
             title="Удалить"
             aria-label="Удалить фигуру"
+            @pointerdown.stop.prevent
             @click.stop.prevent="emit('delete', inst.id)"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -809,6 +811,7 @@ function startGlobalListeners() {
             class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
             title="На зад"
             aria-label="На зад"
+            @pointerdown.stop.prevent
             @click.stop.prevent="emit('layerMove', { id: inst.id, delta: -1 })"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
