@@ -191,18 +191,18 @@ function strokeDashFor(inst: FigureInstance): string | undefined {
   return undefined
 }
 
-function strokeLinecapFor(inst: FigureInstance): string | undefined {
+function strokeLinecapFor(inst: FigureInstance): 'round' | 'butt' | 'square' | undefined {
   const stroke = inst.style?.stroke
   if (!stroke || typeof stroke !== 'object') return undefined
   if (!stroke.enabled) return undefined
-  return String((stroke as any).linecap ?? 'round')
+  return String((stroke as any).linecap ?? 'round') as 'round' | 'butt' | 'square'
 }
 
-function strokeLinejoinFor(inst: FigureInstance): string | undefined {
+function strokeLinejoinFor(inst: FigureInstance): 'miter' | 'round' | 'bevel' | undefined {
   const stroke = inst.style?.stroke
   if (!stroke || typeof stroke !== 'object') return undefined
   if (!stroke.enabled) return undefined
-  return String((stroke as any).linejoin ?? 'miter')
+  return String((stroke as any).linejoin ?? 'miter') as 'miter' | 'round' | 'bevel'
 }
 
 function shadowFilterFor(inst: FigureInstance): string | undefined {
@@ -230,7 +230,7 @@ function linearGradientVector(angleDeg: number): { x1: number; y1: number; x2: n
 }
 
 function curvedConnectorPathD(inst: FigureInstance): string {
-  const def = figuresById[inst.figureId]
+  const def = props.figuresById[inst.figureId]
   const g = (def?.geometry as any) ?? {}
 
   const x1 = Number(g.x1 ?? 0)
