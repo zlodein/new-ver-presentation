@@ -2439,6 +2439,10 @@ function buildCleanSlidesFromTemplate(source: SlideItem[]): SlideItem[] {
       baseData.title = ''
       baseData.subtitle = ''
       baseData.coverImageUrl = ''
+      // Позицию блока с ценой считаем частью структуры шаблона.
+      if (prev.priceEditorPos && typeof prev.priceEditorPos === 'object') {
+        baseData.priceEditorPos = JSON.parse(JSON.stringify(prev.priceEditorPos)) as unknown
+      }
     }
 
     if (s.type === 'characteristics' && Array.isArray(baseData.items)) {

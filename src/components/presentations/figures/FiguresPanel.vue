@@ -325,6 +325,10 @@ function normalizeZ() {
   const arr = ensureFiguresArray()
   const sorted = [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
   sorted.forEach((inst, idx) => { inst.z = idx })
+
+  // Гарантируем реактивность для вложенного slide.data.figures.
+  // На части данных z может не обновляться визуально без переустановки массива.
+  if (props.slide.data) (props.slide.data as any).figures = [...arr]
 }
 
 function bringToFront() {

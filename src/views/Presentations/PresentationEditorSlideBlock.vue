@@ -1,23 +1,169 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { SlideItem } from '@/types/presentationSlide'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { metroLineColor } from '@/data/metroLineColors'
 import { PRESENTATION_EDITOR_SLIDE_KEY } from './presentationEditorSlideKey'
 
-defineProps<{ slide: SlideItem }>()
+const { slide } = defineProps<{ slide: SlideItem }>()
 
 const pe = inject(PRESENTATION_EDITOR_SLIDE_KEY)
 if (!pe) {
   throw new Error('PresentationEditorSlideBlock: отсутствует контекст редактора')
 }
+
+// --- Drag&Drop блока цены на обложке (в редакторе) ---
+const coverRootRef = ref<HTMLDivElement | null>(null)
+const priceBottomRef = ref<HTMLDivElement | null>(null)
+const priceFloatingMode = ref(false)
+const pricePlaceholderH = ref(0)
+const pricePlaceholderW = ref(0)
+const priceClamp = ref<{ minX: number; maxX: number; minY: number; maxY: number } | null>(null)
+
+const dragPriceState = ref<{
+  dragging: boolean
+  offsetX: number
+  offsetY: number
+  containerLeft: number
+  containerTop: number
+  containerW: number
+  containerH: number
+} | null>(null)
+
+const editorGridCfg = computed(() => {
+  const g = (slide.data as any)?.editorGrid
+  const enabled = Boolean(g?.enabled)
+  const snap = enabled && (g?.snap == null ? true : Boolean(g.snap))
+  const stepPct = Number.isFinite(Number(g?.stepPct)) ? Number(g.stepPct) : 5
+  return { enabled, snap, stepPct }
+})
+
+function isDragDisallowedTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (!el) return false
+  const tag = el.tagName?.toUpperCase?.() ?? ''
+  if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(tag)) return true
+  if (el.closest?.('[data-no-drag="1"]')) return true
+  return false
+}
+
+function getPricePos(): { xPct: number; yPct: number } | null {
+  const p = (slide.data as any)?.priceEditorPos
+  if (!p || typeof p !== 'object') return null
+  const xPct = Number((p as any).xPct)
+  const yPct = Number((p as any).yPct)
+  if (!Number.isFinite(xPct) || !Number.isFinite(yPct)) return null
+  return { xPct, yPct }
+}
+
+function setPricePos(next: { xPct: number; yPct: number }) {
+  if (!slide.data) slide.data = {} as any
+  ;(slide.data as any).priceEditorPos = { xPct: next.xPct, yPct: next.yPct }
+}
+
+const priceBottomFloatingStyle = computed(() => {
+  const pos = getPricePos()
+  if (!priceFloatingMode.value || !pos) return {}
+  return {
+    position: 'absolute',
+    left: `${pos.xPct}%`,
+    top: `${pos.yPct}%`,
+    transform: 'translate(-50%, -50%)',
+    width: pricePlaceholderW.value ? `${pricePlaceholderW.value}px` : 'auto',
+    zIndex: 20,
+  } as Record<string, string | number>
+})
+
+function startPriceDragging(e: PointerEvent) {
+  if (!pe.canEditImages) return
+  if (!priceFloatingMode.value) return
+  if (e.button != null && e.button !== 0) return
+  if (isDragDisallowedTarget(e.target)) return
+  if (!coverRootRef.value || !priceBottomRef.value) return
+
+  const containerRect = coverRootRef.value.getBoundingClientRect()
+  const bottomRect = priceBottomRef.value.getBoundingClientRect()
+
+  const centerX = bottomRect.left + bottomRect.width / 2
+  const centerY = bottomRect.top + bottomRect.height / 2
+
+  dragPriceState.value = {
+    dragging: true,
+    offsetX: e.clientX - centerX,
+    offsetY: e.clientY - centerY,
+    containerLeft: containerRect.left,
+    containerTop: containerRect.top,
+    containerW: containerRect.width || 1,
+    containerH: containerRect.height || 1,
+  }
+
+  window.addEventListener('pointermove', onPricePointerMove)
+  window.addEventListener('pointerup', onPricePointerUp, { once: true })
+}
+
+function onPricePointerMove(e: PointerEvent) {
+  const st = dragPriceState.value
+  if (!st?.dragging) return
+
+  let xPct = ((e.clientX - st.offsetX) - st.containerLeft) / st.containerW * 100
+  let yPct = ((e.clientY - st.offsetY) - st.containerTop) / st.containerH * 100
+
+  if (editorGridCfg.value.snap) {
+    const step = Math.max(1, Math.min(25, editorGridCfg.value.stepPct))
+    xPct = Math.round(xPct / step) * step
+    yPct = Math.round(yPct / step) * step
+  }
+
+  if (priceClamp.value) {
+    xPct = Math.max(priceClamp.value.minX, Math.min(priceClamp.value.maxX, xPct))
+    yPct = Math.max(priceClamp.value.minY, Math.min(priceClamp.value.maxY, yPct))
+  }
+
+  setPricePos({ xPct, yPct })
+}
+
+function onPricePointerUp() {
+  dragPriceState.value = null
+  window.removeEventListener('pointermove', onPricePointerMove)
+}
+
+onMounted(() => {
+  if (!coverRootRef.value || !priceBottomRef.value) return
+
+  const containerRect = coverRootRef.value.getBoundingClientRect()
+  const bottomRect = priceBottomRef.value.getBoundingClientRect()
+
+  pricePlaceholderH.value = bottomRect.height
+  pricePlaceholderW.value = bottomRect.width
+
+  const minX = (bottomRect.width / 2) / (containerRect.width || 1) * 100
+  const minY = (bottomRect.height / 2) / (containerRect.height || 1) * 100
+  priceClamp.value = { minX, maxX: 100 - minX, minY, maxY: 100 - minY }
+
+  if (!getPricePos()) {
+    const centerX = bottomRect.left + bottomRect.width / 2
+    const centerY = bottomRect.top + bottomRect.height / 2
+    const xPct = ((centerX - containerRect.left) / (containerRect.width || 1)) * 100
+    const yPct = ((centerY - containerRect.top) / (containerRect.height || 1)) * 100
+    setPricePos({ xPct, yPct })
+  }
+
+  priceFloatingMode.value = true
+})
+
+onBeforeUnmount(() => {
+  dragPriceState.value = null
+  window.removeEventListener('pointermove', onPricePointerMove)
+  window.removeEventListener('pointerup', onPricePointerUp as any)
+})
 </script>
 
 <template>
 <!-- 1. Обложка -->
                     <div
                       v-if="slide.type === 'cover'"
+                      ref="coverRootRef"
                       class="booklet-content booklet-main"
                     >
                       <div class="booklet-main__wrap">
@@ -53,7 +199,17 @@ if (!pe) {
                               @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
                             />
                           </div>
-                          <div class="booklet-main__bottom">
+                          <div
+                            v-if="priceFloatingMode"
+                            class="booklet-main__bottom editor-price-placeholder"
+                            :style="{ height: `${pricePlaceholderH}px`, width: `${pricePlaceholderW}px` }"
+                          />
+                          <div
+                            ref="priceBottomRef"
+                            class="booklet-main__bottom"
+                            :style="priceBottomFloatingStyle"
+                            @pointerdown="startPriceDragging"
+                          >
                             <div class="booklet-main__price-block flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs">
                               <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
                                 <select
@@ -89,7 +245,7 @@ if (!pe) {
                                 </span>
                               </div>
                             </div>
-                            <label class="mt-3 flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
+                            <label class="mt-3 flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400" data-no-drag="1">
                               <div class="relative">
                                 <input v-model="slide.data.show_all_currencies" type="checkbox" class="sr-only" />
                                 <div
