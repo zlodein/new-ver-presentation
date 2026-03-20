@@ -642,6 +642,13 @@
                   <div class="booklet-page__inner">
                     <div class="booklet-scale-root w-full h-full">
                       <PresentationEditorSlideBlock :slide="slide" />
+                      <FiguresOverlay
+                        :slide="slide"
+                        :figuresById="figuresById"
+                        :selectedInstanceId="selectedFigureInstanceId"
+                        :enabled="canEditFigures && slide.id === currentSlide?.id"
+                        @select="selectedFigureInstanceId = $event"
+                      />
                     </div>
                   </div>
                 </div>
@@ -689,6 +696,13 @@
                   <div class="booklet-page__inner">
                     <div class="booklet-scale-root w-full h-full">
                       <PresentationEditorSlideBlock :slide="slide" />
+                      <FiguresOverlay
+                        :slide="slide"
+                        :figuresById="figuresById"
+                        :selectedInstanceId="selectedFigureInstanceId"
+                        :enabled="canEditFigures && slide.id === currentSlide?.id"
+                        @select="selectedFigureInstanceId = $event"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1269,6 +1283,14 @@
                   </div>
                 </div>
               </div>
+              <FiguresPanel
+                v-if="isAdminSlidesGridMode && currentSlide"
+                :slide="currentSlide"
+                :figures="figures"
+                :selectedInstanceId="selectedFigureInstanceId"
+                :enabled="canEditFigures"
+                @select="selectedFigureInstanceId = $event"
+              />
             </template>
           </div>
         </aside>
@@ -1343,6 +1365,9 @@ import { useAuth } from '@/composables/useAuth'
 import { usePhoneMask } from '@/composables/usePhoneMask'
 import type { SlideItem } from '@/types/presentationSlide'
 import PresentationEditorSlideBlock from './PresentationEditorSlideBlock.vue'
+import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
+import FiguresPanel from '@/components/presentations/figures/FiguresPanel.vue'
+import type { FigureDefinition } from '@/types/figures'
 import {
   PRESENTATION_EDITOR_SLIDE_KEY,
   type PresentationEditorSlideInject,
@@ -1494,6 +1519,7 @@ const defaultSlides = SLIDE_TYPES.map(({ type }) => ({
   data:
     type === 'cover'
       ? {
+          figures: [],
           title: 'Новая презентация',
           subtitle: '',
           deal_type: 'Аренда',
@@ -1502,14 +1528,16 @@ const defaultSlides = SLIDE_TYPES.map(({ type }) => ({
           show_all_currencies: false,
         }
       : type === 'location'
-        ? { heading: 'Местоположение', address: '', lat: 55.755864, lng: 37.617698, show_metro: true, metro_stations: [] }
-        : {},
+        ? { figures: [], heading: 'Местоположение', address: '', lat: 55.755864, lng: 37.617698, show_metro: true, metro_stations: [] }
+        : { figures: [] },
   hidden: false,
 }))
 
 const slides = ref<SlideItem[]>([...defaultSlides])
 const swiperInstance = ref<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
+const selectedFigureInstanceId = ref<string | null>(null)
+const figures = ref<FigureDefinition[]>([])
 const showAddSlideMenu = ref(false)
 const showSettingsMenu = ref(false)
 const showMobSlidesNav = ref(false)
@@ -1734,6 +1762,18 @@ const visibleSlides = computed(() => slides.value.filter((s) => !s.hidden))
 
 /** Текущий слайд по активному индексу (для панели управления на мобильных) */
 const currentSlide = computed(() => slides.value[activeSlideIndex.value] ?? null)
+
+// Если выбранная фигура принадлежит другому слайду — сбрасываем выделение.
+watch(
+  currentSlide,
+  (s) => {
+    const id = selectedFigureInstanceId.value
+    if (!id) return
+    const arr = (s?.data as any)?.figures
+    if (!Array.isArray(arr) || !arr.some((x) => x && typeof x.id === 'string' && x.id === id)) selectedFigureInstanceId.value = null
+  },
+  { immediate: true },
+)
 
 /** Номер текущего слайда среди видимых (1-based для отображения) */
 const visibleSlideNumber = computed(() => {
@@ -2298,6 +2338,7 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
   switch (type) {
     case 'cover':
       return {
+        figures: [],
         title: 'Новая презентация',
         subtitle: '',
         deal_type: 'Аренда',
@@ -2307,6 +2348,7 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
       }
     case 'location':
       return {
+        figures: [],
         heading: 'Местоположение',
         address: '',
         lat: 55.755864,
@@ -2315,21 +2357,21 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
         metro_stations: [],
       }
     case 'description':
-      return { heading: 'ОПИСАНИЕ', text: '', imageGrid: '1x2', images: [] as string[] }
+      return { figures: [], heading: 'ОПИСАНИЕ', text: '', imageGrid: '1x2', images: [] as string[] }
     case 'infrastructure':
-      return { heading: 'ИНФРАСТРУКТУРА', content: '', imageGrid: '1x2', images: [] as string[] }
+      return { figures: [], heading: 'ИНФРАСТРУКТУРА', content: '', imageGrid: '1x2', images: [] as string[] }
     case 'gallery':
-      return { heading: 'Галерея', imageGrid: '3x1', images: [] as string[] }
+      return { figures: [], heading: 'Галерея', imageGrid: '3x1', images: [] as string[] }
     case 'characteristics':
-      return { heading: 'Характеристики', items: defaultCharItems.map((x) => ({ ...x })) }
+      return { figures: [], heading: 'Характеристики', items: defaultCharItems.map((x) => ({ ...x })) }
     case 'layout':
-      return { heading: 'Планировка', imageGrid: '1x1', images: [] as string[] }
+      return { figures: [], heading: 'Планировка', imageGrid: '1x1', images: [] as string[] }
     case 'contacts':
-      return { heading: 'Контакты', contactName: '', aboutText: '', phone: '', email: '', address: '', websiteUrl: '', messengers: {} as Record<string, string>, messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
+      return { figures: [], heading: 'Контакты', contactName: '', aboutText: '', phone: '', email: '', address: '', websiteUrl: '', messengers: {} as Record<string, string>, messengersText: '', avatarUrl: '', logoUrl: '', contactImageUrl: '', images: [] as string[] }
     case 'custom':
-      return {}
+      return { figures: [] }
     default:
-      return {}
+      return { figures: [] }
   }
 }
 
@@ -2359,6 +2401,10 @@ function buildCleanSlidesFromTemplate(source: SlideItem[]): SlideItem[] {
     const baseData: Record<string, unknown> = { ...getDefaultDataForType(s.type) }
     const prev = (s.data || {}) as Record<string, unknown>
 
+    // Для фигуры: в шаблонах храним style/координаты прямо в slide.data.figures,
+    // поэтому при загрузке шаблона их нельзя «чистить».
+    if (Array.isArray(prev.figures)) baseData.figures = prev.figures
+
     if (typeof prev.blockLayout === 'string') baseData.blockLayout = prev.blockLayout
     if (typeof prev.imageGrid === 'string') baseData.imageGrid = prev.imageGrid
 
@@ -2383,7 +2429,7 @@ function buildCleanSlidesFromTemplate(source: SlideItem[]): SlideItem[] {
         if (prev.pageStyle != null && typeof prev.pageStyle === 'object')
           baseData.pageStyle = JSON.parse(JSON.stringify(prev.pageStyle)) as Record<string, unknown>
       } else {
-        return { id, type: s.type, data: {}, hidden: s.hidden ?? false }
+        return { id, type: s.type, data: baseData, hidden: s.hidden ?? false }
       }
     }
 
@@ -2411,8 +2457,21 @@ const adminSlidesGroupEditorSlidesBackup = ref<SlideItem[] | null>(null)
 const adminSlidesGroupEditorSettingsBackup = ref<Record<string, string> | null>(null)
 /** Редактирование изображений: либо черновик, либо зашёл администратор */
 const canEditImages = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
+const canEditFigures = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
+
+const figuresById = computed(() => Object.fromEntries(figures.value.map((f) => [f.id, f])) as Record<string, FigureDefinition>)
+
+async function refreshFigures() {
+  if (!hasApi()) return
+  try {
+    const res = await api.get<{ figures?: FigureDefinition[] }>('/api/figures')
+    figures.value = Array.isArray(res.figures) ? (res.figures as FigureDefinition[]) : []
+  } catch {
+    figures.value = []
+  }
+}
 
 // Админский режим: шаблоны групп слайдов в БД (таблица templates) + запасной localStorage без API.
 const SLIDES_GROUP_TEMPLATES_LS_KEY = 'admin-slides-group-templates-v1'
@@ -3462,6 +3521,9 @@ let editorMounted = true
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
+
+  // Подгружаем геометрию фигур (для отрисовки/редактирования)
+  void refreshFigures()
 
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')

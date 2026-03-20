@@ -278,6 +278,12 @@
               </div>
             </div>
           </div>
+            <FiguresOverlay
+              :slide="slide"
+              :figuresById="figuresById"
+              :selectedInstanceId="null"
+              :enabled="false"
+            />
           </div>
         </div>
       </div>
@@ -319,8 +325,10 @@ import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
+import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
+import type { FigureDefinition } from '@/types/figures'
 interface ViewSlideItem {
   type: string
   data?: Record<string, unknown>
@@ -336,6 +344,19 @@ const presentation = ref<{
   coverImage?: string
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string; imageFrame?: string } }
 } | null>(null)
+
+const figures = ref<FigureDefinition[]>([])
+const figuresById = computed(() => Object.fromEntries(figures.value.map((f) => [f.id, f])) as Record<string, FigureDefinition>)
+
+async function refreshFigures() {
+  if (!hasApi()) return
+  try {
+    const res = await api.get<{ figures?: FigureDefinition[] }>('/api/figures')
+    figures.value = Array.isArray(res.figures) ? (res.figures as FigureDefinition[]) : []
+  } catch {
+    figures.value = []
+  }
+}
 
 /** Стили отображения (шрифт, скругления, размеры шрифтов) из настроек презентации */
 const presentationStyle = computed<Record<string, string>>(() => {
@@ -755,6 +776,9 @@ function galleryNext() {
 }
 
 onMounted(async () => {
+  // Геометрия фигур для рендера оверлея.
+  void refreshFigures()
+
   const shortId = route.params.shortId as string
   const slug = route.params.slug as string
   const hash = route.params.hash as string

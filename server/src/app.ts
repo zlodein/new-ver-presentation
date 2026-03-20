@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm'
 import { authRoutes } from './routes/auth.js'
 import { sessionRoutes } from './routes/sessions.js'
 import { adminRoutes } from './routes/admin.js'
+import { figuresRoutes } from './routes/figures.js'
 import { presentationRoutes } from './routes/presentations.js'
 import { editorApiRoutes } from './routes/editor-api.js'
 import { uploadRoutes } from './routes/upload.js'
@@ -100,6 +101,7 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: '/' })
   await app.register(sessionRoutes, { prefix: '/' })
   await app.register(adminRoutes, { prefix: '/' })
+  await app.register(figuresRoutes, { prefix: '/' })
   await app.register(presentationRoutes, { prefix: '/' })
   await app.register(editorApiRoutes, { prefix: '/api' })
   await app.register(uploadRoutes, { prefix: '/' })

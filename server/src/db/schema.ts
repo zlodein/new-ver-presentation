@@ -182,6 +182,27 @@ export const templates = pgTable(
   (table) => [index('templates_created_at_idx').on(table.createdAt)],
 )
 
+/** Библиотека фигур (геометрия/контур), без стилей/координат.
+ * Стиль (заливка/тень) и позиция хранятся в templates/presentation.content (slide.data.figures). */
+export const figures = pgTable(
+  'figures',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    kind: varchar('kind', { length: 50 }).notNull(), // rect | ellipse | polygon
+    geometry: jsonb('geometry')
+      .$type<
+        | { kind: 'rect'; rx?: number }
+        | { kind: 'ellipse'; cx?: number; cy?: number; rx?: number; ry?: number }
+        | { kind: 'polygon'; points: Array<[number, number]> }
+      >()
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('figures_created_at_idx').on(table.createdAt)],
+)
+
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
 export type User = typeof users.$inferSelect
@@ -201,3 +222,5 @@ export type UserSession = typeof userSessions.$inferSelect
 export type NewUserSession = typeof userSessions.$inferInsert
 export type TemplatePg = typeof templates.$inferSelect
 export type NewTemplatePg = typeof templates.$inferInsert
+export type FigurePg = typeof figures.$inferSelect
+export type NewFigurePg = typeof figures.$inferInsert
