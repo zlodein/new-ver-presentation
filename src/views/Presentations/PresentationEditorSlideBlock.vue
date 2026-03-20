@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { inject, onMounted, ref, watch } from 'vue'
 import type { SlideItem } from '@/types/presentationSlide'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
@@ -13,68 +13,10 @@ if (!pe) {
   throw new Error('PresentationEditorSlideBlock: отсутствует контекст редактора')
 }
 
-// --- Drag&Drop блока цены на обложке (в редакторе) ---
+// Цена на обложке в редакторе: не перемещается, но всегда выше остальных слоёв.
 const coverRootRef = ref<HTMLDivElement | null>(null)
 const priceBottomRef = ref<HTMLDivElement | null>(null)
-const priceFloatingMode = ref(false)
-const pricePlaceholderH = ref(0)
-const pricePlaceholderW = ref(0)
-const priceClamp = ref<{ minX: number; maxX: number; minY: number; maxY: number } | null>(null)
 const priceZIndex = ref<number>(20)
-
-const dragPriceState = ref<{
-  dragging: boolean
-  offsetX: number
-  offsetY: number
-  containerLeft: number
-  containerTop: number
-  containerW: number
-  containerH: number
-} | null>(null)
-
-const editorGridCfg = computed(() => {
-  const g = (slide.data as any)?.editorGrid
-  const enabled = Boolean(g?.enabled)
-  const snap = enabled && (g?.snap == null ? true : Boolean(g.snap))
-  const stepPct = Number.isFinite(Number(g?.stepPct)) ? Number(g.stepPct) : 5
-  return { enabled, snap, stepPct }
-})
-
-function isDragDisallowedTarget(target: EventTarget | null): boolean {
-  const el = target as HTMLElement | null
-  if (!el) return false
-  const tag = el.tagName?.toUpperCase?.() ?? ''
-  if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(tag)) return true
-  if (el.closest?.('[data-no-drag="1"]')) return true
-  return false
-}
-
-function getPricePos(): { xPct: number; yPct: number } | null {
-  const p = (slide.data as any)?.priceEditorPos
-  if (!p || typeof p !== 'object') return null
-  const xPct = Number((p as any).xPct)
-  const yPct = Number((p as any).yPct)
-  if (!Number.isFinite(xPct) || !Number.isFinite(yPct)) return null
-  return { xPct, yPct }
-}
-
-function setPricePos(next: { xPct: number; yPct: number }) {
-  if (!slide.data) slide.data = {} as any
-  ;(slide.data as any).priceEditorPos = { xPct: next.xPct, yPct: next.yPct }
-}
-
-const priceBottomFloatingStyle = computed(() => {
-  const pos = getPricePos()
-  if (!priceFloatingMode.value || !pos) return {}
-  return {
-    position: 'absolute',
-    left: `${pos.xPct}%`,
-    top: `${pos.yPct}%`,
-    transform: 'translate(-50%, -50%)',
-    width: pricePlaceholderW.value ? `${pricePlaceholderW.value}px` : 'auto',
-    zIndex: priceZIndex.value,
-  } as Record<string, string | number>
-})
 
 function zNum(v: string): number | null {
   if (!v || v === 'auto') return null
@@ -86,106 +28,44 @@ function computeMaxZ(container: Element): number {
   let max = 0
   const els = container.querySelectorAll<HTMLElement>('*')
   for (const el of els) {
-    if (priceBottomRef.value && el === priceBottomRef.value) continue
+    // Не учитываем z-index элементов внутри самого блока цены.
+    if (priceBottomRef.value && priceBottomRef.value.contains(el)) continue
     const z = zNum(getComputedStyle(el).zIndex)
     if (z != null) max = Math.max(max, z)
   }
   return max
 }
 
-function startPriceDragging(e: PointerEvent) {
-  if (!pe?.canEditImages) return
-  if (!priceFloatingMode.value) return
-  if (e.button != null && e.button !== 0) return
-  if (isDragDisallowedTarget(e.target)) return
-  if (!coverRootRef.value || !priceBottomRef.value) return
-
-  const containerRect = coverRootRef.value.getBoundingClientRect()
-  const bottomRect = priceBottomRef.value.getBoundingClientRect()
-
-  const centerX = bottomRect.left + bottomRect.width / 2
-  const centerY = bottomRect.top + bottomRect.height / 2
-
-  dragPriceState.value = {
-    dragging: true,
-    offsetX: e.clientX - centerX,
-    offsetY: e.clientY - centerY,
-    containerLeft: containerRect.left,
-    containerTop: containerRect.top,
-    containerW: containerRect.width || 1,
-    containerH: containerRect.height || 1,
-  }
-
-  window.addEventListener('pointermove', onPricePointerMove)
-  window.addEventListener('pointerup', onPricePointerUp, { once: true })
-}
-
-function onPricePointerMove(e: PointerEvent) {
-  const st = dragPriceState.value
-  if (!st?.dragging) return
-
-  let xPct = ((e.clientX - st.offsetX) - st.containerLeft) / st.containerW * 100
-  let yPct = ((e.clientY - st.offsetY) - st.containerTop) / st.containerH * 100
-
-  if (editorGridCfg.value.snap) {
-    const step = Math.max(1, Math.min(25, editorGridCfg.value.stepPct))
-    xPct = Math.round(xPct / step) * step
-    yPct = Math.round(yPct / step) * step
-  }
-
-  if (priceClamp.value) {
-    xPct = Math.max(priceClamp.value.minX, Math.min(priceClamp.value.maxX, xPct))
-    yPct = Math.max(priceClamp.value.minY, Math.min(priceClamp.value.maxY, yPct))
-  }
-
-  setPricePos({ xPct, yPct })
-}
-
-function onPricePointerUp() {
-  dragPriceState.value = null
-  window.removeEventListener('pointermove', onPricePointerMove)
-}
-
 onMounted(() => {
   if (!coverRootRef.value || !priceBottomRef.value) return
 
-  const containerRect = coverRootRef.value.getBoundingClientRect()
-  const bottomRect = priceBottomRef.value.getBoundingClientRect()
-
-  pricePlaceholderH.value = bottomRect.height
-  pricePlaceholderW.value = bottomRect.width
-
-  const minX = (bottomRect.width / 2) / (containerRect.width || 1) * 100
-  const minY = (bottomRect.height / 2) / (containerRect.height || 1) * 100
-  priceClamp.value = { minX, maxX: 100 - minX, minY, maxY: 100 - minY }
-
-  // Цена всегда должна быть выше любых "слоев" (карта/контент/холст/оверлеи).
   // Считаем максимальный z-index внутри контейнера и ставим цену как max + 1.
   const zContainer =
     coverRootRef.value.closest('.booklet-scale-root') ??
     coverRootRef.value.closest('.booklet-page') ??
     coverRootRef.value.parentElement
-  if (zContainer) {
+
+  if (!zContainer) return
+  const maxZ = computeMaxZ(zContainer)
+  priceZIndex.value = maxZ + 1
+})
+
+// Динамически поддерживаем "всегда сверху":
+// если пользователь двигает слои фигур (z-index), пересчитаем maxZ и цену как max + 1.
+watch(
+  () => (slide.data as any)?.figures,
+  () => {
+    if (!coverRootRef.value || !priceBottomRef.value) return
+    const zContainer =
+      coverRootRef.value.closest('.booklet-scale-root') ??
+      coverRootRef.value.closest('.booklet-page') ??
+      coverRootRef.value.parentElement
+    if (!zContainer) return
     const maxZ = computeMaxZ(zContainer)
     priceZIndex.value = maxZ + 1
-  }
-
-  if (!getPricePos()) {
-    const centerX = bottomRect.left + bottomRect.width / 2
-    const centerY = bottomRect.top + bottomRect.height / 2
-    const xPct = ((centerX - containerRect.left) / (containerRect.width || 1)) * 100
-    const yPct = ((centerY - containerRect.top) / (containerRect.height || 1)) * 100
-    setPricePos({ xPct, yPct })
-  }
-
-  priceFloatingMode.value = true
-})
-
-onBeforeUnmount(() => {
-  dragPriceState.value = null
-  window.removeEventListener('pointermove', onPricePointerMove)
-  window.removeEventListener('pointerup', onPricePointerUp as any)
-})
+  },
+  { deep: true }
+)
 </script>
 
 <template>
@@ -196,7 +76,7 @@ onBeforeUnmount(() => {
                       class="booklet-content booklet-main relative"
                     >
                       <div class="booklet-main__wrap">
-                        <div class="booklet-main__img relative z-[10]">
+                        <div class="booklet-main__img relative z-0">
                           <template v-if="pe.canEditImages">
                             <label class="booklet-upload-btn cursor-pointer">
                               <input
@@ -209,7 +89,7 @@ onBeforeUnmount(() => {
                           </template>
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
-                        <div class="booklet-main__content relative z-[10]">
+                        <div class="booklet-main__content relative z-0">
                           <div class="booklet-main__top">
                             <textarea
                               :value="String(slide.data?.title ?? '')"
@@ -229,15 +109,9 @@ onBeforeUnmount(() => {
                             />
                           </div>
                           <div
-                            v-if="priceFloatingMode"
-                            class="booklet-main__bottom editor-price-placeholder"
-                            :style="{ height: `${pricePlaceholderH}px`, width: `${pricePlaceholderW}px` }"
-                          />
-                          <div
                             ref="priceBottomRef"
-                            class="booklet-main__bottom"
-                            :style="priceBottomFloatingStyle"
-                            @pointerdown="startPriceDragging"
+                            class="booklet-main__bottom relative"
+                            :style="{ zIndex: priceZIndex }"
                           >
                             <div class="booklet-main__price-block flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs">
                               <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">

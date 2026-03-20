@@ -17,8 +17,6 @@ const emit = defineEmits<{
   (e: 'select', id: string | null): void
   (e: 'delete', id: string): void
   (e: 'layerMove', payload: { id: string; delta: number }): void
-  (e: 'layerToStart', id: string): void
-  (e: 'layerToEnd', id: string): void
 }>()
 
 const rootRef = ref<HTMLDivElement | null>(null)
@@ -52,7 +50,9 @@ const editorGridCfg = computed(() => {
 })
 
 const outerStyle = computed(() => {
-  const base: Record<string, string | number> = { position: 'absolute', inset: 0, zIndex: 9999, pointerEvents: 'none' }
+  // Важно: корневой оверлей не должен создавать отдельный "высокий" stacking context,
+  // иначе z-index фигур не будет сопоставляться с базовыми слоями страницы.
+  const base: Record<string, string | number> = { position: 'absolute', inset: 0, pointerEvents: 'none' }
   if (!editorGridCfg.value.enabled) return base
   const alpha = 0.18
   return {
@@ -785,17 +785,6 @@ function startGlobalListeners() {
           <button
             type="button"
             class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-            title="К концу"
-            aria-label="К концу"
-            @click.stop.prevent="emit('layerToEnd', inst.id)"
-          >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M7 7l10 10M17 7L7 17" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
             title="На перед"
             aria-label="На перед"
             @click.stop.prevent="emit('layerMove', { id: inst.id, delta: 1 })"
@@ -824,17 +813,6 @@ function startGlobalListeners() {
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6-6 6 6M6 9l6 6 6-6" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-            title="К началу"
-            aria-label="К началу"
-            @click.stop.prevent="emit('layerToStart', inst.id)"
-          >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M7 7l10 10M7 17L17 7" />
             </svg>
           </button>
         </div>

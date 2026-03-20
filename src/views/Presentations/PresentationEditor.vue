@@ -659,8 +659,6 @@
                         @select="selectedFigureInstanceId = $event"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
-                        @layerToStart="onFigureLayerToStart"
-                        @layerToEnd="onFigureLayerToEnd"
                       />
                     </div>
                   </div>
@@ -717,8 +715,6 @@
                         @select="selectedFigureInstanceId = $event"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
-                        @layerToStart="onFigureLayerToStart"
-                        @layerToEnd="onFigureLayerToEnd"
                       />
                     </div>
                   </div>
@@ -1833,22 +1829,21 @@ function onFigureLayerMove(payload: { id: string; delta: number }) {
   if (!id || !Number.isFinite(delta) || delta === 0) return
   const found = findSlideFiguresByInstanceId(id)
   if (!found) return
+  const inst = found.figures.find((x) => x && x.id === id)
+  if (!inst) return
 
-  const ordered = [...found.figures].sort((a, b) => zNum(a.z) - zNum(b.z))
-  const idx = ordered.findIndex((x) => x?.id === id)
-  if (idx < 0) return
+  const oldZ = zNum(inst.z)
+  const targetZ = oldZ + delta
 
-  const targetIdx = idx + delta
-  if (targetIdx < 0 || targetIdx >= ordered.length) return
+  // Если на целевом z-index уже стоит другая фигура, меняем z местами,
+  // чтобы "На перед/На зад" выглядело как сдвиг на 1 слой.
+  const other = found.figures.find((x) => x && x.id !== id && zNum(x.z) === targetZ)
+  if (other) other.z = oldZ
+  inst.z = targetZ
 
-  const newOrder = [...ordered]
-  const tmp = newOrder[idx]
-  newOrder[idx] = newOrder[targetIdx]
-  newOrder[targetIdx] = tmp
-
-  newOrder.forEach((inst, zi) => { inst.z = zi })
+  // Переустановить массив для реактивности.
   found.slide.data = found.slide.data ?? {}
-  ;(found.slide.data as any).figures = [...newOrder]
+  ;(found.slide.data as any).figures = [...found.figures]
 }
 
 function onFigureLayerToStart(id: string) {
