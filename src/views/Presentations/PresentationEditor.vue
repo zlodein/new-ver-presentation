@@ -658,6 +658,9 @@
                         :enabled="canEditFigures && slide.id === currentSlide?.id"
                         @select="selectedFigureInstanceId = $event"
                         @delete="deleteFigureInstance"
+                        @layerMove="onFigureLayerMove"
+                        @layerToStart="onFigureLayerToStart"
+                        @layerToEnd="onFigureLayerToEnd"
                       />
                     </div>
                   </div>
@@ -713,6 +716,9 @@
                         :enabled="canEditFigures && slide.id === currentSlide?.id"
                         @select="selectedFigureInstanceId = $event"
                         @delete="deleteFigureInstance"
+                        @layerMove="onFigureLayerMove"
+                        @layerToStart="onFigureLayerToStart"
+                        @layerToEnd="onFigureLayerToEnd"
                       />
                     </div>
                   </div>
@@ -1800,6 +1806,83 @@ function deleteFigureInstance(instanceId: string) {
     break
   }
   selectedFigureInstanceId.value = null
+}
+
+function zNum(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function findSlideFiguresByInstanceId(instanceId: string): { slide: SlideItem; figures: any[] } | null {
+  for (const s of slides.value) {
+    const figures = (s.data as any)?.figures
+    if (!Array.isArray(figures)) continue
+    if (figures.some((x) => x && x.id === instanceId)) return { slide: s, figures }
+  }
+  return null
+}
+
+function normalizeFigureZOrder(figures: any[], newOrder: any[]) {
+  newOrder.forEach((inst, idx) => { inst.z = idx })
+  // Важно: переустановить массив.
+  ;(figures as any[]) = newOrder
+}
+
+function onFigureLayerMove(payload: { id: string; delta: number }) {
+  const { id, delta } = payload ?? {}
+  if (!id || !Number.isFinite(delta) || delta === 0) return
+  const found = findSlideFiguresByInstanceId(id)
+  if (!found) return
+
+  const ordered = [...found.figures].sort((a, b) => zNum(a.z) - zNum(b.z))
+  const idx = ordered.findIndex((x) => x?.id === id)
+  if (idx < 0) return
+
+  const targetIdx = idx + delta
+  if (targetIdx < 0 || targetIdx >= ordered.length) return
+
+  const newOrder = [...ordered]
+  const tmp = newOrder[idx]
+  newOrder[idx] = newOrder[targetIdx]
+  newOrder[targetIdx] = tmp
+
+  newOrder.forEach((inst, zi) => { inst.z = zi })
+  found.slide.data = found.slide.data ?? {}
+  ;(found.slide.data as any).figures = [...newOrder]
+}
+
+function onFigureLayerToStart(id: string) {
+  if (!id) return
+  const found = findSlideFiguresByInstanceId(id)
+  if (!found) return
+
+  const ordered = [...found.figures].sort((a, b) => zNum(a.z) - zNum(b.z))
+  const idx = ordered.findIndex((x) => x?.id === id)
+  if (idx < 0) return
+
+  const inst = ordered[idx]
+  const rest = [...ordered.slice(0, idx), ...ordered.slice(idx + 1)]
+  const newOrder = [inst, ...rest]
+
+  newOrder.forEach((i, zi) => { i.z = zi })
+  ;(found.slide.data as any).figures = [...newOrder]
+}
+
+function onFigureLayerToEnd(id: string) {
+  if (!id) return
+  const found = findSlideFiguresByInstanceId(id)
+  if (!found) return
+
+  const ordered = [...found.figures].sort((a, b) => zNum(a.z) - zNum(b.z))
+  const idx = ordered.findIndex((x) => x?.id === id)
+  if (idx < 0) return
+
+  const inst = ordered[idx]
+  const rest = [...ordered.slice(0, idx), ...ordered.slice(idx + 1)]
+  const newOrder = [...rest, inst]
+
+  newOrder.forEach((i, zi) => { i.z = zi })
+  ;(found.slide.data as any).figures = [...newOrder]
 }
 
 /** Номер текущего слайда среди видимых (1-based для отображения) */

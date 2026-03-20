@@ -16,6 +16,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select', id: string | null): void
   (e: 'delete', id: string): void
+  (e: 'layerMove', payload: { id: string; delta: number }): void
+  (e: 'layerToStart', id: string): void
+  (e: 'layerToEnd', id: string): void
 }>()
 
 const rootRef = ref<HTMLDivElement | null>(null)
@@ -777,18 +780,64 @@ function startGlobalListeners() {
           style="pointer-events: none;"
         />
 
-        <!-- Trash icon: удаление фигуры рядом с ней -->
-        <button
-          type="button"
-          class="absolute right-1 top-1 z-[3] inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
-          style="pointer-events: auto;"
-          aria-label="Удалить фигуру"
-          @click.stop.prevent="emit('delete', inst.id)"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
+        <!-- Layer controls + Trash (рядом с фигурой) -->
+        <div class="absolute right-1 top-1 z-[3] flex flex-col gap-1" style="pointer-events: auto;">
+          <button
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+            title="К концу"
+            aria-label="К концу"
+            @click.stop.prevent="emit('layerToEnd', inst.id)"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 7l10 10M17 7L7 17" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+            title="На перед"
+            aria-label="На перед"
+            @click.stop.prevent="emit('layerMove', { id: inst.id, delta: 1 })"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6 6 6-6M6 9l6-6 6 6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
+            title="Удалить"
+            aria-label="Удалить фигуру"
+            @click.stop.prevent="emit('delete', inst.id)"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+            title="На зад"
+            aria-label="На зад"
+            @click.stop.prevent="emit('layerMove', { id: inst.id, delta: -1 })"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6-6 6 6M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+            title="К началу"
+            aria-label="К началу"
+            @click.stop.prevent="emit('layerToStart', inst.id)"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 7l10 10M7 17L17 7" />
+            </svg>
+          </button>
+        </div>
 
         <!-- Rotation handle (PowerPoint style) -->
         <div

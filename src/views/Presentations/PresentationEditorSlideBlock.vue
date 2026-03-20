@@ -20,6 +20,7 @@ const priceFloatingMode = ref(false)
 const pricePlaceholderH = ref(0)
 const pricePlaceholderW = ref(0)
 const priceClamp = ref<{ minX: number; maxX: number; minY: number; maxY: number } | null>(null)
+const priceZIndex = ref<number>(20)
 
 const dragPriceState = ref<{
   dragging: boolean
@@ -71,9 +72,26 @@ const priceBottomFloatingStyle = computed(() => {
     top: `${pos.yPct}%`,
     transform: 'translate(-50%, -50%)',
     width: pricePlaceholderW.value ? `${pricePlaceholderW.value}px` : 'auto',
-    zIndex: 20,
+    zIndex: priceZIndex.value,
   } as Record<string, string | number>
 })
+
+function zNum(v: string): number | null {
+  if (!v || v === 'auto') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+function computeMaxZ(container: Element): number {
+  let max = 0
+  const els = container.querySelectorAll<HTMLElement>('*')
+  for (const el of els) {
+    if (priceBottomRef.value && el === priceBottomRef.value) continue
+    const z = zNum(getComputedStyle(el).zIndex)
+    if (z != null) max = Math.max(max, z)
+  }
+  return max
+}
 
 function startPriceDragging(e: PointerEvent) {
   if (!pe?.canEditImages) return
@@ -141,6 +159,17 @@ onMounted(() => {
   const minY = (bottomRect.height / 2) / (containerRect.height || 1) * 100
   priceClamp.value = { minX, maxX: 100 - minX, minY, maxY: 100 - minY }
 
+  // Цена всегда должна быть выше любых "слоев" (карта/контент/холст/оверлеи).
+  // Считаем максимальный z-index внутри контейнера и ставим цену как max + 1.
+  const zContainer =
+    coverRootRef.value.closest('.booklet-scale-root') ??
+    coverRootRef.value.closest('.booklet-page') ??
+    coverRootRef.value.parentElement
+  if (zContainer) {
+    const maxZ = computeMaxZ(zContainer)
+    priceZIndex.value = maxZ + 1
+  }
+
   if (!getPricePos()) {
     const centerX = bottomRect.left + bottomRect.width / 2
     const centerY = bottomRect.top + bottomRect.height / 2
@@ -164,10 +193,10 @@ onBeforeUnmount(() => {
                     <div
                       v-if="slide.type === 'cover'"
                       ref="coverRootRef"
-                      class="booklet-content booklet-main"
+                      class="booklet-content booklet-main relative"
                     >
                       <div class="booklet-main__wrap">
-                        <div class="booklet-main__img">
+                        <div class="booklet-main__img relative z-[10]">
                           <template v-if="pe.canEditImages">
                             <label class="booklet-upload-btn cursor-pointer">
                               <input
@@ -180,7 +209,7 @@ onBeforeUnmount(() => {
                           </template>
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
-                        <div class="booklet-main__content">
+                        <div class="booklet-main__content relative z-[10]">
                           <div class="booklet-main__top">
                             <textarea
                               :value="String(slide.data?.title ?? '')"

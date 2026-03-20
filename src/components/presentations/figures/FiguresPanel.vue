@@ -474,26 +474,6 @@ function setShadowOpacity(v: number) {
           </div>
           <!-- Быстрые иконки: цвет, слои, тень -->
           <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
-              title="На зад"
-              @click="moveLayer(-1)"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6-6 6 6M6 15l6 6 6-6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
-              title="На перед"
-              @click="moveLayer(1)"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6 6 6-6M6 9l6-6 6 6" />
-              </svg>
-            </button>
             <label class="inline-flex items-center gap-1.5">
               <input
                 type="checkbox"
@@ -627,16 +607,6 @@ function setShadowOpacity(v: number) {
             <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Вращение</label>
             <input type="range" min="0" max="360" step="1" :value="Number(selectedInstance.rotation ?? 0)" class="w-full" @input="setRotation(Number(($event.target as HTMLInputElement).value))" />
             <div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{{ Number(selectedInstance.rotation ?? 0) }} deg</div>
-          </div>
-
-          <div class="pt-2">
-            <div class="mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Слои</div>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" class="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @click="moveLayer(-1)">На зад</button>
-              <button type="button" class="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @click="moveLayer(1)">На перед</button>
-              <button type="button" class="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @click="sendToBack">К началу</button>
-              <button type="button" class="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @click="bringToFront">К концу</button>
-            </div>
           </div>
 
           <div class="pt-2">
