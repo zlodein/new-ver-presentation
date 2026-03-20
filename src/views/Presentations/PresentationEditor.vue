@@ -2757,10 +2757,26 @@ async function deleteSlidesGroupTemplate(templateId: string) {
 function toggleAdminSlideSelected(slideId: string) {
   if (!adminSlidesSelectionUIEnabled.value) return
   const list = adminSlidesSelectionIds.value
+  const wasSelected = list.includes(slideId)
   const idx = list.indexOf(slideId)
   if (idx >= 0) list.splice(idx, 1)
   else list.push(slideId)
   adminSlidesSelectionIds.value = list
+
+  // В админ-режиме "выбор галочками" пользователь ожидает, что
+  // редактирование (в т.ч. добавление фигур) пойдет на отмеченный слайд.
+  if (!wasSelected) {
+    const fullIdx = slides.value.findIndex((s) => s.id === slideId)
+    if (fullIdx >= 0) nextTick(() => goToSlide(fullIdx))
+    return
+  }
+
+  // Если сняли отметку с активного, переключаемся на последний оставшийся.
+  if (wasSelected && adminSlidesSelectionIds.value.length) {
+    const nextId = adminSlidesSelectionIds.value[adminSlidesSelectionIds.value.length - 1]
+    const fullIdx = slides.value.findIndex((s) => s.id === nextId)
+    if (fullIdx >= 0) nextTick(() => goToSlide(fullIdx))
+  }
 }
 
 function setAdminSlidesSelectionToAll() {

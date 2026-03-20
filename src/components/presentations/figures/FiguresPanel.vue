@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { FigureDefinition, FigureInstance } from '@/types/figures'
 import type { SlideItem } from '@/types/presentationSlide'
 
@@ -26,7 +26,7 @@ function geometryKind(figureId: string): string {
 }
 
 function isLineLikeKind(kind: string): boolean {
-  return ['line', 'connector', 'polyline', 'scribble', 'path'].includes(kind)
+  return ['line', 'connector', 'polyline', 'scribble'].includes(kind)
 }
 
 function figureCategory(f: FigureDefinition): string {
@@ -78,6 +78,15 @@ const selectedInstance = computed<FigureInstance | null>(() => {
   return arr.find((x) => x.id === id) ?? null
 })
 
+// Если выбрали фигуру — раскрываем панель, чтобы были доступны действия (удаление/слои/тень/цвет).
+watch(
+  selectedInstance,
+  (v) => {
+    if (v) open.value = true
+  },
+  { immediate: true },
+)
+
 function genId(): string {
   const c = (globalThis as any).crypto
   if (c?.randomUUID && typeof c.randomUUID === 'function') return c.randomUUID()
@@ -108,7 +117,14 @@ function addFigure(figureId: string) {
     z: maxZ() + 1,
     style: {
       fill: lineLike ? { type: 'none' } : { type: 'solid', color: '#2563eb' },
-      stroke: { enabled: true, color: '#111827', width: 2, dash: 'solid', linecap: 'round', linejoin: 'miter' },
+      stroke: {
+        enabled: lineLike,
+        color: '#2563eb',
+        width: 2,
+        dash: 'solid',
+        linecap: 'round',
+        linejoin: 'miter',
+      },
       shadow: { enabled: false, color: '#000000', blur: 6, offsetX: 2, offsetY: 2, opacity: 0.25 },
     },
   }
@@ -132,7 +148,16 @@ function ensureSelectedStyle(): { fill: any; stroke: any; shadow: any } | null {
   if (!s.style || typeof s.style !== 'object') s.style = { fill: { type: 'solid', color: '#000' } } as any
   if (!s.style.fill || typeof s.style.fill !== 'object') (s.style as any).fill = { type: 'solid', color: '#000' }
   if (!s.style.stroke || typeof s.style.stroke !== 'object') {
-    ;(s.style as any).stroke = { enabled: true, color: '#111827', width: 2, dash: 'solid', linecap: 'round', linejoin: 'miter' }
+    const kind = geometryKind(s.figureId)
+    const lineLike = isLineLikeKind(kind)
+    ;(s.style as any).stroke = {
+      enabled: lineLike,
+      color: '#2563eb',
+      width: 2,
+      dash: 'solid',
+      linecap: 'round',
+      linejoin: 'miter',
+    }
   }
   if (!s.style.shadow || typeof s.style.shadow !== 'object') {
     ;(s.style as any).shadow = { enabled: false, color: '#000000', blur: 6, offsetX: 2, offsetY: 2, opacity: 0.25 }
