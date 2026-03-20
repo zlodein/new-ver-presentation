@@ -78,6 +78,41 @@ const selectedInstance = computed<FigureInstance | null>(() => {
   return arr.find((x) => x.id === id) ?? null
 })
 
+const editorGrid = computed(() => {
+  const g = (props.slide.data as any)?.editorGrid
+  const enabled = Boolean(g?.enabled)
+  const rawStep = g?.stepPct == null ? 5 : Number(g.stepPct)
+  const stepPct = Number.isFinite(rawStep) ? Math.min(25, Math.max(1, rawStep)) : 5
+  const snap = enabled ? (g?.snap == null ? true : Boolean(g.snap)) : false
+  return { enabled, stepPct, snap }
+})
+
+function setEditorGridEnabled(enabled: boolean) {
+  if (!props.enabled) return
+  if (!props.slide.data) props.slide.data = {} as any
+  const d = props.slide.data as any
+  if (!d.editorGrid || typeof d.editorGrid !== 'object') d.editorGrid = {}
+  d.editorGrid.enabled = enabled
+  if (!enabled) d.editorGrid.snap = false
+}
+
+function setEditorGridStepPct(stepPct: number) {
+  if (!props.enabled) return
+  if (!props.slide.data) props.slide.data = {} as any
+  const d = props.slide.data as any
+  if (!d.editorGrid || typeof d.editorGrid !== 'object') d.editorGrid = {}
+  d.editorGrid.stepPct = Math.min(25, Math.max(1, stepPct))
+}
+
+function setEditorGridSnap(snap: boolean) {
+  if (!props.enabled) return
+  if (!props.slide.data) props.slide.data = {} as any
+  const d = props.slide.data as any
+  if (!d.editorGrid || typeof d.editorGrid !== 'object') d.editorGrid = {}
+  d.editorGrid.snap = snap
+  if (snap) d.editorGrid.enabled = true
+}
+
 function starPolygonPoints(points: number, innerRatio: number | undefined): string {
   const p = Number.isFinite(points) ? Math.max(2, Math.floor(points)) : 5
   const inner = innerRatio == null ? 0.5 : innerRatio
@@ -113,10 +148,15 @@ function genId(): string {
   return `fi_${Date.now()}_${Math.random().toString(16).slice(2)}`
 }
 
+function zNum(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
 function maxZ(): number {
   const arr = ensureFiguresArray()
   let m = -Infinity
-  for (const i of arr) m = Math.max(m, typeof i.z === 'number' ? i.z : 0)
+  for (const i of arr) m = Math.max(m, zNum(i.z))
   return m === -Infinity ? 0 : m
 }
 
@@ -283,7 +323,7 @@ function setRotation(deg: number) {
 
 function normalizeZ() {
   const arr = ensureFiguresArray()
-  const sorted = [...arr].sort((a, b) => (a.z ?? 0) - (b.z ?? 0))
+  const sorted = [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
   sorted.forEach((inst, idx) => { inst.z = idx })
 }
 
@@ -292,7 +332,7 @@ function bringToFront() {
   const s = selectedInstance.value
   if (!s) return
   const arr = ensureFiguresArray()
-  const max = Math.max(...arr.map((i) => (i.z ?? 0)))
+  const max = arr.length ? Math.max(...arr.map((i) => zNum(i.z))) : 0
   s.z = max + 1
   normalizeZ()
 }
@@ -302,7 +342,7 @@ function sendToBack() {
   const s = selectedInstance.value
   if (!s) return
   const arr = ensureFiguresArray()
-  const min = Math.min(...arr.map((i) => (i.z ?? 0)))
+  const min = arr.length ? Math.min(...arr.map((i) => zNum(i.z))) : 0
   s.z = min - 1
   normalizeZ()
 }
@@ -312,7 +352,7 @@ function moveLayer(delta: number) {
   const s = selectedInstance.value
   if (!s) return
   const arr = ensureFiguresArray()
-  const sorted = [...arr].sort((a, b) => (a.z ?? 0) - (b.z ?? 0))
+  const sorted = [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
   const idx = sorted.findIndex((x) => x.id === s.id)
   if (idx < 0) return
   const target = sorted[idx + delta]
@@ -384,19 +424,94 @@ function setShadowOpacity(v: number) {
     </button>
 
     <div v-if="open" class="mt-3">
+      <!-- Сетка и снап: настраиваются на уровне текущего слайда -->
+      <div class="mb-3 rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-900/30">
+        <div class="flex items-center justify-between gap-3">
+          <label class="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              class="rounded border-gray-300 text-brand-600"
+              :checked="editorGrid.enabled"
+              @change="setEditorGridEnabled(($event.target as HTMLInputElement).checked)"
+            />
+            Сетка
+          </label>
+          <div class="flex items-center gap-2">
+            <select
+              class="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              :disabled="!editorGrid.enabled"
+              :value="editorGrid.stepPct"
+              @change="setEditorGridStepPct(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option :value="2">2%</option>
+              <option :value="5">5%</option>
+              <option :value="10">10%</option>
+              <option :value="20">20%</option>
+            </select>
+          </div>
+        </div>
+        <label class="mt-1 flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 select-none">
+          <input
+            type="checkbox"
+            class="rounded border-gray-300 text-brand-600"
+            :checked="editorGrid.snap"
+            :disabled="!editorGrid.enabled"
+            @change="setEditorGridSnap(($event.target as HTMLInputElement).checked)"
+          />
+          Снап по сетке
+        </label>
+      </div>
+
       <div v-if="selectedInstance" class="sticky top-0 z-20 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
         <div class="flex items-center justify-between gap-2">
           <div class="min-w-0">
             <div class="truncate text-sm font-semibold text-gray-800 dark:text-gray-200">{{ selectedInstance.figureId }}</div>
             <div class="text-xs text-gray-500 dark:text-gray-400">Настройки фигуры</div>
           </div>
-          <button
-            type="button"
-            class="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
-            @click="removeSelected"
-          >
-            Удалить
-          </button>
+          <!-- Быстрые иконки: цвет, слои, тень -->
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+              title="На зад"
+              @click="moveLayer(-1)"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6-6 6 6M6 15l6 6 6-6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+              title="На перед"
+              @click="moveLayer(1)"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6 6 6-6M6 9l6-6 6 6" />
+              </svg>
+            </button>
+            <label class="inline-flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                class="rounded border-gray-300 text-brand-600"
+                :checked="Boolean((selectedInstance.style as any)?.shadow?.enabled)"
+                @change="setShadowEnabled(($event.target as HTMLInputElement).checked)"
+                title="Тень"
+              />
+              <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <svg class="h-4 w-4 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3" />
+                </svg>
+              </span>
+            </label>
+            <input
+              type="color"
+              :value="(selectedInstance.style as any)?.fill?.color ?? '#2563eb'"
+              class="h-7 w-7 cursor-pointer rounded border border-gray-200 bg-white p-0 dark:border-gray-700"
+              title="Цвет (быстро)"
+              @input="setSolidColor(($event.target as HTMLInputElement).value)"
+            />
+          </div>
         </div>
 
         <div class="mt-3 space-y-2">

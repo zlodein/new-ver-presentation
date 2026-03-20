@@ -377,6 +377,15 @@
                 >
                   Назад к выбору
                 </button>
+
+                <button
+                  type="button"
+                  class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="slides.length === 0"
+                  @click.stop="clearAdminSlidesGroupEditorData"
+                >
+                  Очистить всё (пустой шаблон)
+                </button>
               </div>
             </div>
           </template>
@@ -648,6 +657,7 @@
                         :selectedInstanceId="selectedFigureInstanceId"
                         :enabled="canEditFigures && slide.id === currentSlide?.id"
                         @select="selectedFigureInstanceId = $event"
+                        @delete="deleteFigureInstance"
                       />
                     </div>
                   </div>
@@ -702,6 +712,7 @@
                         :selectedInstanceId="selectedFigureInstanceId"
                         :enabled="canEditFigures && slide.id === currentSlide?.id"
                         @select="selectedFigureInstanceId = $event"
+                        @delete="deleteFigureInstance"
                       />
                     </div>
                   </div>
@@ -1775,6 +1786,22 @@ watch(
   { immediate: true },
 )
 
+function deleteFigureInstance(instanceId: string) {
+  if (!instanceId) return
+  // Удаляем из того слайда, где реально лежит фигура.
+  for (const s of slides.value) {
+    const data = s.data as any
+    if (!data || !Array.isArray(data.figures)) continue
+    const idx = data.figures.findIndex((x: any) => x && x.id === instanceId)
+    if (idx < 0) continue
+    data.figures.splice(idx, 1)
+    // Переустанавливаем массив для реактивности.
+    data.figures = [...data.figures]
+    break
+  }
+  selectedFigureInstanceId.value = null
+}
+
 /** Номер текущего слайда среди видимых (1-based для отображения) */
 const visibleSlideNumber = computed(() => {
   const current = slides.value[activeSlideIndex.value]
@@ -2819,6 +2846,17 @@ function exitAdminSlidesGroupEditorToSelection() {
 
   adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
   activeSlideIndex.value = 0
+}
+
+function clearAdminSlidesGroupEditorData() {
+  if (!adminSlidesGroupEditorMode.value || adminSlidesTemplatePreviewMode.value) return
+  if (!confirm('Очистить все заполненные данные на выбранных слайдах? Шаблон станет пустым.')) return
+
+  for (const s of slides.value) {
+    // Обнуляем content по типу слайда.
+    s.data = getDefaultDataForType(s.type)
+  }
+  selectedFigureInstanceId.value = null
 }
 
 /** Тип «о себе» из настроек профиля: none | about | position */

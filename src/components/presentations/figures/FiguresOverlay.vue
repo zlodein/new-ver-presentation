@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select', id: string | null): void
+  (e: 'delete', id: string): void
 }>()
 
 const rootRef = ref<HTMLDivElement | null>(null)
@@ -33,6 +34,31 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n))
 }
 
+function zNum(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+const editorGridCfg = computed(() => {
+  const g = (props.slide.data as any)?.editorGrid
+  const enabled = Boolean(g?.enabled)
+  const stepPctRaw = g?.stepPct == null ? 5 : Number(g.stepPct)
+  const stepPct = clamp(stepPctRaw, 1, 25)
+  const snap = enabled && (g?.snap == null ? true : Boolean(g.snap))
+  return { enabled, stepPct, snap }
+})
+
+const outerStyle = computed(() => {
+  const base: Record<string, string | number> = { position: 'absolute', inset: 0, zIndex: 9999, pointerEvents: 'none' }
+  if (!editorGridCfg.value.enabled) return base
+  const alpha = 0.18
+  return {
+    ...base,
+    backgroundImage: `linear-gradient(to right, rgba(37,99,235,${alpha}) 1px, transparent 1px), linear-gradient(to bottom, rgba(37,99,235,${alpha}) 1px, transparent 1px)`,
+    backgroundSize: `${editorGridCfg.value.stepPct}% ${editorGridCfg.value.stepPct}%`,
+  }
+})
+
 function selectedInstance(): FigureInstance | null {
   if (!props.selectedInstanceId) return null
   return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
@@ -40,7 +66,7 @@ function selectedInstance(): FigureInstance | null {
 
 function maxZ(): number {
   let m = -Infinity
-  for (const i of instances.value) m = Math.max(m, typeof i.z === 'number' ? i.z : 0)
+  for (const i of instances.value) m = Math.max(m, zNum(i.z))
   return m === -Infinity ? 0 : m
 }
 
@@ -116,13 +142,36 @@ function angleRad(x1: number, y1: number, x2: number, y2: number): number {
 
 function arrowHeadPointsEnd(inst: FigureInstance, x1: number, y1: number, x2: number, y2: number): string {
   const a = angleRad(x1, y1, x2, y2)
-  return arrowHeadPoints(x2, y2, a, headLenFor(inst), headWidthFor(inst))
+  const w = strokeWidthFor(inst)
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const len = Math.hypot(dx, dy)
+  if (len <= 1e-6 || !w) return arrowHeadPoints(x2, y2, a, headLenFor(inst), headWidthFor(inst))
+
+  // Учитываем round linecap: визуальная “точка” конца смещается на ~w/2.
+  // Сдвигаем наконечник стрелки внутрь вдоль направления линии.
+  const ux = dx / len
+  const uy = dy / len
+  const tipX = x2 - ux * (w / 2)
+  const tipY = y2 - uy * (w / 2)
+  return arrowHeadPoints(tipX, tipY, a, headLenFor(inst), headWidthFor(inst))
 }
 
 function arrowHeadPointsStart(inst: FigureInstance, x1: number, y1: number, x2: number, y2: number): string {
   // Стартовая стрелка рисуется "на начало", т.е. направление x1<-x2 (инверсия).
   const a = angleRad(x2, y2, x1, y1)
-  return arrowHeadPoints(x1, y1, a, headLenFor(inst), headWidthFor(inst))
+  const w = strokeWidthFor(inst)
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const len = Math.hypot(dx, dy)
+  if (len <= 1e-6 || !w) return arrowHeadPoints(x1, y1, a, headLenFor(inst), headWidthFor(inst))
+
+  // Аналогично сдвиг внутрь относительно round linecap.
+  const ux = dx / len
+  const uy = dy / len
+  const tipX = x1 - ux * (w / 2)
+  const tipY = y1 - uy * (w / 2)
+  return arrowHeadPoints(tipX, tipY, a, headLenFor(inst), headWidthFor(inst))
 }
 
 function rectRx(def?: FigureDefinition): number {
@@ -247,7 +296,11 @@ function curvedConnectorPathD(inst: FigureInstance): string {
   return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
 }
 
-type DragMode = { mode: 'move'; instance: FigureInstance } | { mode: 'resize'; instance: FigureInstance; handle: 'tl' | 'tr' | 'bl' | 'br' } | null
+type DragMode =
+  | { mode: 'move'; instance: FigureInstance }
+  | { mode: 'resize'; instance: FigureInstance; handle: 'tl' | 'tr' | 'bl' | 'br' }
+  | { mode: 'rotate'; instance: FigureInstance }
+  | null
 const drag = reactive({
   mode: null as DragMode,
   startClientX: 0,
@@ -258,6 +311,10 @@ const drag = reactive({
   startY: 0,
   startW: 0,
   startH: 0,
+  startRotation: 0,
+  startAngleDeg: 0,
+  centerClientX: 0,
+  centerClientY: 0,
 })
 
 function bringToFront(instance: FigureInstance) {
@@ -307,8 +364,53 @@ function beginResize(instance: FigureInstance, handle: 'tl' | 'tr' | 'bl' | 'br'
   startGlobalListeners()
 }
 
+function pointerAngleDeg(cx: number, cy: number, px: number, py: number): number {
+  const dx = px - cx
+  const dy = py - cy
+  return (Math.atan2(dy, dx) * 180) / Math.PI
+}
+
+function beginRotate(instance: FigureInstance, e: PointerEvent) {
+  if (!props.enabled) return
+  bringToFront(instance)
+  emit('select', instance.id)
+
+  const rect = rootRef.value?.getBoundingClientRect()
+  if (!rect) return
+
+  const instX = Number(instance.x ?? 0)
+  const instY = Number(instance.y ?? 0)
+  const instW = Number(instance.w ?? 0)
+  const instH = Number(instance.h ?? 0)
+
+  // Центр фигуры в координатах окна (client).
+  const centerClientX = rect.left + ((instX + instW / 2) / 100) * rect.width
+  const centerClientY = rect.top + ((instY + instH / 2) / 100) * rect.height
+
+  const startAngleDeg = pointerAngleDeg(centerClientX, centerClientY, e.clientX, e.clientY)
+
+  drag.mode = { mode: 'rotate', instance }
+  drag.centerClientX = centerClientX
+  drag.centerClientY = centerClientY
+  drag.startRotation = Number(instance.rotation ?? 0)
+  drag.startAngleDeg = startAngleDeg
+
+  startGlobalListeners()
+}
+
 function onPointerMove(e: PointerEvent) {
   if (!drag.mode) return
+
+  if (drag.mode.mode === 'rotate') {
+    const inst = drag.mode.instance
+    const currentAngleDeg = pointerAngleDeg(drag.centerClientX, drag.centerClientY, e.clientX, e.clientY)
+
+    let next = drag.startRotation + (currentAngleDeg - drag.startAngleDeg)
+    // Нормализуем 0..360
+    next = ((next % 360) + 360) % 360
+    inst.rotation = next
+    return
+  }
 
   const dxPct = ((e.clientX - drag.startClientX) / drag.rectW) * 100
   const dyPct = ((e.clientY - drag.startClientY) / drag.rectH) * 100
@@ -317,8 +419,17 @@ function onPointerMove(e: PointerEvent) {
   const MIN = 2
 
   if (drag.mode.mode === 'move') {
-    const newX = clamp(drag.startX + dxPct, 0, 100 - drag.startW)
-    const newY = clamp(drag.startY + dyPct, 0, 100 - drag.startH)
+    let newX = clamp(drag.startX + dxPct, 0, 100 - drag.startW)
+    let newY = clamp(drag.startY + dyPct, 0, 100 - drag.startH)
+
+    if (editorGridCfg.value.snap) {
+      const step = editorGridCfg.value.stepPct
+      newX = Math.round(newX / step) * step
+      newY = Math.round(newY / step) * step
+      newX = clamp(newX, 0, 100 - drag.startW)
+      newY = clamp(newY, 0, 100 - drag.startH)
+    }
+
     inst.x = newX
     inst.y = newY
     return
@@ -351,6 +462,14 @@ function onPointerMove(e: PointerEvent) {
       newW = drag.startW + dxPct
       newH = drag.startH + dyPct
       break
+  }
+
+  if (editorGridCfg.value.snap) {
+    const step = editorGridCfg.value.stepPct
+    newX = Math.round(newX / step) * step
+    newY = Math.round(newY / step) * step
+    newW = Math.round(newW / step) * step
+    newH = Math.round(newH / step) * step
   }
 
   newW = clamp(newW, MIN, 100)
@@ -386,7 +505,7 @@ function startGlobalListeners() {
   <div
     ref="rootRef"
     class="figures-overlay-root"
-    style="position: absolute; inset: 0; pointer-events: none; z-index: 9999;"
+    :style="outerStyle"
   >
     <div
       v-for="inst in instances"
@@ -397,7 +516,7 @@ function startGlobalListeners() {
         top: `${inst.y}%`,
         width: `${inst.w}%`,
         height: `${inst.h}%`,
-        zIndex: inst.z ?? 0,
+        zIndex: zNum(inst.z),
         pointerEvents: enabled ? 'auto' : 'none',
       }"
       @pointerdown.stop.prevent="beginMove(inst, $event)"
@@ -656,6 +775,26 @@ function startGlobalListeners() {
         <div
           class="absolute inset-0 rounded border-2 border-brand-500/90 bg-transparent"
           style="pointer-events: none;"
+        />
+
+        <!-- Trash icon: удаление фигуры рядом с ней -->
+        <button
+          type="button"
+          class="absolute right-1 top-1 z-[3] inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
+          style="pointer-events: auto;"
+          aria-label="Удалить фигуру"
+          @click.stop.prevent="emit('delete', inst.id)"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+
+        <!-- Rotation handle (PowerPoint style) -->
+        <div
+          class="absolute left-1/2 -top-[18px] z-[3] h-[10px] w-[10px] -translate-x-1/2 cursor-grab rounded-full border border-brand-500 bg-white shadow-theme-xs"
+          style="pointer-events: auto;"
+          @pointerdown.stop.prevent="beginRotate(inst, $event)"
         />
 
         <!-- TL -->
