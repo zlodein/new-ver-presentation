@@ -1834,9 +1834,9 @@ function onFigureLayerMove(payload: { id: string; delta: number }) {
   const idx = ordered.findIndex((x) => x?.id === id)
   if (idx < 0) return
 
-  // Направление слоёв в UI инвертировано относительно индекса в отсортированном массиве:
-  // поэтому "На зад" (delta = -1) должно сдвигать фигуру в сторону меньшей "передности".
-  const targetIdx = idx - delta
+  // "На перед": delta = +1, сдвиг на больший z.
+  // "На зад": delta = -1, сдвиг на меньший z.
+  const targetIdx = idx + delta
   if (targetIdx < 0 || targetIdx >= ordered.length) return
 
   // Сдвигаем фигуру ровно на 1 позицию относительно текущего порядка.
