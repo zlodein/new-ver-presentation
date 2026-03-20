@@ -386,7 +386,7 @@ function startGlobalListeners() {
   <div
     ref="rootRef"
     class="figures-overlay-root"
-    style="position: absolute; inset: 0; pointer-events: none;"
+    style="position: absolute; inset: 0; pointer-events: none; z-index: 9999;"
   >
     <div
       v-for="inst in instances"
