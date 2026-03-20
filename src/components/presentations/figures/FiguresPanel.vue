@@ -174,9 +174,9 @@ function addFigure(figureId: string) {
     y: 25,
     w: 30,
     h: 30,
-    z: maxZ() + 1,
+    z: Math.max(maxZ() + 1, 6),
     style: {
-      fill: lineLike ? { type: 'none' } : { type: 'solid', color: '#2563eb' },
+      fill: lineLike ? { type: 'none' } : { type: 'solid', color: '#2563eb', opacity: 1 },
       stroke: {
         enabled: lineLike,
         color: '#2563eb',
@@ -232,14 +232,18 @@ function setFillType(type: 'none' | 'solid' | 'linear') {
   const s = selectedInstance.value
   if (!s) return
   ensureSelectedStyle()
+  const prev = (s.style as any).fill
+  const prevOp = Number(prev?.opacity)
+  const op = Number.isFinite(prevOp) ? Math.min(1, Math.max(0, prevOp)) : 1
   if (type === 'solid') {
-    ;(s.style as any).fill = { type: 'solid', color: (s.style as any).fill?.color ?? '#2563eb' }
+    ;(s.style as any).fill = { type: 'solid', color: prev?.color ?? '#2563eb', opacity: op }
   } else if (type === 'linear') {
     ;(s.style as any).fill = {
       type: 'linear',
-      from: (s.style as any).fill?.from ?? '#60a5fa',
-      to: (s.style as any).fill?.to ?? '#1d4ed8',
-      angle: Number((s.style as any).fill?.angle ?? 45),
+      from: prev?.from ?? '#60a5fa',
+      to: prev?.to ?? '#1d4ed8',
+      angle: Number(prev?.angle ?? 45),
+      opacity: op,
     }
   } else {
     ;(s.style as any).fill = { type: 'none' }
@@ -253,6 +257,25 @@ function setSolidColor(color: string) {
   ensureSelectedStyle()
   if ((s.style as any).fill?.type !== 'solid') setFillType('solid')
   ;(s.style as any).fill.color = color
+  if ((s.style as any).fill.opacity == null) (s.style as any).fill.opacity = 1
+}
+
+function fillOpacityValue(): number {
+  const f = selectedInstance.value?.style?.fill as { opacity?: number; type?: string } | undefined
+  if (!f || f.type === 'none') return 1
+  const o = Number(f.opacity)
+  return Number.isFinite(o) ? Math.min(1, Math.max(0, o)) : 1
+}
+
+function setFillOpacity(v: number) {
+  if (!props.enabled) return
+  const s = selectedInstance.value
+  if (!s) return
+  ensureSelectedStyle()
+  const fill = (s.style as any).fill
+  if (!fill || fill.type === 'none') return
+  ;(s.style as any).fill.opacity = Math.min(1, Math.max(0, v))
+  if (props.slide.data) (props.slide.data as any).figures = [...ensureFiguresArray()]
 }
 
 function setLinearFrom(color: string) {
@@ -321,14 +344,8 @@ function setRotation(deg: number) {
   s.rotation = deg
 }
 
-function normalizeZ() {
-  const arr = ensureFiguresArray()
-  const sorted = [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
-  sorted.forEach((inst, idx) => { inst.z = idx })
-
-  // Гарантируем реактивность для вложенного slide.data.figures.
-  // На части данных z может не обновляться визуально без переустановки массива.
-  if (props.slide.data) (props.slide.data as any).figures = [...arr]
+function touchFiguresReactive() {
+  if (props.slide.data) (props.slide.data as any).figures = [...ensureFiguresArray()]
 }
 
 function bringToFront() {
@@ -336,9 +353,9 @@ function bringToFront() {
   const s = selectedInstance.value
   if (!s) return
   const arr = ensureFiguresArray()
-  const max = arr.length ? Math.max(...arr.map((i) => zNum(i.z))) : 0
-  s.z = max + 1
-  normalizeZ()
+  const max = arr.length ? Math.max(...arr.map((i) => zNum(i.z))) : 5
+  s.z = Math.min(40, max + 1)
+  touchFiguresReactive()
 }
 
 function sendToBack() {
@@ -346,25 +363,17 @@ function sendToBack() {
   const s = selectedInstance.value
   if (!s) return
   const arr = ensureFiguresArray()
-  const min = arr.length ? Math.min(...arr.map((i) => zNum(i.z))) : 0
-  s.z = min - 1
-  normalizeZ()
+  const min = arr.length ? Math.min(...arr.map((i) => zNum(i.z))) : 5
+  s.z = Math.max(0, min - 1)
+  touchFiguresReactive()
 }
 
 function moveLayer(delta: number) {
   if (!props.enabled) return
   const s = selectedInstance.value
   if (!s) return
-  const arr = ensureFiguresArray()
-  const sorted = [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
-  const idx = sorted.findIndex((x) => x.id === s.id)
-  if (idx < 0) return
-  const target = sorted[idx + delta]
-  if (!target) return
-  const tmp = s.z
-  s.z = target.z
-  target.z = tmp
-  normalizeZ()
+  s.z = Math.min(40, Math.max(0, zNum(s.z) + delta))
+  touchFiguresReactive()
 }
 
 function setShadowEnabled(enabled: boolean) {
@@ -521,6 +530,18 @@ function setShadowOpacity(v: number) {
               class="h-9 w-full rounded-lg border border-gray-300 bg-white p-1 dark:border-gray-700 dark:bg-gray-800"
               @input="setSolidColor(($event.target as HTMLInputElement).value)"
             />
+            <div class="mt-2">
+              <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Прозрачность заливки</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                :value="fillOpacityValue()"
+                class="w-full"
+                @input="setFillOpacity(Number(($event.target as HTMLInputElement).value))"
+              />
+            </div>
           </div>
 
           <div v-else-if="(selectedInstance.style as any)?.fill?.type === 'linear'">
@@ -556,6 +577,18 @@ function setShadowOpacity(v: number) {
                 @input="setLinearAngle(Number(($event.target as HTMLInputElement).value))"
               />
               <div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{{ (selectedInstance.style as any)?.fill?.angle ?? 45 }} deg</div>
+            </div>
+            <div class="mt-2">
+              <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Прозрачность заливки</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                :value="fillOpacityValue()"
+                class="w-full"
+                @input="setFillOpacity(Number(($event.target as HTMLInputElement).value))"
+              />
             </div>
           </div>
 

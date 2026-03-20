@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, watch } from 'vue'
+import { inject, nextTick, onMounted, ref, watch } from 'vue'
 import type { SlideItem } from '@/types/presentationSlide'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
@@ -36,18 +36,34 @@ function computeMaxZ(container: Element): number {
   return max
 }
 
+const coverTopInputRef = ref<HTMLTextAreaElement | null>(null)
+const coverCenterInputRef = ref<HTMLTextAreaElement | null>(null)
+
+function autosizeTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.max(el.scrollHeight, 1)}px`
+}
+
 onMounted(() => {
-  if (!coverRootRef.value || !priceBottomRef.value) return
+  if (coverRootRef.value && priceBottomRef.value) {
+    const zContainer =
+      coverRootRef.value.closest('.booklet-scale-root') ??
+      coverRootRef.value.closest('.booklet-page') ??
+      coverRootRef.value.parentElement
 
-  // Считаем максимальный z-index внутри контейнера и ставим цену как max + 1.
-  const zContainer =
-    coverRootRef.value.closest('.booklet-scale-root') ??
-    coverRootRef.value.closest('.booklet-page') ??
-    coverRootRef.value.parentElement
+    if (zContainer) {
+      const maxZ = computeMaxZ(zContainer)
+      priceZIndex.value = maxZ + 1
+    }
+  }
 
-  if (!zContainer) return
-  const maxZ = computeMaxZ(zContainer)
-  priceZIndex.value = maxZ + 1
+  if (slide.type === 'cover') {
+    nextTick(() => {
+      autosizeTextarea(coverTopInputRef.value)
+      autosizeTextarea(coverCenterInputRef.value)
+    })
+  }
 })
 
 // Динамически поддерживаем "всегда сверху":
@@ -65,6 +81,17 @@ watch(
     priceZIndex.value = maxZ + 1
   },
   { deep: true }
+)
+
+watch(
+  () => [slide.data?.title, slide.data?.subtitle],
+  () => {
+    if (slide.type !== 'cover') return
+    nextTick(() => {
+      autosizeTextarea(coverTopInputRef.value)
+      autosizeTextarea(coverCenterInputRef.value)
+    })
+  }
 )
 </script>
 
@@ -92,20 +119,28 @@ watch(
                         <div class="booklet-main__content relative z-0">
                           <div class="booklet-main__top">
                             <textarea
+                              ref="coverTopInputRef"
                               :value="String(slide.data?.title ?? '')"
-                              rows="2"
+                              rows="1"
                               placeholder="ЭКСКЛЮЗИВНОЕ ПРЕДЛОЖЕНИЕ"
                               class="booklet-main__top-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                              @input="(slide.data as Record<string, string>).title = ($event.target as HTMLTextAreaElement).value"
+                              @input="(e) => {
+                                (slide.data as Record<string, string>).title = (e.target as HTMLTextAreaElement).value
+                                autosizeTextarea(e.target as HTMLTextAreaElement)
+                              }"
                             />
                           </div>
                           <div class="booklet-main__center">
                             <textarea
+                              ref="coverCenterInputRef"
                               :value="String(slide.data?.subtitle ?? '')"
-                              rows="2"
+                              rows="1"
                               placeholder="АБСОЛЮТНО НОВЫЙ ТАУНХАУС НА ПЕРВОЙ ЛИНИИ"
                               class="booklet-main__center-input w-full resize-none border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                              @input="(slide.data as Record<string, string>).subtitle = ($event.target as HTMLTextAreaElement).value"
+                              @input="(e) => {
+                                (slide.data as Record<string, string>).subtitle = (e.target as HTMLTextAreaElement).value
+                                autosizeTextarea(e.target as HTMLTextAreaElement)
+                              }"
                             />
                           </div>
                           <div

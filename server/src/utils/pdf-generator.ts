@@ -591,7 +591,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="1x3"] { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .presentation-slider-wrap.booklet-view .booklet-galery__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .presentation-slider-wrap.booklet-view .booklet-galery__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; z-index: 5; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img { position: relative; min-height: 120px; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__content { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-height: 0; overflow: auto; }

@@ -36,8 +36,8 @@ export interface FigureDefinition {
 
 export type FigureFillStyle =
   | { type: 'none' }
-  | { type: 'solid'; color: string }
-  | { type: 'linear'; from: string; to: string; angle: number }
+  | { type: 'solid'; color: string; opacity?: number }
+  | { type: 'linear'; from: string; to: string; angle: number; opacity?: number }
 
 export type FigureStrokeDash = 'solid' | 'dashed' | 'dotted'
 export type FigureStrokeLinecap = 'butt' | 'round' | 'square'

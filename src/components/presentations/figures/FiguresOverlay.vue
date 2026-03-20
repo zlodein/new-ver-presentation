@@ -3,6 +3,7 @@ import { computed, reactive, ref, watchEffect } from 'vue'
 import type { FigureDefinition, FigureInstance } from '@/types/figures'
 
 type SlideLike = {
+  id?: string
   data?: Record<string, unknown>
 }
 
@@ -16,7 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select', id: string | null): void
   (e: 'delete', id: string): void
-  (e: 'layerMove', payload: { id: string; delta: number }): void
+  (e: 'layerMove', payload: { id: string; delta: number; slideId?: string }): void
 }>()
 
 const rootRef = ref<HTMLDivElement | null>(null)
@@ -27,7 +28,10 @@ function getInstances(): FigureInstance[] {
   return Array.isArray(arr) ? (arr as FigureInstance[]) : []
 }
 
-const instances = computed(() => getInstances())
+const instances = computed(() => {
+  const arr = getInstances()
+  return [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
+})
 const selected = computed(() => selectedInstance())
 
 function clamp(n: number, min: number, max: number): number {
@@ -215,6 +219,14 @@ function fillFor(inst: FigureInstance): string {
   if (fill.type === 'solid') return (fill as any).color ?? '#000'
   if (fill.type === 'linear') return `url(#${gradId(inst)})`
   return 'none'
+}
+
+function fillOpacityFor(inst: FigureInstance): number {
+  const fill = inst.style?.fill
+  if (!fill || typeof fill !== 'object') return 1
+  if (fill.type === 'none') return 1
+  const o = Number((fill as any).opacity)
+  return Number.isFinite(o) ? clamp(o, 0, 1) : 1
 }
 
 function strokeFor(inst: FigureInstance): string {
@@ -564,7 +576,10 @@ function startGlobalListeners() {
           </filter>
         </defs>
 
-        <g :transform="inst.rotation != null ? `rotate(${inst.rotation} 50 50)` : undefined">
+        <g
+          :transform="inst.rotation != null ? `rotate(${inst.rotation} 50 50)` : undefined"
+          :fill-opacity="fillOpacityFor(inst)"
+        >
           <template v-if="['rect','roundedRect'].includes(geometryKind(figuresById[inst.figureId]))">
             <rect
               x="0"
@@ -785,13 +800,13 @@ function startGlobalListeners() {
           <button
             type="button"
             class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-            title="На перед"
-            aria-label="На перед"
-            @pointerdown.stop.prevent
-            @click.stop.prevent="emit('layerMove', { id: inst.id, delta: 1 })"
+            title="Слой выше"
+            aria-label="Слой выше"
+            @pointerdown.stop
+            @click.stop.prevent="emit('layerMove', { id: inst.id, delta: 1, slideId: props.slide.id })"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6 6 6-6M6 9l6-6 6 6" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 5l7 7H5l7-7z" />
             </svg>
           </button>
           <button
@@ -799,7 +814,7 @@ function startGlobalListeners() {
             class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
             title="Удалить"
             aria-label="Удалить фигуру"
-            @pointerdown.stop.prevent
+            @pointerdown.stop
             @click.stop.prevent="emit('delete', inst.id)"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -809,13 +824,13 @@ function startGlobalListeners() {
           <button
             type="button"
             class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-            title="На зад"
-            aria-label="На зад"
-            @pointerdown.stop.prevent
-            @click.stop.prevent="emit('layerMove', { id: inst.id, delta: -1 })"
+            title="Слой ниже"
+            aria-label="Слой ниже"
+            @pointerdown.stop
+            @click.stop.prevent="emit('layerMove', { id: inst.id, delta: -1, slideId: props.slide.id })"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6-6 6 6M6 9l6 6 6-6" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l-7-7h14l-7 7z" />
             </svg>
           </button>
         </div>

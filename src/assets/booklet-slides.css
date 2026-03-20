@@ -115,6 +115,7 @@
   background: var(--theme-color, #fcfcfc);
   box-sizing: border-box;
   border-radius: var(--booklet-image-radius, 8px);
+  z-index: var(--booklet-figure-media-z, 5);
 }
 
 /* Все изображения строго вписываются в область слайда, не выходят за рамки */
@@ -198,10 +199,16 @@
 }
 
 /* Обложка: top = подзаголовок (heading), center = название презентации (presentation title) */
+/* Базовый z-index «слоя медиа»: фигуры с z ниже окажутся под изображениями, выше — поверх */
+.presentation-slider-wrap.booklet-view {
+  --booklet-figure-media-z: 5;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-main__content {
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__top,
@@ -209,6 +216,7 @@
   flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
+  overflow: visible;
   overflow-wrap: break-word;
   word-break: break-word;
 }
@@ -232,6 +240,8 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+  resize: none;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__center input,
@@ -244,6 +254,8 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+  resize: none;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__short-desc {
@@ -350,7 +362,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: var(--booklet-figure-media-z, 5);
   border-radius: var(--booklet-image-radius, 8px);
 }
 
@@ -402,7 +414,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: var(--booklet-figure-media-z, 5);
   border-radius: var(--booklet-image-radius, 8px);
 }
 
@@ -453,7 +465,7 @@
   object-fit: cover;
   object-position: center;
   position: relative;
-  z-index: 2;
+  z-index: var(--booklet-figure-media-z, 5);
   border-radius: var(--booklet-image-radius, 8px);
 }
 
@@ -531,6 +543,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--booklet-image-radius, 8px);
+  z-index: var(--booklet-figure-media-z, 5);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-layout__img img {
@@ -644,6 +657,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--booklet-image-radius, 8px);
+  z-index: var(--booklet-figure-media-z, 5);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img {
@@ -749,6 +763,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--booklet-image-radius, 8px);
+  z-index: var(--booklet-figure-media-z, 5);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img {
@@ -923,6 +938,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--booklet-image-radius, 8px);
+  z-index: var(--booklet-figure-media-z, 5);
 }
 
 .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img {

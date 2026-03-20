@@ -655,8 +655,8 @@
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="canEditFigures && slide.id === currentSlide?.id"
-                        @select="selectedFigureInstanceId = $event"
+                        :enabled="canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id)"
+                        @select="onFigureSelect(slide, $event)"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
                       />
@@ -711,8 +711,8 @@
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="canEditFigures && slide.id === currentSlide?.id"
-                        @select="selectedFigureInstanceId = $event"
+                        :enabled="canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id)"
+                        @select="onFigureSelect(slide, $event)"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
                       />
@@ -1302,7 +1302,7 @@
                 :figures="figures"
                 :selectedInstanceId="selectedFigureInstanceId"
                 :enabled="canEditFigures"
-                @select="selectedFigureInstanceId = $event"
+                @select="onFigureSelect(currentSlide!, $event)"
               />
             </template>
           </div>
@@ -1804,6 +1804,18 @@ function deleteFigureInstance(instanceId: string) {
   selectedFigureInstanceId.value = null
 }
 
+function onFigureSelect(slide: SlideItem, id: string | null) {
+  selectedFigureInstanceId.value = id
+  if (id && isAdminSlidesGridMode.value) {
+    const idx = slides.value.findIndex((s) => s.id === slide.id)
+    if (idx >= 0) activeSlideIndex.value = idx
+  }
+}
+
+/** Диапазон z для фигур: ниже ~5 — под блоками изображений (--booklet-figure-media-z), выше — поверх */
+const FIGURE_Z_MIN = 0
+const FIGURE_Z_MAX = 40
+
 function zNum(v: unknown): number {
   const n = typeof v === 'number' ? v : Number(v)
   return Number.isFinite(n) ? n : 0
@@ -1818,72 +1830,55 @@ function findSlideFiguresByInstanceId(instanceId: string): { slide: SlideItem; f
   return null
 }
 
-function normalizeFigureZOrder(figures: any[], newOrder: any[]) {
-  newOrder.forEach((inst, idx) => { inst.z = idx })
-  // Важно: переустановить массив.
-  ;(figures as any[]) = newOrder
+function findSlideFiguresOnSlide(slideId: string): { slide: SlideItem; figures: any[] } | null {
+  const slide = slides.value.find((s) => s.id === slideId)
+  if (!slide) return null
+  const figures = (slide.data as any)?.figures
+  if (!Array.isArray(figures)) return null
+  return { slide, figures }
 }
 
-function onFigureLayerMove(payload: { id: string; delta: number }) {
-  const { id, delta } = payload ?? {}
+function onFigureLayerMove(payload: { id: string; delta: number; slideId?: string }) {
+  const { id, delta, slideId } = payload ?? {}
   if (!id || !Number.isFinite(delta) || delta === 0) return
-  const found = findSlideFiguresByInstanceId(id)
+
+  let found: { slide: SlideItem; figures: any[] } | null = null
+  if (slideId) {
+    const onSlide = findSlideFiguresOnSlide(slideId)
+    if (onSlide && onSlide.figures.some((x: any) => x?.id === id)) found = onSlide
+  }
+  if (!found) found = findSlideFiguresByInstanceId(id)
   if (!found) return
-  const ordered = [...found.figures].sort((a, b) => zNum(a.z) - zNum(b.z))
 
-  const idx = ordered.findIndex((x) => x?.id === id)
-  if (idx < 0) return
+  const inst = found.figures.find((x: any) => x?.id === id)
+  if (!inst) return
 
-  // "На перед": delta = +1, сдвиг на больший z.
-  // "На зад": delta = -1, сдвиг на меньший z.
-  const targetIdx = idx + delta
-  if (targetIdx < 0 || targetIdx >= ordered.length) return
-
-  // Сдвигаем фигуру ровно на 1 позицию относительно текущего порядка.
-  const newOrder = [...ordered]
-  const tmp = newOrder[idx]
-  newOrder[idx] = newOrder[targetIdx]
-  newOrder[targetIdx] = tmp
-
-  // Пронумеруем z последовательно (это убирает "дыры" и делает клики консистентными).
-  newOrder.forEach((inst, zi) => { inst.z = zi })
+  const next = zNum(inst.z) + delta
+  inst.z = Math.min(FIGURE_Z_MAX, Math.max(FIGURE_Z_MIN, next))
 
   found.slide.data = found.slide.data ?? {}
-  ;(found.slide.data as any).figures = [...newOrder] // Переустановка массива для реактивности.
+  ;(found.slide.data as any).figures = [...found.figures]
 }
 
 function onFigureLayerToStart(id: string) {
   if (!id) return
   const found = findSlideFiguresByInstanceId(id)
   if (!found) return
-
-  const ordered = [...found.figures].sort((a, b) => zNum(a.z) - zNum(b.z))
-  const idx = ordered.findIndex((x) => x?.id === id)
-  if (idx < 0) return
-
-  const inst = ordered[idx]
-  const rest = [...ordered.slice(0, idx), ...ordered.slice(idx + 1)]
-  const newOrder = [inst, ...rest]
-
-  newOrder.forEach((i, zi) => { i.z = zi })
-  ;(found.slide.data as any).figures = [...newOrder]
+  const inst = found.figures.find((x: any) => x?.id === id)
+  if (!inst) return
+  inst.z = FIGURE_Z_MIN
+  ;(found.slide.data as any).figures = [...found.figures]
 }
 
 function onFigureLayerToEnd(id: string) {
   if (!id) return
   const found = findSlideFiguresByInstanceId(id)
   if (!found) return
-
-  const ordered = [...found.figures].sort((a, b) => zNum(a.z) - zNum(b.z))
-  const idx = ordered.findIndex((x) => x?.id === id)
-  if (idx < 0) return
-
-  const inst = ordered[idx]
-  const rest = [...ordered.slice(0, idx), ...ordered.slice(idx + 1)]
-  const newOrder = [...rest, inst]
-
-  newOrder.forEach((i, zi) => { i.z = zi })
-  ;(found.slide.data as any).figures = [...newOrder]
+  const inst = found.figures.find((x: any) => x?.id === id)
+  if (!inst) return
+  const maxFig = found.figures.length ? Math.max(...found.figures.map((x: any) => zNum(x.z))) : 0
+  inst.z = Math.min(FIGURE_Z_MAX, maxFig + 1)
+  ;(found.slide.data as any).figures = [...found.figures]
 }
 
 /** Номер текущего слайда среди видимых (1-based для отображения) */
