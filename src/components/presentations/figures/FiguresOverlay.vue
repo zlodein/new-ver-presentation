@@ -229,6 +229,24 @@ function linearGradientVector(angleDeg: number): { x1: number; y1: number; x2: n
   }
 }
 
+function curvedConnectorPathD(inst: FigureInstance): string {
+  const def = figuresById[inst.figureId]
+  const g = (def?.geometry as any) ?? {}
+
+  const x1 = Number(g.x1 ?? 0)
+  const y1 = Number(g.y1 ?? 0)
+  const x2 = Number(g.x2 ?? 100)
+  const y2 = Number(g.y2 ?? 100)
+
+  // Defaults roughly interpolate control points.
+  const c1x = Number(g.c1x ?? (x1 + x2) / 3)
+  const c1y = Number(g.c1y ?? y1)
+  const c2x = Number(g.c2x ?? (2 * x1 + x2) / 3)
+  const c2y = Number(g.c2y ?? y2)
+
+  return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
+}
+
 type DragMode = { mode: 'move'; instance: FigureInstance } | { mode: 'resize'; instance: FigureInstance; handle: 'tl' | 'tr' | 'bl' | 'br' } | null
 const drag = reactive({
   mode: null as DragMode,
@@ -587,7 +605,7 @@ function startGlobalListeners() {
 
               <template v-else-if="(figuresById[inst.figureId].geometry as any).mode === 'curved'">
                 <path
-                  :d="`M ${(figuresById[inst.figureId].geometry as any).x1} ${(figuresById[inst.figureId].geometry as any).y1} C ${(figuresById[inst.figureId].geometry as any).c1x ?? ((figuresById[inst.figureId].geometry as any).x1 + (figuresById[inst.figureId].geometry as any).x2) / 3)} ${(figuresById[inst.figureId].geometry as any).c1y ?? (figuresById[inst.figureId].geometry as any).y1}, ${(figuresById[inst.figureId].geometry as any).c2x ?? (2 * (figuresById[inst.figureId].geometry as any).x1 + (figuresById[inst.figureId].geometry as any).x2) / 3)} ${(figuresById[inst.figureId].geometry as any).c2y ?? (figuresById[inst.figureId].geometry as any).y2}, ${(figuresById[inst.figureId].geometry as any).x2} ${(figuresById[inst.figureId].geometry as any).y2}`"
+                  :d="curvedConnectorPathD(inst)"
                   :fill="'none'"
                   :stroke="strokeFor(inst)"
                   :stroke-width="strokeWidthFor(inst)"
