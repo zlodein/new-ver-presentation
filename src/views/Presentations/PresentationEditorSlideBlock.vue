@@ -76,7 +76,7 @@ const priceBottomFloatingStyle = computed(() => {
 })
 
 function startPriceDragging(e: PointerEvent) {
-  if (!pe.canEditImages) return
+  if (!pe?.canEditImages) return
   if (!priceFloatingMode.value) return
   if (e.button != null && e.button !== 0) return
   if (isDragDisallowedTarget(e.target)) return
