@@ -79,9 +79,12 @@ function maxZ(): number {
 
 function geometryKind(def?: FigureDefinition): string {
   const g = def?.geometry
-  if (!g || typeof g !== 'object') return ''
-  const k = (g as any).kind
-  return typeof k === 'string' ? k : ''
+  if (g && typeof g === 'object') {
+    const k = (g as any).kind
+    if (typeof k === 'string' && k) return k
+  }
+  const top = def?.kind
+  return typeof top === 'string' ? top : ''
 }
 
 function polygonPoints(def?: FigureDefinition): string {
@@ -100,6 +103,74 @@ function polygonPoints(def?: FigureDefinition): string {
     })
     .filter(Boolean)
     .join(' ')
+}
+
+function polylinePointsAttr(geometry: unknown): string {
+  if (!geometry || typeof geometry !== 'object') return ''
+  const pts = (geometry as any).points
+  if (!Array.isArray(pts)) return ''
+  return pts
+    .map((p: unknown) => {
+      if (!Array.isArray(p) || p.length < 2) return ''
+      const x = Number(p[0])
+      const y = Number(p[1])
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return ''
+      return `${x},${y}`
+    })
+    .filter(Boolean)
+    .join(' ')
+}
+
+/** Последний отрезок соединителя — для корректного направления наконечника у elbow/curved. */
+function connectorEndSegment(inst: FigureInstance): { x1: number; y1: number; x2: number; y2: number } {
+  const g = (props.figuresById[inst.figureId]?.geometry as Record<string, unknown>) ?? {}
+  const x1 = Number(g.x1 ?? 0)
+  const y1 = Number(g.y1 ?? 0)
+  const x2 = Number(g.x2 ?? 100)
+  const y2 = Number(g.y2 ?? 100)
+  const mode = String(g.mode ?? 'straight')
+  if (mode === 'elbow') {
+    const mx = Number(g.elbowMidX ?? (x1 + x2) / 2)
+    const my = Number(g.elbowMidY ?? y1)
+    return { x1: mx, y1: my, x2, y2 }
+  }
+  if (mode === 'curved') {
+    const c2x = Number(g.c2x ?? (2 * x1 + x2) / 3)
+    const c2y = Number(g.c2y ?? y2)
+    return { x1: c2x, y1: c2y, x2, y2 }
+  }
+  return { x1, y1, x2, y2 }
+}
+
+/** Первый отрезок соединителя — для стрелки в начале (both). */
+function connectorStartSegment(inst: FigureInstance): { x1: number; y1: number; x2: number; y2: number } {
+  const g = (props.figuresById[inst.figureId]?.geometry as Record<string, unknown>) ?? {}
+  const x1 = Number(g.x1 ?? 0)
+  const y1 = Number(g.y1 ?? 0)
+  const x2 = Number(g.x2 ?? 100)
+  const y2 = Number(g.y2 ?? 100)
+  const mode = String(g.mode ?? 'straight')
+  if (mode === 'elbow') {
+    const mx = Number(g.elbowMidX ?? (x1 + x2) / 2)
+    const my = Number(g.elbowMidY ?? y1)
+    return { x1, y1, x2: mx, y2: my }
+  }
+  if (mode === 'curved') {
+    const c1x = Number(g.c1x ?? (x1 + x2) / 3)
+    const c1y = Number(g.c1y ?? y1)
+    return { x1, y1, x2: c1x, y2: c1y }
+  }
+  return { x1, y1, x2, y2 }
+}
+
+function connectorArrowEndPointsStr(inst: FigureInstance): string {
+  const s = connectorEndSegment(inst)
+  return arrowHeadPointsEnd(inst, s.x1, s.y1, s.x2, s.y2)
+}
+
+function connectorArrowStartPointsStr(inst: FigureInstance): string {
+  const s = connectorStartSegment(inst)
+  return arrowHeadPointsStart(inst, s.x1, s.y1, s.x2, s.y2)
 }
 
 function starPoints(points: number, innerRatio: number | undefined): string {
@@ -594,6 +665,7 @@ function startGlobalListeners() {
               :stroke-dasharray="strokeDashFor(inst)"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
+              vector-effect="non-scaling-stroke"
               :filter="shadowFilterFor(inst)"
             />
           </template>
@@ -610,6 +682,7 @@ function startGlobalListeners() {
               :stroke-dasharray="strokeDashFor(inst)"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
+              vector-effect="non-scaling-stroke"
               :filter="shadowFilterFor(inst)"
             />
           </template>
@@ -623,6 +696,7 @@ function startGlobalListeners() {
               :stroke-dasharray="strokeDashFor(inst)"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
+              vector-effect="non-scaling-stroke"
               :filter="shadowFilterFor(inst)"
             />
           </template>
@@ -636,19 +710,22 @@ function startGlobalListeners() {
               :stroke-dasharray="strokeDashFor(inst)"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
+              vector-effect="non-scaling-stroke"
               :filter="shadowFilterFor(inst)"
             />
           </template>
 
           <template v-else-if="geometryKind(figuresById[inst.figureId]) === 'path'">
             <path
-              :d="(figuresById[inst.figureId].geometry as any).d"
+              v-if="String((figuresById[inst.figureId].geometry as any).d ?? '')"
+              :d="String((figuresById[inst.figureId].geometry as any).d)"
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
               :stroke-dasharray="strokeDashFor(inst)"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
+              vector-effect="non-scaling-stroke"
               :filter="shadowFilterFor(inst)"
             />
           </template>
@@ -664,6 +741,7 @@ function startGlobalListeners() {
                 :stroke-width="strokeWidthFor(inst)"
                 :stroke-dasharray="strokeDashFor(inst)"
                 :stroke-linecap="strokeLinecapFor(inst)"
+                vector-effect="non-scaling-stroke"
                 :filter="shadowFilterFor(inst)"
               />
 
@@ -699,13 +777,15 @@ function startGlobalListeners() {
 
           <template v-else-if="geometryKind(figuresById[inst.figureId]) === 'polyline' || geometryKind(figuresById[inst.figureId]) === 'scribble'">
             <polyline
-              :points="(figuresById[inst.figureId].geometry as any).points?.map((p: number[]) => `${p[0]},${p[1]}`).join(' ')"
+              v-if="polylinePointsAttr(figuresById[inst.figureId]?.geometry)"
+              :points="polylinePointsAttr(figuresById[inst.figureId]?.geometry)"
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
               :stroke-dasharray="strokeDashFor(inst)"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
+              vector-effect="non-scaling-stroke"
               :filter="shadowFilterFor(inst)"
             />
           </template>
@@ -723,6 +803,7 @@ function startGlobalListeners() {
                   :stroke-width="strokeWidthFor(inst)"
                   :stroke-dasharray="strokeDashFor(inst)"
                   :stroke-linecap="strokeLinecapFor(inst)"
+                  vector-effect="non-scaling-stroke"
                   :filter="shadowFilterFor(inst)"
                 />
               </template>
@@ -736,6 +817,7 @@ function startGlobalListeners() {
                   :stroke-dasharray="strokeDashFor(inst)"
                   :stroke-linecap="strokeLinecapFor(inst)"
                   :stroke-linejoin="strokeLinejoinFor(inst)"
+                  vector-effect="non-scaling-stroke"
                   :filter="shadowFilterFor(inst)"
                 />
               </template>
@@ -749,6 +831,7 @@ function startGlobalListeners() {
                   :stroke-dasharray="strokeDashFor(inst)"
                   :stroke-linecap="strokeLinecapFor(inst)"
                   :stroke-linejoin="strokeLinejoinFor(inst)"
+                  vector-effect="non-scaling-stroke"
                   :filter="shadowFilterFor(inst)"
                 />
               </template>
@@ -756,12 +839,7 @@ function startGlobalListeners() {
               <!-- Arrowheads -->
               <template v-if="(figuresById[inst.figureId].geometry as any).head === 'end' || (figuresById[inst.figureId].geometry as any).head === 'both'">
                 <polygon
-                  :points="arrowHeadPointsEnd(inst,
-                    (figuresById[inst.figureId].geometry as any).x1,
-                    (figuresById[inst.figureId].geometry as any).y1,
-                    (figuresById[inst.figureId].geometry as any).x2,
-                    (figuresById[inst.figureId].geometry as any).y2
-                  )"
+                  :points="connectorArrowEndPointsStr(inst)"
                   :fill="strokeFor(inst)"
                   :stroke="strokeFor(inst)"
                   :stroke-width="0"
@@ -770,12 +848,7 @@ function startGlobalListeners() {
               </template>
               <template v-if="(figuresById[inst.figureId].geometry as any).head === 'both'">
                 <polygon
-                  :points="arrowHeadPointsStart(inst,
-                    (figuresById[inst.figureId].geometry as any).x1,
-                    (figuresById[inst.figureId].geometry as any).y1,
-                    (figuresById[inst.figureId].geometry as any).x2,
-                    (figuresById[inst.figureId].geometry as any).y2
-                  )"
+                  :points="connectorArrowStartPointsStr(inst)"
                   :fill="strokeFor(inst)"
                   :stroke="strokeFor(inst)"
                   :stroke-width="0"

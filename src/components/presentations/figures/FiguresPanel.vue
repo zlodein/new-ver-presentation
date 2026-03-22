@@ -21,8 +21,11 @@ const figuresById = computed(() => Object.fromEntries(props.figures.map((f) => [
 function geometryKind(figureId: string): string {
   const def = figuresById.value[figureId]
   const g = def?.geometry
-  if (!g || typeof g !== 'object') return ''
-  return String((g as any).kind ?? '')
+  if (g && typeof g === 'object') {
+    const k = (g as any).kind
+    if (typeof k === 'string' && k) return k
+  }
+  return typeof def?.kind === 'string' ? def.kind : ''
 }
 
 function isLineLikeKind(kind: string): boolean {
