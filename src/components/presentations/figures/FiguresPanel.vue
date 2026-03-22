@@ -2,6 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import type { FigureDefinition, FigureInstance } from '@/types/figures'
 import type { SlideItem } from '@/types/presentationSlide'
+import {
+  isPolylineGeometryClosed,
+  polylinePointsFromGeometry,
+  rectLayoutFromGeometry,
+  starPolygonPointsFromGeometry,
+} from '@/utils/figureGeometryRender'
 
 const props = defineProps<{
   slide: SlideItem
@@ -114,26 +120,6 @@ function setEditorGridSnap(snap: boolean) {
   if (!d.editorGrid || typeof d.editorGrid !== 'object') d.editorGrid = {}
   d.editorGrid.snap = snap
   if (snap) d.editorGrid.enabled = true
-}
-
-function starPolygonPoints(points: number, innerRatio: number | undefined): string {
-  const p = Number.isFinite(points) ? Math.max(2, Math.floor(points)) : 5
-  const inner = innerRatio == null ? 0.5 : innerRatio
-  const innerR = 50 * Math.max(0.05, Math.min(0.95, inner))
-  const outerR = 50
-  const toRad = (deg: number) => (deg * Math.PI) / 180
-  const startDeg = -90
-  const out: string[] = []
-  for (let i = 0; i < p; i++) {
-    const aOuter = startDeg + (360 / p) * i
-    const aInner = aOuter + 180 / p
-    const ox = 50 + Math.cos(toRad(aOuter)) * outerR
-    const oy = 50 + Math.sin(toRad(aOuter)) * outerR
-    const ix = 50 + Math.cos(toRad(aInner)) * innerR
-    const iy = 50 + Math.sin(toRad(aInner)) * innerR
-    out.push(`${ox},${oy}`, `${ix},${iy}`)
-  }
-  return out.join(' ')
 }
 
 // Если выбрали фигуру — раскрываем панель, чтобы были доступны действия (удаление/слои/тень/цвет).
@@ -695,39 +681,70 @@ function setShadowOpacity(v: number) {
               >
                 <span class="inline-flex h-6 w-6 items-center justify-center rounded bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
                   <svg viewBox="0 0 100 100" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg">
-                    <rect v-if="(f.geometry as any)?.kind === 'rect'" x="0" y="0" width="100" height="100" rx="8" ry="8" fill="currentColor" class="text-brand-600" />
+                    <rect
+                      v-if="(f.geometry as any)?.kind === 'rect'"
+                      v-bind="rectLayoutFromGeometry(f)"
+                      fill="currentColor"
+                      class="text-brand-600"
+                    />
                     <rect
                       v-else-if="(f.geometry as any)?.kind === 'roundedRect'"
-                      x="0"
-                      y="0"
-                      width="100"
-                      height="100"
-                      :rx="(f.geometry as any)?.rx ?? 12"
-                      :ry="(f.geometry as any)?.rx ?? 12"
+                      v-bind="rectLayoutFromGeometry(f)"
                       fill="currentColor"
                       class="text-brand-600"
                     />
-                    <ellipse v-else-if="(f.geometry as any)?.kind === 'ellipse'" cx="50" cy="50" rx="50" ry="30" fill="currentColor" class="text-brand-600" />
-                    <ellipse v-else-if="(f.geometry as any)?.kind === 'circle'" cx="50" cy="50" :rx="(f.geometry as any)?.r ?? 40" :ry="(f.geometry as any)?.r ?? 40" fill="currentColor" class="text-brand-600" />
+                    <ellipse
+                      v-else-if="(f.geometry as any)?.kind === 'ellipse'"
+                      :cx="Number((f.geometry as any)?.cx ?? 50)"
+                      :cy="Number((f.geometry as any)?.cy ?? 50)"
+                      :rx="Number((f.geometry as any)?.rx ?? 50)"
+                      :ry="Number((f.geometry as any)?.ry ?? 50)"
+                      fill="currentColor"
+                      class="text-brand-600"
+                    />
+                    <ellipse
+                      v-else-if="(f.geometry as any)?.kind === 'circle'"
+                      :cx="Number((f.geometry as any)?.cx ?? 50)"
+                      :cy="Number((f.geometry as any)?.cy ?? 50)"
+                      :rx="Number((f.geometry as any)?.r ?? 40)"
+                      :ry="Number((f.geometry as any)?.r ?? 40)"
+                      fill="currentColor"
+                      class="text-brand-600"
+                    />
 
                     <polygon
-                      v-else-if="(f.geometry as any)?.kind === 'star'"
-                      :points="starPolygonPoints((f.geometry as any)?.points ?? 5, (f.geometry as any)?.innerRatio)"
+                      v-else-if="(f.geometry as any)?.kind === 'star' && starPolygonPointsFromGeometry(f)"
+                      :points="starPolygonPointsFromGeometry(f)"
                       fill="currentColor"
                       class="text-brand-600"
                     />
 
-                    <polygon v-else-if="(f.geometry as any)?.kind === 'polygon'" :points="(f.geometry as any)?.points?.map((p: number[]) => `${p[0]},${p[1]}`).join(' ')" fill="currentColor" class="text-brand-600" />
+                    <polygon v-else-if="(f.geometry as any)?.kind === 'polygon'" :points="polylinePointsFromGeometry(f.geometry)" fill="currentColor" class="text-brand-600" />
 
-                    <path v-else-if="(f.geometry as any)?.kind === 'path'" :d="(f.geometry as any)?.d" fill="currentColor" class="text-brand-600" />
+                    <path
+                      v-else-if="(f.geometry as any)?.kind === 'path'"
+                      :d="String((f.geometry as any)?.d ?? '')"
+                      fill="currentColor"
+                      class="text-brand-600"
+                    />
 
-                    <polyline
-                      v-else-if="(f.geometry as any)?.kind === 'polyline' || (f.geometry as any)?.kind === 'scribble'"
-                      :points="(f.geometry as any)?.points?.map((p: number[]) => `${p[0]},${p[1]}`).join(' ')"
+                    <polygon
+                      v-else-if="((f.geometry as any)?.kind === 'polyline' || (f.geometry as any)?.kind === 'scribble') && isPolylineGeometryClosed(f.geometry) && polylinePointsFromGeometry(f.geometry)"
+                      :points="polylinePointsFromGeometry(f.geometry)"
                       fill="none"
                       stroke="currentColor"
                       stroke-width="6"
                       stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <polyline
+                      v-else-if="((f.geometry as any)?.kind === 'polyline' || (f.geometry as any)?.kind === 'scribble') && polylinePointsFromGeometry(f.geometry)"
+                      :points="polylinePointsFromGeometry(f.geometry)"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                     />
 
                     <template v-else-if="(f.geometry as any)?.kind === 'connector'">
@@ -761,10 +778,10 @@ function setShadowOpacity(v: number) {
 
                     <line
                       v-else-if="(f.geometry as any)?.kind === 'line'"
-                      :x1="10"
-                      :y1="50"
-                      :x2="90"
-                      :y2="50"
+                      :x1="Number((f.geometry as any)?.x1 ?? 10)"
+                      :y1="Number((f.geometry as any)?.y1 ?? 50)"
+                      :x2="Number((f.geometry as any)?.x2 ?? 90)"
+                      :y2="Number((f.geometry as any)?.y2 ?? 50)"
                       stroke="currentColor"
                       stroke-width="8"
                       stroke-linecap="round"

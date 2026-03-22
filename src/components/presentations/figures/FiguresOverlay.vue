@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watchEffect } from 'vue'
 import type { FigureDefinition, FigureInstance } from '@/types/figures'
+import {
+  isPolylineGeometryClosed,
+  polylinePointsFromGeometry,
+  rectLayoutFromGeometry,
+  starPolygonPointsFromGeometry,
+} from '@/utils/figureGeometryRender'
 
 type SlideLike = {
   id?: string
@@ -105,22 +111,6 @@ function polygonPoints(def?: FigureDefinition): string {
     .join(' ')
 }
 
-function polylinePointsAttr(geometry: unknown): string {
-  if (!geometry || typeof geometry !== 'object') return ''
-  const pts = (geometry as any).points
-  if (!Array.isArray(pts)) return ''
-  return pts
-    .map((p: unknown) => {
-      if (!Array.isArray(p) || p.length < 2) return ''
-      const x = Number(p[0])
-      const y = Number(p[1])
-      if (!Number.isFinite(x) || !Number.isFinite(y)) return ''
-      return `${x},${y}`
-    })
-    .filter(Boolean)
-    .join(' ')
-}
-
 /** Последний отрезок соединителя — для корректного направления наконечника у elbow/curved. */
 function connectorEndSegment(inst: FigureInstance): { x1: number; y1: number; x2: number; y2: number } {
   const g = (props.figuresById[inst.figureId]?.geometry as Record<string, unknown>) ?? {}
@@ -171,26 +161,6 @@ function connectorArrowEndPointsStr(inst: FigureInstance): string {
 function connectorArrowStartPointsStr(inst: FigureInstance): string {
   const s = connectorStartSegment(inst)
   return arrowHeadPointsStart(inst, s.x1, s.y1, s.x2, s.y2)
-}
-
-function starPoints(points: number, innerRatio: number | undefined): string {
-  const p = Number.isFinite(points) ? Math.max(2, Math.floor(points)) : 5
-  const inner = innerRatio == null ? 0.5 : innerRatio
-  const innerR = 50 * Math.max(0.05, Math.min(0.95, inner))
-  const outerR = 50
-  const toRad = (deg: number) => (deg * Math.PI) / 180
-  const startDeg = -90
-  const out: string[] = []
-  for (let i = 0; i < p; i++) {
-    const aOuter = startDeg + (360 / p) * i
-    const aInner = aOuter + 180 / p
-    const ox = 50 + Math.cos(toRad(aOuter)) * outerR
-    const oy = 50 + Math.sin(toRad(aOuter)) * outerR
-    const ix = 50 + Math.cos(toRad(aInner)) * innerR
-    const iy = 50 + Math.sin(toRad(aInner)) * innerR
-    out.push(`${ox},${oy}`, `${ix},${iy}`)
-  }
-  return out.join(' ')
 }
 
 function arrowHeadPoints(x: number, y: number, angleRad: number, headLen: number, headWidth: number): string {
@@ -252,13 +222,6 @@ function arrowHeadPointsStart(inst: FigureInstance, x1: number, y1: number, x2: 
   return arrowHeadPoints(tipX, tipY, a, headLenFor(inst), headWidthFor(inst))
 }
 
-function rectRx(def?: FigureDefinition): number {
-  const g = def?.geometry
-  if (!g || typeof g !== 'object') return 0
-  const rx = (g as any).rx
-  return typeof rx === 'number' && Number.isFinite(rx) ? rx : 0
-}
-
 function ellipseParams(def?: FigureDefinition): { cx: number; cy: number; rx: number; ry: number } {
   const g = def?.geometry
   if (!g || typeof g !== 'object') return { cx: 50, cy: 50, rx: 50, ry: 50 }
@@ -315,15 +278,38 @@ function strokeWidthFor(inst: FigureInstance): number {
   return Number.isFinite(w) ? Math.max(0, w) : 0
 }
 
-function strokeDashFor(inst: FigureInstance): string | undefined {
+function strokeDashFor(inst: FigureInstance, def?: FigureDefinition): string | undefined {
   const stroke = inst.style?.stroke
   if (!stroke || typeof stroke !== 'object') return undefined
   if (!stroke.enabled) return undefined
   const dash = String((stroke as any).dash ?? 'solid')
-  if (dash === 'solid') return undefined
   if (dash === 'dashed') return '6 4'
   if (dash === 'dotted') return '2 3'
+  if (dash === 'solid') {
+    const g = def?.geometry as Record<string, unknown> | undefined
+    if (g && typeof g === 'object') {
+      const raw = (g as { strokeDasharray?: unknown }).strokeDasharray ?? (g as { strokeDashArray?: unknown }).strokeDashArray
+      if (raw != null && String(raw).trim()) return String(raw).trim()
+    }
+    return undefined
+  }
   return undefined
+}
+
+function defFor(inst: FigureInstance): FigureDefinition | undefined {
+  return props.figuresById[inst.figureId]
+}
+
+function rectLayoutFor(inst: FigureInstance) {
+  return rectLayoutFromGeometry(defFor(inst))
+}
+
+function polylinePtsFor(inst: FigureInstance): string {
+  return polylinePointsFromGeometry(defFor(inst)?.geometry)
+}
+
+function starPtsFor(inst: FigureInstance): string {
+  return starPolygonPointsFromGeometry(defFor(inst))
 }
 
 function strokeLinecapFor(inst: FigureInstance): 'round' | 'butt' | 'square' | undefined {
@@ -653,16 +639,11 @@ function startGlobalListeners() {
         >
           <template v-if="['rect','roundedRect'].includes(geometryKind(figuresById[inst.figureId]))">
             <rect
-              x="0"
-              y="0"
-              width="100"
-              height="100"
-              :rx="rectRx(figuresById[inst.figureId])"
-              :ry="rectRx(figuresById[inst.figureId])"
+              v-bind="rectLayoutFor(inst)"
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
-              :stroke-dasharray="strokeDashFor(inst)"
+              :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
               vector-effect="non-scaling-stroke"
@@ -679,7 +660,7 @@ function startGlobalListeners() {
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
-              :stroke-dasharray="strokeDashFor(inst)"
+              :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
               vector-effect="non-scaling-stroke"
@@ -693,7 +674,7 @@ function startGlobalListeners() {
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
-              :stroke-dasharray="strokeDashFor(inst)"
+              :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
               vector-effect="non-scaling-stroke"
@@ -703,11 +684,12 @@ function startGlobalListeners() {
 
           <template v-else-if="geometryKind(figuresById[inst.figureId]) === 'star'">
             <polygon
-              :points="starPoints((figuresById[inst.figureId].geometry as any).points, (figuresById[inst.figureId].geometry as any).innerRatio)"
+              v-if="starPtsFor(inst)"
+              :points="starPtsFor(inst)"
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
-              :stroke-dasharray="strokeDashFor(inst)"
+              :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
               vector-effect="non-scaling-stroke"
@@ -722,7 +704,7 @@ function startGlobalListeners() {
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
-              :stroke-dasharray="strokeDashFor(inst)"
+              :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
               vector-effect="non-scaling-stroke"
@@ -739,7 +721,7 @@ function startGlobalListeners() {
                 :y2="(figuresById[inst.figureId].geometry as any).y2"
                 :stroke="strokeFor(inst)"
                 :stroke-width="strokeWidthFor(inst)"
-                :stroke-dasharray="strokeDashFor(inst)"
+                :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
                 :stroke-linecap="strokeLinecapFor(inst)"
                 vector-effect="non-scaling-stroke"
                 :filter="shadowFilterFor(inst)"
@@ -776,13 +758,25 @@ function startGlobalListeners() {
           </template>
 
           <template v-else-if="geometryKind(figuresById[inst.figureId]) === 'polyline' || geometryKind(figuresById[inst.figureId]) === 'scribble'">
-            <polyline
-              v-if="polylinePointsAttr(figuresById[inst.figureId]?.geometry)"
-              :points="polylinePointsAttr(figuresById[inst.figureId]?.geometry)"
+            <polygon
+              v-if="isPolylineGeometryClosed(defFor(inst)?.geometry) && polylinePtsFor(inst)"
+              :points="polylinePtsFor(inst)"
               :fill="fillFor(inst)"
               :stroke="strokeFor(inst)"
               :stroke-width="strokeWidthFor(inst)"
-              :stroke-dasharray="strokeDashFor(inst)"
+              :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
+              :stroke-linecap="strokeLinecapFor(inst)"
+              :stroke-linejoin="strokeLinejoinFor(inst)"
+              vector-effect="non-scaling-stroke"
+              :filter="shadowFilterFor(inst)"
+            />
+            <polyline
+              v-else-if="polylinePtsFor(inst)"
+              :points="polylinePtsFor(inst)"
+              :fill="fillFor(inst)"
+              :stroke="strokeFor(inst)"
+              :stroke-width="strokeWidthFor(inst)"
+              :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
               :stroke-linecap="strokeLinecapFor(inst)"
               :stroke-linejoin="strokeLinejoinFor(inst)"
               vector-effect="non-scaling-stroke"
@@ -801,7 +795,7 @@ function startGlobalListeners() {
                   :y2="(figuresById[inst.figureId].geometry as any).y2"
                   :stroke="strokeFor(inst)"
                   :stroke-width="strokeWidthFor(inst)"
-                  :stroke-dasharray="strokeDashFor(inst)"
+                  :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
                   :stroke-linecap="strokeLinecapFor(inst)"
                   vector-effect="non-scaling-stroke"
                   :filter="shadowFilterFor(inst)"
@@ -814,7 +808,7 @@ function startGlobalListeners() {
                   :fill="fillFor(inst)"
                   :stroke="strokeFor(inst)"
                   :stroke-width="strokeWidthFor(inst)"
-                  :stroke-dasharray="strokeDashFor(inst)"
+                  :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
                   :stroke-linecap="strokeLinecapFor(inst)"
                   :stroke-linejoin="strokeLinejoinFor(inst)"
                   vector-effect="non-scaling-stroke"
@@ -828,7 +822,7 @@ function startGlobalListeners() {
                   :fill="'none'"
                   :stroke="strokeFor(inst)"
                   :stroke-width="strokeWidthFor(inst)"
-                  :stroke-dasharray="strokeDashFor(inst)"
+                  :stroke-dasharray="strokeDashFor(inst, defFor(inst))"
                   :stroke-linecap="strokeLinecapFor(inst)"
                   :stroke-linejoin="strokeLinejoinFor(inst)"
                   vector-effect="non-scaling-stroke"
