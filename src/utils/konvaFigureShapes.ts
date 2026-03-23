@@ -129,6 +129,30 @@ function fillOpacityFor(inst: FigureInstance): number {
   return Number.isFinite(o) ? clamp(o, 0, 1) : 1
 }
 
+/** Konva не имеет fillOpacity; смешиваем альфу в цвет (solid / градиент). */
+function withAlpha(color: string, alpha: number): string {
+  if (alpha >= 1 || !Number.isFinite(alpha)) return color
+  const a = clamp(alpha, 0, 1)
+  const hex = color.trim()
+  const m6 = /^#([0-9a-f]{6})$/i.exec(hex)
+  if (m6) {
+    const h = m6[1]
+    const r = parseInt(h.slice(0, 2), 16)
+    const g = parseInt(h.slice(2, 4), 16)
+    const b = parseInt(h.slice(4, 6), 16)
+    return `rgba(${r},${g},${b},${a})`
+  }
+  const m3 = /^#([0-9a-f]{3})$/i.exec(hex)
+  if (m3) {
+    const h = m3[1]
+    const r = parseInt(h[0] + h[0], 16)
+    const g = parseInt(h[1] + h[1], 16)
+    const b = parseInt(h[2] + h[2], 16)
+    return `rgba(${r},${g},${b},${a})`
+  }
+  return color
+}
+
 function linearGradientEnds(angleDeg: number): { x1: number; y1: number; x2: number; y2: number } {
   const a = (angleDeg * Math.PI) / 180
   const dx = Math.cos(a)
@@ -145,7 +169,7 @@ function linearGradientEnds(angleDeg: number): { x1: number; y1: number; x2: num
   }
 }
 
-function applyShadow(node: Konva.Shape | Konva.Group, inst: FigureInstance) {
+function applyShadow(node: Konva.Shape, inst: FigureInstance) {
   const shadow = inst.style?.shadow
   if (!shadow || typeof shadow !== 'object' || !shadow.enabled) {
     node.shadowBlur(0)
@@ -176,19 +200,15 @@ function applyFillStroke(
     if (fill.type === 'none') {
       shape.fill(undefined)
     } else if (fill.type === 'solid') {
-      shape.fill(String((fill as { color?: unknown }).color ?? '#000'))
-      shape.fillOpacity(fo)
+      const c = String((fill as { color?: unknown }).color ?? '#000')
+      shape.fill(withAlpha(c, fo))
     } else if (fill.type === 'linear') {
       const { x1, y1, x2, y2 } = linearGradientEnds(Number((fill as { angle?: unknown }).angle ?? 0))
       shape.fillLinearGradientStartPoint({ x: x1, y: y1 })
       shape.fillLinearGradientEndPoint({ x: x2, y: y2 })
-      shape.fillLinearGradientColorStops([
-        0,
-        String((fill as { from?: unknown }).from ?? '#000'),
-        1,
-        String((fill as { to?: unknown }).to ?? '#fff'),
-      ])
-      shape.fillOpacity(fo)
+      const from = withAlpha(String((fill as { from?: unknown }).from ?? '#000'), fo)
+      const to = withAlpha(String((fill as { to?: unknown }).to ?? '#fff'), fo)
+      shape.fillLinearGradientColorStops([0, from, 1, to])
     }
   } else if (!opts?.skipFill) {
     shape.fill(undefined)
@@ -203,7 +223,7 @@ function applyFillStroke(
     if (dash?.length) shape.dash(dash)
     else shape.dash([])
     const lc = strokeLinecap(inst)
-    if (lc) shape.strokeLinecap(lc as 'butt' | 'round' | 'square')
+    if (lc) shape.lineCap(lc as 'butt' | 'round' | 'square')
     const lj = strokeLinejoin(inst)
     if (lj) shape.lineJoin(lj as 'miter' | 'round' | 'bevel')
   } else {
