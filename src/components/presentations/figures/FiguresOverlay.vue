@@ -39,7 +39,7 @@ function beginInteraction() {
 function endInteraction() {
   if (!interactionLock.value) return
   interactionLock.value = false
-  nextTick(() => rebuildLayer())
+  layer?.batchDraw()
 }
 
 function getInstances(): FigureInstance[] {
@@ -151,6 +151,7 @@ function rebuildLayer() {
       listening: true,
     })
 
+    // world = T · S_bbox · R_viewBox · p — как SVG: поворот в 0..100, затем растяжение под w×h px.
     const scaleInner = new Konva.Group({
       x: 0,
       y: 0,
@@ -191,6 +192,10 @@ function rebuildLayer() {
         window.addEventListener('pointerup', end, { once: true })
       })
 
+      outer.on('click tap', (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        e.cancelBubble = true
+      })
+
       outer.on('dragmove', () => {
         const nxPx = outer.x()
         const nyPx = outer.y()
@@ -221,16 +226,31 @@ function rebuildLayer() {
   layer.batchDraw()
 }
 
-function onStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
-  const t = e.target
-  let cur: Konva.Node | null = t as Konva.Node
+function resolveFigureIdFromNode(n: Konva.Node | null): string | null {
+  let cur: Konva.Node | null = n
   while (cur) {
     const fid = cur.getAttr?.('figureInstanceId')
-    if (fid) {
-      emit('select', fid as string)
+    if (fid) return fid as string
+    cur = cur.getParent()
+  }
+  return null
+}
+
+function onStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
+  const fromTarget = resolveFigureIdFromNode(e.target as Konva.Node)
+  if (fromTarget) {
+    emit('select', fromTarget)
+    return
+  }
+  const st = stage
+  const pos = st?.getPointerPosition()
+  if (st && pos) {
+    const hit = st.getIntersection(pos)
+    const id = resolveFigureIdFromNode(hit)
+    if (id) {
+      emit('select', id)
       return
     }
-    cur = cur.getParent()
   }
   emit('select', null)
 }

@@ -217,6 +217,8 @@ function applyFillStroke(
   const sw = strokeWidthFor(inst)
   const sc = strokeColor(inst)
   if (sw > 0 && sc) {
+    // Как vector-effect="non-scaling-stroke" в SVG: толщина в px, геометрия в 0–100 растягивается отдельно
+    shape.strokeScaleEnabled(false)
     shape.stroke(sc)
     shape.strokeWidth(sw)
     const dash = strokeDashKonva(inst, def)
@@ -230,6 +232,7 @@ function applyFillStroke(
     shape.stroke(undefined)
     shape.strokeWidth(0)
     shape.dash([])
+    shape.strokeScaleEnabled(true)
   }
 }
 
@@ -467,6 +470,7 @@ export function buildFigureContentGroup(
     if (inst.style?.stroke?.enabled) {
       const line = new Konva.Line({
         points: [x1, y1, x2, y2],
+        closed: false,
         listening: false,
       })
       applyFillStroke(line, inst, def, { skipFill: true })
@@ -536,6 +540,7 @@ export function buildFigureContentGroup(
       if (mode === 'straight') {
         const line = new Konva.Line({
           points: [x1, y1, x2, y2],
+          closed: false,
           listening: false,
         })
         applyFillStroke(line, inst, def, { skipFill: true })
@@ -549,6 +554,7 @@ export function buildFigureContentGroup(
         const my = Number(geo?.elbowMidY ?? y1)
         const line = new Konva.Line({
           points: [x1, y1, mx, my, x2, y2],
+          closed: false,
           listening: false,
         })
         applyFillStroke(line, inst, def, { skipFill: true })
