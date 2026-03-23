@@ -614,7 +614,8 @@ function startGlobalListeners() {
         top: `${selected.y}%`,
         width: `${selected.w}%`,
         height: `${selected.h}%`,
-        zIndex: 1,
+        /* Внутри overlay (canvas z-index: 0) — растёт вместе с z фигуры, чтобы было видно смену слоя в DOM */
+        zIndex: zNum(selected.z) + 1,
       }"
     >
           <div class="pointer-events-none absolute inset-0 rounded border-2 border-brand-500/90 bg-transparent" />
