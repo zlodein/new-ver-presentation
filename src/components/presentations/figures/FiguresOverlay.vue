@@ -25,6 +25,22 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLDivElement | null>(null)
 const stageHostRef = ref<HTMLDivElement | null>(null)
 
+/** Целое число: parseInt(getComputedStyle(.booklet-scale-root).--booklet-figures-overlay-z), иначе 20 */
+const figuresOverlayZBaseResolved = ref(20)
+
+function syncFiguresOverlayZBaseFromCss() {
+  if (typeof window === 'undefined' || !rootRef.value) return
+  const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
+  if (!scale) return
+  const raw = getComputedStyle(scale).getPropertyValue('--booklet-figures-overlay-z').trim()
+  if (raw === '') {
+    figuresOverlayZBaseResolved.value = 20
+    return
+  }
+  const n = Number.parseInt(raw, 10)
+  figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 20
+}
+
 let stage: Konva.Stage | null = null
 let layer: Konva.Layer | null = null
 let resizeObserver: ResizeObserver | null = null
@@ -136,12 +152,13 @@ const editorGridCfg = computed(() => {
 
 const outerStyle = computed(() => {
   const boost = Math.max(0, Math.floor(maxZ()))
+  const zFull = figuresOverlayZBaseResolved.value + boost
   const base: Record<string, string | number> = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
-    /* База из CSS + максимальный z фигур на слайде — корень тоже «едет» при смене слоёв (не только figure-selection-ui) */
-    zIndex: `calc(var(--booklet-figures-overlay-z, 20) + ${boost})`,
+    /* Одно число в DOM: база из --booklet-figures-overlay-z + max(z фигур на слайде) */
+    zIndex: zFull,
     isolation: 'isolate',
   }
   if (!editorGridCfg.value.enabled) return base
@@ -341,6 +358,8 @@ function onWindowBlur() {
 }
 
 onMounted(() => {
+  nextTick(() => syncFiguresOverlayZBaseFromCss())
+
   const host = stageHostRef.value
   if (!host) return
 

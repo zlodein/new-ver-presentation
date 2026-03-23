@@ -62,7 +62,7 @@
   transform-origin: 0 0;
   padding: 1rem;
   box-sizing: border-box;
-  /* Konva-оверлей фигур должен быть выше контента слайда (см. --booklet-figure-media-z, по умолчанию 5) */
+  /* База z-index оверлея фигур (целое число; FiguresOverlay читает в JS и задаёт style="z-index: <база+maxZ>") */
   --booklet-figures-overlay-z: 20;
 }
 
