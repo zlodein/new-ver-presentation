@@ -90,12 +90,17 @@ function devicePixelRatioClamped(): number {
 function reorderKonvaByZ() {
   if (!layer || interactionLock.value) return
   const sorted = [...getInstances()].sort((a, b) => zNum(a.z) - zNum(b.z))
-  const nodes: Konva.Group[] = []
-  for (const inst of sorted) {
-    const n = layer.findOne((node: Konva.Node) => node.getAttr('figureInstanceId') === inst.id) as Konva.Group | null
-    if (n) nodes.push(n)
+  const byId = new Map<string, Konva.Group>()
+  for (const ch of layer.getChildren()) {
+    const id = (ch as Konva.Node).getAttr('figureInstanceId') as string | undefined
+    if (id) byId.set(id, ch as Konva.Group)
   }
+  const nodes = sorted.map((i) => byId.get(i.id)).filter(Boolean) as Konva.Group[]
   if (nodes.length === 0) return
+  if (nodes.length !== sorted.length) {
+    if (!interactionLock.value) rebuildLayer()
+    return
+  }
   for (const n of nodes) {
     n.remove()
   }
@@ -124,7 +129,14 @@ const editorGridCfg = computed(() => {
 })
 
 const outerStyle = computed(() => {
-  const base: Record<string, string | number> = { position: 'absolute', inset: 0, pointerEvents: 'none' }
+  const base: Record<string, string | number> = {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    /* Выше .booklet-main__img и др. (--booklet-figure-media-z ≈ 5), иначе canvas с z-index 1 рисуется ПОД HTML слайда */
+    zIndex: 'var(--booklet-figures-overlay-z, 20)',
+    isolation: 'isolate',
+  }
   if (!editorGridCfg.value.enabled) return base
   const alpha = 0.18
   return {
@@ -133,6 +145,13 @@ const outerStyle = computed(() => {
     backgroundSize: `${editorGridCfg.value.stepPct}% ${editorGridCfg.value.stepPct}%`,
   }
 })
+
+const stageHostStyle = computed(() => ({
+  position: 'absolute' as const,
+  inset: 0,
+  zIndex: 0,
+  pointerEvents: props.enabled ? ('auto' as const) : ('none' as const),
+}))
 
 const selected = computed(() => {
   if (!props.selectedInstanceId) return null
@@ -585,21 +604,17 @@ function startGlobalListeners() {
 
 <template>
   <div ref="rootRef" class="figures-overlay-root" :style="outerStyle">
-    <div
-      ref="stageHostRef"
-      class="figures-konva-host absolute inset-0 z-[1]"
-      :style="{ pointerEvents: enabled ? 'auto' : 'none' }"
-    />
+    <div ref="stageHostRef" class="figures-konva-host" :style="stageHostStyle" />
 
     <div
       v-if="enabled && selected"
-      class="figure-selection-ui pointer-events-none absolute z-[2]"
+      class="figure-selection-ui pointer-events-none absolute"
       :style="{
         left: `${selected.x}%`,
         top: `${selected.y}%`,
         width: `${selected.w}%`,
         height: `${selected.h}%`,
-        zIndex: zNum(selected.z) + 2,
+        zIndex: 1,
       }"
     >
           <div class="pointer-events-none absolute inset-0 rounded border-2 border-brand-500/90 bg-transparent" />

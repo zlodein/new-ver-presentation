@@ -62,6 +62,8 @@
   transform-origin: 0 0;
   padding: 1rem;
   box-sizing: border-box;
+  /* Konva-оверлей фигур должен быть выше контента слайда (см. --booklet-figure-media-z, по умолчанию 5) */
+  --booklet-figures-overlay-z: 20;
 }
 
 /* В мобильном редакторе (без .presentation-view-fixed) не масштабируем — обычный поток, иначе блоки не отображаются */
@@ -75,6 +77,7 @@
     transform: none;
     transform-origin: unset;
     padding: 0;
+    --booklet-figures-overlay-z: 20;
   }
 }
 
