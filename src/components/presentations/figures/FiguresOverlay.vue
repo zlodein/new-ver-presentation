@@ -63,6 +63,55 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n))
 }
 
+/** Шаг 10° + магнит к горизонтали/вертикали (0°, 90°, 180°, 270°). */
+function snapRotationDeg(raw: number): number {
+  const d = ((raw % 360) + 360) % 360
+  const step = 10
+  let s = Math.round(d / step) * step
+  s = ((s % 360) + 360) % 360
+  const axes = [0, 90, 180, 270]
+  const tol = 4
+  for (const a of axes) {
+    const dist = Math.min(Math.abs(s - a), 360 - Math.abs(s - a))
+    if (dist <= tol) return a
+  }
+  return s
+}
+
+function devicePixelRatioClamped(): number {
+  if (typeof window === 'undefined') return 1
+  return Math.min(window.devicePixelRatio || 1, 2.5)
+}
+
+/**
+ * Переставляет группы фигур в Konva по актуальному z из модели (без полной пересборки).
+ * Нужен, т.к. watch может не перерисовать слой сразу, а CSS z у рамки выделения обновляется.
+ */
+function reorderKonvaByZ() {
+  if (!layer || interactionLock.value) return
+  const sorted = [...getInstances()].sort((a, b) => zNum(a.z) - zNum(b.z))
+  const nodes: Konva.Group[] = []
+  for (const inst of sorted) {
+    const n = layer.findOne((node: Konva.Node) => node.getAttr('figureInstanceId') === inst.id) as Konva.Group | null
+    if (n) nodes.push(n)
+  }
+  if (nodes.length === 0) return
+  for (const n of nodes) {
+    n.remove()
+  }
+  for (const n of nodes) {
+    layer.add(n)
+  }
+  layer.batchDraw()
+}
+
+function onLayerMove(delta: number) {
+  const sel = selected.value
+  if (!sel) return
+  emit('layerMove', { id: sel.id, delta, slideId: props.slide.id })
+  nextTick(() => reorderKonvaByZ())
+}
+
 const editorGridCfg = computed(() => {
   const g = (props.slide.data as Record<string, unknown> | undefined)?.editorGrid as
     | Record<string, unknown>
@@ -111,6 +160,7 @@ function fitStage() {
   const h = Math.max(1, host.clientHeight)
   stage.width(w)
   stage.height(h)
+  applyCanvasSharpness()
   if (!interactionLock.value) rebuildLayer()
   else layer?.batchDraw()
 }
@@ -255,9 +305,26 @@ function onStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
   emit('select', null)
 }
 
+function applyCanvasSharpness() {
+  if (!layer || !stage) return
+  const pr = devicePixelRatioClamped()
+  Konva.pixelRatio = pr
+  layer.getCanvas().setPixelRatio(pr)
+  layer.hitCanvas.setPixelRatio(1)
+  layer.setSize({ width: stage.width(), height: stage.height() })
+  layer.imageSmoothingEnabled(false)
+  layer.batchDraw()
+}
+
+function onWindowBlur() {
+  endInteraction()
+}
+
 onMounted(() => {
   const host = stageHostRef.value
   if (!host) return
+
+  Konva.pixelRatio = devicePixelRatioClamped()
 
   stage = new Konva.Stage({
     container: host,
@@ -265,8 +332,12 @@ onMounted(() => {
     height: Math.max(1, host.clientHeight),
   })
   layer = new Konva.Layer()
+  layer.imageSmoothingEnabled(false)
   stage.add(layer)
+  applyCanvasSharpness()
   stage.on('click tap', onStageClick)
+
+  window.addEventListener('blur', onWindowBlur)
 
   resizeObserver = new ResizeObserver(() => fitStage())
   resizeObserver.observe(host)
@@ -275,6 +346,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('blur', onWindowBlur)
   resizeObserver?.disconnect()
   resizeObserver = null
   stage?.destroy()
@@ -289,6 +361,18 @@ watch(
     rebuildLayer()
   },
   { deep: true },
+)
+
+watch(
+  () =>
+    getInstances()
+      .map((i) => `${i.id}:${zNum(i.z)}`)
+      .slice()
+      .sort()
+      .join('|'),
+  () => {
+    nextTick(() => reorderKonvaByZ())
+  },
 )
 
 watch(
@@ -384,7 +468,7 @@ function onPointerMove(e: PointerEvent) {
 
     let next = drag.startRotation + (currentAngleDeg - drag.startAngleDeg)
     next = ((next % 360) + 360) % 360
-    inst.rotation = next
+    inst.rotation = snapRotationDeg(next)
     syncFigureRotationInLayer(inst)
     return
   }
@@ -479,9 +563,15 @@ function syncFigureRotationInLayer(inst: FigureInstance) {
 }
 
 function onPointerUp() {
+  const mode = drag.mode
   drag.mode = null
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
+  if (mode?.mode === 'rotate') {
+    const inst = mode.instance
+    inst.rotation = snapRotationDeg(Number(inst.rotation ?? 0))
+    syncFigureRotationInLayer(inst)
+  }
   endInteraction()
 }
 
@@ -521,7 +611,7 @@ function startGlobalListeners() {
               title="Слой выше"
               aria-label="Слой выше"
               @pointerdown.stop
-              @click.stop.prevent="emit('layerMove', { id: selected.id, delta: 1, slideId: props.slide.id })"
+              @click.stop.prevent="onLayerMove(1)"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 5l7 7H5l7-7z" />
@@ -549,7 +639,7 @@ function startGlobalListeners() {
               title="Слой ниже"
               aria-label="Слой ниже"
               @pointerdown.stop
-              @click.stop.prevent="emit('layerMove', { id: selected.id, delta: -1, slideId: props.slide.id })"
+              @click.stop.prevent="onLayerMove(-1)"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l-7-7h14l-7 7z" />
@@ -590,5 +680,11 @@ function startGlobalListeners() {
 <style scoped>
 .figure-selection-ui {
   overflow: visible;
+}
+
+/* Чётче при масштабировании страницы (booklet-scale-root) */
+.figures-konva-host :deep(canvas) {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 </style>
