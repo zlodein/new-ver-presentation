@@ -53,6 +53,12 @@ const instances = computed(() => {
   return [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
 })
 
+function maxZ(): number {
+  let m = -Infinity
+  for (const i of instances.value) m = Math.max(m, zNum(i.z))
+  return m === -Infinity ? 0 : m
+}
+
 function zNum(v: unknown): number {
   const n = typeof v === 'number' ? v : Number(v)
   return Number.isFinite(n) ? n : 0
@@ -129,12 +135,13 @@ const editorGridCfg = computed(() => {
 })
 
 const outerStyle = computed(() => {
+  const boost = Math.max(0, Math.floor(maxZ()))
   const base: Record<string, string | number> = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
-    /* Выше .booklet-main__img и др. (--booklet-figure-media-z ≈ 5), иначе canvas с z-index 1 рисуется ПОД HTML слайда */
-    zIndex: 'var(--booklet-figures-overlay-z, 20)',
+    /* База из CSS + максимальный z фигур на слайде — корень тоже «едет» при смене слоёв (не только figure-selection-ui) */
+    zIndex: `calc(var(--booklet-figures-overlay-z, 20) + ${boost})`,
     isolation: 'isolate',
   }
   if (!editorGridCfg.value.enabled) return base
@@ -157,12 +164,6 @@ const selected = computed(() => {
   if (!props.selectedInstanceId) return null
   return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
 })
-
-function maxZ(): number {
-  let m = -Infinity
-  for (const i of instances.value) m = Math.max(m, zNum(i.z))
-  return m === -Infinity ? 0 : m
-}
 
 function bringToFront(instance: FigureInstance) {
   instance.z = maxZ() + 1
