@@ -653,15 +653,16 @@
                       class="booklet-scale-root w-full h-full"
                       :class="{
                         'booklet-scale-root--fig-pass':
-                          canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id),
+                          canEditFigures && slide.id === currentSlide?.id,
                       }"
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
                       <FiguresOverlay
+                        v-if="!isAdminSlidesGridMode"
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id)"
+                        :enabled="canEditFigures && slide.id === currentSlide?.id"
                         @select="onFigureSelect(slide, $event)"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
@@ -715,15 +716,16 @@
                       class="booklet-scale-root w-full h-full"
                       :class="{
                         'booklet-scale-root--fig-pass':
-                          canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id),
+                          canEditFigures && slide.id === currentSlide?.id,
                       }"
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
                       <FiguresOverlay
+                        v-if="!isAdminSlidesGridMode"
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id)"
+                        :enabled="canEditFigures && slide.id === currentSlide?.id"
                         @select="onFigureSelect(slide, $event)"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
@@ -1308,15 +1310,15 @@
                   </div>
                 </div>
               </div>
-              <FiguresPanel
-                v-if="isAdminSlidesGridMode && currentSlide"
-                :slide="currentSlide"
-                :figures="figures"
-                :selectedInstanceId="selectedFigureInstanceId"
-                :enabled="canEditFigures"
-                @select="onFigureSelect(currentSlide!, $event)"
-              />
             </template>
+            <FiguresPanel
+              v-if="!isAdminSlidesGridMode && currentSlide && canEditFigures"
+              :slide="currentSlide"
+              :figures="figures"
+              :selectedInstanceId="selectedFigureInstanceId"
+              :enabled="canEditFigures"
+              @select="onFigureSelect(currentSlide!, $event)"
+            />
           </div>
         </aside>
       </main>
@@ -2579,7 +2581,13 @@ const adminSlidesGroupEditorSlidesBackup = ref<SlideItem[] | null>(null)
 const adminSlidesGroupEditorSettingsBackup = ref<Record<string, string> | null>(null)
 /** Редактирование изображений: либо черновик, либо зашёл администратор */
 const canEditImages = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
-const canEditFigures = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
+/** Фигуры только в редакторе презентации; в админской сетке слайдов — только шаблоны, без /api/figures и без Konva-редактора */
+const canEditFigures = computed(
+  () =>
+    !isAdminSlidesGridMode.value &&
+    (!isPublished.value || isAdmin.value) &&
+    !adminSlidesTemplatePreviewMode.value,
+)
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
 
@@ -2587,6 +2595,10 @@ const figuresById = computed(() => Object.fromEntries(figures.value.map((f) => [
 
 async function refreshFigures() {
   if (!hasApi()) return
+  if (isAdminSlidesGridMode.value) {
+    figures.value = []
+    return
+  }
   try {
     const res = await api.get<{ figures?: FigureDefinition[] }>('/api/figures')
     figures.value = Array.isArray(res.figures) ? (res.figures as FigureDefinition[]) : []
@@ -2711,9 +2723,18 @@ async function refreshSlidesGroupTemplates() {
   slidesGroupTemplates.value = readSlidesGroupTemplatesFromLS()
 }
 
-watch(isAdminSlidesGridMode, (v) => {
-  if (v) void refreshSlidesGroupTemplates()
-}, { immediate: true })
+watch(
+  isAdminSlidesGridMode,
+  (v) => {
+    if (v) {
+      figures.value = []
+      void refreshSlidesGroupTemplates()
+    } else {
+      void refreshFigures()
+    }
+  },
+  { immediate: true },
+)
 
 watch(
   () => adminSlidesSelectionUIEnabled.value,
@@ -3671,8 +3692,7 @@ onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
 
-  // Подгружаем геометрию фигур (для отрисовки/редактирования)
-  void refreshFigures()
+  /* refreshFigures: watch(isAdminSlidesGridMode, { immediate }) + смена режима сетки */
 
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
@@ -4018,6 +4038,13 @@ async function exportToPDF() {
   background-color: #fff !important;
   border-color: #d1d5db !important;
   color: #1f2937 !important;
+  /* Поверх слоя Konva (z фигур до ~99) — иначе canvas перехватывает клики по тексту */
+  position: relative;
+  z-index: 150;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-content [contenteditable='true'] {
+  position: relative;
+  z-index: 150;
 }
 .editor-slider-wrap .presentation-slider-wrap.booklet-view input::placeholder,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea::placeholder {

@@ -223,13 +223,15 @@ function rotatedBoxAabb(rotatedBox: {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
-/** Удерживаем группу фигуры в границах stage (слой совпадает по размеру со stage) */
+/** Удерживаем группу фигуры в границах stage (relativeTo: layer — в тех же координатах, что outer.x/y) */
 function clampOuterInsideStage(outer: Konva.Group) {
   if (!stage) return
+  const L = outer.getLayer()
+  if (!L) return
   const W = stage.width()
   const H = stage.height()
   for (let i = 0; i < 4; i++) {
-    const rect = outer.getClientRect({ relativeTo: stage })
+    const rect = outer.getClientRect({ relativeTo: L })
     let dx = 0
     let dy = 0
     if (rect.x < 0) dx -= rect.x
