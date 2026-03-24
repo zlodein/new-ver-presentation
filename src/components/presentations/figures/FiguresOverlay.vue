@@ -214,10 +214,20 @@ const toolbarPositionStyle = computed(() => {
   }
 })
 
+/** Контент слайда с padding; фигуры — на полный размер scale-root (без внутреннего отступа) */
+const figuresBleedBox = {
+  position: 'absolute' as const,
+  top: 'calc(-1 * var(--booklet-scale-padding, 0px))',
+  left: 'calc(-1 * var(--booklet-scale-padding, 0px))',
+  right: 'calc(-1 * var(--booklet-scale-padding, 0px))',
+  bottom: 'calc(-1 * var(--booklet-scale-padding, 0px))',
+  width: 'auto',
+  height: 'auto',
+}
+
 const konvaWrapStyle = computed(() => {
   const base: Record<string, string | number> = {
-    position: 'absolute',
-    inset: 0,
+    ...figuresBleedBox,
     pointerEvents: 'none',
     zIndex: konvaStackZ.value,
     isolation: 'isolate',
@@ -232,8 +242,7 @@ const konvaWrapStyle = computed(() => {
 })
 
 const toolbarWrapStyle = computed(() => ({
-  position: 'absolute' as const,
-  inset: 0,
+  ...figuresBleedBox,
   pointerEvents: 'none' as const,
   zIndex: toolbarStackZ.value,
 }))

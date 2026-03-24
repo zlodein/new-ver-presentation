@@ -62,6 +62,8 @@
   transform-origin: 0 0;
   padding: 1rem;
   box-sizing: border-box;
+  /* Совпадает с padding: фигуры (Konva) расширяются в эту зону и не упираются во «внутренний» край */
+  --booklet-scale-padding: 1rem;
   /* Минимальный z-index панели слоёв фигур (FiguresOverlay toolbar), поверх медиа */
   --booklet-figures-overlay-z: 20;
 }
@@ -77,6 +79,7 @@
     transform: none;
     transform-origin: unset;
     padding: 0;
+    --booklet-scale-padding: 0;
     --booklet-figures-overlay-z: 20;
   }
 }
