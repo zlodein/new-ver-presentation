@@ -32,13 +32,29 @@ const mediaZResolved = ref(5)
 
 /**
  * Прямоугольник Konva совпадает с .booklet-content (как у x/y/w/h в % у медиа).
- * Раньше оверлей расширялся в padding scale-root — из‑за этого 0% и 100% не совпадали с видимым краем контента.
+ * Размеры в layout-px до transform: parent .booklet-scale-root имеет scale(), offsetWidth/offsetLeft
+ * дают целые значения и расходятся с реальной геометрией — берём getBoundingClientRect / sx,sy.
  */
 const contentBoxPx = ref({ left: 0, top: 0, width: 0, height: 0 })
 
 function parseCssPx(v: string): number {
   const n = Number.parseFloat(v)
   return Number.isFinite(n) ? n : 0
+}
+
+/** sx,sy — масштаб из matrix(scale); для layout-размеров делим экранные px из getBoundingClientRect */
+function readUniformScaleFromTransform(el: HTMLElement | null): { sx: number; sy: number } {
+  if (!el || typeof window === 'undefined') return { sx: 1, sy: 1 }
+  const t = getComputedStyle(el).transform
+  if (!t || t === 'none') return { sx: 1, sy: 1 }
+  try {
+    const m = new DOMMatrixReadOnly(t)
+    const sx = Math.abs(m.a) > 1e-6 ? Math.abs(m.a) : 1
+    const sy = Math.abs(m.d) > 1e-6 ? Math.abs(m.d) : 1
+    return { sx, sy }
+  } catch {
+    return { sx: 1, sy: 1 }
+  }
 }
 
 function setContentBoxIfChanged(next: { left: number; top: number; width: number; height: number }) {
@@ -67,11 +83,27 @@ function syncContentBoxFromScaleRoot() {
   }
   const content = scale.querySelector(':scope > .booklet-content') as HTMLElement | null
   if (content) {
+    const { sx, sy } = readUniformScaleFromTransform(scale)
+    const cr = content.getBoundingClientRect()
+    const sr = scale.getBoundingClientRect()
+    const leftLocal = (cr.left - sr.left) / sx
+    const topLocal = (cr.top - sr.top) / sy
+    const widthLocal = cr.width / sx
+    const heightLocal = cr.height / sy
+    if (widthLocal >= 1 && heightLocal >= 1) {
+      setContentBoxIfChanged({
+        left: Math.round(leftLocal * 100) / 100,
+        top: Math.round(topLocal * 100) / 100,
+        width: Math.max(1, Math.round(widthLocal)),
+        height: Math.max(1, Math.round(heightLocal)),
+      })
+      return
+    }
     setContentBoxIfChanged({
       left: content.offsetLeft,
       top: content.offsetTop,
-      width: Math.max(1, Math.ceil(content.offsetWidth)),
-      height: Math.max(1, Math.ceil(content.offsetHeight)),
+      width: Math.max(1, Math.round(content.offsetWidth)),
+      height: Math.max(1, Math.round(content.offsetHeight)),
     })
     return
   }
@@ -83,8 +115,8 @@ function syncContentBoxFromScaleRoot() {
   setContentBoxIfChanged({
     left: pl,
     top: pt,
-    width: Math.max(1, Math.ceil(scale.clientWidth - pl - pr)),
-    height: Math.max(1, Math.ceil(scale.clientHeight - pt - pb)),
+    width: Math.max(1, Math.round(scale.clientWidth - pl - pr)),
+    height: Math.max(1, Math.round(scale.clientHeight - pt - pb)),
   })
 }
 
@@ -299,6 +331,9 @@ const figuresContentBoxStyle = computed(() => ({
   top: `${contentBoxPx.value.top}px`,
   width: `${contentBoxPx.value.width}px`,
   height: `${contentBoxPx.value.height}px`,
+  boxSizing: 'border-box' as const,
+  margin: 0,
+  padding: 0,
 }))
 
 const konvaWrapStyle = computed(() => {
@@ -328,6 +363,9 @@ const stageHostStyle = computed(() => ({
   inset: 0,
   zIndex: 0,
   display: 'block' as const,
+  boxSizing: 'border-box' as const,
+  margin: 0,
+  padding: 0,
   pointerEvents: props.enabled ? ('auto' as const) : ('none' as const),
 }))
 
@@ -505,13 +543,21 @@ function updateTransformerSelection() {
   layer.batchDraw()
 }
 
+function layoutSizeOfTransformedHost(host: HTMLElement): { w: number; h: number } {
+  const scale = host.closest('.booklet-scale-root') as HTMLElement | null
+  const { sx, sy } = readUniformScaleFromTransform(scale)
+  const hr = host.getBoundingClientRect()
+  return {
+    w: Math.max(1, Math.round(hr.width / sx)),
+    h: Math.max(1, Math.round(hr.height / sy)),
+  }
+}
+
 function fitStage() {
   const host = stageHostRef.value
   if (!stage || !host) return
   syncFiguresCssVarsFromRoot()
-  /* ceil — иначе clientWidth чуть меньше layout, фигура с x=0 / x+w=100 не доходит до края после scale */
-  const w = Math.max(1, Math.ceil(host.offsetWidth || host.clientWidth))
-  const h = Math.max(1, Math.ceil(host.offsetHeight || host.clientHeight))
+  const { w, h } = layoutSizeOfTransformedHost(host)
   stage.width(w)
   stage.height(h)
   applyCanvasSharpness()
@@ -709,10 +755,11 @@ onMounted(() => {
 
   Konva.pixelRatio = devicePixelRatioClamped()
 
+  const { w: initW, h: initH } = layoutSizeOfTransformedHost(host)
   stage = new Konva.Stage({
     container: host,
-    width: Math.max(1, Math.ceil(host.offsetWidth || host.clientWidth)),
-    height: Math.max(1, Math.ceil(host.offsetHeight || host.clientHeight)),
+    width: initW,
+    height: initH,
   })
   layer = new Konva.Layer()
   layer.imageSmoothingEnabled(false)
@@ -837,6 +884,13 @@ watch(
 </template>
 
 <style scoped>
+.figures-konva-stack {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
 .figures-toolbar-layer {
   overflow: visible;
 }
