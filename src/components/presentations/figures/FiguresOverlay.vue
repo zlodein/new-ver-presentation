@@ -367,6 +367,17 @@ function resetFigureContentNode(content: Konva.Group) {
   content.offsetY(0)
 }
 
+/** Полуоси AABB для прямоугольника w×h с поворотом outer (градусы) — clamp центра при drag */
+function axisAlignedHalfExtentsForRotatedRect(wPx: number, hPx: number, rotationDeg: number): { rx: number; ry: number } {
+  const rad = (rotationDeg * Math.PI) / 180
+  const c = Math.abs(Math.cos(rad))
+  const s = Math.abs(Math.sin(rad))
+  return {
+    rx: (wPx / 2) * c + (hPx / 2) * s,
+    ry: (wPx / 2) * s + (hPx / 2) * c,
+  }
+}
+
 function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
   if (!stage) return
   const W = stage.width()
@@ -385,7 +396,7 @@ function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
   const hit = outer.findOne('.figureHit') as Konva.Rect | null
   const figureContent = outer.findOne('.figureContent') as Konva.Group | null
   const scaleInner = figureContent?.findOne('.figureScale') as Konva.Group | null
-  const rotInner = scaleInner?.getChildren()?.[0] as Konva.Group | null
+  const rotInner = scaleInner?.findOne('.figureRotInner') as Konva.Group | null
 
   outer.x((xPct / 100) * W + wPx / 2)
   outer.y((yPct / 100) * H + hPx / 2)
@@ -404,7 +415,7 @@ function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
   if (figureContent) resetFigureContentNode(figureContent)
 }
 
-/** Transformer цепляется к figureContent (только отрисовка), а не к полному w×h — рамка без «воздуха» вокруг геометрии */
+/** После transform: сброс figureContent; размеры из hit. Рамка Transformer = полная ячейка (см. figurePlacementBounds в scaleInner). */
 function syncInstanceFromTransformNode(outer: Konva.Group, figureContent: Konva.Group, inst: FigureInstance) {
   if (!stage) return
   const W = stage.width()
@@ -555,7 +566,19 @@ function rebuildLayer() {
       listening: false,
     })
 
+    const placementBounds = new Konva.Rect({
+      name: 'figurePlacementBounds',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      fill: 'rgba(0,0,0,0)',
+      listening: false,
+      perfectDrawEnabled: false,
+    })
+
     const rotInner = new Konva.Group({
+      name: 'figureRotInner',
       x: 50,
       y: 50,
       offsetX: 50,
@@ -566,6 +589,7 @@ function rebuildLayer() {
 
     const drawn = buildFigureContentGroup(inst, props.figuresById)
     rotInner.add(drawn)
+    scaleInner.add(placementBounds)
     scaleInner.add(rotInner)
     figureContent.add(scaleInner)
 
@@ -629,8 +653,9 @@ function rebuildLayer() {
           cx = tlx + wP / 2
           cy = tly + hP / 2
         }
-        cx = clamp(cx, wP / 2, W - wP / 2)
-        cy = clamp(cy, hP / 2, H - hP / 2)
+        const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
+        cx = clamp(cx, rx, W - rx)
+        cy = clamp(cy, ry, H - ry)
         return { x: cx, y: cy }
       })
     }
