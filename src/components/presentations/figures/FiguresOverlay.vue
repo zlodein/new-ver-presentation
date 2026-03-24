@@ -25,8 +25,8 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLDivElement | null>(null)
 const stageHostRef = ref<HTMLDivElement | null>(null)
 
-/** Целое число: parseInt(getComputedStyle(.booklet-scale-root).--booklet-figures-overlay-z), иначе 20 */
-const figuresOverlayZBaseResolved = ref(20)
+/** parseInt(--booklet-figures-overlay-z), иначе 1 */
+const figuresOverlayZBaseResolved = ref(1)
 
 function syncFiguresOverlayZBaseFromCss() {
   if (typeof window === 'undefined' || !rootRef.value) return
@@ -34,11 +34,11 @@ function syncFiguresOverlayZBaseFromCss() {
   if (!scale) return
   const raw = getComputedStyle(scale).getPropertyValue('--booklet-figures-overlay-z').trim()
   if (raw === '') {
-    figuresOverlayZBaseResolved.value = 20
+    figuresOverlayZBaseResolved.value = 1
     return
   }
   const n = Number.parseInt(raw, 10)
-  figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 20
+  figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 1
 }
 
 let stage: Konva.Stage | null = null
@@ -150,14 +150,24 @@ const editorGridCfg = computed(() => {
   return { enabled, stepPct, snap }
 })
 
+const selected = computed(() => {
+  if (!props.selectedInstanceId) return null
+  return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
+})
+
+/** Как раньше у figure-selection-ui: z_model + 1; без выделения — 1. Корень: base + это значение. */
+const overlayZBoost = computed(() => {
+  const sel = selected.value
+  if (!sel) return 1
+  return Math.max(1, Math.floor(zNum(sel.z)) + 1)
+})
+
 const outerStyle = computed(() => {
-  const boost = Math.max(0, Math.floor(maxZ()))
-  const zFull = figuresOverlayZBaseResolved.value + boost
+  const zFull = figuresOverlayZBaseResolved.value + overlayZBoost.value
   const base: Record<string, string | number> = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
-    /* Одно число в DOM: база из --booklet-figures-overlay-z + max(z фигур на слайде) */
     zIndex: zFull,
     isolation: 'isolate',
   }
@@ -176,11 +186,6 @@ const stageHostStyle = computed(() => ({
   zIndex: 0,
   pointerEvents: props.enabled ? ('auto' as const) : ('none' as const),
 }))
-
-const selected = computed(() => {
-  if (!props.selectedInstanceId) return null
-  return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
-})
 
 function bringToFront(instance: FigureInstance) {
   instance.z = maxZ() + 1
@@ -634,8 +639,8 @@ function startGlobalListeners() {
         top: `${selected.y}%`,
         width: `${selected.w}%`,
         height: `${selected.h}%`,
-        /* Внутри overlay (canvas z-index: 0) — растёт вместе с z фигуры, чтобы было видно смену слоя в DOM */
-        zIndex: zNum(selected.z) + 1,
+        /* Над canvas (z-index: 0); глобальный «слой» задаётся на figures-overlay-root = base + overlayZBoost */
+        zIndex: 1,
       }"
     >
           <div class="pointer-events-none absolute inset-0 rounded border-2 border-brand-500/90 bg-transparent" />
