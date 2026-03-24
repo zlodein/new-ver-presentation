@@ -641,10 +641,14 @@ function normalizeInstance(raw: unknown): PdfFigureInstance | null {
   }
 }
 
-/** Слой с фигурами поверх контента слайда (внутри .booklet-scale-root). */
+/**
+ * Слой фигур внутри .booklet-scale-root — тот же расчёт z, что в FiguresOverlay.vue:
+ * max(z фигур) + mediaZ - 3; при mediaZ=5 и низком z фигуры слой ниже медиа (z-index 5).
+ */
 export function renderPdfFiguresOverlayHtml(
   dataObj: Record<string, unknown>,
   figuresById: Record<string, PdfFigureDefinition>,
+  mediaZ = 5,
 ): string {
   const raw = dataObj.figures
   if (!Array.isArray(raw) || raw.length === 0) return ''
@@ -652,27 +656,31 @@ export function renderPdfFiguresOverlayHtml(
   const instances = raw.map(normalizeInstance).filter(Boolean) as PdfFigureInstance[]
   if (instances.length === 0) return ''
 
+  const maxFigZ = Math.max(...instances.map((i) => zNum(i.z)))
+  const stackZ = clamp(maxFigZ + mediaZ - 3, 1, 99)
+
   instances.sort((a, b) => zNum(a.z) - zNum(b.z))
 
   const items: string[] = []
+  let stackOrder = 0
   for (let i = 0; i < instances.length; i++) {
     const inst = instances[i]
     const def = figuresById[inst.figureId]
     const inner = buildFigureSvgInner(inst, def, figuresById)
     if (!inner) continue
 
+    stackOrder += 1
     const rot = Number.isFinite(inst.rotation ?? 0) ? (inst.rotation ?? 0) : 0
     const shadowCss = shadowFilterCss(inst)
-    const zIndex = 20 + i
     items.push(`
-    <div class="pdf-fig-item" style="left:${inst.x}%;top:${inst.y}%;width:${inst.w}%;height:${inst.h}%;z-index:${zIndex};transform:rotate(${rot}deg);${shadowCss}">
+    <div class="pdf-fig-item" style="left:${inst.x}%;top:${inst.y}%;width:${inst.w}%;height:${inst.h}%;z-index:${stackOrder};transform:rotate(${rot}deg);${shadowCss}">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%" overflow="visible">${inner}</svg>
     </div>`)
   }
 
   if (items.length === 0) return ''
 
-  return `<div class="pdf-figures-overlay" aria-hidden="true">${items.join('')}</div>`
+  return `<div class="pdf-figures-overlay" style="z-index:${stackZ};isolation:isolate;" aria-hidden="true">${items.join('')}</div>`
 }
 
 export function figuresArrayToMap(figs: PdfFigureDefinition[] | undefined): Record<string, PdfFigureDefinition> {

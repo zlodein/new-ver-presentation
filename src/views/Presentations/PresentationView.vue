@@ -277,7 +277,6 @@
                 <img v-for="(url, i) in viewSlideImages(slide, 4)" :key="i" :src="url" alt="" class="h-24 w-full cursor-pointer object-cover rounded" v-show="url" @click="url && openGallery(getGalleryGlobalIndex(index, i))">
               </div>
             </div>
-          </div>
             <FiguresOverlay
               :slide="slide"
               :figuresById="figuresById"
