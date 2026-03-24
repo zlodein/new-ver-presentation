@@ -649,7 +649,13 @@
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
                 >
                   <div class="booklet-page__inner">
-                    <div class="booklet-scale-root w-full h-full">
+                    <div
+                      class="booklet-scale-root w-full h-full"
+                      :class="{
+                        'booklet-scale-root--fig-pass':
+                          canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id),
+                      }"
+                    >
                       <PresentationEditorSlideBlock :slide="slide" />
                       <FiguresOverlay
                         :slide="slide"
@@ -705,7 +711,13 @@
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
                 >
                   <div class="booklet-page__inner">
-                    <div class="booklet-scale-root w-full h-full">
+                    <div
+                      class="booklet-scale-root w-full h-full"
+                      :class="{
+                        'booklet-scale-root--fig-pass':
+                          canEditFigures && (isAdminSlidesGridMode || slide.id === currentSlide?.id),
+                      }"
+                    >
                       <PresentationEditorSlideBlock :slide="slide" />
                       <FiguresOverlay
                         :slide="slide"

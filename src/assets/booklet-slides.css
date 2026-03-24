@@ -62,7 +62,7 @@
   transform-origin: 0 0;
   padding: 1rem;
   box-sizing: border-box;
-  /* База z-index корня figures-overlay-root; к выбранной фигуре добавляется (z модели + 1) в JS */
+  /* Минимальный z-index панели слоёв фигур (FiguresOverlay toolbar), поверх медиа */
   --booklet-figures-overlay-z: 20;
 }
 
@@ -202,9 +202,17 @@
 }
 
 /* Обложка: top = подзаголовок (heading), center = название презентации (presentation title) */
-/* Базовый z-index «слоя медиа»: фигуры с z ниже окажутся под изображениями, выше — поверх */
+/* Базовый z-index «слоя медиа»: z-index canvas фигур = max(z фигур) + mediaZ - 3 (см. FiguresOverlay.vue) */
 .presentation-slider-wrap.booklet-view {
   --booklet-figure-media-z: 5;
+}
+
+/*
+ * Редактор: когда фигуры под медиа (низкий z модели), клики проходят к Konva.
+ * label.booklet-upload-btn остаётся кликабельным; только <img> без событий.
+ */
+.booklet-scale-root--fig-pass .booklet-content img {
+  pointer-events: none;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__content {

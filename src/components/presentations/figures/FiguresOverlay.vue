@@ -25,21 +25,57 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLDivElement | null>(null)
 const stageHostRef = ref<HTMLDivElement | null>(null)
 
-/** parseInt(--booklet-figures-overlay-z) — стабильный z-index корня оверлея */
+/** Минимальный z-index панели инструментов (поверх медиа). Из --booklet-figures-overlay-z */
 const figuresOverlayZBaseResolved = ref(20)
+/** Слой медиа слайда (--booklet-figure-media-z), обычно 5 — для расчёта z canvas фигур */
+const mediaZResolved = ref(5)
 
-function syncFiguresOverlayZBaseFromCss() {
+function syncFiguresCssVarsFromRoot() {
   if (typeof window === 'undefined' || !rootRef.value) return
   const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
   if (!scale) return
-  const raw = getComputedStyle(scale).getPropertyValue('--booklet-figures-overlay-z').trim()
-  if (raw === '') {
-    figuresOverlayZBaseResolved.value = 20
-    return
+  const cs = getComputedStyle(scale)
+  const raw = cs.getPropertyValue('--booklet-figures-overlay-z').trim()
+  if (raw === '') figuresOverlayZBaseResolved.value = 20
+  else {
+    const n = Number.parseInt(raw, 10)
+    figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 20
   }
-  const n = Number.parseInt(raw, 10)
-  figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 20
+  const rawM = cs.getPropertyValue('--booklet-figure-media-z').trim()
+  if (rawM === '') mediaZResolved.value = 5
+  else {
+    const m = Number.parseInt(rawM, 10)
+    mediaZResolved.value = Number.isFinite(m) ? Math.max(0, m) : 5
+  }
 }
+
+/** Подписка на z фигур: один canvas — общий z-index; max(z) задаёт «глубину» относительно медиа слайда */
+const figuresZStackSig = computed(() =>
+  getInstances()
+    .map((i) => `${i.id}:${zNum(i.z)}`)
+    .sort()
+    .join('|'),
+)
+
+const maxFigZForStack = computed(() => {
+  void figuresZStackSig.value
+  const arr = getInstances()
+  if (arr.length === 0) return 0
+  return Math.max(...arr.map((i) => zNum(i.z)))
+})
+
+/**
+ * z-index слоя Konva: ниже --booklet-figure-media-z при малом z модели (фигура под картинкой).
+ * Формула: maxFigZ + mediaZ - 3 (при media=5: z=0→2, z=4→6 выше медиа).
+ */
+const konvaStackZ = computed(() =>
+  clamp(maxFigZForStack.value + mediaZResolved.value - 3, 1, 99),
+)
+
+/** Панель слоёв всегда поверх медиа, чтобы кнопки были кликабельны */
+const toolbarStackZ = computed(() =>
+  Math.max(konvaStackZ.value + 2, figuresOverlayZBaseResolved.value, mediaZResolved.value + 6),
+)
 
 let stage: Konva.Stage | null = null
 let layer: Konva.Layer | null = null
@@ -167,7 +203,7 @@ const selected = computed(() => {
   return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
 })
 
-const toolbarStyle = computed(() => {
+const toolbarPositionStyle = computed(() => {
   if (!props.enabled || !props.selectedInstanceId || !selected.value) return {}
   const sel = selected.value
   return {
@@ -175,16 +211,15 @@ const toolbarStyle = computed(() => {
     top: `${sel.y}%`,
     width: `${sel.w}%`,
     height: `${sel.h}%`,
-    zIndex: 2,
   }
 })
 
-const outerStyle = computed(() => {
+const konvaWrapStyle = computed(() => {
   const base: Record<string, string | number> = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
-    zIndex: figuresOverlayZBaseResolved.value,
+    zIndex: konvaStackZ.value,
     isolation: 'isolate',
   }
   if (!editorGridCfg.value.enabled) return base
@@ -195,6 +230,13 @@ const outerStyle = computed(() => {
     backgroundSize: `${editorGridCfg.value.stepPct}% ${editorGridCfg.value.stepPct}%`,
   }
 })
+
+const toolbarWrapStyle = computed(() => ({
+  position: 'absolute' as const,
+  inset: 0,
+  pointerEvents: 'none' as const,
+  zIndex: toolbarStackZ.value,
+}))
 
 const stageHostStyle = computed(() => ({
   position: 'absolute' as const,
@@ -531,7 +573,7 @@ function onWindowBlur() {
 }
 
 onMounted(() => {
-  nextTick(() => syncFiguresOverlayZBaseFromCss())
+  nextTick(() => syncFiguresCssVarsFromRoot())
 
   const host = stageHostRef.value
   if (!host) return
@@ -597,17 +639,21 @@ watch(
     updateTransformerSelection()
   },
 )
+
+watch(
+  () => props.slide?.id,
+  () => nextTick(() => syncFiguresCssVarsFromRoot()),
+)
 </script>
 
 <template>
-  <div ref="rootRef" class="figures-overlay-root" :style="outerStyle">
+  <!-- Два корня: Konva с z от max(z) фигур (можно под медиа); панель — всегда выше медиа -->
+  <div ref="rootRef" class="figures-konva-stack" :style="konvaWrapStyle">
     <div ref="stageHostRef" class="figures-konva-host" :style="stageHostStyle" />
+  </div>
 
-    <div
-      v-if="enabled && selected"
-      class="figure-toolbar pointer-events-none absolute"
-      :style="toolbarStyle"
-    >
+  <div v-if="enabled && selected" class="figures-toolbar-layer" :style="toolbarWrapStyle">
+    <div class="figure-toolbar pointer-events-none absolute" :style="toolbarPositionStyle">
       <div class="absolute right-1 top-1 z-[3] flex flex-col gap-1" style="pointer-events: auto">
         <button
           type="button"
@@ -655,6 +701,10 @@ watch(
 </template>
 
 <style scoped>
+.figures-toolbar-layer {
+  overflow: visible;
+}
+
 .figure-toolbar {
   overflow: visible;
 }
