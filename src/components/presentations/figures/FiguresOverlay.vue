@@ -30,8 +30,11 @@ const figuresOverlayZBaseResolved = ref(20)
 /** Слой медиа слайда (--booklet-figure-media-z), обычно 5 — для расчёта z canvas фигур */
 const mediaZResolved = ref(5)
 
-/** Реальные px padding у .booklet-scale-root — расширяем Konva точнее, чем только CSS var */
+/** Расширение Konva за пределы «контентной» области scale-root до визуального края (padding + микрозазор) */
 const bleedPx = ref({ top: 0, right: 0, bottom: 0, left: 0 })
+
+/** Небольшой запас: субпиксели после transform: scale и округление clientWidth дают заметный зазор у краёв в просмотре/PDF */
+const BLEED_EPSILON_PX = 3
 
 function parseCssPx(v: string): number {
   const n = Number.parseFloat(v)
@@ -48,12 +51,27 @@ function syncBleedFromScaleRoot() {
     bleedPx.value = { top: 0, right: 0, bottom: 0, left: 0 }
     return
   }
+  const content = scale.querySelector(':scope > .booklet-content') as HTMLElement | null
+  const eps = BLEED_EPSILON_PX
+  if (content) {
+    const bl = content.offsetLeft
+    const bt = content.offsetTop
+    const br = scale.clientWidth - content.offsetLeft - content.offsetWidth
+    const bb = scale.clientHeight - content.offsetTop - content.offsetHeight
+    bleedPx.value = {
+      top: Math.max(0, bt) + eps,
+      left: Math.max(0, bl) + eps,
+      right: Math.max(0, br) + eps,
+      bottom: Math.max(0, bb) + eps,
+    }
+    return
+  }
   const cs = getComputedStyle(scale)
   bleedPx.value = {
-    top: parseCssPx(cs.paddingTop),
-    right: parseCssPx(cs.paddingRight),
-    bottom: parseCssPx(cs.paddingBottom),
-    left: parseCssPx(cs.paddingLeft),
+    top: parseCssPx(cs.paddingTop) + eps,
+    right: parseCssPx(cs.paddingRight) + eps,
+    bottom: parseCssPx(cs.paddingBottom) + eps,
+    left: parseCssPx(cs.paddingLeft) + eps,
   }
 }
 
@@ -468,8 +486,9 @@ function fitStage() {
   const host = stageHostRef.value
   if (!stage || !host) return
   syncFiguresCssVarsFromRoot()
-  const w = Math.max(1, host.clientWidth)
-  const h = Math.max(1, host.clientHeight)
+  /* ceil — иначе clientWidth чуть меньше layout, фигура с x=0 / x+w=100 не доходит до края после scale */
+  const w = Math.max(1, Math.ceil(host.offsetWidth || host.clientWidth))
+  const h = Math.max(1, Math.ceil(host.offsetHeight || host.clientHeight))
   stage.width(w)
   stage.height(h)
   applyCanvasSharpness()
@@ -667,8 +686,8 @@ onMounted(() => {
 
   stage = new Konva.Stage({
     container: host,
-    width: Math.max(1, host.clientWidth),
-    height: Math.max(1, host.clientHeight),
+    width: Math.max(1, Math.ceil(host.offsetWidth || host.clientWidth)),
+    height: Math.max(1, Math.ceil(host.offsetHeight || host.clientHeight)),
   })
   layer = new Konva.Layer()
   layer.imageSmoothingEnabled(false)
@@ -729,6 +748,16 @@ watch(
   () => [props.slide?.id, props.slide?.data?.figures, maxFigZForStack.value],
   () => {
     nextTick(() => syncFiguresCssVarsFromRoot())
+  },
+  { deep: true },
+)
+
+watch(
+  bleedPx,
+  () => {
+    nextTick(() => {
+      if (stage) fitStage()
+    })
   },
   { deep: true },
 )
