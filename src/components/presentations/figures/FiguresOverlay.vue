@@ -41,14 +41,28 @@ function parseCssPx(v: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
+function setBleedIfChanged(next: { top: number; right: number; bottom: number; left: number }) {
+  const cur = bleedPx.value
+  if (
+    cur.top === next.top &&
+    cur.right === next.right &&
+    cur.bottom === next.bottom &&
+    cur.left === next.left
+  ) {
+    return
+  }
+  bleedPx.value = next
+}
+
 function syncBleedFromScaleRoot() {
+  const zero = { top: 0, right: 0, bottom: 0, left: 0 }
   if (typeof window === 'undefined' || !rootRef.value) {
-    bleedPx.value = { top: 0, right: 0, bottom: 0, left: 0 }
+    setBleedIfChanged(zero)
     return
   }
   const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
   if (!scale) {
-    bleedPx.value = { top: 0, right: 0, bottom: 0, left: 0 }
+    setBleedIfChanged(zero)
     return
   }
   const content = scale.querySelector(':scope > .booklet-content') as HTMLElement | null
@@ -58,21 +72,21 @@ function syncBleedFromScaleRoot() {
     const bt = content.offsetTop
     const br = scale.clientWidth - content.offsetLeft - content.offsetWidth
     const bb = scale.clientHeight - content.offsetTop - content.offsetHeight
-    bleedPx.value = {
+    setBleedIfChanged({
       top: Math.max(0, bt) + eps,
       left: Math.max(0, bl) + eps,
       right: Math.max(0, br) + eps,
       bottom: Math.max(0, bb) + eps,
-    }
+    })
     return
   }
   const cs = getComputedStyle(scale)
-  bleedPx.value = {
+  setBleedIfChanged({
     top: parseCssPx(cs.paddingTop) + eps,
     right: parseCssPx(cs.paddingRight) + eps,
     bottom: parseCssPx(cs.paddingBottom) + eps,
     left: parseCssPx(cs.paddingLeft) + eps,
-  }
+  })
 }
 
 function syncFiguresCssVarsFromRoot() {
@@ -748,16 +762,6 @@ watch(
   () => [props.slide?.id, props.slide?.data?.figures, maxFigZForStack.value],
   () => {
     nextTick(() => syncFiguresCssVarsFromRoot())
-  },
-  { deep: true },
-)
-
-watch(
-  bleedPx,
-  () => {
-    nextTick(() => {
-      if (stage) fitStage()
-    })
   },
   { deep: true },
 )
