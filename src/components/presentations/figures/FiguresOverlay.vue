@@ -114,8 +114,8 @@ function isUnderTransformer(n: Konva.Node | null): boolean {
   return false
 }
 
-function reorderKonvaByZ() {
-  if (!layer || interactionLock.value) return
+function reorderKonvaByZ(force = false) {
+  if (!layer || (interactionLock.value && !force)) return
   const sorted = [...getInstances()].sort((a, b) => zNum(a.z) - zNum(b.z))
   const byId = new Map<string, Konva.Group>()
   for (const ch of layer.getChildren()) {
@@ -142,9 +142,11 @@ function reorderKonvaByZ() {
 function onLayerMove(delta: number) {
   const sel = selected.value
   if (!sel) return
+  /* Иначе watcher rebuildLayer и reorderKonvaByZ не сработают: interactionLock остаётся true после mousedown по фигуре до pointerup (клик по кнопке слоя часто раньше отпускания или без общего pointerup). */
+  endInteraction()
   emit('layerMove', { id: sel.id, delta, slideId: props.slide.id })
   nextTick(() => {
-    reorderKonvaByZ()
+    reorderKonvaByZ(true)
     updateTransformerSelection()
   })
 }
