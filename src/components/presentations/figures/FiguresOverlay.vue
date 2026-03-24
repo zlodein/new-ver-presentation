@@ -25,7 +25,7 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLDivElement | null>(null)
 const stageHostRef = ref<HTMLDivElement | null>(null)
 
-/** parseInt(--booklet-figures-overlay-z). Корень оверлея = только это (не растёт от bringToFront / z фигуры). */
+/** parseInt(--booklet-figures-overlay-z). Итоговый z корня = база + overlayZBoost (z выбранной + 1). */
 const figuresOverlayZBaseResolved = ref(20)
 
 function syncFiguresOverlayZBaseFromCss() {
@@ -71,7 +71,7 @@ const instances = computed(() => {
 
 function maxZ(): number {
   let m = -Infinity
-  for (const i of instances.value) m = Math.max(m, zNum(i.z))
+  for (const i of getInstances()) m = Math.max(m, zNum(i.z))
   return m === -Infinity ? 0 : m
 }
 
@@ -155,12 +155,46 @@ const selected = computed(() => {
   return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
 })
 
+/**
+ * Явная подписка на z всех фигур: sort() может не прочитать каждое поле z за один прогон instances,
+ * из‑за чего рамка и z-index корня не обновлялись после layerMove.
+ */
+const figuresZSignature = computed(() =>
+  getInstances()
+    .map((i) => `${i.id}:${zNum(i.z)}`)
+    .sort()
+    .join('|'),
+)
+
+const overlayZBoost = computed(() => {
+  figuresZSignature.value
+  if (!props.selectedInstanceId) return 1
+  const inst = getInstances().find((i) => i.id === props.selectedInstanceId)
+  if (!inst) return 1
+  return Math.max(1, Math.floor(zNum(inst.z)) + 1)
+})
+
+const selectionUiStyle = computed(() => {
+  figuresZSignature.value
+  if (!props.enabled || !props.selectedInstanceId) return {}
+  const sel = getInstances().find((i) => i.id === props.selectedInstanceId)
+  if (!sel) return {}
+  return {
+    left: `${sel.x}%`,
+    top: `${sel.y}%`,
+    width: `${sel.w}%`,
+    height: `${sel.h}%`,
+    zIndex: Math.max(1, Math.floor(zNum(sel.z)) + 1),
+  }
+})
+
 const outerStyle = computed(() => {
+  const zFull = figuresOverlayZBaseResolved.value + overlayZBoost.value
   const base: Record<string, string | number> = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
-    zIndex: figuresOverlayZBaseResolved.value,
+    zIndex: zFull,
     isolation: 'isolate',
   }
   if (!editorGridCfg.value.enabled) return base
@@ -180,7 +214,9 @@ const stageHostStyle = computed(() => ({
 }))
 
 function bringToFront(instance: FigureInstance) {
-  instance.z = maxZ() + 1
+  const mz = maxZ()
+  const cur = zNum(instance.z)
+  if (cur < mz) instance.z = mz + 1
   const id = instance.id
   const node = layer?.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id)
   node?.moveToTop()
@@ -626,14 +662,7 @@ function startGlobalListeners() {
     <div
       v-if="enabled && selected"
       class="figure-selection-ui pointer-events-none absolute"
-      :style="{
-        left: `${selected.x}%`,
-        top: `${selected.y}%`,
-        width: `${selected.w}%`,
-        height: `${selected.h}%`,
-        /* Над canvas (0); z модели +1 — меняется при bringToFront / кнопках слоя. Корень — только база из CSS. */
-        zIndex: Math.max(1, Math.floor(zNum(selected.z)) + 1),
-      }"
+      :style="selectionUiStyle"
     >
           <div class="pointer-events-none absolute inset-0 rounded border-2 border-brand-500/90 bg-transparent" />
 

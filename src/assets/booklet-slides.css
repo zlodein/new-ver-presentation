@@ -62,7 +62,7 @@
   transform-origin: 0 0;
   padding: 1rem;
   box-sizing: border-box;
-  /* Z-index корня figures-overlay-root (стабильный). Слой фигуры в DOM — у .figure-selection-ui (z модели + 1) */
+  /* База z-index корня figures-overlay-root; к выбранной фигуре добавляется (z модели + 1) в JS */
   --booklet-figures-overlay-z: 20;
 }
 
