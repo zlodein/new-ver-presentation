@@ -268,6 +268,16 @@ function syncInstancePositionFromNode(outer: Konva.Group, inst: FigureInstance) 
   inst.y = ((outer.y() - hPx / 2) / H) * 100
 }
 
+function resetFigureContentNode(content: Konva.Group) {
+  content.x(0)
+  content.y(0)
+  content.scaleX(1)
+  content.scaleY(1)
+  content.rotation(0)
+  content.offsetX(0)
+  content.offsetY(0)
+}
+
 function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
   if (!stage) return
   const W = stage.width()
@@ -284,7 +294,8 @@ function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
   const wPx = (wPct / 100) * W
   const hPx = (hPct / 100) * H
   const hit = outer.findOne('.figureHit') as Konva.Rect | null
-  const scaleInner = outer.findOne('.figureScale') as Konva.Group | null
+  const figureContent = outer.findOne('.figureContent') as Konva.Group | null
+  const scaleInner = figureContent?.findOne('.figureScale') as Konva.Group | null
   const rotInner = scaleInner?.getChildren()?.[0] as Konva.Group | null
 
   outer.x((xPct / 100) * W + wPx / 2)
@@ -301,22 +312,26 @@ function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
     scaleInner.scaleY(hPx / 100)
   }
   if (rotInner) rotInner.rotation(0)
+  if (figureContent) resetFigureContentNode(figureContent)
 }
 
-function syncInstanceFromTransformNode(outer: Konva.Group, inst: FigureInstance) {
+/** Transformer цепляется к figureContent (только отрисовка), а не к полному w×h — рамка без «воздуха» вокруг геометрии */
+function syncInstanceFromTransformNode(outer: Konva.Group, figureContent: Konva.Group, inst: FigureInstance) {
   if (!stage) return
   const W = stage.width()
   const H = stage.height()
   const hit = outer.findOne('.figureHit') as Konva.Rect | null
-  const scaleInner = outer.findOne('.figureScale') as Konva.Group | null
+  const scaleInner = figureContent.findOne('.figureScale') as Konva.Group | null
   if (!hit || !scaleInner) return
 
-  const sx = outer.scaleX()
-  const sy = outer.scaleY()
+  const rExtra = figureContent.rotation()
+  const sx = figureContent.scaleX()
+  const sy = figureContent.scaleY()
   const wPx = hit.width() * sx
   const hPx = hit.height() * sy
-  outer.scaleX(1)
-  outer.scaleY(1)
+
+  resetFigureContentNode(figureContent)
+
   hit.width(Math.max(1, wPx))
   hit.height(Math.max(1, hPx))
   outer.offsetX(wPx / 2)
@@ -324,7 +339,7 @@ function syncInstanceFromTransformNode(outer: Konva.Group, inst: FigureInstance)
   scaleInner.scaleX(wPx / 100)
   scaleInner.scaleY(hPx / 100)
 
-  inst.rotation = snapRotationDeg(outer.rotation())
+  inst.rotation = snapRotationDeg(outer.rotation() + rExtra)
   inst.w = (wPx / W) * 100
   inst.h = (hPx / H) * 100
   inst.x = ((outer.x() - wPx / 2) / W) * 100
@@ -340,8 +355,10 @@ function syncInstanceFromTransformNode(outer: Konva.Group, inst: FigureInstance)
 
 function createTransformer(): Konva.Transformer {
   const tr = new Konva.Transformer({
-    rotateAnchorOffset: 28,
+    padding: 0,
+    rotateAnchorOffset: 22,
     keepRatio: true,
+    ignoreStroke: true,
     enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
     boundBoxFunc(oldBox, newBox) {
       const MIN = 8
@@ -355,14 +372,15 @@ function createTransformer(): Konva.Transformer {
   tr.on('transformstart', () => beginInteraction())
 
   tr.on('transformend', (e: Konva.KonvaEventObject<Event>) => {
-    const node = e.target as Konva.Group
-    const id = node.getAttr('figureInstanceId') as string | undefined
-    if (!id) {
+    const figureContent = e.target as Konva.Group
+    const outer = figureContent.getParent() as Konva.Group | null
+    const id = outer?.getAttr('figureInstanceId') as string | undefined
+    if (!id || !outer) {
       endInteraction()
       return
     }
     const inst = getInstances().find((i) => i.id === id)
-    if (inst) syncInstanceFromTransformNode(node, inst)
+    if (inst) syncInstanceFromTransformNode(outer, figureContent, inst)
     endInteraction()
   })
 
@@ -382,8 +400,9 @@ function updateTransformerSelection() {
     layer.batchDraw()
     return
   }
-  const node = layer.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id) as Konva.Group | null
-  transformer.nodes(node ? [node] : [])
+  const outer = layer.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id) as Konva.Group | null
+  const figureContent = outer?.findOne('.figureContent') as Konva.Group | null
+  transformer.nodes(figureContent ? [figureContent] : [])
   transformer.moveToTop()
   layer.batchDraw()
 }
@@ -429,6 +448,13 @@ function rebuildLayer() {
       figureInstanceId: inst.id,
     })
 
+    const figureContent = new Konva.Group({
+      name: 'figureContent',
+      x: 0,
+      y: 0,
+      listening: true,
+    })
+
     const scaleInner = new Konva.Group({
       name: 'figureScale',
       x: 0,
@@ -447,9 +473,10 @@ function rebuildLayer() {
       listening: false,
     })
 
-    const content = buildFigureContentGroup(inst, props.figuresById)
-    rotInner.add(content)
+    const drawn = buildFigureContentGroup(inst, props.figuresById)
+    rotInner.add(drawn)
     scaleInner.add(rotInner)
+    figureContent.add(scaleInner)
 
     const hitRect = new Konva.Rect({
       name: 'figureHit',
@@ -461,7 +488,7 @@ function rebuildLayer() {
       listening: true,
     })
 
-    outer.add(scaleInner)
+    outer.add(figureContent)
     outer.add(hitRect)
 
     if (props.enabled) {
