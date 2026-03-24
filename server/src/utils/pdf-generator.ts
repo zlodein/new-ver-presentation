@@ -507,7 +507,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-page__inner:has(.pdf-figures-overlay) { overflow: visible; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root { position: absolute; left: 0; top: 0; width: 70.16%; height: 70.16%; transform: scale(1.42518); transform-origin: 0 0; padding: 1rem; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root:has(.pdf-figures-overlay) { overflow: visible; }
-    .presentation-slider-wrap.booklet-view .pdf-figures-overlay { position: absolute; top: calc(-1rem - 3px); left: calc(-1rem - 3px); right: calc(-1rem - 3px); bottom: calc(-1rem - 3px); pointer-events: none; overflow: visible; }
+    /* Совпадает с областью .booklet-content внутри padding scale-root (1rem), как в FiguresOverlay */
+    .presentation-slider-wrap.booklet-view .pdf-figures-overlay { position: absolute; top: 1rem; left: 1rem; right: 1rem; bottom: 1rem; pointer-events: none; overflow: visible; }
     .presentation-slider-wrap.booklet-view .pdf-figures-overlay .pdf-fig-item { position: absolute; transform-origin: center center; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-main__wrap { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; }

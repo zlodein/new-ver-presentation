@@ -71,13 +71,12 @@
   transform-origin: 0 0;
   padding: 1rem;
   box-sizing: border-box;
-  /* Совпадает с padding: фигуры (Konva) расширяются в эту зону и не упираются во «внутренний» край */
   --booklet-scale-padding: 1rem;
   /* Минимальный z-index панели слоёв фигур (FiguresOverlay toolbar), поверх медиа */
   --booklet-figures-overlay-z: 20;
 }
 
-/* Оверлей фигур выходит в padding на пару px — не обрезать у scale-root */
+/* Transformer/углы могут выступать за .booklet-content — не обрезать у scale-root */
 .presentation-slider-wrap.booklet-view .booklet-scale-root:has(.figures-konva-stack) {
   overflow: visible;
 }

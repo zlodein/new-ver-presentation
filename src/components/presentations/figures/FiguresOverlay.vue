@@ -30,62 +30,61 @@ const figuresOverlayZBaseResolved = ref(20)
 /** Слой медиа слайда (--booklet-figure-media-z), обычно 5 — для расчёта z canvas фигур */
 const mediaZResolved = ref(5)
 
-/** Расширение Konva за пределы «контентной» области scale-root до визуального края (padding + микрозазор) */
-const bleedPx = ref({ top: 0, right: 0, bottom: 0, left: 0 })
-
-/** Небольшой запас: субпиксели после transform: scale и округление clientWidth дают заметный зазор у краёв в просмотре/PDF */
-const BLEED_EPSILON_PX = 3
+/**
+ * Прямоугольник Konva совпадает с .booklet-content (как у x/y/w/h в % у медиа).
+ * Раньше оверлей расширялся в padding scale-root — из‑за этого 0% и 100% не совпадали с видимым краем контента.
+ */
+const contentBoxPx = ref({ left: 0, top: 0, width: 0, height: 0 })
 
 function parseCssPx(v: string): number {
   const n = Number.parseFloat(v)
   return Number.isFinite(n) ? n : 0
 }
 
-function setBleedIfChanged(next: { top: number; right: number; bottom: number; left: number }) {
-  const cur = bleedPx.value
+function setContentBoxIfChanged(next: { left: number; top: number; width: number; height: number }) {
+  const cur = contentBoxPx.value
   if (
+    cur.left === next.left &&
     cur.top === next.top &&
-    cur.right === next.right &&
-    cur.bottom === next.bottom &&
-    cur.left === next.left
+    cur.width === next.width &&
+    cur.height === next.height
   ) {
     return
   }
-  bleedPx.value = next
+  contentBoxPx.value = next
 }
 
-function syncBleedFromScaleRoot() {
-  const zero = { top: 0, right: 0, bottom: 0, left: 0 }
+function syncContentBoxFromScaleRoot() {
+  const zero = { left: 0, top: 0, width: 0, height: 0 }
   if (typeof window === 'undefined' || !rootRef.value) {
-    setBleedIfChanged(zero)
+    setContentBoxIfChanged(zero)
     return
   }
   const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
   if (!scale) {
-    setBleedIfChanged(zero)
+    setContentBoxIfChanged(zero)
     return
   }
   const content = scale.querySelector(':scope > .booklet-content') as HTMLElement | null
-  const eps = BLEED_EPSILON_PX
   if (content) {
-    const bl = content.offsetLeft
-    const bt = content.offsetTop
-    const br = scale.clientWidth - content.offsetLeft - content.offsetWidth
-    const bb = scale.clientHeight - content.offsetTop - content.offsetHeight
-    setBleedIfChanged({
-      top: Math.max(0, bt) + eps,
-      left: Math.max(0, bl) + eps,
-      right: Math.max(0, br) + eps,
-      bottom: Math.max(0, bb) + eps,
+    setContentBoxIfChanged({
+      left: content.offsetLeft,
+      top: content.offsetTop,
+      width: Math.max(1, Math.ceil(content.offsetWidth)),
+      height: Math.max(1, Math.ceil(content.offsetHeight)),
     })
     return
   }
   const cs = getComputedStyle(scale)
-  setBleedIfChanged({
-    top: parseCssPx(cs.paddingTop) + eps,
-    right: parseCssPx(cs.paddingRight) + eps,
-    bottom: parseCssPx(cs.paddingBottom) + eps,
-    left: parseCssPx(cs.paddingLeft) + eps,
+  const pl = parseCssPx(cs.paddingLeft)
+  const pt = parseCssPx(cs.paddingTop)
+  const pr = parseCssPx(cs.paddingRight)
+  const pb = parseCssPx(cs.paddingBottom)
+  setContentBoxIfChanged({
+    left: pl,
+    top: pt,
+    width: Math.max(1, Math.ceil(scale.clientWidth - pl - pr)),
+    height: Math.max(1, Math.ceil(scale.clientHeight - pt - pb)),
   })
 }
 
@@ -107,7 +106,7 @@ function syncFiguresCssVarsFromRoot() {
 
   figuresOverlayZBaseResolved.value = readZ('--booklet-figures-overlay-z', 20)
   mediaZResolved.value = readZ('--booklet-figure-media-z', 5)
-  syncBleedFromScaleRoot()
+  syncContentBoxFromScaleRoot()
 }
 
 /** Подписка на z фигур: один canvas — общий z-index; max(z) задаёт «глубину» относительно медиа слайда */
@@ -294,20 +293,17 @@ const toolbarButtonVClass = computed(() => {
   return 'top-1'
 })
 
-/** Контент слайда с padding; фигуры — на полный размер scale-root (через измеренный padding) */
-const figuresBleedBox = computed(() => ({
+const figuresContentBoxStyle = computed(() => ({
   position: 'absolute' as const,
-  top: `-${bleedPx.value.top}px`,
-  left: `-${bleedPx.value.left}px`,
-  right: `-${bleedPx.value.right}px`,
-  bottom: `-${bleedPx.value.bottom}px`,
-  width: 'auto',
-  height: 'auto',
+  left: `${contentBoxPx.value.left}px`,
+  top: `${contentBoxPx.value.top}px`,
+  width: `${contentBoxPx.value.width}px`,
+  height: `${contentBoxPx.value.height}px`,
 }))
 
 const konvaWrapStyle = computed(() => {
   const base: Record<string, string | number> = {
-    ...figuresBleedBox.value,
+    ...figuresContentBoxStyle.value,
     pointerEvents: 'none',
     zIndex: konvaStackZ.value,
     isolation: 'isolate',
@@ -322,7 +318,7 @@ const konvaWrapStyle = computed(() => {
 })
 
 const toolbarWrapStyle = computed(() => ({
-  ...figuresBleedBox.value,
+  ...figuresContentBoxStyle.value,
   pointerEvents: 'none' as const,
   zIndex: toolbarStackZ.value,
 }))
@@ -331,6 +327,7 @@ const stageHostStyle = computed(() => ({
   position: 'absolute' as const,
   inset: 0,
   zIndex: 0,
+  display: 'block' as const,
   pointerEvents: props.enabled ? ('auto' as const) : ('none' as const),
 }))
 
@@ -860,6 +857,8 @@ watch(
 }
 
 .figures-konva-host :deep(canvas) {
+  display: block;
+  vertical-align: top;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
 }
