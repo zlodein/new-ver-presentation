@@ -30,23 +30,52 @@ const figuresOverlayZBaseResolved = ref(20)
 /** Слой медиа слайда (--booklet-figure-media-z), обычно 5 — для расчёта z canvas фигур */
 const mediaZResolved = ref(5)
 
+/** Реальные px padding у .booklet-scale-root — расширяем Konva точнее, чем только CSS var */
+const bleedPx = ref({ top: 0, right: 0, bottom: 0, left: 0 })
+
+function parseCssPx(v: string): number {
+  const n = Number.parseFloat(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function syncBleedFromScaleRoot() {
+  if (typeof window === 'undefined' || !rootRef.value) {
+    bleedPx.value = { top: 0, right: 0, bottom: 0, left: 0 }
+    return
+  }
+  const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
+  if (!scale) {
+    bleedPx.value = { top: 0, right: 0, bottom: 0, left: 0 }
+    return
+  }
+  const cs = getComputedStyle(scale)
+  bleedPx.value = {
+    top: parseCssPx(cs.paddingTop),
+    right: parseCssPx(cs.paddingRight),
+    bottom: parseCssPx(cs.paddingBottom),
+    left: parseCssPx(cs.paddingLeft),
+  }
+}
+
 function syncFiguresCssVarsFromRoot() {
   if (typeof window === 'undefined' || !rootRef.value) return
   const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
-  if (!scale) return
-  const cs = getComputedStyle(scale)
-  const raw = cs.getPropertyValue('--booklet-figures-overlay-z').trim()
-  if (raw === '') figuresOverlayZBaseResolved.value = 20
-  else {
+  const bookletView = rootRef.value.closest('.booklet-view') as HTMLElement | null
+  const csScale = scale ? getComputedStyle(scale) : null
+  const csBv = bookletView ? getComputedStyle(bookletView) : null
+
+  const readZ = (key: string, fallback: number) => {
+    const a = csScale?.getPropertyValue(key).trim() ?? ''
+    const b = !a && csBv ? csBv.getPropertyValue(key).trim() : ''
+    const raw = a || b
+    if (raw === '') return fallback
     const n = Number.parseInt(raw, 10)
-    figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 20
+    return Number.isFinite(n) ? Math.max(0, n) : fallback
   }
-  const rawM = cs.getPropertyValue('--booklet-figure-media-z').trim()
-  if (rawM === '') mediaZResolved.value = 5
-  else {
-    const m = Number.parseInt(rawM, 10)
-    mediaZResolved.value = Number.isFinite(m) ? Math.max(0, m) : 5
-  }
+
+  figuresOverlayZBaseResolved.value = readZ('--booklet-figures-overlay-z', 20)
+  mediaZResolved.value = readZ('--booklet-figure-media-z', 5)
+  syncBleedFromScaleRoot()
 }
 
 /** Подписка на z фигур: один canvas — общий z-index; max(z) задаёт «глубину» относительно медиа слайда */
@@ -203,6 +232,8 @@ const selected = computed(() => {
   return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
 })
 
+const EDGE_TOOLBAR_PCT = 5
+
 const toolbarPositionStyle = computed(() => {
   if (!props.enabled || !props.selectedInstanceId || !selected.value) return {}
   const sel = selected.value
@@ -214,20 +245,37 @@ const toolbarPositionStyle = computed(() => {
   }
 })
 
-/** Контент слайда с padding; фигуры — на полный размер scale-root (без внутреннего отступа) */
-const figuresBleedBox = {
+/** У края слайда — панель с противоположной стороны bbox фигуры */
+const toolbarButtonHClass = computed(() => {
+  if (!selected.value) return 'right-1'
+  const x = Number(selected.value.x ?? 0)
+  const w = Number(selected.value.w ?? 0)
+  return x + w >= 100 - EDGE_TOOLBAR_PCT ? 'left-1' : 'right-1'
+})
+
+const toolbarButtonVClass = computed(() => {
+  if (!selected.value) return 'top-1'
+  const y = Number(selected.value.y ?? 0)
+  const h = Number(selected.value.h ?? 0)
+  if (y <= EDGE_TOOLBAR_PCT) return 'bottom-1'
+  if (y + h >= 100 - EDGE_TOOLBAR_PCT) return 'top-1'
+  return 'top-1'
+})
+
+/** Контент слайда с padding; фигуры — на полный размер scale-root (через измеренный padding) */
+const figuresBleedBox = computed(() => ({
   position: 'absolute' as const,
-  top: 'calc(-1 * var(--booklet-scale-padding, 0px))',
-  left: 'calc(-1 * var(--booklet-scale-padding, 0px))',
-  right: 'calc(-1 * var(--booklet-scale-padding, 0px))',
-  bottom: 'calc(-1 * var(--booklet-scale-padding, 0px))',
+  top: `-${bleedPx.value.top}px`,
+  left: `-${bleedPx.value.left}px`,
+  right: `-${bleedPx.value.right}px`,
+  bottom: `-${bleedPx.value.bottom}px`,
   width: 'auto',
   height: 'auto',
-}
+}))
 
 const konvaWrapStyle = computed(() => {
   const base: Record<string, string | number> = {
-    ...figuresBleedBox,
+    ...figuresBleedBox.value,
     pointerEvents: 'none',
     zIndex: konvaStackZ.value,
     isolation: 'isolate',
@@ -242,7 +290,7 @@ const konvaWrapStyle = computed(() => {
 })
 
 const toolbarWrapStyle = computed(() => ({
-  ...figuresBleedBox,
+  ...figuresBleedBox.value,
   pointerEvents: 'none' as const,
   zIndex: toolbarStackZ.value,
 }))
@@ -419,6 +467,7 @@ function updateTransformerSelection() {
 function fitStage() {
   const host = stageHostRef.value
   if (!stage || !host) return
+  syncFiguresCssVarsFromRoot()
   const w = Math.max(1, host.clientWidth)
   const h = Math.max(1, host.clientHeight)
   stage.width(w)
@@ -677,20 +726,27 @@ watch(
 )
 
 watch(
-  () => props.slide?.id,
-  () => nextTick(() => syncFiguresCssVarsFromRoot()),
+  () => [props.slide?.id, props.slide?.data?.figures, maxFigZForStack.value],
+  () => {
+    nextTick(() => syncFiguresCssVarsFromRoot())
+  },
+  { deep: true },
 )
 </script>
 
 <template>
   <!-- Два корня: Konva с z от max(z) фигур (можно под медиа); панель — всегда выше медиа -->
-  <div ref="rootRef" class="figures-konva-stack" :style="konvaWrapStyle">
+  <div ref="rootRef" class="figures-konva-stack" data-figures-konva-stack :style="konvaWrapStyle">
     <div ref="stageHostRef" class="figures-konva-host" :style="stageHostStyle" />
   </div>
 
   <div v-if="enabled && selected" class="figures-toolbar-layer" :style="toolbarWrapStyle">
     <div class="figure-toolbar pointer-events-none absolute" :style="toolbarPositionStyle">
-      <div class="absolute right-1 top-1 z-[3] flex flex-col gap-1" style="pointer-events: auto">
+      <div
+        class="absolute z-[3] flex flex-col gap-1"
+        :class="[toolbarButtonHClass, toolbarButtonVClass]"
+        style="pointer-events: auto"
+      >
         <button
           type="button"
           class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"

@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer'
 import { existsSync } from 'node:fs'
 import type { ViewSlideItem } from './types.js'
+import type { PdfFigureDefinition } from './pdf-figure-definitions.js'
+import { figuresArrayToMap, renderPdfFiguresOverlayHtml } from './pdf-figures-html.js'
 
 const YANDEX_STATIC_API_KEY = process.env.YANDEX_STATIC_API_KEY ?? ''
 
@@ -19,6 +21,8 @@ interface PresentationData {
   title: string
   coverImage?: string
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; themeColor?: string } }
+  /** Библиотека фигур из БД — для отрисовки slide.data.figures в PDF */
+  figureDefinitions?: PdfFigureDefinition[]
 }
 
 // A4 альбомная в пикселях (96 DPI): 297mm × 210mm — один слайд = один лист
@@ -103,6 +107,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const frameValue = (settings.imageFrame || '').trim()
   const imageFrame = ['default', 'minimal', 'vintage', 'polaroid'].includes(frameValue) ? frameValue : (frameValue === 'none' ? 'none' : 'default')
 
+  const figMap = figuresArrayToMap(data.figureDefinitions)
+  const figLayer = (d: Record<string, unknown>) => renderPdfFiguresOverlayHtml(d, figMap)
+
   const slideHTML = visibleSlides.map((slide) => {
     switch (slide.type) {
       case 'cover': {
@@ -160,6 +167,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   </div>
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -187,6 +195,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   </div>
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -214,6 +223,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   </div>
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -262,6 +272,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   </div>
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -282,6 +293,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   ${imageUrl ? `<div class="booklet-img__img"><img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -305,6 +317,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   </div>
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -340,6 +353,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   </div>
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -374,6 +388,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   </div>
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -426,6 +441,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                   ${contactImageUrl ? `<div class="booklet-contacts__block booklet-contacts__img"><img src="${toAbsoluteImageUrl(contactImageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
                 </div>
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -454,6 +470,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                 `).join('')}</div>` : ''}
                 ${images.some(Boolean) ? `<div class="mt-4 grid grid-cols-2 gap-2">${images.filter(Boolean).map((url) => `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="" class="h-24 w-full object-cover rounded" />`).join('')}</div>` : ''}
               </div>
+              ${figLayer(dataObj)}
               </div>
             </div>
           </div>
@@ -487,6 +504,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view { --theme-main-color: ${themeColor}; }
     .presentation-slider-wrap.booklet-view .booklet-page__inner { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; padding: 0; box-sizing: border-box; overflow: hidden; background: #fff; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root { position: absolute; left: 0; top: 0; width: 70.16%; height: 70.16%; transform: scale(1.42518); transform-origin: 0 0; padding: 1rem; box-sizing: border-box; }
+    .presentation-slider-wrap.booklet-view .pdf-figures-overlay { position: absolute; z-index: 30; top: -1rem; left: -1rem; right: -1rem; bottom: -1rem; pointer-events: none; overflow: visible; }
+    .presentation-slider-wrap.booklet-view .pdf-figures-overlay .pdf-fig-item { position: absolute; transform-origin: center center; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-main__wrap { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; }
     .presentation-slider-wrap.booklet-view .booklet-main__img { position: relative; flex: 0 0 55%; min-width: 200px; min-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #C4C4C4; box-sizing: border-box; }

@@ -39,6 +39,10 @@
   background-color: #eeeeee;
 }
 
+.presentation-slider-wrap.booklet-view .booklet-page:has(.figures-konva-stack) {
+  overflow: visible;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-page__inner {
   position: relative;
   width: 100%;
@@ -49,6 +53,11 @@
   box-sizing: border-box;
   overflow: hidden;
   background: #fff;
+}
+
+/* Фигуры расширяются в padding scale-root — не обрезать оверлей */
+.presentation-slider-wrap.booklet-view .booklet-page__inner:has(.figures-konva-stack) {
+  overflow: visible;
 }
 
 /* Масштаб 1.42518: контент рисуется в уменьшенной области и масштабируется (как на presentation-realty.ru) */

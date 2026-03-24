@@ -7,6 +7,7 @@ import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
 import { deletePresentationImagesFolder } from './upload.js'
 import { generatePDF } from '../utils/pdf-generator.js'
+import { getAllFiguresForPdf } from '../utils/pdf-figure-definitions.js'
 import type { ViewSlideItem } from '../utils/types.js'
 import { toIsoDateRequired } from '../utils/date.js'
 
@@ -1302,7 +1303,8 @@ export async function presentationRoutes(app: FastifyInstance) {
 
       try {
         const baseUrl = (process.env.PUBLIC_APP_URL || `${req.protocol}://${req.hostname}`).replace(/\/$/, '')
-        const pdfBuffer = await generatePDF(presentationData, baseUrl)
+        const figureDefinitions = await getAllFiguresForPdf()
+        const pdfBuffer = await generatePDF({ ...presentationData, figureDefinitions }, baseUrl)
         
         reply.type('application/pdf')
         reply.header('Content-Disposition', `attachment; filename="${encodeURIComponent(presentationData.title || 'presentation')}.pdf"`)
