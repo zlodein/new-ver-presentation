@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Konva from 'konva'
 import type { FigureDefinition, FigureInstance } from '@/types/figures'
 import { buildFigureContentGroup } from '@/utils/konvaFigureShapes'
@@ -25,7 +25,7 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLDivElement | null>(null)
 const stageHostRef = ref<HTMLDivElement | null>(null)
 
-/** parseInt(--booklet-figures-overlay-z). Итоговый z корня = база + overlayZBoost (z выбранной + 1). */
+/** parseInt(--booklet-figures-overlay-z) — стабильный z-index корня оверлея */
 const figuresOverlayZBaseResolved = ref(20)
 
 function syncFiguresOverlayZBaseFromCss() {
@@ -43,9 +43,10 @@ function syncFiguresOverlayZBaseFromCss() {
 
 let stage: Konva.Stage | null = null
 let layer: Konva.Layer | null = null
+let transformer: Konva.Transformer | null = null
 let resizeObserver: ResizeObserver | null = null
 
-/** Блокирует полную пересборку слоя во время drag / resize / rotate и клика по фигуре. */
+/** Блокирует rebuildLayer во время drag / transform и короткого «кликового» цикла по фигуре */
 const interactionLock = ref(false)
 
 function beginInteraction() {
@@ -85,7 +86,6 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n))
 }
 
-/** Шаг 10° + магнит к горизонтали/вертикали (0°, 90°, 180°, 270°). */
 function snapRotationDeg(raw: number): number {
   const d = ((raw % 360) + 360) % 360
   const step = 10
@@ -105,15 +105,21 @@ function devicePixelRatioClamped(): number {
   return Math.min(window.devicePixelRatio || 1, 2.5)
 }
 
-/**
- * Переставляет группы фигур в Konva по актуальному z из модели (без полной пересборки).
- * Нужен, т.к. watch может не перерисовать слой сразу, а CSS z у рамки выделения обновляется.
- */
+function isUnderTransformer(n: Konva.Node | null): boolean {
+  let cur: Konva.Node | null = n
+  while (cur) {
+    if (cur instanceof Konva.Transformer) return true
+    cur = cur.getParent()
+  }
+  return false
+}
+
 function reorderKonvaByZ() {
   if (!layer || interactionLock.value) return
   const sorted = [...getInstances()].sort((a, b) => zNum(a.z) - zNum(b.z))
   const byId = new Map<string, Konva.Group>()
   for (const ch of layer.getChildren()) {
+    if (ch instanceof Konva.Transformer) continue
     const id = (ch as Konva.Node).getAttr('figureInstanceId') as string | undefined
     if (id) byId.set(id, ch as Konva.Group)
   }
@@ -129,6 +135,7 @@ function reorderKonvaByZ() {
   for (const n of nodes) {
     layer.add(n)
   }
+  transformer?.moveToTop()
   layer.batchDraw()
 }
 
@@ -136,7 +143,10 @@ function onLayerMove(delta: number) {
   const sel = selected.value
   if (!sel) return
   emit('layerMove', { id: sel.id, delta, slideId: props.slide.id })
-  nextTick(() => reorderKonvaByZ())
+  nextTick(() => {
+    reorderKonvaByZ()
+    updateTransformerSelection()
+  })
 }
 
 const editorGridCfg = computed(() => {
@@ -155,46 +165,24 @@ const selected = computed(() => {
   return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
 })
 
-/**
- * Явная подписка на z всех фигур: sort() может не прочитать каждое поле z за один прогон instances,
- * из‑за чего рамка и z-index корня не обновлялись после layerMove.
- */
-const figuresZSignature = computed(() =>
-  getInstances()
-    .map((i) => `${i.id}:${zNum(i.z)}`)
-    .sort()
-    .join('|'),
-)
-
-const overlayZBoost = computed(() => {
-  figuresZSignature.value
-  if (!props.selectedInstanceId) return 1
-  const inst = getInstances().find((i) => i.id === props.selectedInstanceId)
-  if (!inst) return 1
-  return Math.max(1, Math.floor(zNum(inst.z)) + 1)
-})
-
-const selectionUiStyle = computed(() => {
-  figuresZSignature.value
-  if (!props.enabled || !props.selectedInstanceId) return {}
-  const sel = getInstances().find((i) => i.id === props.selectedInstanceId)
-  if (!sel) return {}
+const toolbarStyle = computed(() => {
+  if (!props.enabled || !props.selectedInstanceId || !selected.value) return {}
+  const sel = selected.value
   return {
     left: `${sel.x}%`,
     top: `${sel.y}%`,
     width: `${sel.w}%`,
     height: `${sel.h}%`,
-    zIndex: Math.max(1, Math.floor(zNum(sel.z)) + 1),
+    zIndex: 2,
   }
 })
 
 const outerStyle = computed(() => {
-  const zFull = figuresOverlayZBaseResolved.value + overlayZBoost.value
   const base: Record<string, string | number> = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
-    zIndex: zFull,
+    zIndex: figuresOverlayZBaseResolved.value,
     isolation: 'isolate',
   }
   if (!editorGridCfg.value.enabled) return base
@@ -220,7 +208,140 @@ function bringToFront(instance: FigureInstance) {
   const id = instance.id
   const node = layer?.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id)
   node?.moveToTop()
+  transformer?.moveToTop()
   layer?.batchDraw()
+}
+
+function syncInstancePositionFromNode(outer: Konva.Group, inst: FigureInstance) {
+  if (!stage) return
+  const W = stage.width()
+  const H = stage.height()
+  const hit = outer.findOne('.figureHit') as Konva.Rect | null
+  if (!hit) return
+  const wPx = hit.width()
+  const hPx = hit.height()
+  inst.x = ((outer.x() - wPx / 2) / W) * 100
+  inst.y = ((outer.y() - hPx / 2) / H) * 100
+}
+
+function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
+  if (!stage) return
+  const W = stage.width()
+  const H = stage.height()
+  const wPct = clamp(Number(inst.w ?? 0), 2, 100)
+  const hPct = clamp(Number(inst.h ?? 0), 2, 100)
+  const xPct = clamp(Number(inst.x ?? 0), 0, 100 - wPct)
+  const yPct = clamp(Number(inst.y ?? 0), 0, 100 - hPct)
+  inst.x = xPct
+  inst.y = yPct
+  inst.w = wPct
+  inst.h = hPct
+
+  const wPx = (wPct / 100) * W
+  const hPx = (hPct / 100) * H
+  const hit = outer.findOne('.figureHit') as Konva.Rect | null
+  const scaleInner = outer.findOne('.figureScale') as Konva.Group | null
+  const rotInner = scaleInner?.getChildren()?.[0] as Konva.Group | null
+
+  outer.x((xPct / 100) * W + wPx / 2)
+  outer.y((yPct / 100) * H + hPx / 2)
+  outer.offsetX(wPx / 2)
+  outer.offsetY(hPx / 2)
+  outer.rotation(Number(inst.rotation ?? 0))
+  if (hit) {
+    hit.width(Math.max(1, wPx))
+    hit.height(Math.max(1, hPx))
+  }
+  if (scaleInner) {
+    scaleInner.scaleX(wPx / 100)
+    scaleInner.scaleY(hPx / 100)
+  }
+  if (rotInner) rotInner.rotation(0)
+}
+
+function syncInstanceFromTransformNode(outer: Konva.Group, inst: FigureInstance) {
+  if (!stage) return
+  const W = stage.width()
+  const H = stage.height()
+  const hit = outer.findOne('.figureHit') as Konva.Rect | null
+  const scaleInner = outer.findOne('.figureScale') as Konva.Group | null
+  if (!hit || !scaleInner) return
+
+  const sx = outer.scaleX()
+  const sy = outer.scaleY()
+  const wPx = hit.width() * sx
+  const hPx = hit.height() * sy
+  outer.scaleX(1)
+  outer.scaleY(1)
+  hit.width(Math.max(1, wPx))
+  hit.height(Math.max(1, hPx))
+  outer.offsetX(wPx / 2)
+  outer.offsetY(hPx / 2)
+  scaleInner.scaleX(wPx / 100)
+  scaleInner.scaleY(hPx / 100)
+
+  inst.rotation = snapRotationDeg(outer.rotation())
+  inst.w = (wPx / W) * 100
+  inst.h = (hPx / H) * 100
+  inst.x = ((outer.x() - wPx / 2) / W) * 100
+  inst.y = ((outer.y() - hPx / 2) / H) * 100
+
+  inst.w = clamp(inst.w, 2, 100)
+  inst.h = clamp(inst.h, 2, 100)
+  inst.x = clamp(inst.x, 0, 100 - inst.w)
+  inst.y = clamp(inst.y, 0, 100 - inst.h)
+  applyInstanceBoundsToNode(outer, inst)
+  transformer?.forceUpdate()
+}
+
+function createTransformer(): Konva.Transformer {
+  const tr = new Konva.Transformer({
+    rotateAnchorOffset: 28,
+    keepRatio: true,
+    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+    boundBoxFunc(oldBox, newBox) {
+      const MIN = 8
+      if (newBox.width < MIN || newBox.height < MIN) return oldBox
+      return newBox
+    },
+    rotationSnaps: [0, 90, 180, 270],
+    rotationSnapTolerance: 6,
+  })
+
+  tr.on('transformstart', () => beginInteraction())
+
+  tr.on('transformend', (e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target as Konva.Group
+    const id = node.getAttr('figureInstanceId') as string | undefined
+    if (!id) {
+      endInteraction()
+      return
+    }
+    const inst = getInstances().find((i) => i.id === id)
+    if (inst) syncInstanceFromTransformNode(node, inst)
+    endInteraction()
+  })
+
+  return tr
+}
+
+function updateTransformerSelection() {
+  if (!transformer || !layer) return
+  if (!props.enabled) {
+    transformer.nodes([])
+    layer.batchDraw()
+    return
+  }
+  const id = props.selectedInstanceId
+  if (!id) {
+    transformer.nodes([])
+    layer.batchDraw()
+    return
+  }
+  const node = layer.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id) as Konva.Group | null
+  transformer.nodes(node ? [node] : [])
+  transformer.moveToTop()
+  layer.batchDraw()
 }
 
 function fitStage() {
@@ -244,35 +365,28 @@ function rebuildLayer() {
   const W = stage.width()
   const H = stage.height()
   layer.destroyChildren()
+  transformer = null
 
   for (const inst of instances.value) {
     const xPct = Number(inst.x ?? 0)
     const yPct = Number(inst.y ?? 0)
     const wPct = Number(inst.w ?? 0)
     const hPct = Number(inst.h ?? 0)
-    const xPx = (xPct / 100) * W
-    const yPx = (yPct / 100) * H
     const wPx = (wPct / 100) * W
     const hPx = (hPct / 100) * H
 
     const outer = new Konva.Group({
-      x: xPx,
-      y: yPx,
+      x: (xPct / 100) * W + wPx / 2,
+      y: (yPct / 100) * H + hPx / 2,
+      offsetX: wPx / 2,
+      offsetY: hPx / 2,
+      rotation: Number(inst.rotation ?? 0),
       draggable: props.enabled,
       figureInstanceId: inst.id,
     })
 
-    const hitRect = new Konva.Rect({
-      x: 0,
-      y: 0,
-      width: Math.max(1, wPx),
-      height: Math.max(1, hPx),
-      fill: 'rgba(0,0,0,0.001)',
-      listening: true,
-    })
-
-    // world = T · S_bbox · R_viewBox · p — как SVG: поворот в 0..100, затем растяжение под w×h px.
     const scaleInner = new Konva.Group({
+      name: 'figureScale',
       x: 0,
       y: 0,
       scaleX: wPx / 100,
@@ -285,13 +399,24 @@ function rebuildLayer() {
       y: 50,
       offsetX: 50,
       offsetY: 50,
-      rotation: Number(inst.rotation ?? 0),
+      rotation: 0,
       listening: false,
     })
 
     const content = buildFigureContentGroup(inst, props.figuresById)
     rotInner.add(content)
     scaleInner.add(rotInner)
+
+    const hitRect = new Konva.Rect({
+      name: 'figureHit',
+      x: 0,
+      y: 0,
+      width: Math.max(1, wPx),
+      height: Math.max(1, hPx),
+      fill: 'rgba(0,0,0,0.001)',
+      listening: true,
+    })
+
     outer.add(scaleInner)
     outer.add(hitRect)
 
@@ -316,33 +441,44 @@ function rebuildLayer() {
         e.cancelBubble = true
       })
 
-      outer.on('dragmove', () => {
-        const nxPx = outer.x()
-        const nyPx = outer.y()
-        inst.x = (nxPx / W) * 100
-        inst.y = (nyPx / H) * 100
+      outer.on('dragstart', () => beginInteraction())
+
+      outer.on('dragmove', () => syncInstancePositionFromNode(outer, inst))
+
+      outer.on('dragend', () => {
+        syncInstancePositionFromNode(outer, inst)
+        endInteraction()
       })
 
       outer.dragBoundFunc((pos) => {
-        const wP = (Number(inst.w ?? 0) / 100) * W
-        const hP = (Number(inst.h ?? 0) / 100) * H
-        let nx = pos.x
-        let ny = pos.y
+        const hit = outer.findOne('.figureHit') as Konva.Rect | null
+        if (!hit) return pos
+        const wP = hit.width()
+        const hP = hit.height()
+        let cx = pos.x
+        let cy = pos.y
         if (editorGridCfg.value.snap) {
           const stepX = (editorGridCfg.value.stepPct / 100) * W
           const stepY = (editorGridCfg.value.stepPct / 100) * H
-          nx = Math.round(nx / stepX) * stepX
-          ny = Math.round(ny / stepY) * stepY
+          let tlx = cx - wP / 2
+          let tly = cy - hP / 2
+          tlx = Math.round(tlx / stepX) * stepX
+          tly = Math.round(tly / stepY) * stepY
+          cx = tlx + wP / 2
+          cy = tly + hP / 2
         }
-        nx = clamp(nx, 0, W - wP)
-        ny = clamp(ny, 0, H - hP)
-        return { x: nx, y: ny }
+        cx = clamp(cx, wP / 2, W - wP / 2)
+        cy = clamp(cy, hP / 2, H - hP / 2)
+        return { x: cx, y: cy }
       })
     }
 
     layer.add(outer)
   }
 
+  transformer = createTransformer()
+  layer.add(transformer)
+  updateTransformerSelection()
   layer.batchDraw()
 }
 
@@ -357,6 +493,8 @@ function resolveFigureIdFromNode(n: Konva.Node | null): string | null {
 }
 
 function onStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
+  if (isUnderTransformer(e.target as Konva.Node)) return
+
   const fromTarget = resolveFigureIdFromNode(e.target as Konva.Node)
   if (fromTarget) {
     emit('select', fromTarget)
@@ -421,6 +559,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('blur', onWindowBlur)
   resizeObserver?.disconnect()
   resizeObserver = null
+  transformer = null
   stage?.destroy()
   stage = null
   layer = null
@@ -443,216 +582,19 @@ watch(
       .sort()
       .join('|'),
   () => {
-    nextTick(() => reorderKonvaByZ())
+    nextTick(() => {
+      reorderKonvaByZ()
+      updateTransformerSelection()
+    })
   },
 )
 
 watch(
   () => props.selectedInstanceId,
   () => {
-    layer?.batchDraw()
+    updateTransformerSelection()
   },
 )
-
-type DragMode =
-  | { mode: 'resize'; instance: FigureInstance; handle: 'tl' | 'tr' | 'bl' | 'br' }
-  | { mode: 'rotate'; instance: FigureInstance }
-  | null
-
-const drag = reactive({
-  mode: null as DragMode,
-  startClientX: 0,
-  startClientY: 0,
-  rectW: 1,
-  rectH: 1,
-  startX: 0,
-  startY: 0,
-  startW: 0,
-  startH: 0,
-  startRotation: 0,
-  startAngleDeg: 0,
-  centerClientX: 0,
-  centerClientY: 0,
-})
-
-function pointerAngleDeg(cx: number, cy: number, px: number, py: number): number {
-  const dx = px - cx
-  const dy = py - cy
-  return (Math.atan2(dy, dx) * 180) / Math.PI
-}
-
-function beginResize(instance: FigureInstance, handle: 'tl' | 'tr' | 'bl' | 'br', e: PointerEvent) {
-  if (!props.enabled) return
-  beginInteraction()
-  bringToFront(instance)
-  emit('select', instance.id)
-
-  const rect = rootRef.value?.getBoundingClientRect()
-  if (!rect) return
-
-  drag.mode = { mode: 'resize', instance, handle }
-  drag.startClientX = e.clientX
-  drag.startClientY = e.clientY
-  drag.rectW = rect.width || 1
-  drag.rectH = rect.height || 1
-  drag.startX = instance.x ?? 0
-  drag.startY = instance.y ?? 0
-  drag.startW = instance.w ?? 0
-  drag.startH = instance.h ?? 0
-
-  startGlobalListeners()
-}
-
-function beginRotate(instance: FigureInstance, e: PointerEvent) {
-  if (!props.enabled) return
-  beginInteraction()
-  bringToFront(instance)
-  emit('select', instance.id)
-
-  const rect = rootRef.value?.getBoundingClientRect()
-  if (!rect) return
-
-  const instX = Number(instance.x ?? 0)
-  const instY = Number(instance.y ?? 0)
-  const instW = Number(instance.w ?? 0)
-  const instH = Number(instance.h ?? 0)
-
-  const centerClientX = rect.left + ((instX + instW / 2) / 100) * rect.width
-  const centerClientY = rect.top + ((instY + instH / 2) / 100) * rect.height
-
-  const startAngleDeg = pointerAngleDeg(centerClientX, centerClientY, e.clientX, e.clientY)
-
-  drag.mode = { mode: 'rotate', instance }
-  drag.centerClientX = centerClientX
-  drag.centerClientY = centerClientY
-  drag.startRotation = Number(instance.rotation ?? 0)
-  drag.startAngleDeg = startAngleDeg
-
-  startGlobalListeners()
-}
-
-function onPointerMove(e: PointerEvent) {
-  if (!drag.mode) return
-
-  if (drag.mode.mode === 'rotate') {
-    const inst = drag.mode.instance
-    const currentAngleDeg = pointerAngleDeg(drag.centerClientX, drag.centerClientY, e.clientX, e.clientY)
-
-    let next = drag.startRotation + (currentAngleDeg - drag.startAngleDeg)
-    next = ((next % 360) + 360) % 360
-    inst.rotation = snapRotationDeg(next)
-    syncFigureRotationInLayer(inst)
-    return
-  }
-
-  const dxPct = ((e.clientX - drag.startClientX) / drag.rectW) * 100
-  const dyPct = ((e.clientY - drag.startClientY) / drag.rectH) * 100
-
-  const inst = drag.mode.instance
-  const MIN = 2
-
-  let newX = drag.startX
-  let newY = drag.startY
-  let newW = drag.startW
-  let newH = drag.startH
-
-  switch (drag.mode.handle) {
-    case 'tl':
-      newX = drag.startX + dxPct
-      newY = drag.startY + dyPct
-      newW = drag.startW - dxPct
-      newH = drag.startH - dyPct
-      break
-    case 'tr':
-      newY = drag.startY + dyPct
-      newW = drag.startW + dxPct
-      newH = drag.startH - dyPct
-      break
-    case 'bl':
-      newX = drag.startX + dxPct
-      newW = drag.startW - dxPct
-      newH = drag.startH + dyPct
-      break
-    case 'br':
-      newW = drag.startW + dxPct
-      newH = drag.startH + dyPct
-      break
-  }
-
-  if (editorGridCfg.value.snap) {
-    const step = editorGridCfg.value.stepPct
-    newX = Math.round(newX / step) * step
-    newY = Math.round(newY / step) * step
-    newW = Math.round(newW / step) * step
-    newH = Math.round(newH / step) * step
-  }
-
-  newW = clamp(newW, MIN, 100)
-  newH = clamp(newH, MIN, 100)
-  newX = clamp(newX, 0, 100 - newW)
-  newY = clamp(newY, 0, 100 - newH)
-
-  inst.x = newX
-  inst.y = newY
-  inst.w = newW
-  inst.h = newH
-  syncFigureBoundsInLayer(inst)
-}
-
-function syncFigureBoundsInLayer(inst: FigureInstance) {
-  if (!stage || !layer) return
-  const W = stage.width()
-  const H = stage.height()
-  const node = layer.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === inst.id) as Konva.Group | null
-  if (!node) return
-  const xPx = ((inst.x ?? 0) / 100) * W
-  const yPx = ((inst.y ?? 0) / 100) * H
-  const wPx = ((inst.w ?? 0) / 100) * W
-  const hPx = ((inst.h ?? 0) / 100) * H
-  node.x(xPx)
-  node.y(yPx)
-  const scaleInner = node.getChildren()[0] as Konva.Group
-  const hitRect = node.getChildren()[1] as Konva.Rect
-  if (scaleInner) {
-    scaleInner.scaleX(wPx / 100)
-    scaleInner.scaleY(hPx / 100)
-  }
-  if (hitRect) {
-    hitRect.width(Math.max(1, wPx))
-    hitRect.height(Math.max(1, hPx))
-  }
-  layer.batchDraw()
-}
-
-function syncFigureRotationInLayer(inst: FigureInstance) {
-  if (!stage || !layer) return
-  const node = layer.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === inst.id) as Konva.Group | null
-  if (!node) return
-  const scaleInner = node.getChildren()[0] as Konva.Group
-  const rotInner = scaleInner?.getChildren()?.[0] as Konva.Group | null
-  if (rotInner) rotInner.rotation(Number(inst.rotation ?? 0))
-  layer.batchDraw()
-}
-
-function onPointerUp() {
-  const mode = drag.mode
-  drag.mode = null
-  window.removeEventListener('pointermove', onPointerMove)
-  window.removeEventListener('pointerup', onPointerUp)
-  if (mode?.mode === 'rotate') {
-    const inst = mode.instance
-    inst.rotation = snapRotationDeg(Number(inst.rotation ?? 0))
-    syncFigureRotationInLayer(inst)
-  }
-  endInteraction()
-}
-
-function startGlobalListeners() {
-  window.removeEventListener('pointermove', onPointerMove)
-  window.removeEventListener('pointerup', onPointerUp)
-  window.addEventListener('pointermove', onPointerMove)
-  window.addEventListener('pointerup', onPointerUp)
-}
 </script>
 
 <template>
@@ -661,90 +603,60 @@ function startGlobalListeners() {
 
     <div
       v-if="enabled && selected"
-      class="figure-selection-ui pointer-events-none absolute"
-      :style="selectionUiStyle"
+      class="figure-toolbar pointer-events-none absolute"
+      :style="toolbarStyle"
     >
-          <div class="pointer-events-none absolute inset-0 rounded border-2 border-brand-500/90 bg-transparent" />
-
-          <div class="absolute right-1 top-1 z-[3] flex flex-col gap-1" style="pointer-events: auto">
-            <button
-              type="button"
-              class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-              title="Слой выше"
-              aria-label="Слой выше"
-              @pointerdown.stop
-              @click.stop.prevent="onLayerMove(1)"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5l7 7H5l7-7z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
-              title="Удалить"
-              aria-label="Удалить фигуру"
-              @pointerdown.stop
-              @click.stop.prevent="emit('delete', selected.id)"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-              title="Слой ниже"
-              aria-label="Слой ниже"
-              @pointerdown.stop
-              @click.stop.prevent="onLayerMove(-1)"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l-7-7h14l-7 7z" />
-              </svg>
-            </button>
-          </div>
-
-          <div
-            class="absolute left-1/2 -top-[18px] z-[3] h-[10px] w-[10px] -translate-x-1/2 cursor-grab rounded-full border border-brand-500 bg-white shadow-theme-xs"
-            style="pointer-events: auto"
-            @pointerdown.stop.prevent="beginRotate(selected, $event)"
-          />
-
-          <div
-            class="absolute -left-[4px] -top-[4px] h-[8px] w-[8px] cursor-nwse-resize rounded-full border border-white bg-brand-500"
-            style="pointer-events: auto"
-            @pointerdown.stop.prevent="beginResize(selected, 'tl', $event)"
-          />
-          <div
-            class="absolute -right-[4px] -top-[4px] h-[8px] w-[8px] cursor-nesw-resize rounded-full border border-white bg-brand-500"
-            style="pointer-events: auto"
-            @pointerdown.stop.prevent="beginResize(selected, 'tr', $event)"
-          />
-          <div
-            class="absolute -left-[4px] -bottom-[4px] h-[8px] w-[8px] cursor-nesw-resize rounded-full border border-white bg-brand-500"
-            style="pointer-events: auto"
-            @pointerdown.stop.prevent="beginResize(selected, 'bl', $event)"
-          />
-          <div
-            class="absolute -right-[4px] -bottom-[4px] h-[8px] w-[8px] cursor-nwse-resize rounded-full border border-white bg-brand-500"
-            style="pointer-events: auto"
-            @pointerdown.stop.prevent="beginResize(selected, 'br', $event)"
-          />
+      <div class="absolute right-1 top-1 z-[3] flex flex-col gap-1" style="pointer-events: auto">
+        <button
+          type="button"
+          class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+          title="Слой выше"
+          aria-label="Слой выше"
+          @pointerdown.stop
+          @click.stop.prevent="onLayerMove(1)"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5l7 7H5l7-7z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
+          title="Удалить"
+          aria-label="Удалить фигуру"
+          @pointerdown.stop
+          @click.stop.prevent="emit('delete', selected.id)"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+          title="Слой ниже"
+          aria-label="Слой ниже"
+          @pointerdown.stop
+          @click.stop.prevent="onLayerMove(-1)"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l-7-7h14l-7 7z" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.figure-selection-ui {
+.figure-toolbar {
   overflow: visible;
 }
 
-/* Чётче при масштабировании страницы (booklet-scale-root) */
 .figures-konva-host :deep(canvas) {
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
