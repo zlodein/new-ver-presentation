@@ -31,16 +31,11 @@ const figuresOverlayZBaseResolved = ref(20)
 const mediaZResolved = ref(5)
 
 /**
- * Прямоугольник Konva совпадает с .booklet-content (как у x/y/w/h в % у медиа).
- * Размеры в layout-px до transform: parent .booklet-scale-root имеет scale(), offsetWidth/offsetLeft
- * дают целые значения и расходятся с реальной геометрией — берём getBoundingClientRect / sx,sy.
+ * Оверлей = весь padding-box .booklet-scale-root (left/top: 0, clientWidth × clientHeight).
+ * Не привязываем к .booklet-content — иначе 1rem padding scale-root даёт лишний зазор у краёв слайда
+ * и расхождение с тулбаром (проценты должны быть от той же области, что и Konva stage).
  */
 const contentBoxPx = ref({ left: 0, top: 0, width: 0, height: 0 })
-
-function parseCssPx(v: string): number {
-  const n = Number.parseFloat(v)
-  return Number.isFinite(n) ? n : 0
-}
 
 /** sx,sy — масштаб из matrix(scale); для layout-размеров делим экранные px из getBoundingClientRect */
 function readUniformScaleFromTransform(el: HTMLElement | null): { sx: number; sy: number } {
@@ -81,42 +76,24 @@ function syncContentBoxFromScaleRoot() {
     setContentBoxIfChanged(zero)
     return
   }
-  const content = scale.querySelector(':scope > .booklet-content') as HTMLElement | null
-  if (content) {
-    const { sx, sy } = readUniformScaleFromTransform(scale)
-    const cr = content.getBoundingClientRect()
-    const sr = scale.getBoundingClientRect()
-    const leftLocal = (cr.left - sr.left) / sx
-    const topLocal = (cr.top - sr.top) / sy
-    const widthLocal = cr.width / sx
-    const heightLocal = cr.height / sy
-    if (widthLocal >= 1 && heightLocal >= 1) {
-      setContentBoxIfChanged({
-        left: Math.round(leftLocal * 100) / 100,
-        top: Math.round(topLocal * 100) / 100,
-        width: Math.max(1, Math.round(widthLocal)),
-        height: Math.max(1, Math.round(heightLocal)),
-      })
-      return
-    }
+  const { sx, sy } = readUniformScaleFromTransform(scale)
+  const sr = scale.getBoundingClientRect()
+  const widthLocal = sr.width / sx
+  const heightLocal = sr.height / sy
+  if (widthLocal >= 1 && heightLocal >= 1) {
     setContentBoxIfChanged({
-      left: content.offsetLeft,
-      top: content.offsetTop,
-      width: Math.max(1, Math.round(content.offsetWidth)),
-      height: Math.max(1, Math.round(content.offsetHeight)),
+      left: 0,
+      top: 0,
+      width: Math.max(1, Math.round(widthLocal)),
+      height: Math.max(1, Math.round(heightLocal)),
     })
     return
   }
-  const cs = getComputedStyle(scale)
-  const pl = parseCssPx(cs.paddingLeft)
-  const pt = parseCssPx(cs.paddingTop)
-  const pr = parseCssPx(cs.paddingRight)
-  const pb = parseCssPx(cs.paddingBottom)
   setContentBoxIfChanged({
-    left: pl,
-    top: pt,
-    width: Math.max(1, Math.round(scale.clientWidth - pl - pr)),
-    height: Math.max(1, Math.round(scale.clientHeight - pt - pb)),
+    left: 0,
+    top: 0,
+    width: Math.max(1, Math.round(scale.clientWidth)),
+    height: Math.max(1, Math.round(scale.clientHeight)),
   })
 }
 
@@ -886,11 +863,12 @@ watch(
   </div>
 
   <div v-if="enabled && selected" class="figures-toolbar-layer" :style="toolbarWrapStyle">
-    <div class="figure-toolbar pointer-events-none absolute" :style="toolbarPositionStyle">
+    <!-- inset-0: проценты bbox — от полного оверлея (как stage), не от сжатого блока по контенту -->
+    <div class="figure-toolbar pointer-events-none absolute inset-0 overflow-visible">
       <div
-        class="absolute z-[3] flex flex-col gap-1"
+        class="pointer-events-auto absolute z-[3] flex flex-col gap-1"
+        :style="toolbarPositionStyle"
         :class="[toolbarButtonHClass, toolbarButtonVClass]"
-        style="pointer-events: auto"
       >
         <button
           type="button"
