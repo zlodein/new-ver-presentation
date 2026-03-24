@@ -214,6 +214,57 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n))
 }
 
+/**
+ * AABB повёрнутого прямоугольника — как в Konva Limited Drag And Resize
+ * https://konvajs.org/docs/sandbox/Limited_Drag_And_Resize.html
+ */
+function getCorner(pivotX: number, pivotY: number, diffX: number, diffY: number, angle: number) {
+  const distance = Math.sqrt(diffX * diffX + diffY * diffY)
+  angle += Math.atan2(diffY, diffX)
+  return {
+    x: pivotX + distance * Math.cos(angle),
+    y: pivotY + distance * Math.sin(angle),
+  }
+}
+
+function rotatedBoxAabb(rotatedBox: {
+  x: number
+  y: number
+  width: number
+  height: number
+  rotation: number
+}) {
+  const { x, y, width, height, rotation } = rotatedBox
+  const p1 = getCorner(x, y, 0, 0, rotation)
+  const p2 = getCorner(x, y, width, 0, rotation)
+  const p3 = getCorner(x, y, width, height, rotation)
+  const p4 = getCorner(x, y, 0, height, rotation)
+  const minX = Math.min(p1.x, p2.x, p3.x, p4.x)
+  const minY = Math.min(p1.y, p2.y, p3.y, p4.y)
+  const maxX = Math.max(p1.x, p2.x, p3.x, p4.x)
+  const maxY = Math.max(p1.y, p2.y, p3.y, p4.y)
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+}
+
+/** Удерживаем группу фигуры в границах stage (слой совпадает по размеру со stage) */
+function clampOuterInsideStage(outer: Konva.Group) {
+  if (!stage) return
+  const W = stage.width()
+  const H = stage.height()
+  for (let i = 0; i < 4; i++) {
+    const rect = outer.getClientRect({ relativeTo: stage })
+    let dx = 0
+    let dy = 0
+    if (rect.x < 0) dx -= rect.x
+    if (rect.y < 0) dy -= rect.y
+    if (rect.x + rect.width > W) dx -= rect.x + rect.width - W
+    if (rect.y + rect.height > H) dy -= rect.y + rect.height - H
+    if (dx === 0 && dy === 0) break
+    outer.x(outer.x() + dx)
+    outer.y(outer.y() + dy)
+  }
+}
+
 function snapRotationDeg(raw: number): number {
   const d = ((raw % 360) + 360) % 360
   const step = 10
@@ -388,8 +439,10 @@ function syncInstancePositionFromNode(outer: Konva.Group, inst: FigureInstance) 
   if (!hit) return
   const wPx = hit.width()
   const hPx = hit.height()
-  inst.x = ((outer.x() - wPx / 2) / W) * 100
-  inst.y = ((outer.y() - hPx / 2) / H) * 100
+  const wPctEff = (wPx / W) * 100
+  const hPctEff = (hPx / H) * 100
+  inst.x = clamp(((outer.x() - wPx / 2) / W) * 100, 0, Math.max(0, 100 - wPctEff))
+  inst.y = clamp(((outer.y() - hPx / 2) / H) * 100, 0, Math.max(0, 100 - hPctEff))
 }
 
 function resetFigureContentNode(content: Konva.Group) {
@@ -400,17 +453,6 @@ function resetFigureContentNode(content: Konva.Group) {
   content.rotation(0)
   content.offsetX(0)
   content.offsetY(0)
-}
-
-/** Полуоси AABB для прямоугольника w×h с поворотом outer (градусы) — clamp центра при drag */
-function axisAlignedHalfExtentsForRotatedRect(wPx: number, hPx: number, rotationDeg: number): { rx: number; ry: number } {
-  const rad = (rotationDeg * Math.PI) / 180
-  const c = Math.abs(Math.cos(rad))
-  const s = Math.abs(Math.sin(rad))
-  return {
-    rx: (wPx / 2) * c + (hPx / 2) * s,
-    ry: (wPx / 2) * s + (hPx / 2) * c,
-  }
 }
 
 function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
@@ -485,6 +527,8 @@ function syncInstanceFromTransformNode(outer: Konva.Group, figureContent: Konva.
   inst.x = clamp(inst.x, 0, 100 - inst.w)
   inst.y = clamp(inst.y, 0, 100 - inst.h)
   applyInstanceBoundsToNode(outer, inst)
+  clampOuterInsideStage(outer)
+  syncInstancePositionFromNode(outer, inst)
   transformer?.forceUpdate()
 }
 
@@ -499,6 +543,16 @@ function createTransformer(): Konva.Transformer {
     boundBoxFunc(oldBox, newBox) {
       const MIN = 8
       if (newBox.width < MIN || newBox.height < MIN) return oldBox
+      const W = stage?.width() ?? 0
+      const H = stage?.height() ?? 0
+      const box = rotatedBoxAabb(newBox)
+      const eps = 1e-3
+      const isOut =
+        box.x < -eps ||
+        box.y < -eps ||
+        box.x + box.width > W + eps ||
+        box.y + box.height > H + eps
+      if (isOut) return oldBox
       return newBox
     },
     rotationSnaps: [0, 90, 180, 270],
@@ -573,6 +627,7 @@ function rebuildLayer() {
 
   const W = stage.width()
   const H = stage.height()
+  /* destroy() снимает подписки и ссылки на узлы (Konva: избегаем утечек памяти) */
   layer.destroyChildren()
   transformer = null
 
@@ -661,34 +716,30 @@ function rebuildLayer() {
 
       outer.on('dragstart', () => beginInteraction())
 
-      outer.on('dragmove', () => syncInstancePositionFromNode(outer, inst))
-
-      outer.on('dragend', () => {
-        syncInstancePositionFromNode(outer, inst)
-        endInteraction()
-      })
-
-      outer.dragBoundFunc((pos) => {
+      outer.on('dragmove', () => {
         const hit = outer.findOne('.figureHit') as Konva.Rect | null
-        if (!hit) return pos
-        const wP = hit.width()
-        const hP = hit.height()
-        let cx = pos.x
-        let cy = pos.y
-        if (editorGridCfg.value.snap) {
+        if (hit && editorGridCfg.value.snap) {
+          const wP = hit.width()
+          const hP = hit.height()
           const stepX = (editorGridCfg.value.stepPct / 100) * W
           const stepY = (editorGridCfg.value.stepPct / 100) * H
+          let cx = outer.x()
+          let cy = outer.y()
           let tlx = cx - wP / 2
           let tly = cy - hP / 2
           tlx = Math.round(tlx / stepX) * stepX
           tly = Math.round(tly / stepY) * stepY
-          cx = tlx + wP / 2
-          cy = tly + hP / 2
+          outer.x(tlx + wP / 2)
+          outer.y(tly + hP / 2)
         }
-        const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
-        cx = clamp(cx, rx, W - rx)
-        cy = clamp(cy, ry, H - ry)
-        return { x: cx, y: cy }
+        clampOuterInsideStage(outer)
+        syncInstancePositionFromNode(outer, inst)
+      })
+
+      outer.on('dragend', () => {
+        clampOuterInsideStage(outer)
+        syncInstancePositionFromNode(outer, inst)
+        endInteraction()
       })
     }
 
@@ -780,7 +831,10 @@ onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
   transformer = null
-  stage?.destroy()
+  if (stage) {
+    stage.off('click tap', onStageClick)
+    stage.destroy()
+  }
   stage = null
   layer = null
 })
