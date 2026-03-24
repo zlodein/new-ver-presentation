@@ -412,7 +412,7 @@ function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
   if (figureContent) resetFigureContentNode(figureContent)
 }
 
-/** После transform: сброс figureContent; размеры из hit. Рамка Transformer = полная ячейка (см. figurePlacementBounds в scaleInner). */
+/** После transform: сброс figureContent; размеры из hit. Рамка Transformer = bbox геометрии (без искусственного 100×100). */
 function syncInstanceFromTransformNode(outer: Konva.Group, figureContent: Konva.Group, inst: FigureInstance) {
   if (!stage) return
   const W = stage.width()
@@ -455,7 +455,8 @@ function createTransformer(): Konva.Transformer {
     padding: 0,
     rotateAnchorOffset: 22,
     keepRatio: true,
-    ignoreStroke: true,
+    /* false: рамка по видимому контуру вместе со stroke; true даёт зазор «внутри» обводки */
+    ignoreStroke: false,
     enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
     boundBoxFunc(oldBox, newBox) {
       const MIN = 8
@@ -563,17 +564,6 @@ function rebuildLayer() {
       listening: false,
     })
 
-    const placementBounds = new Konva.Rect({
-      name: 'figurePlacementBounds',
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 100,
-      fill: 'rgba(0,0,0,0)',
-      listening: false,
-      perfectDrawEnabled: false,
-    })
-
     const rotInner = new Konva.Group({
       name: 'figureRotInner',
       x: 50,
@@ -586,7 +576,6 @@ function rebuildLayer() {
 
     const drawn = buildFigureContentGroup(inst, props.figuresById)
     rotInner.add(drawn)
-    scaleInner.add(placementBounds)
     scaleInner.add(rotInner)
     figureContent.add(scaleInner)
 
