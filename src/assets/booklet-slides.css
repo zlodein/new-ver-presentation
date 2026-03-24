@@ -62,8 +62,8 @@
   transform-origin: 0 0;
   padding: 1rem;
   box-sizing: border-box;
-  /* База z-index оверлея фигур (целое). Итог: база + (z выбранной фигуры + 1), без выбора +1. При перекрытии контентом (z≈5) поднимите, напр. 20 */
-  --booklet-figures-overlay-z: 1;
+  /* Z-index корня figures-overlay-root (стабильный). Слой фигуры в DOM — у .figure-selection-ui (z модели + 1) */
+  --booklet-figures-overlay-z: 20;
 }
 
 /* В мобильном редакторе (без .presentation-view-fixed) не масштабируем — обычный поток, иначе блоки не отображаются */
@@ -77,7 +77,7 @@
     transform: none;
     transform-origin: unset;
     padding: 0;
-    --booklet-figures-overlay-z: 1;
+    --booklet-figures-overlay-z: 20;
   }
 }
 

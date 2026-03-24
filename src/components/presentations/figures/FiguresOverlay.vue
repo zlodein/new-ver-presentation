@@ -25,8 +25,8 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLDivElement | null>(null)
 const stageHostRef = ref<HTMLDivElement | null>(null)
 
-/** parseInt(--booklet-figures-overlay-z), иначе 1 */
-const figuresOverlayZBaseResolved = ref(1)
+/** parseInt(--booklet-figures-overlay-z). Корень оверлея = только это (не растёт от bringToFront / z фигуры). */
+const figuresOverlayZBaseResolved = ref(20)
 
 function syncFiguresOverlayZBaseFromCss() {
   if (typeof window === 'undefined' || !rootRef.value) return
@@ -34,11 +34,11 @@ function syncFiguresOverlayZBaseFromCss() {
   if (!scale) return
   const raw = getComputedStyle(scale).getPropertyValue('--booklet-figures-overlay-z').trim()
   if (raw === '') {
-    figuresOverlayZBaseResolved.value = 1
+    figuresOverlayZBaseResolved.value = 20
     return
   }
   const n = Number.parseInt(raw, 10)
-  figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 1
+  figuresOverlayZBaseResolved.value = Number.isFinite(n) ? Math.max(0, n) : 20
 }
 
 let stage: Konva.Stage | null = null
@@ -155,20 +155,12 @@ const selected = computed(() => {
   return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
 })
 
-/** Как раньше у figure-selection-ui: z_model + 1; без выделения — 1. Корень: base + это значение. */
-const overlayZBoost = computed(() => {
-  const sel = selected.value
-  if (!sel) return 1
-  return Math.max(1, Math.floor(zNum(sel.z)) + 1)
-})
-
 const outerStyle = computed(() => {
-  const zFull = figuresOverlayZBaseResolved.value + overlayZBoost.value
   const base: Record<string, string | number> = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
-    zIndex: zFull,
+    zIndex: figuresOverlayZBaseResolved.value,
     isolation: 'isolate',
   }
   if (!editorGridCfg.value.enabled) return base
@@ -639,8 +631,8 @@ function startGlobalListeners() {
         top: `${selected.y}%`,
         width: `${selected.w}%`,
         height: `${selected.h}%`,
-        /* Над canvas (z-index: 0); глобальный «слой» задаётся на figures-overlay-root = base + overlayZBoost */
-        zIndex: 1,
+        /* Над canvas (0); z модели +1 — меняется при bringToFront / кнопках слоя. Корень — только база из CSS. */
+        zIndex: Math.max(1, Math.floor(zNum(selected.z)) + 1),
       }"
     >
           <div class="pointer-events-none absolute inset-0 rounded border-2 border-brand-500/90 bg-transparent" />
