@@ -223,7 +223,18 @@ function rotatedBoxAabb(rotatedBox: {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
-/** Удерживаем группу фигуры в границах stage (relativeTo: layer — в тех же координатах, что outer.x/y) */
+/** Полуоси AABB ячейки w×h с поворотом outer (градусы) — границы центра при drag */
+function axisAlignedHalfExtentsForRotatedRect(wPx: number, hPx: number, rotationDeg: number): { rx: number; ry: number } {
+  const rad = (rotationDeg * Math.PI) / 180
+  const c = Math.abs(Math.cos(rad))
+  const s = Math.abs(Math.sin(rad))
+  return {
+    rx: (wPx / 2) * c + (hPx / 2) * s,
+    ry: (wPx / 2) * s + (hPx / 2) * c,
+  }
+}
+
+/** После drag/transform — подправить позицию, если AABB вылез за stage (не вызывать каждый dragmove — ломает перетаскивание) */
 function clampOuterInsideStage(outer: Konva.Group) {
   if (!stage) return
   const L = outer.getLayer()
@@ -711,7 +722,6 @@ function rebuildLayer() {
           outer.x(tlx + wP / 2)
           outer.y(tly + hP / 2)
         }
-        clampOuterInsideStage(outer)
         syncInstancePositionFromNode(outer, inst)
       })
 
@@ -719,6 +729,29 @@ function rebuildLayer() {
         clampOuterInsideStage(outer)
         syncInstancePositionFromNode(outer, inst)
         endInteraction()
+      })
+
+      outer.dragBoundFunc((pos) => {
+        const hit = outer.findOne('.figureHit') as Konva.Rect | null
+        if (!hit) return pos
+        const wP = hit.width()
+        const hP = hit.height()
+        let cx = pos.x
+        let cy = pos.y
+        if (editorGridCfg.value.snap) {
+          const stepX = (editorGridCfg.value.stepPct / 100) * W
+          const stepY = (editorGridCfg.value.stepPct / 100) * H
+          let tlx = cx - wP / 2
+          let tly = cy - hP / 2
+          tlx = Math.round(tlx / stepX) * stepX
+          tly = Math.round(tly / stepY) * stepY
+          cx = tlx + wP / 2
+          cy = tly + hP / 2
+        }
+        const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
+        cx = clamp(cx, rx, W - rx)
+        cy = clamp(cy, ry, H - ry)
+        return { x: cx, y: cy }
       })
     }
 

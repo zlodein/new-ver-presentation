@@ -658,7 +658,7 @@
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
                       <FiguresOverlay
-                        v-if="!isAdminSlidesGridMode"
+                        v-if="isAdminSlidesGridMode"
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
@@ -721,7 +721,7 @@
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
                       <FiguresOverlay
-                        v-if="!isAdminSlidesGridMode"
+                        v-if="isAdminSlidesGridMode"
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
@@ -1312,7 +1312,7 @@
               </div>
             </template>
             <FiguresPanel
-              v-if="!isAdminSlidesGridMode && currentSlide && canEditFigures"
+              v-if="isAdminSlidesGridMode && currentSlide && canEditFigures"
               :slide="currentSlide"
               :figures="figures"
               :selectedInstanceId="selectedFigureInstanceId"
@@ -2581,13 +2581,8 @@ const adminSlidesGroupEditorSlidesBackup = ref<SlideItem[] | null>(null)
 const adminSlidesGroupEditorSettingsBackup = ref<Record<string, string> | null>(null)
 /** Редактирование изображений: либо черновик, либо зашёл администратор */
 const canEditImages = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
-/** Фигуры только в редакторе презентации; в админской сетке слайдов — только шаблоны, без /api/figures и без Konva-редактора */
-const canEditFigures = computed(
-  () =>
-    !isAdminSlidesGridMode.value &&
-    (!isPublished.value || isAdmin.value) &&
-    !adminSlidesTemplatePreviewMode.value,
-)
+/** Фигуры и сетка Konva — только в админском редакторе сетки слайдов (/dashboard/admin/slides). В /dashboard/presentations/ их нет. */
+const canEditFigures = computed(() => isAdminSlidesGridMode.value && !adminSlidesTemplatePreviewMode.value)
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
 
@@ -2595,7 +2590,7 @@ const figuresById = computed(() => Object.fromEntries(figures.value.map((f) => [
 
 async function refreshFigures() {
   if (!hasApi()) return
-  if (isAdminSlidesGridMode.value) {
+  if (!isAdminSlidesGridMode.value) {
     figures.value = []
     return
   }
@@ -2727,10 +2722,10 @@ watch(
   isAdminSlidesGridMode,
   (v) => {
     if (v) {
-      figures.value = []
       void refreshSlidesGroupTemplates()
-    } else {
       void refreshFigures()
+    } else {
+      figures.value = []
     }
   },
   { immediate: true },
