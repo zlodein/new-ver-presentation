@@ -55,6 +55,11 @@
   background: #fff;
 }
 
+/*
+ * Админ-редактор сетки слайдов (editor-layer-stack в PresentationEditor):
+ * z: фон 0 → Konva 10–19 или 21+ (выше HTML) → контент .booklet-slide-layer--content 20.
+ */
+
 /* Фигуры расширяются в padding scale-root — не обрезать оверлей */
 .presentation-slider-wrap.booklet-view .booklet-page__inner:has(.figures-konva-stack) {
   overflow: visible;

@@ -873,6 +873,8 @@ onBeforeUnmount(() => {
   max-width: 100%;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  /* Навигация между блоками — по ссылкам в шапке; без горизонтального «уезда» страницы */
+  overscroll-behavior-x: contain;
 }
 .presentation-view-fixed .presentation-slider-wrap {
   min-width: 320px;

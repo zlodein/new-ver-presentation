@@ -18,8 +18,13 @@ const props = withDefaults(
     enabled: boolean
     /** Область шаблона: совпадает с data-editor-block; координаты фигур — % от этой области */
     figureBlockScope?: string
+    /**
+     * Редактор /dashboard/admin/slides: три слоя (фон → Konva → HTML-контент).
+     * z-index canvas не ниже слоя фона и может быть выше слоя контента при большом z фигуры.
+     */
+    editorLayerStack?: boolean
   }>(),
-  { figureBlockScope: SLIDE_WIDE_BLOCK_ID },
+  { figureBlockScope: SLIDE_WIDE_BLOCK_ID, editorLayerStack: false },
 )
 
 const emit = defineEmits<{
@@ -143,17 +148,32 @@ const maxFigZForStack = computed(() => {
   return Math.max(...arr.map((i) => zNum(i.z)))
 })
 
+/** Слой HTML-контента в режиме editorLayerStack (между фоном и «верхом» стека) */
+const EDITOR_CONTENT_LAYER_Z = 20
+const EDITOR_KONVA_BASE_Z = 10
+
 /**
  * z-index слоя Konva: ниже --booklet-figure-media-z при малом z модели (фигура под картинкой).
  * Формула: maxFigZ + mediaZ - 3 (при media=5: z=0→2, z=4→6 выше медиа).
+ * В editorLayerStack: Konva между фоном и контентом (10–19) или выше контента (21+), не ниже фона.
  */
-const konvaStackZ = computed(() =>
-  clamp(maxFigZForStack.value + mediaZResolved.value - 3, 1, 99),
-)
+const konvaStackZ = computed(() => {
+  const kz = maxFigZForStack.value
+  if (props.editorLayerStack) {
+    if (kz <= 4) return clamp(EDITOR_KONVA_BASE_Z + kz, EDITOR_KONVA_BASE_Z, EDITOR_CONTENT_LAYER_Z - 1)
+    return clamp(EDITOR_CONTENT_LAYER_Z + 1 + (kz - 5), EDITOR_CONTENT_LAYER_Z + 1, 99)
+  }
+  return clamp(kz + mediaZResolved.value - 3, 1, 99)
+})
 
-/** Панель слоёв всегда поверх медиа, чтобы кнопки были кликабельны */
+/** Панель слоёв и трансформер — выше полей ввода редактора (z-index ~150) */
 const toolbarStackZ = computed(() =>
-  Math.max(konvaStackZ.value + 2, figuresOverlayZBaseResolved.value, mediaZResolved.value + 6),
+  Math.max(
+    konvaStackZ.value + 2,
+    figuresOverlayZBaseResolved.value,
+    mediaZResolved.value + 6,
+    props.enabled ? 220 : 0,
+  ),
 )
 
 let stage: Konva.Stage | null = null

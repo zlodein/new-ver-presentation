@@ -559,6 +559,7 @@
         <div
           ref="editorSliderWrapRef"
           class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
+          :class="{ 'editor-slider-wrap--admin-slides': isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode }"
           @paste.capture="onPasteStripFormat"
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
@@ -588,7 +589,7 @@
               v-bind="swiperOptions"
               @swiper="onSwiper"
               @slideChange="onSlideChange"
-              class="presentation-swiper h-full"
+              class="presentation-swiper swiper-no-swiping h-full"
             >
               <SwiperSlide v-for="slide in visibleSlides" :key="slide.id">
                 <div
@@ -606,7 +607,35 @@
                     <span class="booklet-palette-btn-ping absolute inset-0 z-0" aria-hidden="true" />
                     <svg class="relative z-10 isolate h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
                   </button>
-                  <div class="booklet-page__inner">
+                  <!-- Админ-сетка: слой фона → HTML-контент → Konva (z ниже контента при малом z фигуры, выше — при большом; якорь Konva после монтирования блоков) -->
+                  <div
+                    v-if="isAdminSlidesGridMode"
+                    class="booklet-page__inner booklet-page__inner--editor-layers"
+                  >
+                    <div class="booklet-slide-layer booklet-slide-layer--bg" aria-hidden="true" />
+                    <div
+                      class="booklet-scale-root booklet-slide-layer--content w-full h-full"
+                      :class="{
+                        'booklet-scale-root--fig-pass': figuresInteractiveOnSlide(slide.id),
+                      }"
+                    >
+                      <PresentationEditorSlideBlock :slide="slide" />
+                    </div>
+                    <FiguresOverlay
+                      v-for="scope in (canEditFigures ? overlayFigureScopesForSlide(slide) : [])"
+                      :key="`${slide.id}-${scope}`"
+                      :slide="slide"
+                      :figure-block-scope="scope"
+                      :figuresById="figuresById"
+                      :selectedInstanceId="selectedFigureInstanceId"
+                      :enabled="figuresInteractiveOnSlide(slide.id)"
+                      :editor-layer-stack="canEditFigures"
+                      @select="onFigureSelect(slide, $event)"
+                      @delete="deleteFigureInstance"
+                      @layerMove="onFigureLayerMove"
+                    />
+                  </div>
+                  <div v-else class="booklet-page__inner">
                     <div
                       class="booklet-scale-root w-full h-full"
                       :class="{
@@ -2185,7 +2214,10 @@ async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infra
 
 const swiperOptions = computed(() => ({
   spaceBetween: 0,
-  allowTouchMove: true,
+  allowTouchMove: false,
+  simulateTouch: false,
+  noSwiping: true,
+  noSwipingClass: 'swiper-no-swiping',
   initialSlide: 0,
   direction: 'horizontal' as const,
 }))
@@ -3850,6 +3882,25 @@ async function exportToPDF() {
 .presentation-swiper .swiper-slide {
   height: 100%;
 }
+/* Только переключение слайда по клику в сайдбаре: без свайпа и перетаскивания мышью */
+.presentation-swiper.swiper-no-swiping {
+  touch-action: pan-y;
+}
+.editor-slider-wrap .booklet-page__inner--editor-layers {
+  position: relative;
+  isolation: isolate;
+}
+.editor-slider-wrap .booklet-slide-layer--bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: inherit;
+}
+.editor-slider-wrap .booklet-slide-layer--content.booklet-scale-root {
+  position: relative;
+  z-index: 20;
+}
 
 /* Блоки в слайдере редактора: без обводки/подсветки при фокусе и без затемнения в ночном режиме */
 .editor-slider-wrap .presentation-slider-wrap.booklet-view {
@@ -3869,9 +3920,18 @@ async function exportToPDF() {
   position: relative;
   z-index: 150;
 }
+/* Админ /dashboard/admin/slides: стек слоёв — контент (20) над Konva (10–19); z-index 150 ломал панель фигур (toolbar ~220) */
+.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view input,
+.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view select,
+.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view textarea {
+  z-index: auto;
+}
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-content [contenteditable='true'] {
   position: relative;
   z-index: 150;
+}
+.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view .booklet-content [contenteditable='true'] {
+  z-index: auto;
 }
 .editor-slider-wrap .presentation-slider-wrap.booklet-view input::placeholder,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea::placeholder {
