@@ -234,26 +234,11 @@
                         ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
                         : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
                       slide.hidden ? 'opacity-60' : '',
-                      adminSlidesSelectionUIEnabled && adminSlidesSelectionIds.includes(slide.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-950' : '',
                     ]"
                     @click="goToSlide(index)"
                   >
-                    <label
-                      v-if="adminSlidesSelectionUIEnabled"
-                      class="absolute left-2 top-2 z-10"
-                      @click.stop
-                    >
-                      <input
-                        type="checkbox"
-                        class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900"
-                        :checked="adminSlidesSelectionIds.includes(slide.id)"
-                        @change="toggleAdminSlideSelected(slide.id)"
-                      />
-                    </label>
-
                     <div class="flex items-start justify-between gap-2">
                       <span
-                        v-if="!adminSlidesSelectionUIEnabled"
                         class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         title="Перетащить"
                         @click.stop
@@ -264,7 +249,6 @@
                       </span>
 
                       <button
-                        v-if="!adminSlidesSelectionUIEnabled"
                         type="button"
                         class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                         :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
@@ -302,7 +286,7 @@
                       </div>
                     </div>
 
-                    <div v-if="!adminSlidesSelectionUIEnabled" class="mt-1 flex items-center justify-end gap-1">
+                    <div class="mt-1 flex items-center justify-end gap-1">
                       <button
                         type="button"
                         :disabled="!canAddSlide"
@@ -332,60 +316,26 @@
               </draggable>
 
               <div
-                v-if="adminSlidesSelectionUIEnabled"
-                class="w-full border-t border-gray-200 pt-2 dark:border-gray-700 px-1.5"
+                v-if="currentSlide && !adminSlidesTemplatePreviewMode"
+                class="w-full shrink-0 border-t border-gray-200 pt-2 dark:border-gray-700"
               >
-                <div class="flex items-center justify-between gap-2 pb-2">
-                  <p class="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    Выбрано: {{ adminSlidesSelectionIds.length }}
-                  </p>
-                  <div class="flex items-center gap-1">
-                    <button
-                      type="button"
-                      class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                      @click.stop="setAdminSlidesSelectionToAll"
-                    >
-                      Все
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                      @click.stop="adminSlidesSelectionIds = []"
-                    >
-                      Сброс
-                    </button>
-                  </div>
+                <p class="mb-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">Блок для редактирования</p>
+                <div class="flex flex-col gap-1">
+                  <button
+                    v-for="opt in adminTemplateBlockOptions"
+                    :key="opt.id"
+                    type="button"
+                    class="w-full rounded-lg border px-2 py-1.5 text-left text-xs transition"
+                    :class="
+                      adminTemplateEditingBlockId === opt.id
+                        ? 'border-brand-500 bg-brand-50 text-brand-800 dark:border-brand-500 dark:bg-brand-950 dark:text-brand-200'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                    "
+                    @click="adminTemplateEditingBlockId = opt.id; selectedFigureInstanceId = null"
+                  >
+                    {{ opt.label }}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  class="w-full rounded-lg border border-brand-500 bg-brand-500 px-3 py-2 text-xs font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-brand-600"
-                  :disabled="adminSlidesSelectionIds.length === 0"
-                  @click.stop="openAdminSlidesGroupEditorFromSelection"
-                >
-                  Редактировать выбранные
-                </button>
-              </div>
-
-              <div
-                v-else-if="adminSlidesGroupEditorMode && !adminSlidesTemplatePreviewMode && adminSlidesGroupEditorSlidesBackup"
-                class="w-full border-t border-gray-200 pt-2 dark:border-gray-700 px-1.5"
-              >
-                <button
-                  type="button"
-                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                  @click.stop="exitAdminSlidesGroupEditorToSelection"
-                >
-                  Назад к выбору
-                </button>
-
-                <button
-                  type="button"
-                  class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="slides.length === 0"
-                  @click.stop="clearAdminSlidesGroupEditorData"
-                >
-                  Очистить всё (пустой шаблон)
-                </button>
               </div>
             </div>
           </template>
@@ -616,10 +566,8 @@
             ref="presentationSliderScrollRef"
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 rounded-xl bg-white shadow-lg"
             :class="{
-              'overflow-hidden': !isAdminSlidesGridMode,
-              'overflow-y-auto overflow-x-hidden': isAdminSlidesGridMode,
+              'overflow-hidden': true,
               'admin-template-preview-mode': adminSlidesTemplatePreviewMode,
-              'admin-slides-stack-mode': isAdminSlidesGridMode,
             }"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
@@ -637,17 +585,27 @@
               <svg class="relative z-10 isolate h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
             </button>
             <Swiper
-              v-if="!isAdminSlidesGridMode"
               v-bind="swiperOptions"
               @swiper="onSwiper"
               @slideChange="onSlideChange"
               class="presentation-swiper h-full"
             >
-              <SwiperSlide v-for="(slide, index) in visibleSlides" :key="slide.id">
+              <SwiperSlide v-for="slide in visibleSlides" :key="slide.id">
                 <div
-                  class="booklet-page h-full w-full"
+                  class="booklet-page relative h-full w-full"
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
                 >
+                  <button
+                    v-if="isAdminSlidesGridMode && ['description','infrastructure','gallery','layout'].includes(slide.type) && canEditImages"
+                    type="button"
+                    class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-[35] hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-visible rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
+                    style="background-color: var(--color-green-600);"
+                    title="Макет и сетка изображений"
+                    @click="openPalettePopup(slide.id, $event)"
+                  >
+                    <span class="booklet-palette-btn-ping absolute inset-0 z-0" aria-hidden="true" />
+                    <svg class="relative z-10 isolate h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
+                  </button>
                   <div class="booklet-page__inner">
                     <div
                       class="booklet-scale-root w-full h-full"
@@ -658,8 +616,10 @@
                       <PresentationEditorSlideBlock :slide="slide" />
                     </div>
                     <FiguresOverlay
-                      v-if="isAdminSlidesGridMode"
+                      v-for="scope in (canEditFigures ? overlayFigureScopesForSlide(slide) : [])"
+                      :key="`${slide.id}-${scope}`"
                       :slide="slide"
+                      :figure-block-scope="scope"
                       :figuresById="figuresById"
                       :selectedInstanceId="selectedFigureInstanceId"
                       :enabled="figuresInteractiveOnSlide(slide.id)"
@@ -671,68 +631,6 @@
                 </div>
               </SwiperSlide>
             </Swiper>
-            <div
-              v-else
-              class="admin-slides-stack w-full max-w-[1123px] mx-auto flex flex-col gap-4 py-3 px-1"
-            >
-              <div
-                v-for="slide in visibleSlides"
-                :key="slide.id"
-                class="admin-slide-block relative w-full shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-white shadow-md transition-colors dark:border-gray-700"
-                :data-admin-slide-id="slide.id"
-                :class="adminSlidesSelectionUIEnabled && adminSlidesSelectionIds.includes(slide.id) ? '!border-brand-500 ring-2 ring-brand-500/30 dark:!border-brand-500' : ''"
-              >
-                <label
-                  v-if="adminSlidesSelectionUIEnabled"
-                  class="absolute left-2 top-2 z-30 flex cursor-pointer items-center gap-2 rounded-md bg-white/95 px-2 py-1 text-xs font-medium shadow dark:bg-gray-900/95"
-                  @click.stop
-                >
-                  <input
-                    type="checkbox"
-                    class="rounded border-gray-300 text-brand-600"
-                    :checked="adminSlidesSelectionIds.includes(slide.id)"
-                    @change="toggleAdminSlideSelected(slide.id)"
-                  />
-                  <span class="text-gray-700 dark:text-gray-300">В группу</span>
-                </label>
-                <button
-                  v-if="['description','infrastructure','gallery','layout'].includes(slide.type) && canEditImages"
-                  type="button"
-                  class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-[35] hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-visible rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
-                  style="background-color: var(--color-green-600);"
-                  title="Макет и сетка изображений"
-                  @click="openPalettePopup(slide.id, $event)"
-                >
-                  <span class="booklet-palette-btn-ping absolute inset-0 z-0" aria-hidden="true" />
-                  <svg class="relative z-10 isolate h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
-                </button>
-                <div
-                  class="booklet-page h-full w-full"
-                  :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
-                >
-                  <div class="booklet-page__inner">
-                    <div
-                      class="booklet-scale-root w-full h-full"
-                      :class="{
-                        'booklet-scale-root--fig-pass': figuresInteractiveOnSlide(slide.id),
-                      }"
-                    >
-                      <PresentationEditorSlideBlock :slide="slide" />
-                    </div>
-                    <FiguresOverlay
-                      v-if="isAdminSlidesGridMode"
-                      :slide="slide"
-                      :figuresById="figuresById"
-                      :selectedInstanceId="selectedFigureInstanceId"
-                      :enabled="figuresInteractiveOnSlide(slide.id)"
-                      @select="onFigureSelect(slide, $event)"
-                      @delete="deleteFigureInstance"
-                      @layerMove="onFigureLayerMove"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Мобильная нижняя панель: выезжающая шторка (настройки / добавить слайд) + кнопки -->
@@ -1315,6 +1213,7 @@
               :figures="figures"
               :selectedInstanceId="selectedFigureInstanceId"
               :enabled="canEditFigures"
+              :figure-block-scope="adminTemplateEditingBlockId"
               @select="onFigureSelect(currentSlide!, $event)"
             />
           </div>
@@ -1393,6 +1292,7 @@ import PresentationEditorSlideBlock from './PresentationEditorSlideBlock.vue'
 import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
 import FiguresPanel from '@/components/presentations/figures/FiguresPanel.vue'
 import type { FigureDefinition } from '@/types/figures'
+import { figureBlockScopesForSlide } from '@/utils/figureBlockScopes'
 import { swapFigureStackOrder } from '@/utils/figureStackOrder'
 import {
   PRESENTATION_EDITOR_SLIDE_KEY,
@@ -1535,6 +1435,25 @@ const SLIDE_TYPES = [
   { type: 'contacts', label: 'Контакты' },
 ] as const
 
+/** Блоки слайда для режима шаблонов (data-editor-block + сайдбар) */
+const ADMIN_TEMPLATE_BLOCKS: Record<string, { id: string; label: string }[]> = {
+  cover: [{ id: 'slide', label: 'Обложка' }],
+  description: [
+    { id: 'description-images', label: 'Изображения' },
+    { id: 'description-text', label: 'Текст' },
+  ],
+  infrastructure: [
+    { id: 'infrastructure-images', label: 'Изображения' },
+    { id: 'infrastructure-text', label: 'Текст' },
+  ],
+  location: [{ id: 'slide', label: 'Местоположение' }],
+  gallery: [{ id: 'slide', label: 'Галерея' }],
+  characteristics: [{ id: 'slide', label: 'Характеристики' }],
+  layout: [{ id: 'slide', label: 'Планировка' }],
+  contacts: [{ id: 'slide', label: 'Контакты' }],
+  custom: [{ id: 'slide', label: 'Страница' }],
+}
+
 function genSlideId() {
   return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
@@ -1563,6 +1482,8 @@ const slides = ref<SlideItem[]>([...defaultSlides])
 const swiperInstance = ref<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
 const selectedFigureInstanceId = ref<string | null>(null)
+/** Редактируемый блок шаблона (админ): совпадает с data-editor-block */
+const adminTemplateEditingBlockId = ref('slide')
 const figures = ref<FigureDefinition[]>([])
 const showAddSlideMenu = ref(false)
 const showSettingsMenu = ref(false)
@@ -1584,22 +1505,6 @@ const PALETTE_POPUP_HEIGHT = 140
 const editorSliderWrapRef = ref<HTMLElement | null>(null)
 /** Прокручиваемый контейнер слайдов (админский стек + предпросмотр) */
 const presentationSliderScrollRef = ref<HTMLElement | null>(null)
-
-function escapeSlideIdForSelector(slideId: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(slideId)
-  return slideId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-}
-
-function scrollAdminSlideIntoView(slideId: string) {
-  const root = presentationSliderScrollRef.value
-  if (!root) return
-  try {
-    const el = root.querySelector(`[data-admin-slide-id="${escapeSlideIdForSelector(slideId)}"]`) as HTMLElement | null
-    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  } catch {
-    /* ignore invalid selector */
-  }
-}
 
 function openPalettePopup(slideId: string, event: MouseEvent) {
   const el = event.currentTarget as HTMLElement
@@ -2280,9 +2185,9 @@ async function generateTextWithAI(slide: SlideItem, type: 'description' | 'infra
 
 const swiperOptions = computed(() => ({
   spaceBetween: 0,
-  allowTouchMove: !isAdminSlidesGridMode.value,
+  allowTouchMove: true,
   initialSlide: 0,
-  direction: (isAdminSlidesGridMode.value ? 'vertical' : 'horizontal') as 'vertical' | 'horizontal',
+  direction: 'horizontal' as const,
 }))
 
 function onSwiper(swiper: SwiperType) {
@@ -2304,11 +2209,7 @@ function goToSlide(fullIndex: number) {
   if (slide && !slide.hidden) {
     const visibleIdx = visibleSlides.value.findIndex((s) => s.id === slide.id)
     if (visibleIdx >= 0) {
-      if (isAdminSlidesGridMode.value) {
-        nextTick(() => scrollAdminSlideIntoView(slide.id))
-      } else {
-        swiperInstance.value?.slideTo(visibleIdx)
-      }
+      swiperInstance.value?.slideTo(visibleIdx)
     }
   }
 }
@@ -2572,28 +2473,44 @@ const isAdminSlidesGridMode = computed(() => isAdmin.value && String(route.path 
 // В этом режиме отключаем редактирование контента (частично/полностью) и скрываем сохранение шаблонов.
 const adminSlidesTemplatePreviewMode = ref(false)
 
-// Админ: редактируем только подмножество слайдов (выбранная группа).
-const adminSlidesGroupEditorMode = ref(false)
-
-// Админ: выбор группы слайдов из текущей презентации галочками.
-const adminSlidesSelectionIds = ref<string[]>([])
-const adminSlidesSelectionUIEnabled = computed(() => isAdminSlidesGridMode.value && !adminSlidesGroupEditorMode.value && !adminSlidesTemplatePreviewMode.value)
-
-// Бэкап для режима "редактировать выбранную группу"
-const adminSlidesGroupEditorSlidesBackup = ref<SlideItem[] | null>(null)
-const adminSlidesGroupEditorSettingsBackup = ref<Record<string, string> | null>(null)
 /** Редактирование изображений: либо черновик, либо зашёл администратор */
 const canEditImages = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
 /** Фигуры и сетка Konva — только в админском редакторе сетки слайдов (/dashboard/admin/slides). В /dashboard/presentations/ их нет. */
 const canEditFigures = computed(() => isAdminSlidesGridMode.value && !adminSlidesTemplatePreviewMode.value)
 
-/**
- * В админском режиме столбиком видны все слайды сразу; раньше Konva и fig-pass были только у «текущего» слайда (currentSlide),
- * из‑за чего на остальных слайдах не работали перетаскивание, трансформер и слои.
- */
+const adminTemplateBlockOptions = computed(() => {
+  const s = currentSlide.value
+  if (!s) return [{ id: 'slide', label: 'Слайд' }]
+  return ADMIN_TEMPLATE_BLOCKS[s.type] ?? [{ id: 'slide', label: 'Слайд' }]
+})
+
+function overlayFigureScopesForSlide(slide: SlideItem): string[] {
+  if (isAdminSlidesGridMode.value) {
+    return [adminTemplateEditingBlockId.value]
+  }
+  return figureBlockScopesForSlide(slide)
+}
+
+watch(
+  () => [currentSlide.value?.id, currentSlide.value?.type, isAdminSlidesGridMode.value] as const,
+  () => {
+    if (!isAdminSlidesGridMode.value || !currentSlide.value) return
+    const opts = adminTemplateBlockOptions.value
+    const ids = new Set(opts.map((o) => o.id))
+    if (!ids.has(adminTemplateEditingBlockId.value)) {
+      adminTemplateEditingBlockId.value = opts[0]?.id ?? 'slide'
+    }
+  },
+  { immediate: true },
+)
+
+watch(adminTemplateEditingBlockId, () => {
+  selectedFigureInstanceId.value = null
+})
+
+/** Konva и fig-pass только на текущем слайде Swiper. */
 function figuresInteractiveOnSlide(slideId: string): boolean {
   if (!canEditFigures.value) return false
-  if (isAdminSlidesGridMode.value) return true
   return currentSlide.value?.id === slideId
 }
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
@@ -2744,28 +2661,6 @@ watch(
   { immediate: true },
 )
 
-watch(
-  () => adminSlidesSelectionUIEnabled.value,
-  (enabled) => {
-    if (!enabled) return
-    if (adminSlidesSelectionIds.value.length) return
-    if (!slides.value.length) return
-    adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
-  },
-  { immediate: true },
-)
-
-watch(
-  () => slides.value.length,
-  () => {
-    if (!adminSlidesSelectionUIEnabled.value) return
-    if (adminSlidesSelectionIds.value.length) return
-    if (!slides.value.length) return
-    adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
-  },
-  { immediate: false },
-)
-
 async function saveSlidesGroupTemplate() {
   if (!isAdminSlidesGridMode.value || adminSlidesTemplatePreviewMode.value) return
 
@@ -2853,14 +2748,10 @@ async function loadSlidesGroupTemplate(templateId: string, options?: { preview?:
   if (!skipConfirm && !confirm('Заменить текущие слайды содержимым шаблона?')) return
 
   adminSlidesTemplatePreviewMode.value = preview
-  adminSlidesGroupEditorMode.value = true
-  adminSlidesGroupEditorSlidesBackup.value = null
-  adminSlidesGroupEditorSettingsBackup.value = null
 
   slides.value = buildCleanSlidesFromTemplate(t.slides)
   presentationSettings.value = { ...DEFAULT_PRESENTATION_SETTINGS, ...(t.settings ?? {}) }
   activeSlideIndex.value = 0
-  adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
 
   slidesTemplateSaved.value = true
   setTimeout(() => { slidesTemplateSaved.value = false }, 2000)
@@ -2903,84 +2794,6 @@ async function deleteSlidesGroupTemplate(templateId: string) {
   const list = readSlidesGroupTemplatesFromLS()
   writeSlidesGroupTemplatesToLS(list.filter((x) => x.id !== templateId))
   await refreshSlidesGroupTemplates()
-}
-
-function toggleAdminSlideSelected(slideId: string) {
-  if (!adminSlidesSelectionUIEnabled.value) return
-  const list = adminSlidesSelectionIds.value
-  const wasSelected = list.includes(slideId)
-  const idx = list.indexOf(slideId)
-  if (idx >= 0) list.splice(idx, 1)
-  else list.push(slideId)
-  adminSlidesSelectionIds.value = list
-
-  // В админ-режиме "выбор галочками" пользователь ожидает, что
-  // редактирование (в т.ч. добавление фигур) пойдет на отмеченный слайд.
-  if (!wasSelected) {
-    const fullIdx = slides.value.findIndex((s) => s.id === slideId)
-    if (fullIdx >= 0) nextTick(() => goToSlide(fullIdx))
-    return
-  }
-
-  // Если сняли отметку с активного, переключаемся на последний оставшийся.
-  if (wasSelected && adminSlidesSelectionIds.value.length) {
-    const nextId = adminSlidesSelectionIds.value[adminSlidesSelectionIds.value.length - 1]
-    const fullIdx = slides.value.findIndex((s) => s.id === nextId)
-    if (fullIdx >= 0) nextTick(() => goToSlide(fullIdx))
-  }
-}
-
-function setAdminSlidesSelectionToAll() {
-  if (!adminSlidesSelectionUIEnabled.value) return
-  adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
-}
-
-function openAdminSlidesGroupEditorFromSelection() {
-  if (!adminSlidesSelectionUIEnabled.value) return
-
-  if (!adminSlidesSelectionIds.value.length) {
-    alert('Выберите хотя бы один слайд')
-    return
-  }
-
-  adminSlidesTemplatePreviewMode.value = false
-  adminSlidesGroupEditorMode.value = true
-  adminSlidesGroupEditorSlidesBackup.value = cloneJson(slides.value)
-  adminSlidesGroupEditorSettingsBackup.value = cloneJson(presentationSettings.value)
-
-  const idSet = new Set(adminSlidesSelectionIds.value)
-  slides.value = slides.value
-    .filter((s) => idSet.has(s.id))
-    .map((s) => ({ ...cloneJson(s) }))
-
-  activeSlideIndex.value = 0
-}
-
-function exitAdminSlidesGroupEditorToSelection() {
-  if (!adminSlidesGroupEditorMode.value) return
-  if (!adminSlidesGroupEditorSlidesBackup.value || !adminSlidesGroupEditorSettingsBackup.value) return
-
-  adminSlidesTemplatePreviewMode.value = false
-  adminSlidesGroupEditorMode.value = false
-
-  slides.value = cloneJson(adminSlidesGroupEditorSlidesBackup.value)
-  presentationSettings.value = cloneJson(adminSlidesGroupEditorSettingsBackup.value)
-  adminSlidesGroupEditorSlidesBackup.value = null
-  adminSlidesGroupEditorSettingsBackup.value = null
-
-  adminSlidesSelectionIds.value = slides.value.map((s) => s.id)
-  activeSlideIndex.value = 0
-}
-
-function clearAdminSlidesGroupEditorData() {
-  if (!adminSlidesGroupEditorMode.value || adminSlidesTemplatePreviewMode.value) return
-  if (!confirm('Очистить все заполненные данные на выбранных слайдах? Шаблон станет пустым.')) return
-
-  for (const s of slides.value) {
-    // Обнуляем content по типу слайда.
-    s.data = getDefaultDataForType(s.type)
-  }
-  selectedFigureInstanceId.value = null
 }
 
 /** Тип «о себе» из настроек профиля: none | about | position */
@@ -3646,6 +3459,12 @@ const presentationEditorSlideContext = reactive<PresentationEditorSlideInject>({
   customSlidePageStyle,
   customBlockTag,
   customBlockStyle,
+  get adminTemplateBlockEdit() {
+    return isAdminSlidesGridMode.value
+  },
+  get adminVisibleTemplateBlockId() {
+    return adminTemplateEditingBlockId.value
+  },
 } as PresentationEditorSlideInject)
 
 provide(PRESENTATION_EDITOR_SLIDE_KEY, presentationEditorSlideContext)

@@ -41,7 +41,7 @@
         <div class="booklet-page__inner">
           <div class="booklet-scale-root w-full h-full">
             <!-- Обложка -->
-            <div v-if="slide.type === 'cover'" class="booklet-content booklet-main">
+            <div v-if="slide.type === 'cover'" class="booklet-content booklet-main" data-editor-block="slide">
               <div class="booklet-main__wrap">
                 <div class="booklet-main__img">
                   <img
@@ -72,11 +72,15 @@
             <!-- 2. Описание (с блоком текста и сеткой 2 фото) -->
             <div v-else-if="slide.type === 'description'" class="booklet-content booklet-info">
               <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
-                <div class="booklet-info__block booklet-info__content">
+                <div class="booklet-info__block booklet-info__content" data-editor-block="description-text">
                   <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
                   <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.text ?? slide.data?.content ?? ''))" />
                 </div>
-                <div class="booklet-info__grid image-grid-bound" :data-image-grid="getEffectiveImageGrid(slide)">
+                <div
+                  class="booklet-info__grid image-grid-bound"
+                  :data-image-grid="getEffectiveImageGrid(slide)"
+                  data-editor-block="description-images"
+                >
                   <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-info__block booklet-info__img">
                     <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                   </div>
@@ -86,11 +90,15 @@
             <!-- 3. Инфраструктура -->
             <div v-else-if="slide.type === 'infrastructure'" class="booklet-content booklet-stroen">
               <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
-                <div class="booklet-stroen__block booklet-stroen__content">
+                <div class="booklet-stroen__block booklet-stroen__content" data-editor-block="infrastructure-text">
                   <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
                   <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.content ?? slide.data?.text ?? ''))" />
                 </div>
-                <div class="booklet-stroen__grid image-grid-bound" :data-image-grid="getEffectiveImageGrid(slide)">
+                <div
+                  class="booklet-stroen__grid image-grid-bound"
+                  :data-image-grid="getEffectiveImageGrid(slide)"
+                  data-editor-block="infrastructure-images"
+                >
                   <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-stroen__block booklet-stroen__img">
                     <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
                   </div>
@@ -98,7 +106,7 @@
               </div>
             </div>
             <!-- 4. Местоположение: слева карта (__left), справа адрес/метро + фото (__content) -->
-            <div v-else-if="slide.type === 'location'" class="booklet-content booklet-map overflow-visible">
+            <div v-else-if="slide.type === 'location'" class="booklet-content booklet-map overflow-visible" data-editor-block="slide">
               <div class="booklet-map__wrap">
                 <h2 class="booklet-map__title">{{ slide.data?.heading ?? slide.data?.title ?? 'МЕСТОПОЛОЖЕНИЕ' }}</h2>
                 <div class="booklet-map__left">
@@ -132,7 +140,7 @@
               </div>
             </div>
             <!-- 5. Изображение: 100% по ширине и высоте -->
-            <div v-else-if="slide.type === 'image'" class="booklet-content booklet-img">
+            <div v-else-if="slide.type === 'image'" class="booklet-content booklet-img" data-editor-block="slide">
               <div class="booklet-img__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2">{{ slide.data?.heading ?? slide.data?.title }}</h2>
                 <div v-if="slide.data?.imageUrl ?? slide.data?.image" class="booklet-img__img">
@@ -141,7 +149,7 @@
               </div>
             </div>
             <!-- 6. Галерея 3 фото -->
-            <div v-else-if="slide.type === 'gallery'" class="booklet-content booklet-galery">
+            <div v-else-if="slide.type === 'gallery'" class="booklet-content booklet-galery" data-editor-block="slide">
               <div class="booklet-galery__wrap">
                 <h2 class="booklet-galery__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ГАЛЕРЕЯ' }}</h2>
                 <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
@@ -152,7 +160,7 @@
               </div>
             </div>
             <!-- 7. Характеристики -->
-            <div v-else-if="slide.type === 'characteristics'" class="booklet-content booklet-char">
+            <div v-else-if="slide.type === 'characteristics'" class="booklet-content booklet-char" data-editor-block="slide">
               <div class="booklet-char__wrap">
                 <h2 class="booklet-char__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ХАРАКТЕРИСТИКИ' }}</h2>
                 <div v-if="slide.data?.charImageUrl || slide.data?.image" class="booklet-char__img">
@@ -169,7 +177,7 @@
               </div>
             </div>
             <!-- 8. Планировка: сетка изображений -->
-            <div v-else-if="slide.type === 'layout'" class="booklet-content booklet-layout">
+            <div v-else-if="slide.type === 'layout'" class="booklet-content booklet-layout" data-editor-block="slide">
               <div class="booklet-layout__wrap">
                 <h2 class="booklet-layout__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ПЛАНИРОВКА' }}</h2>
                 <div class="booklet-layout__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
@@ -180,7 +188,7 @@
               </div>
             </div>
             <!-- 9. Контакты: лого/аватар слева по центру, справа ФИО и телефон; соцсети, email, адрес, доп. текст, сайт. Пустые поля не выводим. -->
-            <div v-else-if="slide.type === 'contacts'" class="booklet-content booklet-contacts">
+            <div v-else-if="slide.type === 'contacts'" class="booklet-content booklet-contacts" data-editor-block="slide">
               <div class="booklet-contacts__wrap">
                 <div class="booklet-contacts__left flex flex-col gap-4">
                   <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
@@ -220,6 +228,7 @@
             <div
               v-else-if="slide.type === 'custom' && slide.data?.layoutMode === 'ai'"
               class="booklet-content booklet-ai-layout p-6 overflow-auto"
+              data-editor-block="slide"
               :style="customSlidePageStyle(slide)"
             >
               <template v-for="(block, bi) in (slide.data?.blocks as Array<Record<string, unknown>>) || []" :key="String(block.id ?? bi)">
@@ -263,7 +272,7 @@
               </template>
             </div>
             <!-- Fallback: features и др. — упрощённо -->
-            <div v-else class="booklet-content booklet-info p-6 overflow-auto">
+            <div v-else class="booklet-content booklet-info p-6 overflow-auto" data-editor-block="slide">
               <h2 class="booklet-info__title mb-4">{{ slide.data?.heading ?? slide.data?.title ?? slide.type }}</h2>
               <div v-if="slide.data?.text" class="booklet-info__text" v-html="String(slide.data.text).replace(/\n/g, '<br>')" />
               <div v-else-if="slide.data?.content" class="booklet-info__text" v-html="String(slide.data.content).replace(/\n/g, '<br>')" />
@@ -278,6 +287,9 @@
               </div>
             </div>
             <FiguresOverlay
+              v-for="scope in figureBlockScopesForSlide(slide)"
+              :key="`${index}-${scope}`"
+              :figure-block-scope="scope"
               :slide="slide"
               :figuresById="figuresById"
               :selectedInstanceId="null"
@@ -326,6 +338,7 @@ import '@/assets/booklet-slides.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
+import { figureBlockScopesForSlide } from '@/utils/figureBlockScopes'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
 import type { FigureDefinition } from '@/types/figures'

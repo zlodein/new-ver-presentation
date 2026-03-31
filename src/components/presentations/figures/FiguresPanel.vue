@@ -9,13 +9,18 @@ import {
   starPolygonPointsFromGeometry,
 } from '@/utils/figureGeometryRender'
 import { swapFigureStackOrder } from '@/utils/figureStackOrder'
+import { normalizeFigureBlockId, SLIDE_WIDE_BLOCK_ID } from '@/utils/figureBlockScopes'
 
-const props = defineProps<{
-  slide: SlideItem
-  figures: FigureDefinition[]
-  selectedInstanceId: string | null
-  enabled: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    slide: SlideItem
+    figures: FigureDefinition[]
+    selectedInstanceId: string | null
+    enabled: boolean
+    figureBlockScope?: string
+  }>(),
+  { figureBlockScope: SLIDE_WIDE_BLOCK_ID },
+)
 
 const emit = defineEmits<{
   (e: 'select', id: string | null): void
@@ -143,8 +148,13 @@ function zNum(v: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
+function figuresInScope(): FigureInstance[] {
+  const scope = normalizeFigureBlockId(props.figureBlockScope)
+  return ensureFiguresArray().filter((i) => normalizeFigureBlockId(i.blockId) === scope)
+}
+
 function maxZ(): number {
-  const arr = ensureFiguresArray()
+  const arr = figuresInScope()
   let m = -Infinity
   for (const i of arr) m = Math.max(m, zNum(i.z))
   return m === -Infinity ? 0 : m
@@ -160,6 +170,7 @@ function addFigure(figureId: string) {
   const inst: FigureInstance = {
     id: genId(),
     figureId,
+    blockId: normalizeFigureBlockId(props.figureBlockScope),
     x: 30,
     y: 25,
     w: 30,
@@ -342,7 +353,7 @@ function bringToFront() {
   if (!props.enabled) return
   const s = selectedInstance.value
   if (!s) return
-  const arr = ensureFiguresArray()
+  const arr = figuresInScope()
   const max = arr.length ? Math.max(...arr.map((i) => zNum(i.z))) : 5
   s.z = Math.min(40, max + 1)
   touchFiguresReactive()
@@ -352,7 +363,7 @@ function sendToBack() {
   if (!props.enabled) return
   const s = selectedInstance.value
   if (!s) return
-  const arr = ensureFiguresArray()
+  const arr = figuresInScope()
   const min = arr.length ? Math.min(...arr.map((i) => zNum(i.z))) : 5
   s.z = Math.max(0, min - 1)
   touchFiguresReactive()
@@ -362,7 +373,7 @@ function moveLayer(delta: number) {
   if (!props.enabled) return
   const s = selectedInstance.value
   if (!s) return
-  const arr = ensureFiguresArray()
+  const arr = figuresInScope()
   if (!swapFigureStackOrder(arr, s.id, delta)) return
   touchFiguresReactive()
 }

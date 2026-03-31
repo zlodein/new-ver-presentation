@@ -3,18 +3,24 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Konva from 'konva'
 import type { FigureDefinition, FigureInstance } from '@/types/figures'
 import { buildFigureContentGroup } from '@/utils/konvaFigureShapes'
+import { normalizeFigureBlockId, SLIDE_WIDE_BLOCK_ID } from '@/utils/figureBlockScopes'
 
 type SlideLike = {
   id?: string
   data?: Record<string, unknown>
 }
 
-const props = defineProps<{
-  slide: SlideLike
-  figuresById: Record<string, FigureDefinition>
-  selectedInstanceId: string | null
-  enabled: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    slide: SlideLike
+    figuresById: Record<string, FigureDefinition>
+    selectedInstanceId: string | null
+    enabled: boolean
+    /** Область шаблона: совпадает с data-editor-block; координаты фигур — % от этой области */
+    figureBlockScope?: string
+  }>(),
+  { figureBlockScope: SLIDE_WIDE_BLOCK_ID },
+)
 
 const emit = defineEmits<{
   (e: 'select', id: string | null): void
@@ -31,9 +37,8 @@ const figuresOverlayZBaseResolved = ref(20)
 const mediaZResolved = ref(5)
 
 /**
- * Оверлей = весь padding-box .booklet-scale-root (left/top: 0, clientWidth × clientHeight).
- * Не привязываем к .booklet-content — иначе 1rem padding scale-root даёт лишний зазор у краёв слайда
- * и расхождение с тулбаром (проценты должны быть от той же области, что и Konva stage).
+ * Оверлей позиционируется по [data-editor-block] (или .booklet-content), чтобы проценты Konva
+ * совпадали с видимой областью блока без лишних отступов родителя.
  */
 const contentBoxPx = ref({ left: 0, top: 0, width: 0, height: 0 })
 
@@ -52,6 +57,19 @@ function resolveBookletViewEl(scale: HTMLElement | null): HTMLElement | null {
     if (nearest) return nearest
   }
   return scale?.closest('.booklet-view') as HTMLElement | null
+}
+
+function resolveAnchorEl(): HTMLElement | null {
+  const scale = resolveScaleRootEl()
+  if (!scale) return null
+  const scope = normalizeFigureBlockId(props.figureBlockScope)
+  const safe =
+    typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(scope)
+      : scope.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  const found = scale.querySelector(`[data-editor-block="${safe}"]`) as HTMLElement | null
+  if (found) return found
+  return (scale.querySelector('.booklet-content') as HTMLElement | null) ?? scale
 }
 
 function setContentBoxIfChanged(next: { left: number; top: number; width: number; height: number }) {
@@ -73,19 +91,19 @@ function syncContentBoxFromScaleRoot() {
     setContentBoxIfChanged(zero)
     return
   }
-  const scale = resolveScaleRootEl()
   const pageInner = rootRef.value.closest('.booklet-page__inner') as HTMLElement | null
-  if (!scale || !pageInner) {
+  const anchor = resolveAnchorEl()
+  if (!anchor || !pageInner) {
     setContentBoxIfChanged(zero)
     return
   }
-  const sr = scale.getBoundingClientRect()
+  const ar = anchor.getBoundingClientRect()
   const pr = pageInner.getBoundingClientRect()
   setContentBoxIfChanged({
-    left: Math.round(sr.left - pr.left),
-    top: Math.round(sr.top - pr.top),
-    width: Math.max(1, Math.round(sr.width)),
-    height: Math.max(1, Math.round(sr.height)),
+    left: Math.round(ar.left - pr.left),
+    top: Math.round(ar.top - pr.top),
+    width: Math.max(1, Math.round(ar.width)),
+    height: Math.max(1, Math.round(ar.height)),
   })
 }
 
@@ -143,6 +161,20 @@ let layer: Konva.Layer | null = null
 let transformer: Konva.Transformer | null = null
 let resizeObserver: ResizeObserver | null = null
 
+function bindResizeObserver() {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+  if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') return
+  const host = stageHostRef.value
+  const anchor = resolveAnchorEl()
+  resizeObserver = new ResizeObserver(() => {
+    syncFiguresCssVarsFromRoot()
+    fitStage()
+  })
+  if (anchor) resizeObserver.observe(anchor)
+  if (host) resizeObserver.observe(host)
+}
+
 /** Блокирует rebuildLayer во время drag / transform и короткого «кликового» цикла по фигуре */
 const interactionLock = ref(false)
 
@@ -159,7 +191,9 @@ function endInteraction() {
 function getInstances(): FigureInstance[] {
   const data = props.slide.data as Record<string, unknown> | undefined
   const arr = data?.figures
-  return Array.isArray(arr) ? (arr as FigureInstance[]) : []
+  if (!Array.isArray(arr)) return []
+  const scope = normalizeFigureBlockId(props.figureBlockScope)
+  return (arr as FigureInstance[]).filter((i) => normalizeFigureBlockId(i.blockId) === scope)
 }
 
 const instances = computed(() => {
@@ -870,8 +904,7 @@ onMounted(() => {
 
   window.addEventListener('blur', onWindowBlur)
 
-  resizeObserver = new ResizeObserver(() => fitStage())
-  resizeObserver.observe(host)
+  bindResizeObserver()
 
   rebuildLayer()
   /* После layout админского столбика слайдов размер host может остаться 0 на первом кадре */
@@ -894,12 +927,24 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  () => [props.slide?.id, props.slide?.data?.figures, props.figuresById, props.enabled],
+  () => [props.slide?.id, props.slide?.data?.figures, props.figuresById, props.enabled, props.figureBlockScope],
   () => {
     if (interactionLock.value) return
     rebuildLayer()
   },
   { deep: true },
+)
+
+watch(
+  () => props.figureBlockScope,
+  () => {
+    nextTick(() => {
+      bindResizeObserver()
+      syncFiguresCssVarsFromRoot()
+      fitStage()
+      if (!interactionLock.value) rebuildLayer()
+    })
+  },
 )
 
 watch(

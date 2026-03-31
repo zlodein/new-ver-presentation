@@ -52,6 +52,10 @@ export type PresentationEditorSlideInject = {
   customSlidePageStyle: (slide: SlideItem) => Record<string, string | number>
   customBlockTag: (blockType: string) => string
   customBlockStyle: (style: unknown) => Record<string, string | number>
+  /** Режим шаблонов админа: один блок на экран, выбор в сайдбаре */
+  adminTemplateBlockEdit: boolean
+  /** Текущий редактируемый блок (data-editor-block) */
+  adminVisibleTemplateBlockId: string
 }
 
 export const PRESENTATION_EDITOR_SLIDE_KEY = Symbol('presentationEditorSlide') as InjectionKey<

@@ -70,7 +70,12 @@ export interface FigureStyle {
 export interface FigureInstance {
   id: string
   figureId: string
-  /** Позиция и размер в процентах от контейнера слайда: 0..100 */
+  /**
+   * Область шаблона (data-editor-block): позиции x,y,w,h в процентах 0..100 от этой области.
+   * Без поля или `slide` — весь контент слайда (.booklet-content).
+   */
+  blockId?: string
+  /** Позиция и размер в процентах от контейнера (слайд или блок): 0..100 */
   x: number
   y: number
   w: number
