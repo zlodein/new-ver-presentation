@@ -652,8 +652,7 @@
                     <div
                       class="booklet-scale-root w-full h-full"
                       :class="{
-                        'booklet-scale-root--fig-pass':
-                          canEditFigures && slide.id === currentSlide?.id,
+                        'booklet-scale-root--fig-pass': figuresInteractiveOnSlide(slide.id),
                       }"
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
@@ -662,7 +661,7 @@
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="canEditFigures && slide.id === currentSlide?.id"
+                        :enabled="figuresInteractiveOnSlide(slide.id)"
                         @select="onFigureSelect(slide, $event)"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
@@ -715,8 +714,7 @@
                     <div
                       class="booklet-scale-root w-full h-full"
                       :class="{
-                        'booklet-scale-root--fig-pass':
-                          canEditFigures && slide.id === currentSlide?.id,
+                        'booklet-scale-root--fig-pass': figuresInteractiveOnSlide(slide.id),
                       }"
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
@@ -725,7 +723,7 @@
                         :slide="slide"
                         :figuresById="figuresById"
                         :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="canEditFigures && slide.id === currentSlide?.id"
+                        :enabled="figuresInteractiveOnSlide(slide.id)"
                         @select="onFigureSelect(slide, $event)"
                         @delete="deleteFigureInstance"
                         @layerMove="onFigureLayerMove"
@@ -2583,6 +2581,16 @@ const adminSlidesGroupEditorSettingsBackup = ref<Record<string, string> | null>(
 const canEditImages = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
 /** Фигуры и сетка Konva — только в админском редакторе сетки слайдов (/dashboard/admin/slides). В /dashboard/presentations/ их нет. */
 const canEditFigures = computed(() => isAdminSlidesGridMode.value && !adminSlidesTemplatePreviewMode.value)
+
+/**
+ * В админском режиме столбиком видны все слайды сразу; раньше Konva и fig-pass были только у «текущего» слайда (currentSlide),
+ * из‑за чего на остальных слайдах не работали перетаскивание, трансформер и слои.
+ */
+function figuresInteractiveOnSlide(slideId: string): boolean {
+  if (!canEditFigures.value) return false
+  if (isAdminSlidesGridMode.value) return true
+  return currentSlide.value?.id === slideId
+}
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
 
