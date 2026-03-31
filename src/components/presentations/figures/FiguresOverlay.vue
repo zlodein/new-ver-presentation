@@ -734,26 +734,6 @@ function rebuildLayer() {
       outer.on('dragstart', () => beginInteraction())
 
       outer.on('dragmove', () => {
-        const hit = outer.findOne('.figureHit') as Konva.Rect | null
-        if (hit && editorGridCfg.value.snap) {
-          const wP = hit.width()
-          const hP = hit.height()
-          const stepX = (editorGridCfg.value.stepPct / 100) * W
-          const stepY = (editorGridCfg.value.stepPct / 100) * H
-          let cx = outer.x()
-          let cy = outer.y()
-          let tlx = cx - wP / 2
-          let tly = cy - hP / 2
-          tlx = Math.round(tlx / stepX) * stepX
-          tly = Math.round(tly / stepY) * stepY
-          cx = tlx + wP / 2
-          cy = tly + hP / 2
-          const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
-          cx = snapCenterWithEdgeMagnet(cx, rx, W - rx, stepX)
-          cy = snapCenterWithEdgeMagnet(cy, ry, H - ry, stepY)
-          outer.x(cx)
-          outer.y(cy)
-        }
         /* Не пишем x/y в реактивную модель на каждом dragmove — глубокий watch на figures вызывает syncFiguresCssVarsFromRoot и тяжёлые перерисовки Vue, из‑за чего перетаскивание «тормозит». Синхронизация — в dragend. */
         layer?.batchDraw()
       })
@@ -771,22 +751,43 @@ function rebuildLayer() {
         const hP = hit.height()
         let cx = pos.x
         let cy = pos.y
+        const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
+        const minX = rx
+        const maxX = W - rx
+        const minY = ry
+        const maxY = H - ry
+        const clampedRawX = clamp(cx, minX, maxX)
+        const clampedRawY = clamp(cy, minY, maxY)
+
         if (editorGridCfg.value.snap) {
           const stepX = (editorGridCfg.value.stepPct / 100) * W
           const stepY = (editorGridCfg.value.stepPct / 100) * H
-          let tlx = cx - wP / 2
-          let tly = cy - hP / 2
+          const rawAtLeft = Math.abs(clampedRawX - minX) <= 1e-6
+          const rawAtRight = Math.abs(clampedRawX - maxX) <= 1e-6
+          const rawAtTop = Math.abs(clampedRawY - minY) <= 1e-6
+          const rawAtBottom = Math.abs(clampedRawY - maxY) <= 1e-6
+
+          let tlx = clampedRawX - wP / 2
+          let tly = clampedRawY - hP / 2
           tlx = Math.round(tlx / stepX) * stepX
           tly = Math.round(tly / stepY) * stepY
           cx = tlx + wP / 2
           cy = tly + hP / 2
-          const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
-          cx = snapCenterWithEdgeMagnet(cx, rx, W - rx, stepX)
-          cy = snapCenterWithEdgeMagnet(cy, ry, H - ry, stepY)
+
+          // При упоре в край приоритет у границы, а не у сетки.
+          if (rawAtLeft) cx = minX
+          else if (rawAtRight) cx = maxX
+          else cx = snapCenterWithEdgeMagnet(cx, minX, maxX, stepX)
+
+          if (rawAtTop) cy = minY
+          else if (rawAtBottom) cy = maxY
+          else cy = snapCenterWithEdgeMagnet(cy, minY, maxY, stepY)
+        } else {
+          cx = clampedRawX
+          cy = clampedRawY
         }
-        const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
-        cx = clamp(cx, rx, W - rx)
-        cy = clamp(cy, ry, H - ry)
+        cx = clamp(cx, minX, maxX)
+        cy = clamp(cy, minY, maxY)
         return { x: cx, y: cy }
       })
     }
