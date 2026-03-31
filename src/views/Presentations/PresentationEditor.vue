@@ -611,8 +611,12 @@
                   <div
                     v-if="isAdminSlidesGridMode"
                     class="booklet-page__inner booklet-page__inner--editor-layers"
+                    :style="{ '--booklet-editor-canvas-bg': presentationSettings.themeColor || '#ffffff' }"
                   >
-                    <div class="booklet-slide-layer booklet-slide-layer--bg" aria-hidden="true" />
+                    <div
+                      class="booklet-slide-layer booklet-slide-layer--bg"
+                      aria-hidden="true"
+                    />
                     <div
                       class="booklet-scale-root booklet-slide-layer--content w-full h-full"
                       :class="{
@@ -3886,20 +3890,34 @@ async function exportToPDF() {
 .presentation-swiper.swiper-no-swiping {
   touch-action: pan-y;
 }
+/*
+ * Админ-сетка слайдов: три слоя по z-index
+ * 1 — фон «холста» (непрозрачный)
+ * 2 — Konva (FiguresOverlay; между фоном и HTML при низком z фигуры)
+ * 3 — контент без заливки на корневых обёртках — видны фон и фигуры в промежутках между блоками
+ * Блоки (колонки, карточки, поля ввода) сохраняют свои фоны из booklet-slides / правил редактора.
+ */
 .editor-slider-wrap .booklet-page__inner--editor-layers {
   position: relative;
   isolation: isolate;
+  /* был #fff — убираем, чтобы не перекрывать слой 1 и Konva */
+  background: transparent !important;
 }
 .editor-slider-wrap .booklet-slide-layer--bg {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: inherit;
+  /* холст слайда: как прежний inner, по желанию — цвет темы презентации */
+  background-color: var(--booklet-editor-canvas-bg, #ffffff);
 }
 .editor-slider-wrap .booklet-slide-layer--content.booklet-scale-root {
   position: relative;
   z-index: 20;
+  background: transparent !important;
+}
+.editor-slider-wrap .booklet-page__inner--editor-layers .booklet-content {
+  background: transparent !important;
 }
 
 /* Блоки в слайдере редактора: без обводки/подсветки при фокусе и без затемнения в ночном режиме */

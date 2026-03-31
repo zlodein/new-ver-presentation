@@ -56,8 +56,10 @@
 }
 
 /*
- * Админ-редактор сетки слайдов (editor-layer-stack в PresentationEditor):
- * z: фон 0 → Konva 10–19 или 21+ (выше HTML) → контент .booklet-slide-layer--content 20.
+ * Админ-редактор сетки слайдов (PresentationEditor, .booklet-page__inner--editor-layers):
+ * z: 1) .booklet-slide-layer--bg — холст (--booklet-editor-canvas-bg)
+ *    2) Konva — 10–19 или 21+ (выше HTML)
+ *    3) .booklet-slide-layer--content — без фона на корне; блоки сами задают заливку.
  */
 
 /* Фигуры расширяются в padding scale-root — не обрезать оверлей */
