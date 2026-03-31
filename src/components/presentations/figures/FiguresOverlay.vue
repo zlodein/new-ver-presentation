@@ -237,24 +237,15 @@ function axisAlignedHalfExtentsForRotatedRect(wPx: number, hPx: number, rotation
 /** После drag/transform — подправить позицию, если AABB вылез за stage (не вызывать каждый dragmove — ломает перетаскивание) */
 function clampOuterInsideStage(outer: Konva.Group) {
   if (!stage) return
-  const L = outer.getLayer()
-  if (!L) return
   const W = stage.width()
   const H = stage.height()
-  for (let i = 0; i < 4; i++) {
-    // Не учитываем shadow/stroke в коллизии с границами: эффект и обводка не должны
-    // создавать визуальный зазор при прижатии фигуры к краю.
-    const rect = outer.getClientRect({ relativeTo: L, skipShadow: true, skipStroke: true })
-    let dx = 0
-    let dy = 0
-    if (rect.x < 0) dx -= rect.x
-    if (rect.y < 0) dy -= rect.y
-    if (rect.x + rect.width > W) dx -= rect.x + rect.width - W
-    if (rect.y + rect.height > H) dy -= rect.y + rect.height - H
-    if (dx === 0 && dy === 0) break
-    outer.x(outer.x() + dx)
-    outer.y(outer.y() + dy)
-  }
+  const hit = outer.findOne('.figureHit') as Konva.Rect | null
+  if (!hit) return
+  const wP = hit.width()
+  const hP = hit.height()
+  const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
+  outer.x(clamp(outer.x(), rx, W - rx))
+  outer.y(clamp(outer.y(), ry, H - ry))
 }
 
 function snapRotationDeg(raw: number): number {
