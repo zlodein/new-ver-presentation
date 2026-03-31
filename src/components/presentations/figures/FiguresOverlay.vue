@@ -262,6 +262,20 @@ function snapRotationDeg(raw: number): number {
   return s
 }
 
+function snapCenterWithEdgeMagnet(
+  center: number,
+  minCenter: number,
+  maxCenter: number,
+  step: number,
+): number {
+  const safeStep = Math.max(1e-6, step)
+  const edgeTol = safeStep / 2
+  const clamped = clamp(center, minCenter, maxCenter)
+  if (Math.abs(clamped - minCenter) <= edgeTol) return minCenter
+  if (Math.abs(maxCenter - clamped) <= edgeTol) return maxCenter
+  return clamped
+}
+
 function devicePixelRatioClamped(): number {
   if (typeof window === 'undefined') return 1
   return Math.min(window.devicePixelRatio || 1, 2.5)
@@ -742,8 +756,13 @@ function rebuildLayer() {
           let tly = cy - hP / 2
           tlx = Math.round(tlx / stepX) * stepX
           tly = Math.round(tly / stepY) * stepY
-          outer.x(tlx + wP / 2)
-          outer.y(tly + hP / 2)
+          cx = tlx + wP / 2
+          cy = tly + hP / 2
+          const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
+          cx = snapCenterWithEdgeMagnet(cx, rx, W - rx, stepX)
+          cy = snapCenterWithEdgeMagnet(cy, ry, H - ry, stepY)
+          outer.x(cx)
+          outer.y(cy)
         }
         /* Не пишем x/y в реактивную модель на каждом dragmove — глубокий watch на figures вызывает syncFiguresCssVarsFromRoot и тяжёлые перерисовки Vue, из‑за чего перетаскивание «тормозит». Синхронизация — в dragend. */
         layer?.batchDraw()
@@ -771,6 +790,9 @@ function rebuildLayer() {
           tly = Math.round(tly / stepY) * stepY
           cx = tlx + wP / 2
           cy = tly + hP / 2
+          const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
+          cx = snapCenterWithEdgeMagnet(cx, rx, W - rx, stepX)
+          cy = snapCenterWithEdgeMagnet(cy, ry, H - ry, stepY)
         }
         const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
         cx = clamp(cx, rx, W - rx)
