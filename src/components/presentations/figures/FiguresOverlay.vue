@@ -938,13 +938,13 @@ watch(
     <!-- inset-0: проценты bbox — от полного оверлея (как stage), не от сжатого блока по контенту -->
     <div class="figure-toolbar pointer-events-none absolute inset-0 overflow-visible">
       <div
-        class="pointer-events-auto absolute z-[3] flex flex-col gap-1"
+        class="pointer-events-none absolute z-[3] flex flex-col gap-1"
         :style="toolbarPositionStyle"
         :class="[toolbarButtonHClass, toolbarButtonVClass]"
       >
         <button
           type="button"
-          class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+          class="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
           title="Слой выше"
           aria-label="Слой выше"
           @pointerdown.stop
@@ -956,7 +956,7 @@ watch(
         </button>
         <button
           type="button"
-          class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
+          class="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
           title="Удалить"
           aria-label="Удалить фигуру"
           @pointerdown.stop
@@ -972,7 +972,7 @@ watch(
         </button>
         <button
           type="button"
-          class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
+          class="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
           title="Слой ниже"
           aria-label="Слой ниже"
           @pointerdown.stop
