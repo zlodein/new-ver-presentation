@@ -722,7 +722,8 @@ function rebuildLayer() {
           outer.x(tlx + wP / 2)
           outer.y(tly + hP / 2)
         }
-        syncInstancePositionFromNode(outer, inst)
+        /* Не пишем x/y в реактивную модель на каждом dragmove — глубокий watch на figures вызывает syncFiguresCssVarsFromRoot и тяжёлые перерисовки Vue, из‑за чего перетаскивание «тормозит». Синхронизация — в dragend. */
+        layer?.batchDraw()
       })
 
       outer.on('dragend', () => {
@@ -885,6 +886,7 @@ watch(
 watch(
   () => [props.slide?.id, props.slide?.data?.figures, maxFigZForStack.value],
   () => {
+    if (interactionLock.value) return
     nextTick(() => syncFiguresCssVarsFromRoot())
   },
   { deep: true },

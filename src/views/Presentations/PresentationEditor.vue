@@ -1395,6 +1395,7 @@ import PresentationEditorSlideBlock from './PresentationEditorSlideBlock.vue'
 import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
 import FiguresPanel from '@/components/presentations/figures/FiguresPanel.vue'
 import type { FigureDefinition } from '@/types/figures'
+import { swapFigureStackOrder } from '@/utils/figureStackOrder'
 import {
   PRESENTATION_EDITOR_SLIDE_KEY,
   type PresentationEditorSlideInject,
@@ -1867,8 +1868,7 @@ function onFigureLayerMove(payload: { id: string; delta: number; slideId?: strin
   const inst = found.figures.find((x: any) => x?.id === id)
   if (!inst) return
 
-  const next = zNum(inst.z) + delta
-  inst.z = Math.min(FIGURE_Z_MAX, Math.max(FIGURE_Z_MIN, next))
+  if (!swapFigureStackOrder(found.figures, id, delta)) return
 
   found.slide.data = found.slide.data ?? {}
   ;(found.slide.data as any).figures = [...found.figures]

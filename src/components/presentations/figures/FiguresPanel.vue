@@ -8,6 +8,7 @@ import {
   rectLayoutFromGeometry,
   starPolygonPointsFromGeometry,
 } from '@/utils/figureGeometryRender'
+import { swapFigureStackOrder } from '@/utils/figureStackOrder'
 
 const props = defineProps<{
   slide: SlideItem
@@ -361,7 +362,8 @@ function moveLayer(delta: number) {
   if (!props.enabled) return
   const s = selectedInstance.value
   if (!s) return
-  s.z = Math.min(40, Math.max(0, zNum(s.z) + delta))
+  const arr = ensureFiguresArray()
+  if (!swapFigureStackOrder(arr, s.id, delta)) return
   touchFiguresReactive()
 }
 
