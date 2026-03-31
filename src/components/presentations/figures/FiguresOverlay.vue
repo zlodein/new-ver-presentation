@@ -305,6 +305,7 @@ function reorderKonvaByZ(force = false) {
     layer.add(n)
   }
   transformer?.moveToTop()
+  patchTransformerHitThrough()
   layer.batchDraw()
 }
 
@@ -317,6 +318,7 @@ function onLayerMove(delta: number) {
   nextTick(() => {
     reorderKonvaByZ(true)
     updateTransformerSelection()
+    patchTransformerHitThrough()
   })
 }
 
@@ -523,6 +525,21 @@ function syncInstanceFromTransformNode(outer: Konva.Group, figureContent: Konva.
   clampOuterInsideStage(outer)
   syncInstancePositionFromNode(outer, inst)
   transformer?.forceUpdate()
+  patchTransformerHitThrough()
+}
+
+/**
+ * Внутренний rect `.back` у Konva.Transformer иначе участвует в hit/drag и перекрывает группу фигуры
+ * (рамка рисуется sceneFunc на всю область). Тогда клики не доходят до hitRect/drag outer — после
+ * появления трансформера перетаскивание «умирает». Отключаем hit на back — якоря остаются отдельными узлами.
+ */
+function patchTransformerHitThrough() {
+  if (!transformer) return
+  const back = transformer.findOne('.back') as Konva.Shape | null
+  if (back) {
+    back.listening(false)
+    back.draggable(false)
+  }
 }
 
 function createTransformer(): Konva.Transformer {
@@ -532,6 +549,8 @@ function createTransformer(): Konva.Transformer {
     keepRatio: true,
     /* false: рамка по видимому контуру вместе со stroke; true даёт зазор «внутри» обводки */
     ignoreStroke: false,
+    /* true = фейковая заливка на весь bbox перехватывает события и ломает drag по группе под трансформером */
+    shouldOverdrawWholeArea: false,
     enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
     boundBoxFunc(oldBox, newBox) {
       const MIN = 8
@@ -565,6 +584,7 @@ function createTransformer(): Konva.Transformer {
     const inst = getInstances().find((i) => i.id === id)
     if (inst) syncInstanceFromTransformNode(outer, figureContent, inst)
     endInteraction()
+    patchTransformerHitThrough()
   })
 
   return tr
@@ -587,6 +607,8 @@ function updateTransformerSelection() {
   const figureContent = outer?.findOne('.figureContent') as Konva.Group | null
   transformer.nodes(figureContent ? [figureContent] : [])
   transformer.moveToTop()
+  transformer.forceUpdate()
+  patchTransformerHitThrough()
   layer.batchDraw()
 }
 
@@ -609,7 +631,11 @@ function fitStage() {
   stage.height(h)
   applyCanvasSharpness()
   if (!interactionLock.value) rebuildLayer()
-  else layer?.batchDraw()
+  else {
+    layer?.batchDraw()
+    transformer?.forceUpdate()
+    patchTransformerHitThrough()
+  }
 }
 
 function rebuildLayer() {
@@ -766,6 +792,7 @@ function rebuildLayer() {
   transformer = createTransformer()
   layer.add(transformer)
   updateTransformerSelection()
+  patchTransformerHitThrough()
   layer.batchDraw()
 }
 
