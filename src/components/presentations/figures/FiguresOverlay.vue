@@ -242,8 +242,9 @@ function clampOuterInsideStage(outer: Konva.Group) {
   const W = stage.width()
   const H = stage.height()
   for (let i = 0; i < 4; i++) {
-    // Не учитываем shadow в коллизии с границами: тень не должна мешать прижать фигуру к краю.
-    const rect = outer.getClientRect({ relativeTo: L, skipShadow: true })
+    // Не учитываем shadow/stroke в коллизии с границами: эффект и обводка не должны
+    // создавать визуальный зазор при прижатии фигуры к краю.
+    const rect = outer.getClientRect({ relativeTo: L, skipShadow: true, skipStroke: true })
     let dx = 0
     let dy = 0
     if (rect.x < 0) dx -= rect.x
