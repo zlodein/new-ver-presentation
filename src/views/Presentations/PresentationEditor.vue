@@ -656,17 +656,17 @@
                       }"
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
-                      <FiguresOverlay
-                        v-if="isAdminSlidesGridMode"
-                        :slide="slide"
-                        :figuresById="figuresById"
-                        :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="figuresInteractiveOnSlide(slide.id)"
-                        @select="onFigureSelect(slide, $event)"
-                        @delete="deleteFigureInstance"
-                        @layerMove="onFigureLayerMove"
-                      />
                     </div>
+                    <FiguresOverlay
+                      v-if="isAdminSlidesGridMode"
+                      :slide="slide"
+                      :figuresById="figuresById"
+                      :selectedInstanceId="selectedFigureInstanceId"
+                      :enabled="figuresInteractiveOnSlide(slide.id)"
+                      @select="onFigureSelect(slide, $event)"
+                      @delete="deleteFigureInstance"
+                      @layerMove="onFigureLayerMove"
+                    />
                   </div>
                 </div>
               </SwiperSlide>
@@ -718,17 +718,17 @@
                       }"
                     >
                       <PresentationEditorSlideBlock :slide="slide" />
-                      <FiguresOverlay
-                        v-if="isAdminSlidesGridMode"
-                        :slide="slide"
-                        :figuresById="figuresById"
-                        :selectedInstanceId="selectedFigureInstanceId"
-                        :enabled="figuresInteractiveOnSlide(slide.id)"
-                        @select="onFigureSelect(slide, $event)"
-                        @delete="deleteFigureInstance"
-                        @layerMove="onFigureLayerMove"
-                      />
                     </div>
+                    <FiguresOverlay
+                      v-if="isAdminSlidesGridMode"
+                      :slide="slide"
+                      :figuresById="figuresById"
+                      :selectedInstanceId="selectedFigureInstanceId"
+                      :enabled="figuresInteractiveOnSlide(slide.id)"
+                      @select="onFigureSelect(slide, $event)"
+                      @delete="deleteFigureInstance"
+                      @layerMove="onFigureLayerMove"
+                    />
                   </div>
                 </div>
               </div>

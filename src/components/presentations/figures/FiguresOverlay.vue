@@ -37,19 +37,21 @@ const mediaZResolved = ref(5)
  */
 const contentBoxPx = ref({ left: 0, top: 0, width: 0, height: 0 })
 
-/** sx,sy — масштаб из matrix(scale); для layout-размеров делим экранные px из getBoundingClientRect */
-function readUniformScaleFromTransform(el: HTMLElement | null): { sx: number; sy: number } {
-  if (!el || typeof window === 'undefined') return { sx: 1, sy: 1 }
-  const t = getComputedStyle(el).transform
-  if (!t || t === 'none') return { sx: 1, sy: 1 }
-  try {
-    const m = new DOMMatrixReadOnly(t)
-    const sx = Math.abs(m.a) > 1e-6 ? Math.abs(m.a) : 1
-    const sy = Math.abs(m.d) > 1e-6 ? Math.abs(m.d) : 1
-    return { sx, sy }
-  } catch {
-    return { sx: 1, sy: 1 }
+function resolveScaleRootEl(): HTMLElement | null {
+  if (!rootRef.value) return null
+  const nearest = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
+  if (nearest) return nearest
+  const pageInner = rootRef.value.closest('.booklet-page__inner') as HTMLElement | null
+  if (!pageInner) return null
+  return pageInner.querySelector('.booklet-scale-root') as HTMLElement | null
+}
+
+function resolveBookletViewEl(scale: HTMLElement | null): HTMLElement | null {
+  if (rootRef.value) {
+    const nearest = rootRef.value.closest('.booklet-view') as HTMLElement | null
+    if (nearest) return nearest
   }
+  return scale?.closest('.booklet-view') as HTMLElement | null
 }
 
 function setContentBoxIfChanged(next: { left: number; top: number; width: number; height: number }) {
@@ -71,36 +73,26 @@ function syncContentBoxFromScaleRoot() {
     setContentBoxIfChanged(zero)
     return
   }
-  const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
-  if (!scale) {
+  const scale = resolveScaleRootEl()
+  const pageInner = rootRef.value.closest('.booklet-page__inner') as HTMLElement | null
+  if (!scale || !pageInner) {
     setContentBoxIfChanged(zero)
     return
   }
-  const { sx, sy } = readUniformScaleFromTransform(scale)
   const sr = scale.getBoundingClientRect()
-  const widthLocal = sr.width / sx
-  const heightLocal = sr.height / sy
-  if (widthLocal >= 1 && heightLocal >= 1) {
-    setContentBoxIfChanged({
-      left: 0,
-      top: 0,
-      width: Math.max(1, Math.round(widthLocal)),
-      height: Math.max(1, Math.round(heightLocal)),
-    })
-    return
-  }
+  const pr = pageInner.getBoundingClientRect()
   setContentBoxIfChanged({
-    left: 0,
-    top: 0,
-    width: Math.max(1, Math.round(scale.clientWidth)),
-    height: Math.max(1, Math.round(scale.clientHeight)),
+    left: Math.round(sr.left - pr.left),
+    top: Math.round(sr.top - pr.top),
+    width: Math.max(1, Math.round(sr.width)),
+    height: Math.max(1, Math.round(sr.height)),
   })
 }
 
 function syncFiguresCssVarsFromRoot() {
   if (typeof window === 'undefined' || !rootRef.value) return
-  const scale = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
-  const bookletView = rootRef.value.closest('.booklet-view') as HTMLElement | null
+  const scale = resolveScaleRootEl()
+  const bookletView = resolveBookletViewEl(scale)
   const csScale = scale ? getComputedStyle(scale) : null
   const csBv = bookletView ? getComputedStyle(bookletView) : null
 
@@ -620,12 +612,10 @@ function updateTransformerSelection() {
 }
 
 function layoutSizeOfTransformedHost(host: HTMLElement): { w: number; h: number } {
-  const scale = host.closest('.booklet-scale-root') as HTMLElement | null
-  const { sx, sy } = readUniformScaleFromTransform(scale)
   const hr = host.getBoundingClientRect()
   return {
-    w: Math.max(1, Math.round(hr.width / sx)),
-    h: Math.max(1, Math.round(hr.height / sy)),
+    w: Math.max(1, Math.round(hr.width)),
+    h: Math.max(1, Math.round(hr.height)),
   }
 }
 
