@@ -380,9 +380,11 @@ const figuresContentBoxStyle = computed(() => ({
 const konvaWrapStyle = computed(() => {
   const base: Record<string, string | number> = {
     ...figuresContentBoxStyle.value,
-    pointerEvents: 'none',
+    /* auto: весь блок как уровень hit; canvas внутри перехватывает события. none на родителе ломал цели в некоторых браузерах. */
+    pointerEvents: 'auto',
     zIndex: konvaStackZ.value,
     isolation: 'isolate',
+    touchAction: 'none',
   }
   if (!editorGridCfg.value.enabled) return base
   const alpha = 0.18
@@ -408,6 +410,7 @@ const stageHostStyle = computed(() => ({
   margin: 0,
   padding: 0,
   pointerEvents: props.enabled ? ('auto' as const) : ('none' as const),
+  touchAction: props.enabled ? ('none' as const) : ('auto' as const),
 }))
 
 function bringToFront(instance: FigureInstance) {
@@ -678,6 +681,7 @@ function rebuildLayer() {
       height: Math.max(1, hPx),
       fill: 'rgba(0,0,0,0.001)',
       listening: true,
+      perfectDrawEnabled: false,
     })
 
     outer.add(figureContent)
@@ -837,6 +841,10 @@ onMounted(() => {
   resizeObserver.observe(host)
 
   rebuildLayer()
+  /* После layout админского столбика слайдов размер host может остаться 0 на первом кадре */
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => fitStage())
+  })
 })
 
 onBeforeUnmount(() => {

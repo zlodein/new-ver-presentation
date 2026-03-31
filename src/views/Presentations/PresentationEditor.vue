@@ -1866,7 +1866,12 @@ function onFigureLayerMove(payload: { id: string; delta: number; slideId?: strin
   const inst = found.figures.find((x: any) => x?.id === id)
   if (!inst) return
 
-  if (!swapFigureStackOrder(found.figures, id, delta)) return
+  if (!swapFigureStackOrder(found.figures, id, delta)) {
+    if (found.figures.length >= 2) return
+    const nz = Math.min(FIGURE_Z_MAX, Math.max(FIGURE_Z_MIN, zNum(inst.z) + delta))
+    if (nz === zNum(inst.z)) return
+    inst.z = nz
+  }
 
   found.slide.data = found.slide.data ?? {}
   ;(found.slide.data as any).figures = [...found.figures]

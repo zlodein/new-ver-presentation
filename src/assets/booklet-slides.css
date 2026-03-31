@@ -224,9 +224,22 @@
 }
 
 /*
- * Редактор: когда фигуры под медиа (низкий z модели), клики проходят к Konva.
- * label.booklet-upload-btn остаётся кликабельным; только <img> без событий.
+ * Редактор фигур: HTML под полупрозрачным canvas Konva перехватывал клики (textarea, div, сетка картинок),
+ * из‑за чего не работали перетаскивание и трансформер. Отключаем hit на контенте целиком и возвращаем
+ * только полям ввода, кнопкам и загрузке изображений.
  */
+.booklet-scale-root--fig-pass .booklet-content {
+  pointer-events: none;
+}
+.booklet-scale-root--fig-pass .booklet-content textarea,
+.booklet-scale-root--fig-pass .booklet-content input:not([type="hidden"]),
+.booklet-scale-root--fig-pass .booklet-content select,
+.booklet-scale-root--fig-pass .booklet-content button,
+.booklet-scale-root--fig-pass .booklet-content label.cursor-pointer,
+.booklet-scale-root--fig-pass .booklet-content .booklet-upload-btn,
+.booklet-scale-root--fig-pass .booklet-content [data-figure-edit-pass] {
+  pointer-events: auto;
+}
 .booklet-scale-root--fig-pass .booklet-content img {
   pointer-events: none;
 }
