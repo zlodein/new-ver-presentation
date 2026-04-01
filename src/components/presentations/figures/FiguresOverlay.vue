@@ -133,6 +133,7 @@ function syncContentBoxFromScaleRoot() {
     setContentBoxIfChanged(zero)
     return
   }
+  const overlayEl = overlayMountEl()!
   const anchor = resolveAnchorEl()
   const scale = resolveScaleRootEl()
   if (!anchor || !scale) {
@@ -148,12 +149,31 @@ function syncContentBoxFromScaleRoot() {
   const padT = applyAnchorPadding ? Number.parseFloat(cs?.paddingTop || '0') || 0 : 0
   const padR = applyAnchorPadding ? Number.parseFloat(cs?.paddingRight || '0') || 0 : 0
   const padB = applyAnchorPadding ? Number.parseFloat(cs?.paddingBottom || '0') || 0 : 0
-  const off = layoutOffsetInAncestor(anchor, scale)
+  const offInScale = layoutOffsetInAncestor(anchor, scale)
   const innerW = Math.max(1, Math.round(anchor.clientWidth - padL - padR))
   const innerH = Math.max(1, Math.round(anchor.clientHeight - padT - padB))
+
+  /**
+   * В просмотре FiguresOverlay лежит внутри .booklet-scale-root — достаточно off внутри scale.
+   * В редакторе (editorLayerStack) Konva — сосед scale-root в .booklet-page__inner--editor-layers;
+   * фрейм позиционируется относительно overlay, нужно добавить смещение scale относительно общего родителя.
+   */
+  const overlayInsideScale = scale.contains(overlayEl)
+  let left = offInScale.left + padL
+  let top = offInScale.top + padT
+  if (!overlayInsideScale) {
+    const parentEl = overlayEl.parentElement
+    if (parentEl && scale.parentElement === parentEl) {
+      const scaleInParent = layoutOffsetInAncestor(scale, parentEl)
+      const overlayInParent = layoutOffsetInAncestor(overlayEl, parentEl)
+      left += scaleInParent.left - overlayInParent.left
+      top += scaleInParent.top - overlayInParent.top
+    }
+  }
+
   setContentBoxIfChanged({
-    left: Math.round(off.left + padL),
-    top: Math.round(off.top + padT),
+    left: Math.round(left),
+    top: Math.round(top),
     width: innerW,
     height: innerH,
   })
