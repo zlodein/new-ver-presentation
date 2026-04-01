@@ -60,13 +60,22 @@ function toAbsoluteImageUrl(url: string, baseUrl: string): string {
   return baseUrl.replace(/\/$/, '') + '/' + u
 }
 
-const DEFAULT_IMAGE_GRID: Record<string, string> = {
+const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
   gallery: '3x1',
-  location: '1x2',
-  contacts: '1x2',
+  layout: '1x1',
+  contacts: '1x1',
 }
+
+const LAYOUT_IMAGE_GRIDS: Record<string, string[]> = {
+  'text-left': ['1x1', '1x2', '2x2', '1x3', '2x3'],
+  'text-right': ['1x1', '1x2', '2x2', '1x3', '2x3'],
+  'text-top': ['1x1', '2x1', '2x2', '3x1', '3x2'],
+  'text-bottom': ['1x1', '2x1', '2x2', '3x1', '3x2'],
+}
+
+const GALLERY_LAYOUT_GRIDS = ['1x1', '2x1', '1x2', '2x2', '3x1', '1x3', '3x2', '2x3']
 
 const BLOCK_LAYOUT_VALUES = ['text-left', 'text-right', 'text-top', 'text-bottom'] as const
 function blockLayout(dataObj: Record<string, unknown>): string {
@@ -75,8 +84,22 @@ function blockLayout(dataObj: Record<string, unknown>): string {
   return 'text-left'
 }
 
+/** Как PresentationEditor / PresentationView: только допустимые сетки, иначе fallback */
+function resolveImageGrid(dataObj: Record<string, unknown>, slideType: string): string {
+  const v = dataObj.imageGrid ?? dataObj.image_grid
+  let values: string[]
+  if (slideType === 'description' || slideType === 'infrastructure') {
+    const layout = blockLayout(dataObj)
+    values = LAYOUT_IMAGE_GRIDS[layout] ?? LAYOUT_IMAGE_GRIDS['text-left']
+  } else {
+    values = GALLERY_LAYOUT_GRIDS
+  }
+  if (typeof v === 'string' && v && values.includes(v)) return v
+  return values[0] ?? DEFAULT_IMAGE_GRID_BY_TYPE[slideType] ?? '1x1'
+}
+
 function getImageGridLimit(dataObj: Record<string, unknown>, slideType: string): { cols: number; rows: number; limit: number; grid: string } {
-  let grid = String((dataObj.imageGrid ?? dataObj.image_grid) || DEFAULT_IMAGE_GRID[slideType] || '2x2')
+  let grid = resolveImageGrid(dataObj, slideType)
   const [c, r] = grid.split('x').map(Number)
   let cols = c || 2
   let rows = r || 2
@@ -359,11 +382,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       case 'layout': {
         const dataObj = slide.data || {}
         const heading = String(dataObj.heading || dataObj.title || 'ПЛАНИРОВКА')
-        const grid = String(dataObj.imageGrid || '1x1')
-        const limit = (() => {
-          const [c, r] = grid.split('x').map(Number)
-          return (c || 1) * (r || 1)
-        })()
+        const { limit, grid } = getImageGridLimit(dataObj, 'layout')
         const rawImages = Array.isArray(dataObj.images) ? (dataObj.images as (string | { url?: string })[]) : []
         const singleUrl = dataObj.layoutImageUrl || dataObj.image
         const layoutImages: string[] = rawImages.length

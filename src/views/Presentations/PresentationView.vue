@@ -609,26 +609,45 @@ function coverImageUrl(slide: ViewSlideItem): string | undefined {
   return url ? String(url) : undefined
 }
 
+/** Как в PresentationEditor.vue: дефолты только если нет values[0] у списка допустимых сеток */
 const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
   gallery: '3x1',
   layout: '1x1',
-  location: '1x2',
-  contacts: '1x2',
+  contacts: '1x1',
 }
 
-function getImageGrid(slide: ViewSlideItem): string {
-  const v = slide.data?.imageGrid
-  if (typeof v === 'string' && v) return v
-  return DEFAULT_IMAGE_GRID_BY_TYPE[slide.type] ?? '2x2'
+const LAYOUT_IMAGE_GRIDS: Record<string, string[]> = {
+  'text-left': ['1x1', '1x2', '2x2', '1x3', '2x3'],
+  'text-right': ['1x1', '1x2', '2x2', '1x3', '2x3'],
+  'text-top': ['1x1', '2x1', '2x2', '3x1', '3x2'],
+  'text-bottom': ['1x1', '2x1', '2x2', '3x1', '3x2'],
+}
+
+const GALLERY_LAYOUT_GRIDS = ['1x1', '2x1', '1x2', '2x2', '3x1', '1x3', '3x2', '2x3'] as const
+
+function getGridOptionValues(slide: ViewSlideItem): string[] {
+  if (slide.type === 'description' || slide.type === 'infrastructure') {
+    const layout = getBlockLayout(slide)
+    return LAYOUT_IMAGE_GRIDS[layout] ?? LAYOUT_IMAGE_GRIDS['text-left']
+  }
+  return [...GALLERY_LAYOUT_GRIDS]
 }
 
 const BLOCK_LAYOUT_VALUES = ['text-left', 'text-right', 'text-top', 'text-bottom'] as const
 function getBlockLayout(slide: ViewSlideItem): string {
-  const v = slide.data?.blockLayout
+  const v = slide.data?.blockLayout ?? slide.data?.block_layout
   if (typeof v === 'string' && BLOCK_LAYOUT_VALUES.includes(v as (typeof BLOCK_LAYOUT_VALUES)[number])) return v
   return 'text-left'
+}
+
+/** Сетка изображений — те же правила, что в редакторе (недопустимое значение imageGrid подменяется) */
+function getImageGrid(slide: ViewSlideItem): string {
+  const v = slide.data?.imageGrid ?? slide.data?.image_grid
+  const values = getGridOptionValues(slide)
+  if (typeof v === 'string' && v && values.includes(v)) return v
+  return values[0] ?? DEFAULT_IMAGE_GRID_BY_TYPE[slide.type] ?? '1x1'
 }
 
 /** Количество слотов по сетке (cols×rows) */
@@ -730,7 +749,7 @@ function viewLayoutImages(slide: ViewSlideItem): string[] {
 /** Извлечь URL изображений из слайда (поддержка строк и { url }), limit — максимум штук */
 function viewSlideImages(slide: ViewSlideItem, limit: number): string[] {
   const arr = slide.data?.images
-  if (!Array.isArray(arr)) return []
+  if (!Array.isArray(arr)) return Array(limit).fill('')
   const out: string[] = []
   for (let i = 0; i < Math.min(limit, arr.length); i++) {
     const v = arr[i]
