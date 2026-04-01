@@ -105,11 +105,13 @@ function syncContentBoxFromScaleRoot() {
   }
   const ar = anchor.getBoundingClientRect()
   const pr = pageInner.getBoundingClientRect()
-  const cs = getComputedStyle(anchor)
-  const padL = Number.parseFloat(cs.paddingLeft || '0') || 0
-  const padT = Number.parseFloat(cs.paddingTop || '0') || 0
-  const padR = Number.parseFloat(cs.paddingRight || '0') || 0
-  const padB = Number.parseFloat(cs.paddingBottom || '0') || 0
+  const scope = normalizeFigureBlockId(props.figureBlockScope)
+  const applyAnchorPadding = scope === SLIDE_WIDE_BLOCK_ID
+  const cs = applyAnchorPadding ? getComputedStyle(anchor) : null
+  const padL = applyAnchorPadding ? Number.parseFloat(cs?.paddingLeft || '0') || 0 : 0
+  const padT = applyAnchorPadding ? Number.parseFloat(cs?.paddingTop || '0') || 0 : 0
+  const padR = applyAnchorPadding ? Number.parseFloat(cs?.paddingRight || '0') || 0 : 0
+  const padB = applyAnchorPadding ? Number.parseFloat(cs?.paddingBottom || '0') || 0 : 0
   const innerW = Math.max(1, Math.round(ar.width - padL - padR))
   const innerH = Math.max(1, Math.round(ar.height - padT - padB))
   setContentBoxIfChanged({
@@ -270,28 +272,22 @@ function rotatedBoxAabb(rotatedBox: {
 
 /** После drag/transform — подправить позицию, если AABB вылез за stage (не вызывать каждый dragmove — ломает перетаскивание) */
 function clampOuterInsideStage(outer: Konva.Group) {
-  if (!stage) return
+  if (!stage || !layer) return
   const W = stage.width()
   const H = stage.height()
-  const hit = outer.findOne('.figureHit') as Konva.Rect | null
-  if (!hit) return
-  const wP = hit.width()
-  const hP = hit.height()
-  const aabb = rotatedBoxAabb({
-    x: outer.x() - wP / 2,
-    y: outer.y() - hP / 2,
-    width: wP,
-    height: hP,
-    rotation: outer.rotation(),
-  })
+  const prevX = outer.x()
+  const prevY = outer.y()
+  const aabb = outer.getClientRect({ relativeTo: layer, skipShadow: false, skipStroke: false })
   let nx = outer.x()
   let ny = outer.y()
   if (aabb.x < 0) nx -= aabb.x
   if (aabb.y < 0) ny -= aabb.y
   if (aabb.x + aabb.width > W) nx -= aabb.x + aabb.width - W
   if (aabb.y + aabb.height > H) ny -= aabb.y + aabb.height - H
-  outer.x(nx)
-  outer.y(ny)
+  if (nx !== prevX || ny !== prevY) {
+    outer.x(nx)
+    outer.y(ny)
+  }
 }
 
 function snapRotationDeg(raw: number): number {
@@ -751,21 +747,19 @@ function rebuildLayer() {
       })
 
       outer.dragBoundFunc((pos) => {
-        const hit = outer.findOne('.figureHit') as Konva.Rect | null
-        if (!hit) return pos
-        const wP = hit.width()
-        const hP = hit.height()
+        const currentLayer = layer
+        if (!currentLayer) return pos
         let cx = pos.x
         let cy = pos.y
 
         const clampByStageAabb = (x: number, y: number) => {
-          const box = rotatedBoxAabb({
-            x: x - wP / 2,
-            y: y - hP / 2,
-            width: wP,
-            height: hP,
-            rotation: outer.rotation(),
-          })
+          const prevX = outer.x()
+          const prevY = outer.y()
+          outer.x(x)
+          outer.y(y)
+          const box = outer.getClientRect({ relativeTo: currentLayer, skipShadow: false, skipStroke: false })
+          outer.x(prevX)
+          outer.y(prevY)
           let nx = x
           let ny = y
           if (box.x < 0) nx -= box.x
@@ -782,12 +776,13 @@ function rebuildLayer() {
         if (editorGridCfg.value.snap) {
           const stepX = (editorGridCfg.value.stepPct / 100) * W
           const stepY = (editorGridCfg.value.stepPct / 100) * H
-          let tlx = cx - wP / 2
-          let tly = cy - hP / 2
+          const currentBox = clampByStageAabb(cx, cy).box
+          let tlx = currentBox.x
+          let tly = currentBox.y
           tlx = Math.round(tlx / stepX) * stepX
           tly = Math.round(tly / stepY) * stepY
-          cx = tlx + wP / 2
-          cy = tly + hP / 2
+          cx += tlx - currentBox.x
+          cy += tly - currentBox.y
           const snapped = clampByStageAabb(cx, cy)
           cx = snapped.x
           cy = snapped.y
