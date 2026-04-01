@@ -80,7 +80,11 @@ function resolveBookletViewEl(scale: HTMLElement | null): HTMLElement | null {
   return scale?.closest('.booklet-view') as HTMLElement | null
 }
 
-/** Смещение элемента относительно предка в координатах layout (без CSS transform), чтобы размеры совпадали с offsetWidth родителя. */
+/**
+ * Смещение элемента относительно предка в координатах layout (цепочка offsetParent).
+ * Не используем getBoundingClientRect: у .booklet-scale-root есть transform: scale, визуальный rect
+ * не совпадает с layout и ломает позицию при «fallback» (сильный сдвиг влево/вверх в редакторе).
+ */
 function layoutOffsetInAncestor(el: HTMLElement, ancestor: HTMLElement): { left: number; top: number } {
   let left = 0
   let top = 0
@@ -91,9 +95,7 @@ function layoutOffsetInAncestor(el: HTMLElement, ancestor: HTMLElement): { left:
     cur = cur.offsetParent as HTMLElement | null
   }
   if (cur !== ancestor) {
-    const ar = el.getBoundingClientRect()
-    const pr = ancestor.getBoundingClientRect()
-    return { left: ar.left - pr.left, top: ar.top - pr.top }
+    return { left: 0, top: 0 }
   }
   return { left, top }
 }
@@ -155,8 +157,9 @@ function syncContentBoxFromScaleRoot() {
 
   /**
    * В просмотре FiguresOverlay лежит внутри .booklet-scale-root — достаточно off внутри scale.
-   * В редакторе (editorLayerStack) Konva — сосед scale-root в .booklet-page__inner--editor-layers;
-   * фрейм позиционируется относительно overlay, нужно добавить смещение scale относительно общего родителя.
+   * В редакторе (editorLayerStack) Konva — сосед .booklet-scale-root: смещение через цепочку offsetParent
+   * к общему родителю давало расхождение с transform на scale; берём разницу offsetLeft/Top у соседей
+   * с одним offsetParent (типично общий родитель).
    */
   const overlayInsideScale = scale.contains(overlayEl)
   let left = offInScale.left + padL
@@ -164,10 +167,17 @@ function syncContentBoxFromScaleRoot() {
   if (!overlayInsideScale) {
     const parentEl = overlayEl.parentElement
     if (parentEl && scale.parentElement === parentEl) {
-      const scaleInParent = layoutOffsetInAncestor(scale, parentEl)
-      const overlayInParent = layoutOffsetInAncestor(overlayEl, parentEl)
-      left += scaleInParent.left - overlayInParent.left
-      top += scaleInParent.top - overlayInParent.top
+      const sOp = scale.offsetParent
+      const oOp = overlayEl.offsetParent
+      if (sOp && sOp === oOp) {
+        left += scale.offsetLeft - overlayEl.offsetLeft
+        top += scale.offsetTop - overlayEl.offsetTop
+      } else {
+        const scaleInParent = layoutOffsetInAncestor(scale, parentEl)
+        const overlayInParent = layoutOffsetInAncestor(overlayEl, parentEl)
+        left += scaleInParent.left - overlayInParent.left
+        top += scaleInParent.top - overlayInParent.top
+      }
     }
   }
 
