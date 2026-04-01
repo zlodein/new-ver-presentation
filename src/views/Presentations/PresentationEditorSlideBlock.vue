@@ -408,7 +408,7 @@ watch(
                           />
                         </div>
                       </div>
-                      <div class="booklet-map__content flex flex-col gap-2 min-h-0">
+                      <div class="booklet-map__content relative flex min-h-0 flex-col gap-2">
                         <div class="booklet-map__info relative flex-shrink-0">
                           <div class="relative mb-2">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Поиск по адресу</label>
@@ -466,27 +466,28 @@ watch(
                           </div>
                           <button
                             type="button"
-                            class="booklet-btn booklet-btn--secondary mb-2 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white py-1.5 px-2.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+                            class="location-find-metro-btn mb-2 self-start inline-flex items-center gap-2 rounded-lg border border-transparent bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-700"
                             :disabled="pe.locationMetroLoading(slide)"
                             @click="pe.findNearestMetro(slide)"
                           >
                             <span>{{ pe.locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}</span>
                           </button>
-                          <label class="flex items-center text-sm font-medium leading-none text-gray-700 cursor-pointer select-none dark:text-gray-400">
-                            <div class="relative flex h-5 w-5 shrink-0 items-center justify-center self-center">
-                              <input v-model="slide.data.show_metro" type="checkbox" class="absolute h-0 w-0 opacity-0" />
-                              <div
+                          <label class="flex cursor-pointer select-none items-start gap-3 text-sm font-medium leading-snug text-gray-700 dark:text-gray-400">
+                            <span class="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+                              <input v-model="slide.data.show_metro" type="checkbox" class="peer sr-only" />
+                              <span
                                 :class="slide.data.show_metro ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
-                                class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
+                                class="pointer-events-none flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/40 hover:border-brand-500 dark:hover:border-brand-500"
+                                aria-hidden="true"
                               >
                                 <span :class="slide.data.show_metro ? '' : 'opacity-0'">
                                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" />
                                   </svg>
                                 </span>
-                              </div>
-                            </div>
-                            Показывать метро в презентации
+                              </span>
+                            </span>
+                            <span>Показывать метро в презентации</span>
                           </label>
                           <div
                             v-if="(slide.data?.metro_stations as Array<unknown>)?.length"

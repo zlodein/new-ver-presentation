@@ -3366,6 +3366,15 @@ async function exportToPDF() {
   position: relative;
   z-index: 150;
 }
+/* Правая колонка «Местоположение» поверх тайлов карты (Leaflet/Yandex), иначе чекбокс и поля визуально уходят под соседнюю ячейку */
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-map__left {
+  position: relative;
+  z-index: 0;
+}
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-map__content {
+  position: relative;
+  z-index: 160;
+}
 .editor-slider-wrap .presentation-slider-wrap.booklet-view input::placeholder,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea::placeholder {
   color: #9ca3af !important;
