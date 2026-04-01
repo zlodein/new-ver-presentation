@@ -107,7 +107,9 @@ function syncContentBoxFromScaleRoot() {
   const ar = anchor.getBoundingClientRect()
   const pr = pageInner.getBoundingClientRect()
   const scope = normalizeFigureBlockId(props.figureBlockScope)
-  const applyAnchorPadding = scope === SLIDE_WIDE_BLOCK_ID
+  // Для полного слоя слайда (scope=slide) Konva должна совпадать с видимой областью слайда целиком,
+  // включая padding контейнера. Для блочных scope оставляем привязку к внутреннему контенту.
+  const applyAnchorPadding = scope !== SLIDE_WIDE_BLOCK_ID
   const cs = applyAnchorPadding ? getComputedStyle(anchor) : null
   const padL = applyAnchorPadding ? Number.parseFloat(cs?.paddingLeft || '0') || 0 : 0
   const padT = applyAnchorPadding ? Number.parseFloat(cs?.paddingTop || '0') || 0 : 0
