@@ -117,7 +117,7 @@
   height: 100%;
   min-height: 0;
   max-height: 100%;
-  background: var(--theme-color, #fcfcfc);
+  background: transparent;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__img {
@@ -212,7 +212,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 25px 25px;
-  background: #ffffff !important;
+  background: transparent !important;
 }
 
 /* Обложка: top = подзаголовок (heading), center = название презентации (presentation title) */
