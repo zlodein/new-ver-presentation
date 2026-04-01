@@ -175,7 +175,7 @@ function addFigure(figureId: string) {
     y: 25,
     w: 30,
     h: 30,
-    z: Math.max(maxZ() + 1, 6),
+    z: Math.max(0, maxZ() + 1),
     style: {
       fill: lineLike ? { type: 'none' } : { type: 'solid', color: '#2563eb', opacity: 1 },
       stroke: {

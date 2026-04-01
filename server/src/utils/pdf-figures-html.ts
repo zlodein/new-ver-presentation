@@ -641,30 +641,18 @@ function normalizeInstance(raw: unknown): PdfFigureInstance | null {
   }
 }
 
-/**
- * Слой фигур внутри .booklet-scale-root — тот же расчёт z, что в FiguresOverlay.vue:
- * max(z фигур) + mediaZ - 3; при mediaZ=5 и низком z фигуры слой ниже медиа (z-index 5).
- */
-export function renderPdfFiguresOverlayHtml(
-  dataObj: Record<string, unknown>,
+const FIGURE_Z_MEDIA = 5
+
+function renderPdfFiguresOverlayOneStack(
+  instances: PdfFigureInstance[],
   figuresById: Record<string, PdfFigureDefinition>,
-  mediaZ = 5,
+  stackZ: number,
 ): string {
-  const raw = dataObj.figures
-  if (!Array.isArray(raw) || raw.length === 0) return ''
-
-  const instances = raw.map(normalizeInstance).filter(Boolean) as PdfFigureInstance[]
-  if (instances.length === 0) return ''
-
-  const maxFigZ = Math.max(...instances.map((i) => zNum(i.z)))
-  const stackZ = clamp(maxFigZ + mediaZ - 3, 1, 99)
-
-  instances.sort((a, b) => zNum(a.z) - zNum(b.z))
-
+  const sorted = [...instances].sort((a, b) => zNum(a.z) - zNum(b.z))
   const items: string[] = []
   let stackOrder = 0
-  for (let i = 0; i < instances.length; i++) {
-    const inst = instances[i]
+  for (let i = 0; i < sorted.length; i++) {
+    const inst = sorted[i]
     const def = figuresById[inst.figureId]
     const inner = buildFigureSvgInner(inst, def, figuresById)
     if (!inner) continue
@@ -681,6 +669,39 @@ export function renderPdfFiguresOverlayHtml(
   if (items.length === 0) return ''
 
   return `<div class="pdf-figures-overlay" style="z-index:${stackZ};isolation:isolate;" aria-hidden="true">${items.join('')}</div>`
+}
+
+/**
+ * Два DOM-слоя, как в FiguresOverlay (просмотр): z фигуры &lt; 5 — под медиа, иначе — над.
+ */
+export function renderPdfFiguresOverlayHtml(
+  dataObj: Record<string, unknown>,
+  figuresById: Record<string, PdfFigureDefinition>,
+  mediaZ = 5,
+): string {
+  const raw = dataObj.figures
+  if (!Array.isArray(raw) || raw.length === 0) return ''
+
+  const instances = raw.map(normalizeInstance).filter(Boolean) as PdfFigureInstance[]
+  if (instances.length === 0) return ''
+
+  const below = instances.filter((i) => zNum(i.z) < FIGURE_Z_MEDIA)
+  const above = instances.filter((i) => zNum(i.z) >= FIGURE_Z_MEDIA)
+
+  const parts: string[] = []
+  if (below.length > 0) {
+    const maxFigZ = Math.max(...below.map((i) => zNum(i.z)))
+    const stackZ = maxFigZ === 0 ? 1 : clamp(maxFigZ + mediaZ - 3, 1, FIGURE_Z_MEDIA - 1)
+    parts.push(renderPdfFiguresOverlayOneStack(below, figuresById, stackZ))
+  }
+  if (above.length > 0) {
+    const maxFigZ = Math.max(...above.map((i) => zNum(i.z)))
+    const stackZ =
+      maxFigZ === 0 ? FIGURE_Z_MEDIA + 1 : clamp(maxFigZ + mediaZ - 3, FIGURE_Z_MEDIA + 1, 99)
+    parts.push(renderPdfFiguresOverlayOneStack(above, figuresById, stackZ))
+  }
+
+  return parts.join('')
 }
 
 export function figuresArrayToMap(figs: PdfFigureDefinition[] | undefined): Record<string, PdfFigureDefinition> {

@@ -35,7 +35,22 @@ const rootRef = ref<HTMLDivElement | null>(null)
 const frameRef = ref<HTMLDivElement | null>(null)
 const stageRef = ref<any>(null)
 const layerRef = ref<any>(null)
+const rootBelowRef = ref<HTMLDivElement | null>(null)
+const frameBelowRef = ref<HTMLDivElement | null>(null)
+const stageBelowRef = ref<any>(null)
+const layerBelowRef = ref<any>(null)
+const rootAboveRef = ref<HTMLDivElement | null>(null)
+const frameAboveRef = ref<HTMLDivElement | null>(null)
+const stageAboveRef = ref<any>(null)
+const layerAboveRef = ref<any>(null)
+
+function overlayMountEl(): HTMLElement | null {
+  return rootRef.value ?? rootBelowRef.value ?? frameBelowRef.value
+}
 const DEBUG_KONVA_BOUNDS = true
+
+/** Совпадает с z-index изображений в booklet-slides (--booklet-figure-media-z). z фигуры < порога — под медиа (отдельный DOM-слой Konva). */
+const FIGURE_Z_MEDIA = 5
 
 /** Слой медиа слайда (--booklet-figure-media-z), обычно 5 — для расчёта z canvas фигур */
 const mediaZResolved = ref(5)
@@ -47,20 +62,40 @@ const mediaZResolved = ref(5)
 const contentBoxPx = ref({ left: 0, top: 0, width: 0, height: 0 })
 
 function resolveScaleRootEl(): HTMLElement | null {
-  if (!rootRef.value) return null
-  const nearest = rootRef.value.closest('.booklet-scale-root') as HTMLElement | null
+  const el = overlayMountEl()
+  if (!el) return null
+  const nearest = el.closest('.booklet-scale-root') as HTMLElement | null
   if (nearest) return nearest
-  const pageInner = rootRef.value.closest('.booklet-page__inner') as HTMLElement | null
+  const pageInner = el.closest('.booklet-page__inner') as HTMLElement | null
   if (!pageInner) return null
   return pageInner.querySelector('.booklet-scale-root') as HTMLElement | null
 }
 
 function resolveBookletViewEl(scale: HTMLElement | null): HTMLElement | null {
-  if (rootRef.value) {
-    const nearest = rootRef.value.closest('.booklet-view') as HTMLElement | null
+  const mount = overlayMountEl()
+  if (mount) {
+    const nearest = mount.closest('.booklet-view') as HTMLElement | null
     if (nearest) return nearest
   }
   return scale?.closest('.booklet-view') as HTMLElement | null
+}
+
+/** Смещение элемента относительно предка в координатах layout (без CSS transform), чтобы размеры совпадали с offsetWidth родителя. */
+function layoutOffsetInAncestor(el: HTMLElement, ancestor: HTMLElement): { left: number; top: number } {
+  let left = 0
+  let top = 0
+  let cur: HTMLElement | null = el
+  while (cur && cur !== ancestor) {
+    left += cur.offsetLeft
+    top += cur.offsetTop
+    cur = cur.offsetParent as HTMLElement | null
+  }
+  if (cur !== ancestor) {
+    const ar = el.getBoundingClientRect()
+    const pr = ancestor.getBoundingClientRect()
+    return { left: ar.left - pr.left, top: ar.top - pr.top }
+  }
+  return { left, top }
 }
 
 function resolveAnchorEl(): HTMLElement | null {
@@ -94,21 +129,16 @@ function setContentBoxIfChanged(next: { left: number; top: number; width: number
 
 function syncContentBoxFromScaleRoot() {
   const zero = { left: 0, top: 0, width: 0, height: 0 }
-  if (typeof window === 'undefined' || !rootRef.value) {
+  if (typeof window === 'undefined' || !overlayMountEl()) {
     setContentBoxIfChanged(zero)
     return
   }
-  const pageInner = rootRef.value.closest('.booklet-page__inner') as HTMLElement | null
   const anchor = resolveAnchorEl()
   const scale = resolveScaleRootEl()
-  if (!anchor || !pageInner) {
+  if (!anchor || !scale) {
     setContentBoxIfChanged(zero)
     return
   }
-  const ar = anchor.getBoundingClientRect()
-  // Фрейм Konva позиционируется внутри .booklet-scale-root (родитель .figures-konva-stack), а не
-  // относительно .booklet-page__inner — иначе в режиме просмотра слой уезжает и konvajs-content вылезает за inner.
-  const origin = scale?.getBoundingClientRect() ?? pageInner.getBoundingClientRect()
   const scope = normalizeFigureBlockId(props.figureBlockScope)
   // Для полного слоя слайда (scope=slide) Konva должна совпадать с видимой областью слайда целиком,
   // включая padding контейнера. Для блочных scope оставляем привязку к внутреннему контенту.
@@ -118,18 +148,19 @@ function syncContentBoxFromScaleRoot() {
   const padT = applyAnchorPadding ? Number.parseFloat(cs?.paddingTop || '0') || 0 : 0
   const padR = applyAnchorPadding ? Number.parseFloat(cs?.paddingRight || '0') || 0 : 0
   const padB = applyAnchorPadding ? Number.parseFloat(cs?.paddingBottom || '0') || 0 : 0
-  const innerW = Math.max(1, Math.round(ar.width - padL - padR))
-  const innerH = Math.max(1, Math.round(ar.height - padT - padB))
+  const off = layoutOffsetInAncestor(anchor, scale)
+  const innerW = Math.max(1, Math.round(anchor.clientWidth - padL - padR))
+  const innerH = Math.max(1, Math.round(anchor.clientHeight - padT - padB))
   setContentBoxIfChanged({
-    left: Math.round(ar.left - origin.left + padL),
-    top: Math.round(ar.top - origin.top + padT),
+    left: Math.round(off.left + padL),
+    top: Math.round(off.top + padT),
     width: innerW,
     height: innerH,
   })
 }
 
 function syncFiguresCssVarsFromRoot() {
-  if (typeof window === 'undefined' || !rootRef.value) return
+  if (typeof window === 'undefined' || !overlayMountEl()) return
   const scale = resolveScaleRootEl()
   const bookletView = resolveBookletViewEl(scale)
   const csScale = scale ? getComputedStyle(scale) : null
@@ -184,6 +215,10 @@ const konvaStackZ = computed(() => {
 
 let stage: Konva.Stage | null = null
 let layer: Konva.Layer | null = null
+let stageBelow: Konva.Stage | null = null
+let layerBelow: Konva.Layer | null = null
+let stageAbove: Konva.Stage | null = null
+let layerAbove: Konva.Layer | null = null
 let transformer: Konva.Transformer | null = null
 let resizeObserver: ResizeObserver | null = null
 
@@ -199,6 +234,10 @@ function bindResizeObserver() {
   if (anchor) resizeObserver.observe(anchor)
   if (rootRef.value) resizeObserver.observe(rootRef.value)
   if (frameRef.value) resizeObserver.observe(frameRef.value)
+  if (rootBelowRef.value) resizeObserver.observe(rootBelowRef.value)
+  if (frameBelowRef.value) resizeObserver.observe(frameBelowRef.value)
+  if (rootAboveRef.value) resizeObserver.observe(rootAboveRef.value)
+  if (frameAboveRef.value) resizeObserver.observe(frameAboveRef.value)
 }
 
 /** Блокирует rebuildLayer во время drag / transform и короткого «кликового» цикла по фигуре */
@@ -211,7 +250,12 @@ function beginInteraction() {
 function endInteraction() {
   if (!interactionLock.value) return
   interactionLock.value = false
-  layer?.batchDraw()
+  if (props.editorLayerStack) {
+    layer?.batchDraw()
+  } else {
+    layerBelow?.batchDraw()
+    layerAbove?.batchDraw()
+  }
 }
 
 function getInstances(): FigureInstance[] {
@@ -227,11 +271,59 @@ const instances = computed(() => {
   return [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
 })
 
-function maxZ(): number {
-  let m = -Infinity
-  for (const i of getInstances()) m = Math.max(m, zNum(i.z))
-  return m === -Infinity ? 0 : m
-}
+const instancesBelowMedia = computed(() => {
+  const arr = getInstances().filter((i) => zNum(i.z) < FIGURE_Z_MEDIA)
+  return [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
+})
+
+const instancesAboveMedia = computed(() => {
+  const arr = getInstances().filter((i) => zNum(i.z) >= FIGURE_Z_MEDIA)
+  return [...arr].sort((a, b) => zNum(a.z) - zNum(b.z))
+})
+
+const maxFigZBelowMedia = computed(() => {
+  void figuresZStackSig.value
+  const arr = instancesBelowMedia.value
+  if (arr.length === 0) return 0
+  return Math.max(...arr.map((i) => zNum(i.z)))
+})
+
+const maxFigZAboveMedia = computed(() => {
+  void figuresZStackSig.value
+  const arr = instancesAboveMedia.value
+  if (arr.length === 0) return 0
+  return Math.max(...arr.map((i) => zNum(i.z)))
+})
+
+/** Просмотр: слой только с фигурами z<5 — z-index строго ниже медиа (5). */
+const konvaWrapBelowStyle = computed(() => {
+  const mz = mediaZResolved.value
+  const kz = maxFigZBelowMedia.value
+  const z = kz === 0 ? 1 : clamp(kz + mz - 3, 1, FIGURE_Z_MEDIA - 1)
+  return {
+    position: 'absolute' as const,
+    inset: 0,
+    pointerEvents: 'none' as const,
+    zIndex: z,
+    isolation: 'isolate' as const,
+    touchAction: 'none' as const,
+  }
+})
+
+/** Просмотр: слой с фигурами z>=5 — выше медиа. */
+const konvaWrapAboveStyle = computed(() => {
+  const mz = mediaZResolved.value
+  const kz = maxFigZAboveMedia.value
+  const z = kz === 0 ? FIGURE_Z_MEDIA + 1 : clamp(kz + mz - 3, FIGURE_Z_MEDIA + 1, 99)
+  return {
+    position: 'absolute' as const,
+    inset: 0,
+    pointerEvents: 'none' as const,
+    zIndex: z,
+    isolation: 'isolate' as const,
+    touchAction: 'none' as const,
+  }
+})
 
 function zNum(v: unknown): number {
   const n = typeof v === 'number' ? v : Number(v)
@@ -279,12 +371,14 @@ function rotatedBoxAabb(rotatedBox: {
 
 /** После drag/transform — подправить позицию, если AABB вылез за stage (не вызывать каждый dragmove — ломает перетаскивание) */
 function clampOuterInsideStage(outer: Konva.Group) {
-  if (!stage || !layer) return
-  const W = stage.width()
-  const H = stage.height()
+  const lay = outer.getLayer()
+  const st = lay?.getStage() ?? null
+  if (!st || !lay) return
+  const W = st.width()
+  const H = st.height()
   const prevX = outer.x()
   const prevY = outer.y()
-  const aabb = outer.getClientRect({ relativeTo: layer, skipShadow: false, skipStroke: false })
+  const aabb = outer.getClientRect({ relativeTo: lay, skipShadow: false, skipStroke: false })
   let nx = outer.x()
   let ny = outer.y()
   if (aabb.x < 0) nx -= aabb.x
@@ -295,7 +389,7 @@ function clampOuterInsideStage(outer: Konva.Group) {
     outer.x(nx)
     outer.y(ny)
   }
-  logFigureState('clamp-outer', outer)
+  logFigureState('clamp-outer', outer, st)
 }
 
 function snapRotationDeg(raw: number): number {
@@ -341,10 +435,20 @@ function isUnderTransformer(n: Konva.Node | null): boolean {
 }
 
 function reorderKonvaByZ(force = false) {
-  if (!layer || (interactionLock.value && !force)) return
-  const sorted = [...getInstances()].sort((a, b) => zNum(a.z) - zNum(b.z))
+  if (interactionLock.value && !force) return
+  if (props.editorLayerStack) {
+    reorderOneLayerByZ(layer, instances.value)
+  } else {
+    reorderOneLayerByZ(layerBelow, instancesBelowMedia.value)
+    reorderOneLayerByZ(layerAbove, instancesAboveMedia.value)
+  }
+}
+
+function reorderOneLayerByZ(targetLayer: Konva.Layer | null, instList: FigureInstance[]) {
+  if (!targetLayer) return
+  const sorted = [...instList].sort((a, b) => zNum(a.z) - zNum(b.z))
   const byId = new Map<string, Konva.Group>()
-  for (const ch of layer.getChildren()) {
+  for (const ch of targetLayer.getChildren()) {
     if (ch instanceof Konva.Transformer) continue
     const id = (ch as Konva.Node).getAttr('figureInstanceId') as string | undefined
     if (id) byId.set(id, ch as Konva.Group)
@@ -359,11 +463,11 @@ function reorderKonvaByZ(force = false) {
     n.remove()
   }
   for (const n of nodes) {
-    layer.add(n)
+    targetLayer.add(n)
   }
   transformer?.moveToTop()
   patchTransformerHitThrough()
-  layer.batchDraw()
+  targetLayer.batchDraw()
 }
 
 const editorGridCfg = computed(() => {
@@ -423,21 +527,31 @@ const stageHostStyle = computed(() => ({
   touchAction: props.enabled ? ('none' as const) : ('auto' as const),
 }))
 
-function bringToFront(instance: FigureInstance) {
-  const mz = maxZ()
-  const cur = zNum(instance.z)
-  if (cur < mz) instance.z = mz + 1
-  const id = instance.id
-  const node = layer?.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id)
+/** Поднять фигуру в Konva и при необходимости увеличить z в пределах того же «ведра» (под/над медиа). */
+function konvaRaiseOnInteraction(inst: FigureInstance) {
+  const id = inst.id
+  const below = zNum(inst.z) < FIGURE_Z_MEDIA
+  const ly = props.editorLayerStack ? layer : below ? layerBelow : layerAbove
+  const peers = props.editorLayerStack
+    ? getInstances()
+    : below
+      ? getInstances().filter((i) => zNum(i.z) < FIGURE_Z_MEDIA)
+      : getInstances().filter((i) => zNum(i.z) >= FIGURE_Z_MEDIA)
+  let mz = 0
+  for (const i of peers) mz = Math.max(mz, zNum(i.z))
+  const cur = zNum(inst.z)
+  if (cur < mz) inst.z = mz + 1
+  const node = ly?.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id)
   node?.moveToTop()
   transformer?.moveToTop()
-  layer?.batchDraw()
+  ly?.batchDraw()
 }
 
 function syncInstancePositionFromNode(outer: Konva.Group, inst: FigureInstance) {
-  if (!stage) return
-  const W = stage.width()
-  const H = stage.height()
+  const st = outer.getLayer()?.getStage() ?? null
+  if (!st) return
+  const W = st.width()
+  const H = st.height()
   const hit = outer.findOne('.figureHit') as Konva.Rect | null
   if (!hit) return
   const wPx = hit.width()
@@ -459,9 +573,10 @@ function resetFigureContentNode(content: Konva.Group) {
 }
 
 function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
-  if (!stage) return
-  const W = stage.width()
-  const H = stage.height()
+  const st = outer.getLayer()?.getStage() ?? null
+  if (!st) return
+  const W = st.width()
+  const H = st.height()
   const wPct = clamp(Number(inst.w ?? 0), 2, 100)
   const hPct = clamp(Number(inst.h ?? 0), 2, 100)
   const xPct = clamp(Number(inst.x ?? 0), 0, 100 - wPct)
@@ -497,9 +612,10 @@ function applyInstanceBoundsToNode(outer: Konva.Group, inst: FigureInstance) {
 
 /** После transform: сброс figureContent; размеры из hit. Рамка Transformer = bbox геометрии (без искусственного 100×100). */
 function syncInstanceFromTransformNode(outer: Konva.Group, figureContent: Konva.Group, inst: FigureInstance) {
-  if (!stage) return
-  const W = stage.width()
-  const H = stage.height()
+  const st = outer.getLayer()?.getStage() ?? null
+  if (!st) return
+  const W = st.width()
+  const H = st.height()
   const hit = outer.findOne('.figureHit') as Konva.Rect | null
   const scaleInner = figureContent.findOne('.figureScale') as Konva.Group | null
   if (!hit || !scaleInner) return
@@ -550,7 +666,7 @@ function patchTransformerHitThrough() {
   }
 }
 
-function createTransformer(): Konva.Transformer {
+function createTransformer(stageForBounds: Konva.Stage | null): Konva.Transformer {
   const tr = new Konva.Transformer({
     padding: 0,
     rotateAnchorOffset: 22,
@@ -563,8 +679,8 @@ function createTransformer(): Konva.Transformer {
     boundBoxFunc(oldBox, newBox) {
       const MIN = 8
       if (newBox.width < MIN || newBox.height < MIN) return oldBox
-      const W = stage?.width() ?? 0
-      const H = stage?.height() ?? 0
+      const W = stageForBounds?.width() ?? 0
+      const H = stageForBounds?.height() ?? 0
       const box = rotatedBoxAabb(newBox)
       const eps = 1e-3
       const isOut =
@@ -599,49 +715,88 @@ function createTransformer(): Konva.Transformer {
   return tr
 }
 
+function layerForSelectedFigure(): Konva.Layer | null {
+  const id = props.selectedInstanceId
+  if (!id) return null
+  const inst = getInstances().find((i) => i.id === id)
+  if (!inst) return null
+  if (props.editorLayerStack) return layer
+  return zNum(inst.z) < FIGURE_Z_MEDIA ? layerBelow : layerAbove
+}
+
 function updateTransformerSelection() {
-  if (!transformer || !layer) return
+  if (!transformer) return
+  const targetLayer = props.editorLayerStack ? layer : layerForSelectedFigure()
+  if (!targetLayer) {
+    transformer.nodes([])
+    layer?.batchDraw()
+    layerBelow?.batchDraw()
+    layerAbove?.batchDraw()
+    return
+  }
   if (!props.enabled) {
     transformer.nodes([])
-    layer.batchDraw()
+    targetLayer.batchDraw()
     return
   }
   const id = props.selectedInstanceId
   if (!id) {
     transformer.nodes([])
-    layer.batchDraw()
+    targetLayer.batchDraw()
     return
   }
-  const outer = layer.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id) as Konva.Group | null
+  if (transformer.getParent() !== targetLayer) {
+    transformer.remove()
+    targetLayer.add(transformer)
+  }
+  const outer = targetLayer.findOne((n: Konva.Node) => n.getAttr('figureInstanceId') === id) as Konva.Group | null
   const figureContent = outer?.findOne('.figureContent') as Konva.Group | null
   transformer.nodes(figureContent ? [figureContent] : [])
   transformer.moveToTop()
   transformer.forceUpdate()
   patchTransformerHitThrough()
-  layer.batchDraw()
+  targetLayer.batchDraw()
 }
 
-function layoutSizeOfTransformedHost(host: HTMLElement): { w: number; h: number } {
-  const hr = host.getBoundingClientRect()
+/** Размеры host в координатах layout (без влияния transform: scale на родителе). */
+function layoutSizeOfHost(host: HTMLElement): { w: number; h: number } {
   return {
-    w: Math.max(1, Math.round(hr.width)),
-    h: Math.max(1, Math.round(hr.height)),
+    w: Math.max(1, Math.round(host.offsetWidth)),
+    h: Math.max(1, Math.round(host.offsetHeight)),
   }
 }
 
 function fitStage() {
-  if (!stage) return
   syncFiguresCssVarsFromRoot()
-  const hostEl = frameRef.value
-  if (!hostEl) return
-  const { w, h } = layoutSizeOfTransformedHost(hostEl)
-  stage.width(w)
-  stage.height(h)
+  if (props.editorLayerStack) {
+    if (!stage || !frameRef.value) return
+    const { w, h } = layoutSizeOfHost(frameRef.value)
+    stage.width(w)
+    stage.height(h)
+    logOverlayState('fit-stage')
+    applyCanvasSharpness(layer, stage)
+    if (!interactionLock.value) rebuildLayer()
+    else {
+      layer?.batchDraw()
+      transformer?.forceUpdate()
+      patchTransformerHitThrough()
+    }
+    return
+  }
+  const fb = frameBelowRef.value
+  if (!fb || !stageBelow || !layerBelow || !stageAbove || !layerAbove) return
+  const { w, h } = layoutSizeOfHost(fb)
+  stageBelow.width(w)
+  stageBelow.height(h)
+  stageAbove.width(w)
+  stageAbove.height(h)
   logOverlayState('fit-stage')
-  applyCanvasSharpness()
+  applyCanvasSharpness(layerBelow, stageBelow)
+  applyCanvasSharpness(layerAbove, stageAbove)
   if (!interactionLock.value) rebuildLayer()
   else {
-    layer?.batchDraw()
+    layerBelow.batchDraw()
+    layerAbove.batchDraw()
     transformer?.forceUpdate()
     patchTransformerHitThrough()
   }
@@ -664,10 +819,10 @@ function logOverlayState(tag: string) {
   if (!DEBUG_KONVA_BOUNDS || typeof window === 'undefined') return
   const scale = resolveScaleRootEl()
   const anchor = resolveAnchorEl()
-  const frame = frameRef.value
-  const root = rootRef.value
-  const stageW = stage?.width() ?? null
-  const stageH = stage?.height() ?? null
+  const frame = frameRef.value ?? frameBelowRef.value
+  const root = rootRef.value ?? rootBelowRef.value
+  const stageW = props.editorLayerStack ? stage?.width() ?? null : stageBelow?.width() ?? null
+  const stageH = props.editorLayerStack ? stage?.height() ?? null : stageBelow?.height() ?? null
   const scaleRect = scale?.getBoundingClientRect()
   const anchorRect = anchor?.getBoundingClientRect()
   const frameRect = frame?.getBoundingClientRect()
@@ -692,11 +847,13 @@ function logOverlayState(tag: string) {
   console.groupEnd()
 }
 
-function logFigureState(tag: string, outer: Konva.Group) {
-  if (!DEBUG_KONVA_BOUNDS || !stage || !layer) return
+function logFigureState(tag: string, outer: Konva.Group, stForStage?: Konva.Stage | null) {
+  const lay = outer.getLayer()
+  const st = stForStage ?? lay?.getStage() ?? null
+  if (!DEBUG_KONVA_BOUNDS || !st || !lay) return
   const hit = outer.findOne('.figureHit') as Konva.Rect | null
-  const clientRect = outer.getClientRect({ relativeTo: layer, skipShadow: false, skipStroke: false })
-  const stageRect = { x: 0, y: 0, width: stage.width(), height: stage.height() }
+  const clientRect = outer.getClientRect({ relativeTo: lay, skipShadow: false, skipStroke: false })
+  const stageRect = { x: 0, y: 0, width: st.width(), height: st.height() }
   console.groupCollapsed(`[KonvaDebug][${tag}] fig=${String(outer.getAttr('figureInstanceId') ?? 'n/a')}`)
   console.log('outer', {
     x: round2(outer.x()),
@@ -717,19 +874,11 @@ function logFigureState(tag: string, outer: Konva.Group) {
   console.groupEnd()
 }
 
-function rebuildLayer() {
-  if (!stage || !layer) return
-  if (interactionLock.value) return
+function appendFiguresToLayer(targetLayer: Konva.Layer, targetStage: Konva.Stage, instList: FigureInstance[]) {
+  const W = targetStage.width()
+  const H = targetStage.height()
 
-  stage.listening(props.enabled)
-
-  const W = stage.width()
-  const H = stage.height()
-  /* destroy() снимает подписки и ссылки на узлы (Konva: избегаем утечек памяти) */
-  layer.destroyChildren()
-  transformer = null
-
-  for (const inst of instances.value) {
+  for (const inst of instList) {
     const xPct = Number(inst.x ?? 0)
     const yPct = Number(inst.y ?? 0)
     const wPct = Number(inst.w ?? 0)
@@ -796,7 +945,7 @@ function rebuildLayer() {
       outer.on('mousedown touchstart', (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
         e.cancelBubble = true
         beginInteraction()
-        bringToFront(inst)
+        konvaRaiseOnInteraction(inst)
         emit('select', inst.id)
         const end = () => {
           window.removeEventListener('mouseup', end)
@@ -817,7 +966,7 @@ function rebuildLayer() {
 
       outer.on('dragmove', () => {
         /* Не пишем x/y в реактивную модель на каждом dragmove — глубокий watch на figures вызывает syncFiguresCssVarsFromRoot и тяжёлые перерисовки Vue, из‑за чего перетаскивание «тормозит». Синхронизация — в dragend. */
-        layer?.batchDraw()
+        targetLayer.batchDraw()
         logFigureState('drag-move', outer)
       })
 
@@ -829,7 +978,7 @@ function rebuildLayer() {
       })
 
       outer.dragBoundFunc((pos) => {
-        const currentLayer = layer
+        const currentLayer = targetLayer
         if (!currentLayer) return pos
         let cx = pos.x
         let cy = pos.y
@@ -888,14 +1037,43 @@ function rebuildLayer() {
       })
     }
 
-    layer.add(outer)
+    targetLayer.add(outer)
   }
+}
 
-  transformer = createTransformer()
-  layer.add(transformer)
+function rebuildLayer() {
+  if (interactionLock.value) return
+  if (props.editorLayerStack) {
+    if (!stage || !layer) return
+    stage.listening(props.enabled)
+    layer.destroyChildren()
+    transformer = null
+    appendFiguresToLayer(layer, stage, instances.value)
+    transformer = createTransformer(stage)
+    layer.add(transformer)
+    updateTransformerSelection()
+    patchTransformerHitThrough()
+    layer.batchDraw()
+    return
+  }
+  if (!stageBelow || !layerBelow || !stageAbove || !layerAbove) return
+  stageBelow.listening(props.enabled)
+  stageAbove.listening(props.enabled)
+  layerBelow.destroyChildren()
+  layerAbove.destroyChildren()
+  transformer = null
+  appendFiguresToLayer(layerBelow, stageBelow, instancesBelowMedia.value)
+  appendFiguresToLayer(layerAbove, stageAbove, instancesAboveMedia.value)
+  const attachLayer = layerForSelectedFigure() ?? layerAbove ?? layerBelow
+  const attachStage = attachLayer?.getStage() ?? null
+  if (attachLayer && attachStage) {
+    transformer = createTransformer(attachStage)
+    attachLayer.add(transformer)
+  }
   updateTransformerSelection()
   patchTransformerHitThrough()
-  layer.batchDraw()
+  layerBelow.batchDraw()
+  layerAbove.batchDraw()
 }
 
 function resolveFigureIdFromNode(n: Konva.Node | null): string | null {
@@ -916,7 +1094,12 @@ function onStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
     emit('select', fromTarget)
     return
   }
-  const st = stage
+  const st =
+    (e.target as Konva.Node).getStage?.() ??
+    stage ??
+    stageBelow ??
+    stageAbove ??
+    null
   const pos = st?.getPointerPosition()
   if (st && pos) {
     const hit = st.getIntersection(pos)
@@ -929,15 +1112,15 @@ function onStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
   emit('select', null)
 }
 
-function applyCanvasSharpness() {
-  if (!layer || !stage) return
+function applyCanvasSharpness(targetLayer: Konva.Layer | null, targetStage: Konva.Stage | null) {
+  if (!targetLayer || !targetStage) return
   const pr = devicePixelRatioClamped()
   Konva.pixelRatio = pr
-  layer.getCanvas().setPixelRatio(pr)
-  layer.hitCanvas.setPixelRatio(1)
-  layer.setSize({ width: stage.width(), height: stage.height() })
-  layer.imageSmoothingEnabled(false)
-  layer.batchDraw()
+  targetLayer.getCanvas().setPixelRatio(pr)
+  targetLayer.hitCanvas.setPixelRatio(1)
+  targetLayer.setSize({ width: targetStage.width(), height: targetStage.height() })
+  targetLayer.imageSmoothingEnabled(false)
+  targetLayer.batchDraw()
 }
 
 function onWindowBlur() {
@@ -945,25 +1128,47 @@ function onWindowBlur() {
 }
 
 onMounted(() => {
-  nextTick(() => syncFiguresCssVarsFromRoot())
-  const stageNode = stageRef.value?.getNode?.() as Konva.Stage | undefined
-  const layerNode = layerRef.value?.getNode?.() as Konva.Layer | undefined
-  if (!stageNode || !layerNode) return
-  stage = stageNode
-  layer = layerNode
-  Konva.pixelRatio = devicePixelRatioClamped()
-  layer.imageSmoothingEnabled(false)
-  applyCanvasSharpness()
-  stage.on('click tap', onStageClick)
+  nextTick(() => {
+    nextTick(() => {
+    syncFiguresCssVarsFromRoot()
+    if (props.editorLayerStack) {
+      const stageNode = stageRef.value?.getNode?.() as Konva.Stage | undefined
+      const layerNode = layerRef.value?.getNode?.() as Konva.Layer | undefined
+      if (!stageNode || !layerNode) return
+      stage = stageNode
+      layer = layerNode
+      Konva.pixelRatio = devicePixelRatioClamped()
+      layer.imageSmoothingEnabled(false)
+      applyCanvasSharpness(layer, stage)
+      stage.on('click tap', onStageClick)
+    } else {
+      const sb = stageBelowRef.value?.getNode?.() as Konva.Stage | undefined
+      const lb = layerBelowRef.value?.getNode?.() as Konva.Layer | undefined
+      const sa = stageAboveRef.value?.getNode?.() as Konva.Stage | undefined
+      const la = layerAboveRef.value?.getNode?.() as Konva.Layer | undefined
+      if (!sb || !lb || !sa || !la) return
+      stageBelow = sb
+      layerBelow = lb
+      stageAbove = sa
+      layerAbove = la
+      Konva.pixelRatio = devicePixelRatioClamped()
+      layerBelow.imageSmoothingEnabled(false)
+      layerAbove.imageSmoothingEnabled(false)
+      applyCanvasSharpness(layerBelow, stageBelow)
+      applyCanvasSharpness(layerAbove, stageAbove)
+      stageBelow.on('click tap', onStageClick)
+      stageAbove.on('click tap', onStageClick)
+    }
 
-  window.addEventListener('blur', onWindowBlur)
+    window.addEventListener('blur', onWindowBlur)
 
-  bindResizeObserver()
+    bindResizeObserver()
 
-  rebuildLayer()
-  /* После layout админского столбика слайдов размер host может остаться 0 на первом кадре */
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => fitStage())
+    rebuildLayer()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => fitStage())
+    })
+    })
   })
 })
 
@@ -976,8 +1181,20 @@ onBeforeUnmount(() => {
     stage.off('click tap', onStageClick)
     stage.destroy()
   }
+  if (stageBelow) {
+    stageBelow.off('click tap', onStageClick)
+    stageBelow.destroy()
+  }
+  if (stageAbove) {
+    stageAbove.off('click tap', onStageClick)
+    stageAbove.destroy()
+  }
   stage = null
   layer = null
+  stageBelow = null
+  layerBelow = null
+  stageAbove = null
+  layerAbove = null
 })
 
 watch(
@@ -1024,7 +1241,13 @@ watch(
 )
 
 watch(
-  () => [props.slide?.id, props.slide?.data?.figures, maxFigZForStack.value],
+  () => [
+    props.slide?.id,
+    props.slide?.data?.figures,
+    maxFigZForStack.value,
+    maxFigZBelowMedia.value,
+    maxFigZAboveMedia.value,
+  ],
   () => {
     if (interactionLock.value) return
     nextTick(() => syncFiguresCssVarsFromRoot())
@@ -1034,14 +1257,32 @@ watch(
 </script>
 
 <template>
-  <!-- Два корня: Konva с z от max(z) фигур (можно под медиа); панель — всегда выше медиа -->
-  <div ref="rootRef" class="figures-konva-stack" data-figures-konva-stack :style="konvaWrapStyle">
-    <div ref="frameRef" class="figures-konva-frame" :style="konvaFrameStyle">
-      <v-stage ref="stageRef" class="figures-konva-host" :config="stageHostStyle">
-        <v-layer ref="layerRef" />
-      </v-stage>
+  <!-- Редактор (админ-слайды): один canvas; просмотр: два canvas — под медиа (z&lt;5) и над медиа (z≥5). -->
+  <template v-if="editorLayerStack">
+    <div ref="rootRef" class="figures-konva-stack" data-figures-konva-stack :style="konvaWrapStyle">
+      <div ref="frameRef" class="figures-konva-frame" :style="konvaFrameStyle">
+        <v-stage ref="stageRef" class="figures-konva-host" :config="stageHostStyle">
+          <v-layer ref="layerRef" />
+        </v-stage>
+      </div>
     </div>
-  </div>
+  </template>
+  <template v-else>
+    <div ref="rootBelowRef" class="figures-konva-stack" data-figures-konva-stack :style="konvaWrapBelowStyle">
+      <div ref="frameBelowRef" class="figures-konva-frame" :style="konvaFrameStyle">
+        <v-stage ref="stageBelowRef" class="figures-konva-host" :config="stageHostStyle">
+          <v-layer ref="layerBelowRef" />
+        </v-stage>
+      </div>
+    </div>
+    <div ref="rootAboveRef" class="figures-konva-stack" data-figures-konva-stack :style="konvaWrapAboveStyle">
+      <div ref="frameAboveRef" class="figures-konva-frame" :style="konvaFrameStyle">
+        <v-stage ref="stageAboveRef" class="figures-konva-host" :config="stageHostStyle">
+          <v-layer ref="layerAboveRef" />
+        </v-stage>
+      </div>
+    </div>
+  </template>
 </template>
 
 <style scoped>
