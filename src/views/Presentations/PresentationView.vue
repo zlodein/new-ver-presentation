@@ -292,8 +292,6 @@
               :figure-block-scope="scope"
               :slide="slide"
               :figuresById="figuresById"
-              :selectedInstanceId="null"
-              :enabled="false"
             />
           </div>
         </div>

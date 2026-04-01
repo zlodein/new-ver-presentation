@@ -7,7 +7,7 @@ export function normalizeFigureBlockId(raw: string | undefined | null): string {
   return s || SLIDE_WIDE_BLOCK_ID
 }
 
-/** Уникальные blockId по фигурам слайда (для нескольких слоёв Konva в просмотре). Без фигур — один слой `slide`. */
+/** Уникальные blockId по фигурам слайда (несколько SVG-оверлеев в просмотре). Без фигур — один слой `slide`. */
 export function figureBlockScopesForSlide(slide: { data?: Record<string, unknown> }): string[] {
   const figs = slide.data?.figures
   if (!Array.isArray(figs) || figs.length === 0) return [SLIDE_WIDE_BLOCK_ID]

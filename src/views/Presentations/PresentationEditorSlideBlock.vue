@@ -14,12 +14,6 @@ if (!peInjected) {
 }
 const pe: PresentationEditorSlideInject = peInjected
 
-/** В режиме шаблонов админа показывается только выбранный в сайдбаре блок (data-editor-block). */
-function templateBlockVisible(blockId: string): boolean {
-  if (!pe.adminTemplateBlockEdit) return true
-  return pe.adminVisibleTemplateBlockId === blockId
-}
-
 // Цена на обложке в редакторе: не перемещается, но всегда выше остальных слоёв.
 const coverRootRef = ref<HTMLDivElement | null>(null)
 const priceBottomRef = ref<HTMLDivElement | null>(null)
@@ -109,7 +103,6 @@ watch(
                       ref="coverRootRef"
                       class="booklet-content booklet-main relative"
                       data-editor-block="slide"
-                      v-show="templateBlockVisible('slide')"
                     >
                       <div class="booklet-main__wrap">
                         <div class="booklet-main__img relative z-0">
@@ -225,7 +218,6 @@ watch(
                       <div
                         class="booklet-info__block booklet-info__content"
                         data-editor-block="description-text"
-                        v-show="templateBlockVisible('description-text')"
                       >
                         <div v-if="pe.canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
                           <input
@@ -284,7 +276,6 @@ watch(
                         class="booklet-info__grid image-grid-bound"
                         :data-image-grid="pe.getImageGrid(slide)"
                         data-editor-block="description-images"
-                        v-show="templateBlockVisible('description-images')"
                       >
                         <div
                           v-for="(img, i) in pe.descriptionImages(slide)"
@@ -316,7 +307,6 @@ watch(
                       <div
                         class="booklet-stroen__block booklet-stroen__content"
                         data-editor-block="infrastructure-text"
-                        v-show="templateBlockVisible('infrastructure-text')"
                       >
                         <div v-if="pe.canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
                           <input
@@ -372,7 +362,6 @@ watch(
                         class="booklet-stroen__grid image-grid-bound"
                         :data-image-grid="pe.getImageGrid(slide)"
                         data-editor-block="infrastructure-images"
-                        v-show="templateBlockVisible('infrastructure-images')"
                       >
                         <div
                           v-for="(img, i) in pe.infrastructureImages(slide)"
@@ -400,7 +389,6 @@ watch(
                     v-else-if="slide.type === 'location'"
                     class="booklet-content booklet-map overflow-visible"
                     data-editor-block="slide"
-                    v-show="templateBlockVisible('slide')"
                   >
                     <div class="booklet-map__wrap">
                       <input
@@ -532,7 +520,6 @@ watch(
                     v-else-if="slide.type === 'gallery'"
                     class="booklet-content booklet-galery"
                     data-editor-block="slide"
-                    v-show="templateBlockVisible('slide')"
                   >
                     <div class="booklet-galery__wrap">
                       <div v-if="pe.canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
@@ -589,7 +576,6 @@ watch(
                     v-else-if="slide.type === 'characteristics'"
                     class="booklet-content booklet-char"
                     data-editor-block="slide"
-                    v-show="templateBlockVisible('slide')"
                   >
                     <div class="booklet-char__wrap">
                       <input
@@ -669,7 +655,6 @@ watch(
                     v-else-if="slide.type === 'layout'"
                     class="booklet-content booklet-layout"
                     data-editor-block="slide"
-                    v-show="templateBlockVisible('slide')"
                   >
                     <div class="booklet-layout__wrap">
                       <div v-if="pe.canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1 flex-shrink-0">
@@ -728,7 +713,6 @@ watch(
                     v-else-if="slide.type === 'contacts'"
                     class="booklet-content booklet-contacts"
                     data-editor-block="slide"
-                    v-show="templateBlockVisible('slide')"
                   >
                     <div class="booklet-contacts__wrap">
                       <div class="booklet-contacts__left flex flex-col gap-4">
@@ -823,7 +807,6 @@ watch(
                     v-else-if="slide.type === 'custom' && slide.data?.layoutMode === 'ai'"
                     class="booklet-content booklet-ai-layout h-full w-full overflow-auto"
                     data-editor-block="slide"
-                    v-show="templateBlockVisible('slide')"
                     :style="pe.customSlidePageStyle(slide)"
                   >
                     <template v-for="(block, bi) in (slide.data?.blocks as Array<Record<string, unknown>>) || []" :key="String(block.id ?? bi)">

@@ -39,7 +39,7 @@
   background-color: #eeeeee;
 }
 
-.presentation-slider-wrap.booklet-view .booklet-page:has(.figures-konva-stack) {
+.presentation-slider-wrap.booklet-view .booklet-page:has(.figures-svg-stack) {
   overflow: visible;
 }
 
@@ -55,15 +55,8 @@
   background: #fff;
 }
 
-/*
- * Админ-редактор сетки слайдов (PresentationEditor, .booklet-page__inner--editor-layers):
- * z: 1) .booklet-slide-layer--bg — холст (--booklet-editor-canvas-bg)
- *    2) Konva — 10–19 или 21+ (выше HTML)
- *    3) .booklet-slide-layer--content — без фона на корне; блоки сами задают заливку.
- */
-
-/* Фигуры расширяются в padding scale-root — не обрезать оверлей */
-.presentation-slider-wrap.booklet-view .booklet-page__inner:has(.figures-konva-stack) {
+/* Фигуры (SVG-оверлей) расширяются в padding scale-root — не обрезать */
+.presentation-slider-wrap.booklet-view .booklet-page__inner:has(.figures-svg-stack) {
   overflow: visible;
 }
 
@@ -79,12 +72,10 @@
   padding: 1rem;
   box-sizing: border-box;
   --booklet-scale-padding: 1rem;
-  /* Минимальный z-index панели слоёв фигур (FiguresOverlay toolbar), поверх медиа */
   --booklet-figures-overlay-z: 20;
 }
 
-/* Transformer/углы могут выступать за .booklet-content — не обрезать у scale-root */
-.presentation-slider-wrap.booklet-view .booklet-scale-root:has(.figures-konva-stack) {
+.presentation-slider-wrap.booklet-view .booklet-scale-root:has(.figures-svg-stack) {
   overflow: visible;
 }
 
@@ -225,30 +216,9 @@
 }
 
 /* Обложка: top = подзаголовок (heading), center = название презентации (presentation title) */
-/* Базовый z-index «слоя медиа»: z-index canvas фигур = max(z фигур) + mediaZ - 3 (см. FiguresOverlay.vue) */
+/* Базовый z-index «слоя медиа»: z-index слоя фигур = max(z фигур) + mediaZ - 3 (см. FiguresOverlay.vue) */
 .presentation-slider-wrap.booklet-view {
   --booklet-figure-media-z: 5;
-}
-
-/*
- * Редактор фигур: HTML под полупрозрачным canvas Konva перехватывал клики (textarea, div, сетка картинок),
- * из‑за чего не работали перетаскивание и трансформер. Отключаем hit на контенте целиком и возвращаем
- * только полям ввода, кнопкам и загрузке изображений.
- */
-.booklet-scale-root--fig-pass .booklet-content {
-  pointer-events: none;
-}
-.booklet-scale-root--fig-pass .booklet-content textarea,
-.booklet-scale-root--fig-pass .booklet-content input:not([type="hidden"]),
-.booklet-scale-root--fig-pass .booklet-content select,
-.booklet-scale-root--fig-pass .booklet-content button,
-.booklet-scale-root--fig-pass .booklet-content label.cursor-pointer,
-.booklet-scale-root--fig-pass .booklet-content .booklet-upload-btn,
-.booklet-scale-root--fig-pass .booklet-content [data-figure-edit-pass] {
-  pointer-events: auto;
-}
-.booklet-scale-root--fig-pass .booklet-content img {
-  pointer-events: none;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-main__content {

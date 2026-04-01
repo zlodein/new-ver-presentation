@@ -215,131 +215,6 @@
 
         <!-- ПК: плитка слайдов по левому краю -->
         <div class="hidden md:flex md:flex-1 md:items-center md:gap-1.5">
-          <template v-if="isAdminSlidesGridMode">
-            <div class="flex min-w-0 flex-1 flex-col items-start gap-2 border-r border-gray-200 pr-2 dark:border-gray-700 overflow-y-auto max-h-[60vh]">
-              <draggable
-                v-model="slides"
-                item-key="id"
-                handle=".slide-drag-handle"
-                @end="onDragEnd"
-                @move="onDragMove"
-                class="slides-grid grid grid-cols-2 gap-2"
-              >
-                <template #item="{ element: slide, index }">
-                  <div
-                    :data-slide-index="index"
-                    :class="[
-                      'relative cursor-pointer rounded-lg border px-2 py-2 transition shrink-0',
-                      activeSlideIndex === index
-                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-950'
-                        : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
-                      slide.hidden ? 'opacity-60' : '',
-                    ]"
-                    @click="goToSlide(index)"
-                  >
-                    <div class="flex items-start justify-between gap-2">
-                      <span
-                        class="slide-drag-handle cursor-grab touch-none p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        title="Перетащить"
-                        @click.stop
-                      >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                        </svg>
-                      </span>
-
-                      <button
-                        type="button"
-                        class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                        :title="slide.hidden ? 'Показать слайд' : 'Скрыть слайд'"
-                        @click.stop="toggleSlideVisibility(index)"
-                      >
-                        <svg v-if="slide.hidden" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.0002 13.8619C7.23361 13.8619 4.86803 12.1372 3.92328 9.70241C4.86804 7.26761 7.23361 5.54297 10.0002 5.54297C12.7667 5.54297 15.1323 7.26762 16.0771 9.70243C15.1323 12.1372 12.7667 13.8619 10.0002 13.8619ZM10.0002 4.04297C6.48191 4.04297 3.49489 6.30917 2.4155 9.4593C2.3615 9.61687 2.3615 9.78794 2.41549 9.94552C3.49488 13.0957 6.48191 15.3619 10.0002 15.3619C13.5184 15.3619 16.5055 13.0957 17.5849 9.94555C17.6389 9.78797 17.6389 9.6169 17.5849 9.45932C16.5055 6.30919 13.5184 4.04297 10.0002 4.04297ZM9.99151 7.84413C8.96527 7.84413 8.13333 8.67606 8.13333 9.70231C8.13333 10.7286 8.96527 11.5605 9.99151 11.5605H10.0064C11.0326 11.5605 11.8646 10.7286 11.8646 9.70231C11.8646 8.67606 11.0326 7.84413 10.0064 7.84413H9.99151Z" />
-                        </svg>
-                        <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878a4.5 4.5 0 106.262 6.262M4.031 11.117A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.05 10.05 0 01-1.563 3.029m5.858-.908a3 3 0 11-4.243-4.243M9.88 9.88a4.5 4.5 0 106.262-6.262" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div class="mt-2 flex items-center gap-2">
-                      <div class="relative h-16 w-16 overflow-hidden rounded-md border border-gray-200 bg-white dark:border-gray-700">
-                        <img
-                          v-if="getSlideThumbnailUrl(slide)"
-                          :src="getSlideThumbnailUrl(slide)"
-                          alt=""
-                          class="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                        <div v-else class="flex h-full w-full items-center justify-center text-[10px] text-gray-400">
-                          Слайд
-                        </div>
-                      </div>
-                      <div class="min-w-0 flex-1">
-                        <div
-                          class="truncate text-sm font-medium"
-                          :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'"
-                        >
-                          {{ getSlideLabel(slide) }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="mt-1 flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        :disabled="!canAddSlide"
-                        :title="!canAddSlide ? 'На тарифе «Тест драйв» не более 4 слайдов' : 'Дублировать'"
-                        class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                        @click.stop="canAddSlide && duplicateSlide(index)"
-                      >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </button>
-
-                      <button
-                        v-if="slides.length > 1"
-                        type="button"
-                        class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
-                        title="Удалить"
-                        @click.stop="deleteSlide(index)"
-                      >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </template>
-              </draggable>
-
-              <div
-                v-if="currentSlide && !adminSlidesTemplatePreviewMode"
-                class="w-full shrink-0 border-t border-gray-200 pt-2 dark:border-gray-700"
-              >
-                <p class="mb-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">Блок для редактирования</p>
-                <div class="flex flex-col gap-1">
-                  <button
-                    v-for="opt in adminTemplateBlockOptions"
-                    :key="opt.id"
-                    type="button"
-                    class="w-full rounded-lg border px-2 py-1.5 text-left text-xs transition"
-                    :class="
-                      adminTemplateEditingBlockId === opt.id
-                        ? 'border-brand-500 bg-brand-50 text-brand-800 dark:border-brand-500 dark:bg-brand-950 dark:text-brand-200'
-                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
-                    "
-                    @click="adminTemplateEditingBlockId = opt.id; selectedFigureInstanceId = null"
-                  >
-                    {{ opt.label }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </template>
-          <template v-else>
             <div class="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 border-r border-gray-200 pr-2 dark:border-gray-700">
             <draggable
               v-model="slides"
@@ -417,7 +292,6 @@
               </template>
             </draggable>
             </div>
-          </template>
         </div>
 
         <!-- Шестерёнка и кнопка "Добавить" — только на мобильных (на ПК в сайдбаре) -->
@@ -554,12 +428,10 @@
       <!-- Область превью слайдов: на ПК — слайдер слева + сайдбар справа -->
       <main
         class="w-full flex-1 min-h-0 md:flex md:gap-4 md:items-start md:flex-initial"
-        :class="{ 'admin-template-preview-mode-root': adminSlidesTemplatePreviewMode }"
       >
         <div
           ref="editorSliderWrapRef"
           class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
-          :class="{ 'editor-slider-wrap--admin-slides': isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode }"
           @paste.capture="onPasteStripFormat"
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
@@ -568,14 +440,13 @@
             class="presentation-slider-wrap booklet-view relative mx-auto w-full flex-1 min-h-0 rounded-xl bg-white shadow-lg"
             :class="{
               'overflow-hidden': true,
-              'admin-template-preview-mode': adminSlidesTemplatePreviewMode,
             }"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
           >
             <!-- Кнопка палитры (макет/сетка): только на десктопе; волна идёт от кнопки влево и вниз -->
             <button
-              v-if="!isAdminSlidesGridMode && currentSlide && ['description','infrastructure','gallery','layout'].includes(currentSlide.type) && canEditImages"
+              v-if="currentSlide && ['description','infrastructure','gallery','layout'].includes(currentSlide.type) && canEditImages"
               type="button"
               class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-20 hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-visible rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
               style="background-color: var(--color-green-600);"
@@ -596,66 +467,10 @@
                   class="booklet-page relative h-full w-full"
                   :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
                 >
-                  <button
-                    v-if="isAdminSlidesGridMode && ['description','infrastructure','gallery','layout'].includes(slide.type) && canEditImages"
-                    type="button"
-                    class="booklet-palette-btn booklet-palette-btn--desktop absolute right-0 top-0 z-[35] hidden h-[36px] w-[36px] shrink-0 items-center justify-center overflow-visible rounded-tl-none rounded-br-none rounded-tr-lg rounded-bl-lg text-white transition-opacity hover:opacity-90 md:flex"
-                    style="background-color: var(--color-green-600);"
-                    title="Макет и сетка изображений"
-                    @click="openPalettePopup(slide.id, $event)"
-                  >
-                    <span class="booklet-palette-btn-ping absolute inset-0 z-0" aria-hidden="true" />
-                    <svg class="relative z-10 isolate h-[18px] w-[18px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
-                  </button>
-                  <!-- Админ-сетка: слой фона → HTML-контент → Konva (z ниже контента при малом z фигуры, выше — при большом; якорь Konva после монтирования блоков) -->
-                  <div
-                    v-if="isAdminSlidesGridMode"
-                    class="booklet-page__inner booklet-page__inner--editor-layers"
-                    :style="{ '--booklet-editor-canvas-bg': presentationSettings.themeColor || '#ffffff' }"
-                  >
-                    <div
-                      class="booklet-slide-layer booklet-slide-layer--bg"
-                      aria-hidden="true"
-                    />
-                    <div
-                      class="booklet-scale-root booklet-slide-layer--content w-full h-full"
-                      :class="{
-                        'booklet-scale-root--fig-pass': figuresInteractiveOnSlide(slide.id),
-                      }"
-                    >
+                  <div class="booklet-page__inner">
+                    <div class="booklet-scale-root w-full h-full">
                       <PresentationEditorSlideBlock :slide="slide" />
                     </div>
-                    <FiguresOverlay
-                      v-for="scope in (canEditFigures ? overlayFigureScopesForSlide(slide) : [])"
-                      :key="`${slide.id}-${scope}`"
-                      :slide="slide"
-                      :figure-block-scope="scope"
-                      :figuresById="figuresById"
-                      :selectedInstanceId="selectedFigureInstanceId"
-                      :enabled="figuresInteractiveOnSlide(slide.id)"
-                      :editor-layer-stack="canEditFigures"
-                      @select="onFigureSelect(slide, $event)"
-                    />
-                  </div>
-                  <div v-else class="booklet-page__inner">
-                    <div
-                      class="booklet-scale-root w-full h-full"
-                      :class="{
-                        'booklet-scale-root--fig-pass': figuresInteractiveOnSlide(slide.id),
-                      }"
-                    >
-                      <PresentationEditorSlideBlock :slide="slide" />
-                    </div>
-                    <FiguresOverlay
-                      v-for="scope in (canEditFigures ? overlayFigureScopesForSlide(slide) : [])"
-                      :key="`${slide.id}-${scope}`"
-                      :slide="slide"
-                      :figure-block-scope="scope"
-                      :figuresById="figuresById"
-                      :selectedInstanceId="selectedFigureInstanceId"
-                      :enabled="figuresInteractiveOnSlide(slide.id)"
-                      @select="onFigureSelect(slide, $event)"
-                    />
                   </div>
                 </div>
               </SwiperSlide>
@@ -785,8 +600,7 @@
               type="button"
               class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               title="Просмотр"
-              :disabled="isAdminSlidesGridMode || adminSlidesTemplatePreviewMode"
-              @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && openViewPage"
+              @click="openViewPage"
             >
               <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -796,8 +610,8 @@
               type="button"
               class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700 disabled:opacity-50"
               title="Сохранить"
-              :disabled="saving || adminSlidesTemplatePreviewMode || isAdminSlidesGridMode"
-              @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && savePresentation"
+              :disabled="saving"
+              @click="savePresentation"
             >
               <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -1091,22 +905,21 @@
                 <button
                   type="button"
                   class="h-8 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                  :disabled="isAdminSlidesGridMode || adminSlidesTemplatePreviewMode"
-                  @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && openViewPage"
+                  @click="openViewPage"
                 >
                   Просмотр
                 </button>
                 <button
                   type="button"
                   class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-                  :disabled="saving || isAdminSlidesGridMode || adminSlidesTemplatePreviewMode"
-                  @click="!isAdminSlidesGridMode && !adminSlidesTemplatePreviewMode && savePresentation"
+                  :disabled="saving"
+                  @click="savePresentation"
                 >
                   Сохранить
                 </button>
               </div>
               <button
-                v-if="!isAdminSlidesGridMode && (presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published')"
+                v-if="presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published'"
                 type="button"
                 class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                 @click="exportToPDF"
@@ -1115,7 +928,7 @@
                 Экспорт в PDF
               </button>
               <button
-                v-else-if="!isAdminSlidesGridMode && presentationMeta.status !== 'published'"
+                v-else-if="presentationMeta.status !== 'published'"
                 type="button"
                 class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700"
                 @click="publishPresentation"
@@ -1158,93 +971,7 @@
               >
                 Опубликовать
               </button>
-
-              <!-- Админский режим: шаблоны группы слайдов (БД + запасной localStorage) -->
-              <div
-                v-if="isAdminSlidesGridMode"
-                class="admin-slides-templates-panel mt-2 rounded-lg border border-gray-200 bg-white/60 p-3 dark:border-gray-700 dark:bg-gray-900/30"
-              >
-                <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Шаблоны группы слайдов</p>
-                <template v-if="!adminSlidesTemplatePreviewMode">
-                  <div class="mt-2 flex items-center gap-2">
-                    <input
-                      v-model="slidesTemplateName"
-                      type="text"
-                      class="h-9 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                      placeholder="Название шаблона"
-                    />
-                    <button
-                      type="button"
-                      class="h-9 shrink-0 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                      :disabled="slidesTemplateSaving || !slidesTemplateName.trim()"
-                      @click="saveSlidesGroupTemplate"
-                    >
-                      {{ slidesTemplateSaving ? 'Сохранение...' : 'Сохранить' }}
-                    </button>
-                  </div>
-
-                  <div
-                    v-if="slidesTemplateError"
-                    class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300"
-                  >
-                    {{ slidesTemplateError }}
-                  </div>
-                  <div
-                    v-else-if="slidesTemplateSaved"
-                    class="mt-2 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-800 dark:bg-green-950/30 dark:text-green-300"
-                  >
-                    Шаблон сохранен
-                  </div>
-                </template>
-
-                <div v-if="slidesGroupTemplates.length" class="mt-3 space-y-2">
-                  <div
-                    v-for="t in slidesGroupTemplates"
-                    :key="t.id"
-                    class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white/70 px-2 py-2 dark:border-gray-700 dark:bg-gray-900/30"
-                  >
-                    <div class="min-w-0 flex-1">
-                      <div class="truncate text-left text-sm font-medium text-gray-800 dark:text-gray-200">{{ t.name }}</div>
-                      <div class="mt-1 flex items-center gap-1">
-                        <button
-                          type="button"
-                          class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                          @click="loadSlidesGroupTemplate(t.id, { preview: false })"
-                        >
-                          Редактор
-                        </button>
-                        <button
-                          type="button"
-                          class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                          @click="loadSlidesGroupTemplate(t.id, { preview: true, skipConfirm: true })"
-                        >
-                          Предпросмотр
-                        </button>
-                      </div>
-                    </div>
-
-                    <button
-                      v-if="!adminSlidesTemplatePreviewMode"
-                      type="button"
-                      class="shrink-0 rounded border border-transparent px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                      title="Удалить шаблон"
-                      @click="deleteSlidesGroupTemplate(t.id)"
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                </div>
-              </div>
             </template>
-            <FiguresPanel
-              v-if="isAdminSlidesGridMode && currentSlide && canEditFigures"
-              :slide="currentSlide"
-              :figures="figures"
-              :selectedInstanceId="selectedFigureInstanceId"
-              :enabled="canEditFigures"
-              :figure-block-scope="adminTemplateEditingBlockId"
-              @select="onFigureSelect(currentSlide!, $event)"
-            />
           </div>
         </aside>
       </main>
@@ -1318,10 +1045,6 @@ import { useAuth } from '@/composables/useAuth'
 import { usePhoneMask } from '@/composables/usePhoneMask'
 import type { SlideItem } from '@/types/presentationSlide'
 import PresentationEditorSlideBlock from './PresentationEditorSlideBlock.vue'
-import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
-import FiguresPanel from '@/components/presentations/figures/FiguresPanel.vue'
-import type { FigureDefinition } from '@/types/figures'
-import { figureBlockScopesForSlide } from '@/utils/figureBlockScopes'
 import {
   PRESENTATION_EDITOR_SLIDE_KEY,
   type PresentationEditorSlideInject,
@@ -1463,25 +1186,6 @@ const SLIDE_TYPES = [
   { type: 'contacts', label: 'Контакты' },
 ] as const
 
-/** Блоки слайда для режима шаблонов (data-editor-block + сайдбар) */
-const ADMIN_TEMPLATE_BLOCKS: Record<string, { id: string; label: string }[]> = {
-  cover: [{ id: 'slide', label: 'Обложка' }],
-  description: [
-    { id: 'description-images', label: 'Изображения' },
-    { id: 'description-text', label: 'Текст' },
-  ],
-  infrastructure: [
-    { id: 'infrastructure-images', label: 'Изображения' },
-    { id: 'infrastructure-text', label: 'Текст' },
-  ],
-  location: [{ id: 'slide', label: 'Местоположение' }],
-  gallery: [{ id: 'slide', label: 'Галерея' }],
-  characteristics: [{ id: 'slide', label: 'Характеристики' }],
-  layout: [{ id: 'slide', label: 'Планировка' }],
-  contacts: [{ id: 'slide', label: 'Контакты' }],
-  custom: [{ id: 'slide', label: 'Страница' }],
-}
-
 function genSlideId() {
   return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
@@ -1509,10 +1213,6 @@ const defaultSlides = SLIDE_TYPES.map(({ type }) => ({
 const slides = ref<SlideItem[]>([...defaultSlides])
 const swiperInstance = ref<SwiperType | null>(null)
 const activeSlideIndex = ref(0)
-const selectedFigureInstanceId = ref<string | null>(null)
-/** Редактируемый блок шаблона (админ): совпадает с data-editor-block */
-const adminTemplateEditingBlockId = ref('slide')
-const figures = ref<FigureDefinition[]>([])
 const showAddSlideMenu = ref(false)
 const showSettingsMenu = ref(false)
 const showMobSlidesNav = ref(false)
@@ -1531,7 +1231,7 @@ const PALETTE_POPUP_WIDTH = 220
 const PALETTE_POPUP_HEIGHT = 140
 
 const editorSliderWrapRef = ref<HTMLElement | null>(null)
-/** Прокручиваемый контейнер слайдов (админский стек + предпросмотр) */
+/** Прокручиваемый контейнер слайдов */
 const presentationSliderScrollRef = ref<HTMLElement | null>(null)
 
 function openPalettePopup(slideId: string, event: MouseEvent) {
@@ -1721,26 +1421,6 @@ const visibleSlides = computed(() => slides.value.filter((s) => !s.hidden))
 
 /** Текущий слайд по активному индексу (для панели управления на мобильных) */
 const currentSlide = computed(() => slides.value[activeSlideIndex.value] ?? null)
-
-// Если выбранная фигура принадлежит другому слайду — сбрасываем выделение.
-watch(
-  currentSlide,
-  (s) => {
-    const id = selectedFigureInstanceId.value
-    if (!id) return
-    const arr = (s?.data as any)?.figures
-    if (!Array.isArray(arr) || !arr.some((x) => x && typeof x.id === 'string' && x.id === id)) selectedFigureInstanceId.value = null
-  },
-  { immediate: true },
-)
-
-function onFigureSelect(slide: SlideItem, id: string | null) {
-  selectedFigureInstanceId.value = id
-  if (id && isAdminSlidesGridMode.value) {
-    const idx = slides.value.findIndex((s) => s.id === slide.id)
-    if (idx >= 0) activeSlideIndex.value = idx
-  }
-}
 
 /** Номер текущего слайда среди видимых (1-based для отображения) */
 const visibleSlideNumber = computed(() => {
@@ -2341,402 +2021,14 @@ function getDefaultDataForType(type: string): Record<string, unknown> {
   }
 }
 
-/** Очистка данных шаблона при загрузке: структура (сетки, макет) сохраняется, тексты и картинки — нет */
-function cleanAiLayoutBlocks(blocks: unknown[]): unknown[] {
-  if (!Array.isArray(blocks)) return []
-  return blocks.map((raw) => {
-    if (!raw || typeof raw !== 'object') return raw
-    const b = JSON.parse(JSON.stringify(raw)) as Record<string, unknown>
-    if (b.type === 'columns' && Array.isArray(b.columns)) {
-      b.columns = b.columns.map((col) => {
-        if (!col || typeof col !== 'object') return col
-        return { ...(col as Record<string, unknown>), content: '' }
-      })
-    } else if (b.type === 'image_placeholder') {
-      b.imageUrl = ''
-    } else if (b.type !== 'divider') {
-      b.content = ''
-    }
-    return b
-  })
-}
-
-function buildCleanSlidesFromTemplate(source: SlideItem[]): SlideItem[] {
-  return source.map((s) => {
-    const id = genSlideId()
-    const baseData: Record<string, unknown> = { ...getDefaultDataForType(s.type) }
-    const prev = (s.data || {}) as Record<string, unknown>
-
-    // Для фигуры: в шаблонах храним style/координаты прямо в slide.data.figures,
-    // поэтому при загрузке шаблона их нельзя «чистить».
-    if (Array.isArray(prev.figures)) baseData.figures = prev.figures
-
-    if (typeof prev.blockLayout === 'string') baseData.blockLayout = prev.blockLayout
-    if (typeof prev.imageGrid === 'string') baseData.imageGrid = prev.imageGrid
-
-    if (s.type === 'cover') {
-      baseData.title = ''
-      baseData.subtitle = ''
-      baseData.coverImageUrl = ''
-      // Позицию блока с ценой считаем частью структуры шаблона.
-      if (prev.priceEditorPos && typeof prev.priceEditorPos === 'object') {
-        baseData.priceEditorPos = JSON.parse(JSON.stringify(prev.priceEditorPos)) as unknown
-      }
-    }
-
-    if (s.type === 'characteristics' && Array.isArray(baseData.items)) {
-      baseData.items = (baseData.items as Array<{ label?: string; value?: string }>).map((row) => ({
-        label: row.label ?? '',
-        value: '',
-      }))
-    }
-
-    if (s.type === 'custom') {
-      if (prev.layoutMode === 'ai' && Array.isArray(prev.blocks)) {
-        baseData.layoutMode = 'ai'
-        if (typeof prev.pageName === 'string') baseData.pageName = prev.pageName
-        baseData.blocks = cleanAiLayoutBlocks(prev.blocks)
-        if (prev.pageStyle != null && typeof prev.pageStyle === 'object')
-          baseData.pageStyle = JSON.parse(JSON.stringify(prev.pageStyle)) as Record<string, unknown>
-      } else {
-        return { id, type: s.type, data: baseData, hidden: s.hidden ?? false }
-      }
-    }
-
-    return { id, type: s.type, data: baseData, hidden: s.hidden ?? false }
-  })
-}
-
 const { currentUser } = useAuth()
 const isAdmin = computed(() => (currentUser.value as { role_id?: number } | undefined)?.role_id === 2)
-const isAdminSlidesGridMode = computed(() => isAdmin.value && String(route.path ?? '').startsWith('/dashboard/admin/slides'))
-
-// Админ: режим предварительного просмотра шаблона группы.
-// В этом режиме отключаем редактирование контента (частично/полностью) и скрываем сохранение шаблонов.
-const adminSlidesTemplatePreviewMode = ref(false)
 
 /** Редактирование изображений: либо черновик, либо зашёл администратор */
-const canEditImages = computed(() => (!isPublished.value || isAdmin.value) && !adminSlidesTemplatePreviewMode.value)
-/** Фигуры и сетка Konva — только в админском редакторе сетки слайдов (/dashboard/admin/slides). В /dashboard/presentations/ их нет. */
-const canEditFigures = computed(() => isAdminSlidesGridMode.value && !adminSlidesTemplatePreviewMode.value)
+const canEditImages = computed(() => !isPublished.value || isAdmin.value)
 
-const adminTemplateBlockOptions = computed(() => {
-  const s = currentSlide.value
-  if (!s) return [{ id: 'slide', label: 'Слайд' }]
-  return ADMIN_TEMPLATE_BLOCKS[s.type] ?? [{ id: 'slide', label: 'Слайд' }]
-})
-
-function overlayFigureScopesForSlide(slide: SlideItem): string[] {
-  if (isAdminSlidesGridMode.value) {
-    return [adminTemplateEditingBlockId.value]
-  }
-  return figureBlockScopesForSlide(slide)
-}
-
-watch(
-  () => [currentSlide.value?.id, currentSlide.value?.type, isAdminSlidesGridMode.value] as const,
-  () => {
-    if (!isAdminSlidesGridMode.value || !currentSlide.value) return
-    const opts = adminTemplateBlockOptions.value
-    const ids = new Set(opts.map((o) => o.id))
-    if (!ids.has(adminTemplateEditingBlockId.value)) {
-      adminTemplateEditingBlockId.value = opts[0]?.id ?? 'slide'
-    }
-  },
-  { immediate: true },
-)
-
-watch(adminTemplateEditingBlockId, () => {
-  selectedFigureInstanceId.value = null
-})
-
-/** Konva и fig-pass только на текущем слайде Swiper. */
-function figuresInteractiveOnSlide(slideId: string): boolean {
-  if (!canEditFigures.value) return false
-  return currentSlide.value?.id === slideId
-}
 const isTestDrive = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff === 'test_drive')
 const canAddSlide = computed(() => !isTestDrive.value || slides.value.length < 4)
-
-const figuresById = computed(() => Object.fromEntries(figures.value.map((f) => [f.id, f])) as Record<string, FigureDefinition>)
-
-async function refreshFigures() {
-  if (!hasApi()) return
-  if (!isAdminSlidesGridMode.value) {
-    figures.value = []
-    return
-  }
-  try {
-    const res = await api.get<{ figures?: FigureDefinition[] }>('/api/figures')
-    figures.value = Array.isArray(res.figures) ? (res.figures as FigureDefinition[]) : []
-  } catch {
-    figures.value = []
-  }
-}
-
-// Админский режим: шаблоны групп слайдов в БД (таблица templates) + запасной localStorage без API.
-const SLIDES_GROUP_TEMPLATES_LS_KEY = 'admin-slides-group-templates-v1'
-type SlidesGroupTemplate = {
-  id: string
-  name: string
-  createdAt: string
-  slides: SlideItem[]
-  settings: Record<string, string>
-}
-const slidesTemplateName = ref('')
-const slidesTemplateSaving = ref(false)
-const slidesTemplateSaved = ref(false)
-const slidesTemplateError = ref('')
-const slidesGroupTemplates = ref<SlidesGroupTemplate[]>([])
-
-function cloneJson<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T
-}
-
-function genSlidesGroupTemplateId(): string {
-  const c = (globalThis as any).crypto
-  if (c?.randomUUID && typeof c.randomUUID === 'function') return c.randomUUID()
-  return `tpl_${Date.now()}_${Math.random().toString(16).slice(2)}`
-}
-
-function normalizeSettings(value: unknown): Record<string, string> {
-  if (!value || typeof value !== 'object') return {}
-  const out: Record<string, string> = {}
-  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof v === 'string') out[k] = v
-    else if (v != null) out[k] = String(v)
-  }
-  return out
-}
-
-function normalizeSlideItemForTemplate(value: unknown): SlideItem | null {
-  if (!value || typeof value !== 'object') return null
-  const raw = value as Record<string, unknown>
-  const id = typeof raw.id === 'string' ? raw.id : genSlideId()
-  const hidden = raw.hidden == null ? false : Boolean(raw.hidden)
-  // Шаблоны лежат в localStorage и приходят как `unknown`, поэтому приводим через `unknown` чтобы пройти TS.
-  return { ...(raw as unknown as SlideItem), id, hidden }
-}
-
-function readSlidesGroupTemplatesFromLS(): SlidesGroupTemplate[] {
-  try {
-    const raw = localStorage.getItem(SLIDES_GROUP_TEMPLATES_LS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as unknown
-    if (!Array.isArray(parsed)) return []
-
-    const normalized = parsed
-      .map((t) => {
-        if (!t || typeof t !== 'object') return null
-        const obj = t as Record<string, unknown>
-        const id = typeof obj.id === 'string' ? obj.id : null
-        const name = typeof obj.name === 'string' ? obj.name : null
-        const createdAt = typeof obj.createdAt === 'string' ? obj.createdAt : null
-        const slidesRaw = obj.slides
-        const settings = normalizeSettings(obj.settings)
-        if (!id || !name || !createdAt) return null
-        if (!Array.isArray(slidesRaw)) return { id, name, createdAt, slides: [], settings }
-
-        const slides = slidesRaw.map((s) => normalizeSlideItemForTemplate(s)).filter((x): x is SlideItem => !!x)
-        return { id, name, createdAt, slides, settings }
-      })
-      .filter((x): x is SlidesGroupTemplate => !!x)
-
-    // Самое свежее — наверху
-    return normalized.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  } catch {
-    return []
-  }
-}
-
-function writeSlidesGroupTemplatesToLS(templates: SlidesGroupTemplate[]) {
-  localStorage.setItem(SLIDES_GROUP_TEMPLATES_LS_KEY, JSON.stringify(templates))
-}
-
-async function refreshSlidesGroupTemplates() {
-  if (!isAdminSlidesGridMode.value) return
-  if (hasApi() && getToken()) {
-    try {
-      const res = await api.get<{
-        templates: Array<{
-          id: string
-          name: string
-          createdAt: string
-          slides: unknown[]
-          settings: Record<string, string>
-        }>
-      }>('/api/admin/templates')
-      const rows = res.templates ?? []
-      const list: SlidesGroupTemplate[] = rows
-        .map((row) => {
-          const slides = Array.isArray(row.slides)
-            ? row.slides.map((s) => normalizeSlideItemForTemplate(s)).filter((x): x is SlideItem => !!x)
-            : []
-          return {
-            id: row.id,
-            name: row.name,
-            createdAt: row.createdAt,
-            slides,
-            settings: normalizeSettings(row.settings),
-          }
-        })
-        .filter((t) => Boolean(t.id && t.name && t.createdAt))
-      slidesGroupTemplates.value = list.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      return
-    } catch {
-      /* offline / нет таблицы — LS */
-    }
-  }
-  slidesGroupTemplates.value = readSlidesGroupTemplatesFromLS()
-}
-
-watch(
-  isAdminSlidesGridMode,
-  (v) => {
-    if (v) {
-      void refreshSlidesGroupTemplates()
-      void refreshFigures()
-    } else {
-      figures.value = []
-    }
-  },
-  { immediate: true },
-)
-
-async function saveSlidesGroupTemplate() {
-  if (!isAdminSlidesGridMode.value || adminSlidesTemplatePreviewMode.value) return
-
-  slidesTemplateError.value = ''
-  slidesTemplateSaved.value = false
-
-  const name = slidesTemplateName.value.trim()
-  if (!name) {
-    slidesTemplateError.value = 'Введите имя шаблона'
-    return
-  }
-
-  slidesTemplateSaving.value = true
-  try {
-    if (hasApi() && getToken()) {
-      try {
-        await api.post('/api/admin/templates', {
-          name,
-          slides: cloneJson(slides.value),
-          settings: { ...presentationSettings.value },
-        })
-        await refreshSlidesGroupTemplates()
-        slidesTemplateSaved.value = true
-        slidesTemplateName.value = ''
-        setTimeout(() => { slidesTemplateSaved.value = false }, 2500)
-        return
-      } catch (e) {
-        const msg =
-          e instanceof ApiError
-            ? (typeof e.payload === 'object' && e.payload && 'error' in (e.payload as object)
-                ? String((e.payload as { error?: string }).error)
-                : e.message)
-            : e instanceof Error
-              ? e.message
-              : 'Не удалось сохранить шаблон на сервере'
-        slidesTemplateError.value = msg
-        /* fallback: localStorage */
-      }
-    }
-
-    const template: SlidesGroupTemplate = {
-      id: genSlidesGroupTemplateId(),
-      name,
-      createdAt: new Date().toISOString(),
-      slides: cloneJson(slides.value),
-      settings: { ...presentationSettings.value },
-    }
-    const list = readSlidesGroupTemplatesFromLS()
-    writeSlidesGroupTemplatesToLS([template, ...list])
-    await refreshSlidesGroupTemplates()
-
-    slidesTemplateSaved.value = true
-    slidesTemplateName.value = ''
-    setTimeout(() => { slidesTemplateSaved.value = false }, 2500)
-  } catch (e) {
-    slidesTemplateError.value = e instanceof Error ? e.message : 'Не удалось сохранить шаблон'
-  } finally {
-    slidesTemplateSaving.value = false
-  }
-}
-
-async function loadSlidesGroupTemplate(templateId: string, options?: { preview?: boolean; skipConfirm?: boolean }) {
-  if (!isAdminSlidesGridMode.value) return
-
-  const preview = !!options?.preview
-  const skipConfirm = !!options?.skipConfirm
-
-  slidesTemplateError.value = ''
-  slidesTemplateSaved.value = false
-
-  let t = slidesGroupTemplates.value.find((x) => x.id === templateId)
-  if (!t) {
-    await refreshSlidesGroupTemplates()
-    t = slidesGroupTemplates.value.find((x) => x.id === templateId)
-  }
-  if (!t) {
-    const list = readSlidesGroupTemplatesFromLS()
-    t = list.find((x) => x.id === templateId)
-  }
-  if (!t) {
-    slidesTemplateError.value = 'Шаблон не найден'
-    return
-  }
-
-  if (!skipConfirm && !confirm('Заменить текущие слайды содержимым шаблона?')) return
-
-  adminSlidesTemplatePreviewMode.value = preview
-
-  slides.value = buildCleanSlidesFromTemplate(t.slides)
-  presentationSettings.value = { ...DEFAULT_PRESENTATION_SETTINGS, ...(t.settings ?? {}) }
-  activeSlideIndex.value = 0
-
-  slidesTemplateSaved.value = true
-  setTimeout(() => { slidesTemplateSaved.value = false }, 2000)
-}
-
-async function deleteSlidesGroupTemplate(templateId: string) {
-  if (!isAdminSlidesGridMode.value || adminSlidesTemplatePreviewMode.value) return
-  if (!templateId) return
-
-  if (!confirm('Удалить шаблон?')) return
-
-  slidesTemplateError.value = ''
-
-  if (hasApi() && getToken()) {
-    let removedOnServer = false
-    try {
-      await api.post<{ success?: boolean }>('/api/admin/templates/delete', { id: templateId })
-      removedOnServer = true
-    } catch (e) {
-      try {
-        await api.delete(`/api/admin/templates/${encodeURIComponent(templateId)}`)
-        removedOnServer = true
-      } catch (e2) {
-        slidesTemplateError.value =
-          e2 instanceof ApiError
-            ? (typeof e2.payload === 'object' && e2.payload && 'error' in (e2.payload as object)
-                ? String((e2.payload as { error?: string }).error)
-                : e2.message)
-            : 'Не удалось удалить шаблон на сервере'
-      }
-    }
-    if (removedOnServer) {
-      const list = readSlidesGroupTemplatesFromLS()
-      writeSlidesGroupTemplatesToLS(list.filter((x) => x.id !== templateId))
-      await refreshSlidesGroupTemplates()
-      return
-    }
-  }
-
-  const list = readSlidesGroupTemplatesFromLS()
-  writeSlidesGroupTemplatesToLS(list.filter((x) => x.id !== templateId))
-  await refreshSlidesGroupTemplates()
-}
 
 /** Тип «о себе» из настроек профиля: none | about | position */
 const profileAboutType = computed(() => {
@@ -3401,12 +2693,6 @@ const presentationEditorSlideContext = reactive<PresentationEditorSlideInject>({
   customSlidePageStyle,
   customBlockTag,
   customBlockStyle,
-  get adminTemplateBlockEdit() {
-    return isAdminSlidesGridMode.value
-  },
-  get adminVisibleTemplateBlockId() {
-    return adminTemplateEditingBlockId.value
-  },
 } as PresentationEditorSlideInject)
 
 provide(PRESENTATION_EDITOR_SLIDE_KEY, presentationEditorSlideContext)
@@ -3460,8 +2746,6 @@ let editorMounted = true
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
-
-  /* refreshFigures: watch(isAdminSlidesGridMode, { immediate }) + смена режима сетки */
 
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
@@ -3796,36 +3080,6 @@ async function exportToPDF() {
 .presentation-swiper.swiper-no-swiping {
   touch-action: pan-y;
 }
-/*
- * Админ-сетка слайдов: три слоя по z-index
- * 1 — фон «холста» (непрозрачный)
- * 2 — Konva (FiguresOverlay; между фоном и HTML при низком z фигуры)
- * 3 — контент без заливки на корневых обёртках — видны фон и фигуры в промежутках между блоками
- * Блоки (колонки, карточки, поля ввода) сохраняют свои фоны из booklet-slides / правил редактора.
- */
-.editor-slider-wrap .booklet-page__inner--editor-layers {
-  position: relative;
-  isolation: isolate;
-  /* был #fff — убираем, чтобы не перекрывать слой 1 и Konva */
-  background: transparent !important;
-}
-.editor-slider-wrap .booklet-slide-layer--bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  /* холст слайда: как прежний inner, по желанию — цвет темы презентации */
-  background-color: var(--booklet-editor-canvas-bg, #ffffff);
-}
-.editor-slider-wrap .booklet-slide-layer--content.booklet-scale-root {
-  position: relative;
-  z-index: 20;
-  background: transparent !important;
-}
-.editor-slider-wrap .booklet-page__inner--editor-layers .booklet-content {
-  background: transparent !important;
-}
-
 /* Блоки в слайдере редактора: без обводки/подсветки при фокусе и без затемнения в ночном режиме */
 .editor-slider-wrap .presentation-slider-wrap.booklet-view {
   background-color: #fff !important;
@@ -3840,22 +3094,13 @@ async function exportToPDF() {
   background-color: #fff !important;
   border-color: #d1d5db !important;
   color: #1f2937 !important;
-  /* Поверх слоя Konva (z фигур до ~99) — иначе canvas перехватывает клики по тексту */
+  /* Поверх слоя фигур (FiguresOverlay), иначе перехватываются клики по полям */
   position: relative;
   z-index: 150;
-}
-/* Админ /dashboard/admin/slides: стек слоёв — контент (20) над Konva (10–19); z-index 150 ломал панель фигур (toolbar ~220) */
-.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view input,
-.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view select,
-.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view textarea {
-  z-index: auto;
 }
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-content [contenteditable='true'] {
   position: relative;
   z-index: 150;
-}
-.editor-slider-wrap--admin-slides .presentation-slider-wrap.booklet-view .booklet-content [contenteditable='true'] {
-  z-index: auto;
 }
 .editor-slider-wrap .presentation-slider-wrap.booklet-view input::placeholder,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea::placeholder {

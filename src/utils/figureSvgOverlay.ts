@@ -1,46 +1,13 @@
 /**
- * HTML+SVG слой фигур для PDF (Puppeteer). Координаты геометрии 0..100 (как в оверлее слайда).
+ * SVG-разметка фигур для оверлея в браузере (те же правила, что и PDF: геометрия 0..100).
  */
-import type { PdfFigureDefinition } from './pdf-figure-definitions.js'
-
-type FigureFill =
-  | { type: 'none' }
-  | { type: 'solid'; color: string; opacity?: number }
-  | { type: 'linear'; from: string; to: string; angle: number; opacity?: number }
-
-type FigureStroke = {
-  enabled: boolean
-  color: string
-  width: number
-  dash: string
-  linecap: string
-  linejoin: string
-}
-
-type FigureShadow = {
-  enabled: boolean
-  color: string
-  blur: number
-  offsetX: number
-  offsetY: number
-  opacity: number
-}
-
-export type PdfFigureInstance = {
-  id: string
-  figureId: string
-  x: number
-  y: number
-  w: number
-  h: number
-  z?: number
-  rotation?: number
-  style: {
-    fill: FigureFill
-    stroke: FigureStroke
-    shadow?: FigureShadow
-  }
-}
+import type { FigureDefinition, FigureInstance } from '@/types/figures'
+import {
+  isPolylineGeometryClosed,
+  polylinePointsFromGeometry,
+  rectLayoutFromGeometry,
+  starPolygonPointsFromGeometry,
+} from '@/utils/figureGeometryRender'
 
 function clamp(n: number, min: number, max: number): number {
   if (Number.isNaN(n)) return min
@@ -78,7 +45,7 @@ function withAlpha(color: string, alpha: number): string {
   return color
 }
 
-function geometryKind(def?: PdfFigureDefinition): string {
+function geometryKind(def?: FigureDefinition): string {
   const g = def?.geometry
   if (g && typeof g === 'object') {
     const k = (g as { kind?: unknown }).kind
@@ -88,7 +55,7 @@ function geometryKind(def?: PdfFigureDefinition): string {
   return typeof top === 'string' ? top : ''
 }
 
-function polygonPointsFlat(def?: PdfFigureDefinition): number[] {
+function polygonPointsFlat(def?: FigureDefinition): number[] {
   const g = def?.geometry
   if (!g || typeof g !== 'object') return []
   const pts = (g as { points?: unknown }).points
@@ -115,7 +82,7 @@ function parsePointsStr(s: string): number[] {
   return out
 }
 
-function ellipseParams(def?: PdfFigureDefinition): { cx: number; cy: number; rx: number; ry: number } {
+function ellipseParams(def?: FigureDefinition): { cx: number; cy: number; rx: number; ry: number } {
   const g = def?.geometry
   if (!g || typeof g !== 'object') return { cx: 50, cy: 50, rx: 50, ry: 50 }
   const cx = Number((g as { cx?: unknown }).cx ?? 50)
@@ -129,94 +96,6 @@ function ellipseParams(def?: PdfFigureDefinition): { cx: number; cy: number; rx:
     rx: Number.isFinite(rx) ? rx : 50,
     ry: Number.isFinite(ry) ? ry : 50,
   }
-}
-
-function rectLayoutFromGeometry(def?: PdfFigureDefinition): {
-  x: number
-  y: number
-  width: number
-  height: number
-  rx: number
-  ry: number
-} {
-  const g = def?.geometry as Record<string, unknown> | undefined
-  if (g && typeof g === 'object') {
-    const w = Number((g as { width?: unknown }).width)
-    const h = Number((g as { height?: unknown }).height)
-    if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) {
-      const gx = (g as { x?: unknown }).x
-      const gy = (g as { y?: unknown }).y
-      const x = Number.isFinite(Number(gx)) ? Number(gx) : 0
-      const y = Number.isFinite(Number(gy)) ? Number(gy) : 0
-      const rxRaw = Number((g as { rx?: unknown }).rx ?? 0)
-      const ryRaw = Number((g as { ry?: unknown }).ry ?? (g as { rx?: unknown }).rx ?? 0)
-      const rx = Number.isFinite(rxRaw) ? Math.max(0, rxRaw) : 0
-      const ry = Number.isFinite(ryRaw) ? Math.max(0, ryRaw) : rx
-      return { x, y, width: w, height: h, rx, ry }
-    }
-  }
-  let legacyRx = 0
-  if (g && typeof g === 'object') {
-    const rx = (g as { rx?: unknown }).rx
-    if (typeof rx === 'number' && Number.isFinite(rx)) legacyRx = Math.max(0, rx)
-  }
-  return { x: 0, y: 0, width: 100, height: 100, rx: legacyRx, ry: legacyRx }
-}
-
-function starPolygonPointsFromGeometry(def?: PdfFigureDefinition): string {
-  const g = def?.geometry as Record<string, unknown> | undefined
-  if (!g || typeof g !== 'object') return ''
-  const n = Number((g as { points?: unknown }).points)
-  const p = Number.isFinite(n) ? Math.max(2, Math.floor(n)) : 5
-  const cx = Number.isFinite(Number((g as { cx?: unknown }).cx)) ? Number((g as { cx?: unknown }).cx) : 50
-  const cy = Number.isFinite(Number((g as { cy?: unknown }).cy)) ? Number((g as { cy?: unknown }).cy) : 50
-  let outerR = Number.isFinite(Number((g as { outerRadius?: unknown }).outerRadius))
-    ? Number((g as { outerRadius?: unknown }).outerRadius)
-    : 50
-  if (!Number.isFinite(outerR) || outerR <= 0) outerR = 50
-  let innerR: number
-  if (Number.isFinite(Number((g as { innerRadius?: unknown }).innerRadius))) {
-    innerR = Number((g as { innerRadius?: unknown }).innerRadius)
-  } else if ((g as { innerRatio?: unknown }).innerRatio != null && Number.isFinite(Number((g as { innerRatio?: unknown }).innerRatio))) {
-    innerR = outerR * clamp(Number((g as { innerRatio?: unknown }).innerRatio), 0.05, 0.95)
-  } else {
-    innerR = outerR * 0.5
-  }
-  innerR = clamp(innerR, 0.05, outerR - 0.01)
-  const toRad = (deg: number) => (deg * Math.PI) / 180
-  const startDeg = -90
-  const out: string[] = []
-  for (let i = 0; i < p; i++) {
-    const aOuter = startDeg + (360 / p) * i
-    const aInner = aOuter + 180 / p
-    const ox = cx + Math.cos(toRad(aOuter)) * outerR
-    const oy = cy + Math.sin(toRad(aOuter)) * outerR
-    const ix = cx + Math.cos(toRad(aInner)) * innerR
-    const iy = cy + Math.sin(toRad(aInner)) * innerR
-    out.push(`${ox},${oy}`, `${ix},${iy}`)
-  }
-  return out.join(' ')
-}
-
-function polylinePointsFromGeometry(geometry: unknown): string {
-  if (!geometry || typeof geometry !== 'object') return ''
-  const pts = (geometry as { points?: unknown }).points
-  if (!Array.isArray(pts)) return ''
-  return pts
-    .map((p: unknown) => {
-      if (!Array.isArray(p) || p.length < 2) return ''
-      const x = Number(p[0])
-      const y = Number(p[1])
-      if (!Number.isFinite(x) || !Number.isFinite(y)) return ''
-      return `${x},${y}`
-    })
-    .filter(Boolean)
-    .join(' ')
-}
-
-function isPolylineGeometryClosed(geometry: unknown): boolean {
-  if (!geometry || typeof geometry !== 'object') return false
-  return Boolean((geometry as { closed?: unknown }).closed)
 }
 
 function linearGradientEnds(angleDeg: number): { x1: number; y1: number; x2: number; y2: number } {
@@ -235,7 +114,7 @@ function linearGradientEnds(angleDeg: number): { x1: number; y1: number; x2: num
   }
 }
 
-function fillOpacityFor(inst: PdfFigureInstance): number {
+function fillOpacityFor(inst: FigureInstance): number {
   const fill = inst.style?.fill
   if (!fill || typeof fill !== 'object') return 1
   if ((fill as { type?: string }).type === 'none') return 1
@@ -243,7 +122,7 @@ function fillOpacityFor(inst: PdfFigureInstance): number {
   return Number.isFinite(o) ? clamp(o, 0, 1) : 1
 }
 
-function strokeWidthFor(inst: PdfFigureInstance): number {
+function strokeWidthFor(inst: FigureInstance): number {
   const stroke = inst.style?.stroke
   if (!stroke || typeof stroke !== 'object') return 0
   if (!stroke.enabled) return 0
@@ -251,7 +130,7 @@ function strokeWidthFor(inst: PdfFigureInstance): number {
   return Number.isFinite(w) ? Math.max(0, w) : 0
 }
 
-function strokeDashSvg(inst: PdfFigureInstance, def?: PdfFigureDefinition): string {
+function strokeDashSvg(inst: FigureInstance, def?: FigureDefinition): string {
   const stroke = inst.style?.stroke
   if (!stroke || typeof stroke !== 'object' || !stroke.enabled) return ''
   const dash = String((stroke as { dash?: unknown }).dash ?? 'solid')
@@ -277,14 +156,15 @@ function strokeDashSvg(inst: PdfFigureInstance, def?: PdfFigureDefinition): stri
   return ''
 }
 
-function strokeColor(inst: PdfFigureInstance): string | undefined {
+function strokeColor(inst: FigureInstance): string | undefined {
   const stroke = inst.style?.stroke
   if (!stroke || typeof stroke !== 'object') return undefined
   if (!stroke.enabled) return undefined
   return String((stroke as { color?: unknown }).color ?? '#111827')
 }
 
-function shadowFilterCss(inst: PdfFigureInstance): string {
+/** CSS filter для тени (как в PDF-слое). */
+export function shadowFilterCssForFigure(inst: FigureInstance): string {
   const shadow = inst.style?.shadow
   if (!shadow || typeof shadow !== 'object' || !shadow.enabled) return ''
   const ox = Number((shadow as { offsetX?: unknown }).offsetX ?? 2)
@@ -297,8 +177,8 @@ function shadowFilterCss(inst: PdfFigureInstance): string {
 }
 
 function buildFillStrokeAttrs(
-  inst: PdfFigureInstance,
-  def: PdfFigureDefinition | undefined,
+  inst: FigureInstance,
+  def: FigureDefinition | undefined,
   gid: string,
   skipFill: boolean,
 ): { defs: string; fillAttr: string; strokeAttrs: string } {
@@ -342,12 +222,12 @@ function angleRad(x1: number, y1: number, x2: number, y2: number): number {
   return Math.atan2(y2 - y1, x2 - x1)
 }
 
-function headLenFor(inst: PdfFigureInstance): number {
+function headLenFor(inst: FigureInstance): number {
   const w = strokeWidthFor(inst)
   return 8 + w * 0.8
 }
 
-function headWidthFor(inst: PdfFigureInstance): number {
+function headWidthFor(inst: FigureInstance): number {
   const w = strokeWidthFor(inst)
   return 5 + w * 0.35
 }
@@ -369,7 +249,7 @@ function arrowHeadFlat(
 }
 
 function arrowHeadPointsEnd(
-  inst: PdfFigureInstance,
+  inst: FigureInstance,
   x1: number,
   y1: number,
   x2: number,
@@ -389,7 +269,7 @@ function arrowHeadPointsEnd(
 }
 
 function arrowHeadPointsStart(
-  inst: PdfFigureInstance,
+  inst: FigureInstance,
   x1: number,
   y1: number,
   x2: number,
@@ -409,8 +289,8 @@ function arrowHeadPointsStart(
 }
 
 function connectorEndSegment(
-  inst: PdfFigureInstance,
-  figuresById: Record<string, PdfFigureDefinition>,
+  inst: FigureInstance,
+  figuresById: Record<string, FigureDefinition>,
 ): { x1: number; y1: number; x2: number; y2: number } {
   const g = (figuresById[inst.figureId]?.geometry as Record<string, unknown>) ?? {}
   const x1 = Number(g.x1 ?? 0)
@@ -432,8 +312,8 @@ function connectorEndSegment(
 }
 
 function connectorStartSegment(
-  inst: PdfFigureInstance,
-  figuresById: Record<string, PdfFigureDefinition>,
+  inst: FigureInstance,
+  figuresById: Record<string, FigureDefinition>,
 ): { x1: number; y1: number; x2: number; y2: number } {
   const g = (figuresById[inst.figureId]?.geometry as Record<string, unknown>) ?? {}
   const x1 = Number(g.x1 ?? 0)
@@ -454,7 +334,7 @@ function connectorStartSegment(
   return { x1, y1, x2, y2 }
 }
 
-function curvedConnectorPathD(inst: PdfFigureInstance, def?: PdfFigureDefinition): string {
+function curvedConnectorPathD(def?: FigureDefinition): string {
   const g = (def?.geometry as Record<string, unknown>) ?? {}
   const x1 = Number(g.x1 ?? 0)
   const y1 = Number(g.y1 ?? 0)
@@ -471,10 +351,10 @@ function safeSvgId(raw: string): string {
   return raw.replace(/[^a-zA-Z0-9_-]/g, '_')
 }
 
-function buildFigureSvgInner(
-  inst: PdfFigureInstance,
-  def: PdfFigureDefinition | undefined,
-  figuresById: Record<string, PdfFigureDefinition>,
+export function buildFigureSvgInner(
+  inst: FigureInstance,
+  def: FigureDefinition | undefined,
+  figuresById: Record<string, FigureDefinition>,
 ): string {
   const kind = geometryKind(def)
   const gid = `g-${safeSvgId(inst.id)}`
@@ -585,7 +465,7 @@ function buildFigureSvgInner(
       const p = `${x1},${y1} ${mx},${my} ${x2},${y2}`
       parts.push(`<polyline points="${escapeAttr(p)}" fill="none" ${strokeAttrs.replace(/^\s/, '')} />`)
     } else if (mode === 'curved') {
-      const d = curvedConnectorPathD(inst, def)
+      const d = curvedConnectorPathD(def)
       parts.push(`<path d="${escapeAttr(d)}" fill="none" ${strokeAttrs.replace(/^\s/, '')} />`)
     }
     if (sc && (head === 'end' || head === 'both')) {
@@ -604,107 +484,4 @@ function buildFigureSvgInner(
   }
 
   return ''
-}
-
-function zNum(v: unknown): number {
-  const n = typeof v === 'number' ? v : Number(v)
-  return Number.isFinite(n) ? n : 0
-}
-
-function normalizeInstance(raw: unknown): PdfFigureInstance | null {
-  if (!raw || typeof raw !== 'object') return null
-  const o = raw as Record<string, unknown>
-  const id = typeof o.id === 'string' ? o.id : ''
-  const figureId = typeof o.figureId === 'string' ? o.figureId : ''
-  if (!id || !figureId) return null
-  const x = Number(o.x)
-  const y = Number(o.y)
-  const w = Number(o.w)
-  const h = Number(o.h)
-  if (![x, y, w, h].every((n) => Number.isFinite(n))) return null
-  const style = (o.style && typeof o.style === 'object' ? o.style : {}) as PdfFigureInstance['style']
-  const fill = (style.fill && typeof style.fill === 'object' ? style.fill : { type: 'solid', color: '#3b82f6' }) as FigureFill
-  const stroke = (style.stroke && typeof style.stroke === 'object'
-    ? style.stroke
-    : { enabled: true, color: '#111827', width: 2, dash: 'solid', linecap: 'round', linejoin: 'miter' }) as FigureStroke
-  const shadow = style.shadow && typeof style.shadow === 'object' ? (style.shadow as FigureShadow) : undefined
-  return {
-    id,
-    figureId,
-    x,
-    y,
-    w,
-    h,
-    z: zNum(o.z),
-    rotation: Number.isFinite(Number(o.rotation)) ? Number(o.rotation) : 0,
-    style: { fill, stroke, shadow },
-  }
-}
-
-const FIGURE_Z_MEDIA = 5
-
-function renderPdfFiguresOverlayOneStack(
-  instances: PdfFigureInstance[],
-  figuresById: Record<string, PdfFigureDefinition>,
-  stackZ: number,
-): string {
-  const sorted = [...instances].sort((a, b) => zNum(a.z) - zNum(b.z))
-  const items: string[] = []
-  let stackOrder = 0
-  for (let i = 0; i < sorted.length; i++) {
-    const inst = sorted[i]
-    const def = figuresById[inst.figureId]
-    const inner = buildFigureSvgInner(inst, def, figuresById)
-    if (!inner) continue
-
-    stackOrder += 1
-    const rot = Number.isFinite(inst.rotation ?? 0) ? (inst.rotation ?? 0) : 0
-    const shadowCss = shadowFilterCss(inst)
-    items.push(`
-    <div class="pdf-fig-item" style="left:${inst.x}%;top:${inst.y}%;width:${inst.w}%;height:${inst.h}%;z-index:${stackOrder};transform:rotate(${rot}deg);${shadowCss}">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%" overflow="visible">${inner}</svg>
-    </div>`)
-  }
-
-  if (items.length === 0) return ''
-
-  return `<div class="pdf-figures-overlay" style="z-index:${stackZ};isolation:isolate;" aria-hidden="true">${items.join('')}</div>`
-}
-
-/**
- * Два DOM-слоя, как в FiguresOverlay (просмотр): z фигуры &lt; 5 — под медиа, иначе — над.
- */
-export function renderPdfFiguresOverlayHtml(
-  dataObj: Record<string, unknown>,
-  figuresById: Record<string, PdfFigureDefinition>,
-  mediaZ = 5,
-): string {
-  const raw = dataObj.figures
-  if (!Array.isArray(raw) || raw.length === 0) return ''
-
-  const instances = raw.map(normalizeInstance).filter(Boolean) as PdfFigureInstance[]
-  if (instances.length === 0) return ''
-
-  const below = instances.filter((i) => zNum(i.z) < FIGURE_Z_MEDIA)
-  const above = instances.filter((i) => zNum(i.z) >= FIGURE_Z_MEDIA)
-
-  const parts: string[] = []
-  if (below.length > 0) {
-    const maxFigZ = Math.max(...below.map((i) => zNum(i.z)))
-    const stackZ = maxFigZ === 0 ? 1 : clamp(maxFigZ + mediaZ - 3, 1, FIGURE_Z_MEDIA - 1)
-    parts.push(renderPdfFiguresOverlayOneStack(below, figuresById, stackZ))
-  }
-  if (above.length > 0) {
-    const maxFigZ = Math.max(...above.map((i) => zNum(i.z)))
-    const stackZ =
-      maxFigZ === 0 ? FIGURE_Z_MEDIA + 1 : clamp(maxFigZ + mediaZ - 3, FIGURE_Z_MEDIA + 1, 99)
-    parts.push(renderPdfFiguresOverlayOneStack(above, figuresById, stackZ))
-  }
-
-  return parts.join('')
-}
-
-export function figuresArrayToMap(figs: PdfFigureDefinition[] | undefined): Record<string, PdfFigureDefinition> {
-  if (!figs?.length) return {}
-  return Object.fromEntries(figs.map((f) => [f.id, f]))
 }

@@ -507,7 +507,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-page__inner:has(.pdf-figures-overlay) { overflow: visible; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root { position: absolute; left: 0; top: 0; width: 70.16%; height: 70.16%; transform: scale(1.42518); transform-origin: 0 0; padding: 1rem; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root:has(.pdf-figures-overlay) { overflow: visible; }
-    /* Как Konva: заполняем область .booklet-scale-root без лишних отступов у контейнера оверлея */
+    /* Заполняем область .booklet-scale-root без лишних отступов у контейнера оверлея */
     .presentation-slider-wrap.booklet-view .pdf-figures-overlay { position: absolute; left: 0; top: 0; right: 0; bottom: 0; width: 100%; height: 100%; margin: 0; padding: 0; box-sizing: border-box; pointer-events: none; overflow: visible; }
     .presentation-slider-wrap.booklet-view .pdf-figures-overlay .pdf-fig-item { position: absolute; transform-origin: center center; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
