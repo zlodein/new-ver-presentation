@@ -318,6 +318,20 @@
               <p class="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Отображение в редакторе / просмотре / PDF</p>
               <div class="space-y-2">
                 <div>
+                  <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шаблон</label>
+                  <div class="relative z-20 bg-transparent">
+                    <select
+                      v-model="presentationSettings.template"
+                      class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                    >
+                      <option v-for="t in TEMPLATE_OPTIONS" :key="t.value" :value="t.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ t.label }}</option>
+                    </select>
+                    <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                      <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                  </div>
+                </div>
+                <div>
                   <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шрифт</label>
                   <div class="relative z-20 bg-transparent">
                     <select
@@ -443,6 +457,7 @@
             }"
             :style="presentationStyle"
             :data-image-frame="presentationSettings.imageFrame"
+            :data-template="presentationSettings.template"
           >
             <!-- Кнопка палитры (макет/сетка): только на десктопе; волна идёт от кнопки влево и вниз -->
             <button
@@ -490,6 +505,15 @@
                 <div v-if="showSettingsMenu" class="p-4">
                   <p class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Отображение в редакторе / просмотре / PDF</p>
                   <div class="space-y-3">
+                    <div>
+                      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шаблон</label>
+                      <div class="relative z-20">
+                        <select v-model="presentationSettings.template" class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                          <option v-for="t in TEMPLATE_OPTIONS" :key="t.value" :value="t.value">{{ t.label }}</option>
+                        </select>
+                        <span class="absolute right-4 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500"><svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                      </div>
+                    </div>
                     <div>
                       <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шрифт</label>
                       <div class="relative z-20">
@@ -714,6 +738,20 @@
               >
                 <p class="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Отображение в редакторе / просмотре / PDF</p>
                 <div class="space-y-2">
+                  <div>
+                    <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шаблон</label>
+                    <div class="relative z-20 bg-transparent">
+                      <select
+                        v-model="presentationSettings.template"
+                        class="settings-select dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                      >
+                        <option v-for="t in TEMPLATE_OPTIONS" :key="t.value" :value="t.value" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ t.label }}</option>
+                      </select>
+                      <span class="absolute z-30 text-gray-700 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400">
+                        <svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </div>
                   <div>
                     <label class="settings-select-label mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Шрифт</label>
                     <div class="relative z-20 bg-transparent">
@@ -989,6 +1027,7 @@
                             class="presentation-slider-wrap booklet-view editor-sidebar-thumb-booklet max-w-none shadow-none"
                             :style="presentationStyle"
                             :data-image-frame="presentationSettings.imageFrame"
+                            :data-template="presentationSettings.template"
                           >
                             <div class="booklet-page relative h-full w-full overflow-hidden">
                               <div class="booklet-page__inner">
@@ -1493,6 +1532,10 @@ const FONT_OPTIONS = [
   { value: '"Rubik", sans-serif', label: 'Rubik' },
   { value: '"Source Sans 3", sans-serif', label: 'Source Sans Pro' },
 ]
+const TEMPLATE_OPTIONS = [
+  { value: 'basic', label: 'Базовый шаблон' },
+  { value: 'city', label: 'Городская' },
+]
 const RADIUS_OPTIONS = [
   { value: '0', label: 'Без скругления' },
   { value: '4px', label: '4 px' },
@@ -1530,6 +1573,7 @@ const FONT_SIZE_PRICE_OPTIONS = [
   { value: '28px', label: '28 px' },
 ]
 const DEFAULT_PRESENTATION_SETTINGS = {
+  template: 'basic',
   fontFamily: 'system-ui',
   imageBorderRadius: '0',
   imageFrame: 'none',
@@ -2982,6 +3026,7 @@ onMounted(async () => {
       const contentWithSettings = data?.content as { slides?: unknown[]; settings?: Record<string, string> } | undefined
       if (contentWithSettings?.settings && typeof contentWithSettings.settings === 'object') {
         const s = contentWithSettings.settings
+        if (s.template != null) presentationSettings.value.template = s.template
         if (s.exportEnabled != null) presentationSettings.value.exportEnabled = s.exportEnabled
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
@@ -3038,6 +3083,7 @@ function loadFromLocalStorage() {
       }
       if (saved.settings && typeof saved.settings === 'object') {
         const s = saved.settings as Record<string, string>
+        if (s.template != null) presentationSettings.value.template = s.template
         if (s.exportEnabled != null) presentationSettings.value.exportEnabled = s.exportEnabled
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
