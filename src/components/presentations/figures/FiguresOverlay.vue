@@ -253,26 +253,17 @@ function rotatedBoxAabb(rotatedBox: {
   rotation: number
 }) {
   const { x, y, width, height, rotation } = rotatedBox
-  const p1 = getCorner(x, y, 0, 0, rotation)
-  const p2 = getCorner(x, y, width, 0, rotation)
-  const p3 = getCorner(x, y, width, height, rotation)
-  const p4 = getCorner(x, y, 0, height, rotation)
+  // Поддержка как радиан, так и градусов (в Konva источники угла отличаются по API).
+  const angleRad = Math.abs(rotation) > Math.PI * 2 ? (rotation * Math.PI) / 180 : rotation
+  const p1 = getCorner(x, y, 0, 0, angleRad)
+  const p2 = getCorner(x, y, width, 0, angleRad)
+  const p3 = getCorner(x, y, width, height, angleRad)
+  const p4 = getCorner(x, y, 0, height, angleRad)
   const minX = Math.min(p1.x, p2.x, p3.x, p4.x)
   const minY = Math.min(p1.y, p2.y, p3.y, p4.y)
   const maxX = Math.max(p1.x, p2.x, p3.x, p4.x)
   const maxY = Math.max(p1.y, p2.y, p3.y, p4.y)
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-}
-
-/** Полуоси AABB ячейки w×h с поворотом outer (градусы) — границы центра при drag */
-function axisAlignedHalfExtentsForRotatedRect(wPx: number, hPx: number, rotationDeg: number): { rx: number; ry: number } {
-  const rad = (rotationDeg * Math.PI) / 180
-  const c = Math.abs(Math.cos(rad))
-  const s = Math.abs(Math.sin(rad))
-  return {
-    rx: (wPx / 2) * c + (hPx / 2) * s,
-    ry: (wPx / 2) * s + (hPx / 2) * c,
-  }
 }
 
 /** После drag/transform — подправить позицию, если AABB вылез за stage (не вызывать каждый dragmove — ломает перетаскивание) */
@@ -284,9 +275,21 @@ function clampOuterInsideStage(outer: Konva.Group) {
   if (!hit) return
   const wP = hit.width()
   const hP = hit.height()
-  const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
-  outer.x(clamp(outer.x(), rx, W - rx))
-  outer.y(clamp(outer.y(), ry, H - ry))
+  const aabb = rotatedBoxAabb({
+    x: outer.x() - wP / 2,
+    y: outer.y() - hP / 2,
+    width: wP,
+    height: hP,
+    rotation: outer.rotation(),
+  })
+  let nx = outer.x()
+  let ny = outer.y()
+  if (aabb.x < 0) nx -= aabb.x
+  if (aabb.y < 0) ny -= aabb.y
+  if (aabb.x + aabb.width > W) nx -= aabb.x + aabb.width - W
+  if (aabb.y + aabb.height > H) ny -= aabb.y + aabb.height - H
+  outer.x(nx)
+  outer.y(ny)
 }
 
 function snapRotationDeg(raw: number): number {
@@ -742,43 +745,56 @@ function rebuildLayer() {
         const hP = hit.height()
         let cx = pos.x
         let cy = pos.y
-        const { rx, ry } = axisAlignedHalfExtentsForRotatedRect(wP, hP, outer.rotation())
-        const minX = rx
-        const maxX = W - rx
-        const minY = ry
-        const maxY = H - ry
-        const clampedRawX = clamp(cx, minX, maxX)
-        const clampedRawY = clamp(cy, minY, maxY)
+
+        const clampByStageAabb = (x: number, y: number) => {
+          const box = rotatedBoxAabb({
+            x: x - wP / 2,
+            y: y - hP / 2,
+            width: wP,
+            height: hP,
+            rotation: outer.rotation(),
+          })
+          let nx = x
+          let ny = y
+          if (box.x < 0) nx -= box.x
+          if (box.y < 0) ny -= box.y
+          if (box.x + box.width > W) nx -= box.x + box.width - W
+          if (box.y + box.height > H) ny -= box.y + box.height - H
+          return { x: nx, y: ny, box }
+        }
+
+        const base = clampByStageAabb(cx, cy)
+        cx = base.x
+        cy = base.y
 
         if (editorGridCfg.value.snap) {
           const stepX = (editorGridCfg.value.stepPct / 100) * W
           const stepY = (editorGridCfg.value.stepPct / 100) * H
-          const rawAtLeft = Math.abs(clampedRawX - minX) <= 1e-6
-          const rawAtRight = Math.abs(clampedRawX - maxX) <= 1e-6
-          const rawAtTop = Math.abs(clampedRawY - minY) <= 1e-6
-          const rawAtBottom = Math.abs(clampedRawY - maxY) <= 1e-6
-
-          let tlx = clampedRawX - wP / 2
-          let tly = clampedRawY - hP / 2
+          let tlx = cx - wP / 2
+          let tly = cy - hP / 2
           tlx = Math.round(tlx / stepX) * stepX
           tly = Math.round(tly / stepY) * stepY
           cx = tlx + wP / 2
           cy = tly + hP / 2
+          const snapped = clampByStageAabb(cx, cy)
+          cx = snapped.x
+          cy = snapped.y
 
-          // При упоре в край приоритет у границы, а не у сетки.
-          if (rawAtLeft) cx = minX
-          else if (rawAtRight) cx = maxX
-          else cx = snapCenterWithEdgeMagnet(cx, minX, maxX, stepX)
-
-          if (rawAtTop) cy = minY
-          else if (rawAtBottom) cy = maxY
-          else cy = snapCenterWithEdgeMagnet(cy, minY, maxY, stepY)
-        } else {
-          cx = clampedRawX
-          cy = clampedRawY
+          // Лёгкий edge magnet после снапа, чтобы не оставалось зазора из-за шага сетки.
+          const post = clampByStageAabb(cx, cy).box
+          const tolX = stepX / 2
+          const tolY = stepY / 2
+          if (Math.abs(post.x) <= tolX) cx -= post.x
+          if (Math.abs(post.y) <= tolY) cy -= post.y
+          const rightDelta = W - (post.x + post.width)
+          const bottomDelta = H - (post.y + post.height)
+          if (Math.abs(rightDelta) <= tolX) cx += rightDelta
+          if (Math.abs(bottomDelta) <= tolY) cy += bottomDelta
         }
-        cx = clamp(cx, minX, maxX)
-        cy = clamp(cy, minY, maxY)
+
+        const finalPos = clampByStageAabb(cx, cy)
+        cx = finalPos.x
+        cy = finalPos.y
         return { x: cx, y: cy }
       })
     }
@@ -943,6 +959,8 @@ watch(
   margin: 0;
   padding: 0;
   overflow: visible;
+  outline: 1px dashed rgba(37, 99, 235, 0.35);
+  outline-offset: 0;
 }
 
 .figures-konva-host :deep(canvas) {
