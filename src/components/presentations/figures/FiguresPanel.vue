@@ -8,7 +8,6 @@ import {
   rectLayoutFromGeometry,
   starPolygonPointsFromGeometry,
 } from '@/utils/figureGeometryRender'
-import { swapFigureStackOrder } from '@/utils/figureStackOrder'
 import { normalizeFigureBlockId, SLIDE_WIDE_BLOCK_ID } from '@/utils/figureBlockScopes'
 
 const props = withDefaults(
@@ -370,15 +369,6 @@ function sendToBack() {
   touchFiguresReactive()
 }
 
-function moveLayer(delta: number) {
-  if (!props.enabled) return
-  const s = selectedInstance.value
-  if (!s) return
-  const arr = figuresInScope()
-  if (!swapFigureStackOrder(arr, s.id, delta)) return
-  touchFiguresReactive()
-}
-
 function setShadowEnabled(enabled: boolean) {
   if (!props.enabled) return
   const s = selectedInstance.value
@@ -510,16 +500,13 @@ function setShadowOpacity(v: number) {
           </div>
         </div>
         <div class="mt-2 grid grid-cols-2 gap-2">
-          <button type="button" class="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" @click="moveLayer(1)">
-            Слой выше
-          </button>
-          <button type="button" class="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" @click="moveLayer(-1)">
-            Слой ниже
-          </button>
           <button type="button" class="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" @click="bringToFront">
             Вперед
           </button>
-          <button type="button" class="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20" @click="removeSelected">
+          <button type="button" class="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" @click="sendToBack">
+            Назад
+          </button>
+          <button type="button" class="col-span-2 rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20" @click="removeSelected">
             Удалить
           </button>
         </div>

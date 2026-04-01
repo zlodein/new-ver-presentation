@@ -100,12 +100,15 @@ function syncContentBoxFromScaleRoot() {
   }
   const pageInner = rootRef.value.closest('.booklet-page__inner') as HTMLElement | null
   const anchor = resolveAnchorEl()
+  const scale = resolveScaleRootEl()
   if (!anchor || !pageInner) {
     setContentBoxIfChanged(zero)
     return
   }
   const ar = anchor.getBoundingClientRect()
-  const pr = pageInner.getBoundingClientRect()
+  // Фрейм Konva позиционируется внутри .booklet-scale-root (родитель .figures-konva-stack), а не
+  // относительно .booklet-page__inner — иначе в режиме просмотра слой уезжает и konvajs-content вылезает за inner.
+  const origin = scale?.getBoundingClientRect() ?? pageInner.getBoundingClientRect()
   const scope = normalizeFigureBlockId(props.figureBlockScope)
   // Для полного слоя слайда (scope=slide) Konva должна совпадать с видимой областью слайда целиком,
   // включая padding контейнера. Для блочных scope оставляем привязку к внутреннему контенту.
@@ -118,8 +121,8 @@ function syncContentBoxFromScaleRoot() {
   const innerW = Math.max(1, Math.round(ar.width - padL - padR))
   const innerH = Math.max(1, Math.round(ar.height - padT - padB))
   setContentBoxIfChanged({
-    left: Math.round(ar.left - pr.left + padL),
-    top: Math.round(ar.top - pr.top + padT),
+    left: Math.round(ar.left - origin.left + padL),
+    top: Math.round(ar.top - origin.top + padT),
     width: innerW,
     height: innerH,
   })
