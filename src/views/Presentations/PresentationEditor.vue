@@ -2191,7 +2191,7 @@ function getSlideThumbnailUrl(slide: SlideItem): string {
     case 'layout':
       return pickFirstResolved(layoutImages(slide))
     case 'location':
-      return pickFirstResolved(locationImages(slide))
+      return ''
     case 'contacts':
       return resolveImageUrlForThumb(contactImageUrl(slide))
     case 'characteristics': {
@@ -2749,32 +2749,6 @@ async function onLayoutImageUpload(slide: SlideItem, event: Event, index: number
   const file = input.files?.[0]
   if (!file) return
   if (!slide.data) slide.data = {}
-  if (!Array.isArray(slide.data.images)) slide.data.images = []
-  const arr = slide.data.images as string[]
-  while (arr.length <= index) arr.push('')
-  try {
-    if (hasApi() && getToken()) {
-      try {
-        arr[index] = await uploadPresentationImage(file)
-        return
-      } catch (e) {
-        console.warn('Загрузка на сервер не удалась, сохраняю как data URL:', e)
-      }
-    }
-    arr[index] = await readFileAsDataUrl(file)
-  } finally {
-    input.value = ''
-  }
-}
-
-function locationImages(slide: SlideItem): string[] {
-  return imageSlotsForSlide(slide)
-}
-
-async function onLocationImageUpload(slide: SlideItem, event: Event, index: number) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
   if (!Array.isArray(slide.data.images)) slide.data.images = []
   const arr = slide.data.images as string[]
   while (arr.length <= index) arr.push('')

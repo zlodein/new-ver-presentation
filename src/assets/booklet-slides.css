@@ -873,37 +873,6 @@
   color: #1a1a1a;
 }
 
-.presentation-slider-wrap.booklet-view .booklet-map__grid {
-  display: grid;
-  gap: 8px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.presentation-slider-wrap.booklet-view .booklet-map__grid-img {
-  position: relative;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--theme-color, #fcfcfc);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--booklet-image-radius, 8px);
-  z-index: var(--booklet-figure-media-z, 5);
-}
-
-.presentation-slider-wrap.booklet-view .booklet-map__grid-img img {
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-  border-radius: var(--booklet-image-radius, 8px);
-}
-
 /* ---------- Контакты: 50% слева список контактов + аватар/лого сверху, 50% справа изображение ---------- */
 .presentation-slider-wrap.booklet-view .booklet-contacts__wrap {
   display: grid;
@@ -1256,8 +1225,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid {
     display: grid;
     gap: 8px;
     margin-top: 8px;
@@ -1268,8 +1236,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x1"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x1"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="1x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="1x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="1x1"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="1x1"] {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
   }
@@ -1278,16 +1245,14 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x1"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="2x1"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="2x1"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x1"] {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: 1fr;
   }
 
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .image-grid-bound[data-image-grid="1x2"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="1x2"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x2"] {
     grid-template-columns: 1fr;
     grid-template-rows: repeat(2, 1fr);
   }
@@ -1296,8 +1261,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x2"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="2x2"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="2x2"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x2"] {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(2, 1fr);
   }
@@ -1306,8 +1270,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="3x1"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="3x1"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="3x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="3x1"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="3x1"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="3x1"] {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: 1fr;
   }
@@ -1316,8 +1279,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="1x3"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="1x3"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="1x3"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="1x3"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="1x3"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="1x3"] {
     grid-template-columns: 1fr;
     grid-template-rows: repeat(3, 1fr);
   }
@@ -1326,8 +1288,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="3x2"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="3x2"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="3x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="3x2"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="3x2"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="3x2"] {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(2, 1fr);
   }
@@ -1336,8 +1297,7 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-info__grid[data-image-grid="2x3"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__grid[data-image-grid="2x3"],
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__grid[data-image-grid="2x3"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x3"],
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid[data-image-grid="2x3"] {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__grid[data-image-grid="2x3"] {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(3, 1fr);
   }
@@ -1346,7 +1306,6 @@
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-stroen__block.booklet-stroen__img,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-galery__img,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-layout__img,
-  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-map__grid-img,
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed) .booklet-contacts__block.booklet-contacts__img {
     position: relative;
     min-height: 120px;

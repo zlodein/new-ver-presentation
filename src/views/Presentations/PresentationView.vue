@@ -107,7 +107,7 @@
                 </div>
               </div>
             </div>
-            <!-- 4. Местоположение: слева карта (__left), справа адрес/метро + фото (__content) -->
+            <!-- 4. Местоположение: слева карта, справа адрес и метро (без сетки фото) -->
             <div v-else-if="slide.type === 'location'" class="booklet-content booklet-map overflow-visible" data-editor-block="slide">
               <div class="booklet-map__wrap">
                 <h2 class="booklet-map__title">{{ slide.data?.heading ?? slide.data?.title ?? 'МЕСТОПОЛОЖЕНИЕ' }}</h2>
@@ -131,11 +131,6 @@
                           <span>{{ st.name }}{{ st.walk_time_text ? ` — ${st.walk_time_text}` : '' }}</span>
                         </li>
                       </ul>
-                    </div>
-                  </div>
-                  <div class="booklet-map__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
-                    <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-map__grid-img">
-                      <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))" @error="onImageError">
                     </div>
                   </div>
                 </div>
@@ -770,9 +765,10 @@ function getSlideImageUrls(slide: ViewSlideItem): string[] {
     }
     case 'description':
     case 'infrastructure':
-    case 'location':
     case 'gallery':
       return viewSlideImages(slide, getViewImageLimit(slide)).filter(Boolean)
+    case 'location':
+      return []
     case 'image': {
       const u = slide.data?.imageUrl ?? slide.data?.image
       return u ? [String(u)] : []
