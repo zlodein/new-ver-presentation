@@ -635,8 +635,6 @@
                       :enabled="figuresInteractiveOnSlide(slide.id)"
                       :editor-layer-stack="canEditFigures"
                       @select="onFigureSelect(slide, $event)"
-                      @delete="deleteFigureInstance"
-                      @layerMove="onFigureLayerMove"
                     />
                   </div>
                   <div v-else class="booklet-page__inner">
@@ -657,8 +655,6 @@
                       :selectedInstanceId="selectedFigureInstanceId"
                       :enabled="figuresInteractiveOnSlide(slide.id)"
                       @select="onFigureSelect(slide, $event)"
-                      @delete="deleteFigureInstance"
-                      @layerMove="onFigureLayerMove"
                     />
                   </div>
                 </div>
@@ -1326,7 +1322,6 @@ import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vu
 import FiguresPanel from '@/components/presentations/figures/FiguresPanel.vue'
 import type { FigureDefinition } from '@/types/figures'
 import { figureBlockScopesForSlide } from '@/utils/figureBlockScopes'
-import { swapFigureStackOrder } from '@/utils/figureStackOrder'
 import {
   PRESENTATION_EDITOR_SLIDE_KEY,
   type PresentationEditorSlideInject,
@@ -1739,101 +1734,12 @@ watch(
   { immediate: true },
 )
 
-function deleteFigureInstance(instanceId: string) {
-  if (!instanceId) return
-  // Удаляем из того слайда, где реально лежит фигура.
-  for (const s of slides.value) {
-    const data = s.data as any
-    if (!data || !Array.isArray(data.figures)) continue
-    const idx = data.figures.findIndex((x: any) => x && x.id === instanceId)
-    if (idx < 0) continue
-    data.figures.splice(idx, 1)
-    // Переустанавливаем массив для реактивности.
-    data.figures = [...data.figures]
-    break
-  }
-  selectedFigureInstanceId.value = null
-}
-
 function onFigureSelect(slide: SlideItem, id: string | null) {
   selectedFigureInstanceId.value = id
   if (id && isAdminSlidesGridMode.value) {
     const idx = slides.value.findIndex((s) => s.id === slide.id)
     if (idx >= 0) activeSlideIndex.value = idx
   }
-}
-
-/** Диапазон z для фигур: ниже ~5 — под блоками изображений (--booklet-figure-media-z), выше — поверх */
-const FIGURE_Z_MIN = 0
-const FIGURE_Z_MAX = 40
-
-function zNum(v: unknown): number {
-  const n = typeof v === 'number' ? v : Number(v)
-  return Number.isFinite(n) ? n : 0
-}
-
-function findSlideFiguresByInstanceId(instanceId: string): { slide: SlideItem; figures: any[] } | null {
-  for (const s of slides.value) {
-    const figures = (s.data as any)?.figures
-    if (!Array.isArray(figures)) continue
-    if (figures.some((x) => x && x.id === instanceId)) return { slide: s, figures }
-  }
-  return null
-}
-
-function findSlideFiguresOnSlide(slideId: string): { slide: SlideItem; figures: any[] } | null {
-  const slide = slides.value.find((s) => s.id === slideId)
-  if (!slide) return null
-  const figures = (slide.data as any)?.figures
-  if (!Array.isArray(figures)) return null
-  return { slide, figures }
-}
-
-function onFigureLayerMove(payload: { id: string; delta: number; slideId?: string }) {
-  const { id, delta, slideId } = payload ?? {}
-  if (!id || !Number.isFinite(delta) || delta === 0) return
-
-  let found: { slide: SlideItem; figures: any[] } | null = null
-  if (slideId) {
-    const onSlide = findSlideFiguresOnSlide(slideId)
-    if (onSlide && onSlide.figures.some((x: any) => x?.id === id)) found = onSlide
-  }
-  if (!found) found = findSlideFiguresByInstanceId(id)
-  if (!found) return
-
-  const inst = found.figures.find((x: any) => x?.id === id)
-  if (!inst) return
-
-  if (!swapFigureStackOrder(found.figures, id, delta)) {
-    if (found.figures.length >= 2) return
-    const nz = Math.min(FIGURE_Z_MAX, Math.max(FIGURE_Z_MIN, zNum(inst.z) + delta))
-    if (nz === zNum(inst.z)) return
-    inst.z = nz
-  }
-
-  found.slide.data = found.slide.data ?? {}
-  ;(found.slide.data as any).figures = [...found.figures]
-}
-
-function onFigureLayerToStart(id: string) {
-  if (!id) return
-  const found = findSlideFiguresByInstanceId(id)
-  if (!found) return
-  const inst = found.figures.find((x: any) => x?.id === id)
-  if (!inst) return
-  inst.z = FIGURE_Z_MIN
-  ;(found.slide.data as any).figures = [...found.figures]
-}
-
-function onFigureLayerToEnd(id: string) {
-  if (!id) return
-  const found = findSlideFiguresByInstanceId(id)
-  if (!found) return
-  const inst = found.figures.find((x: any) => x?.id === id)
-  if (!inst) return
-  const maxFig = found.figures.length ? Math.max(...found.figures.map((x: any) => zNum(x.z))) : 0
-  inst.z = Math.min(FIGURE_Z_MAX, maxFig + 1)
-  ;(found.slide.data as any).figures = [...found.figures]
 }
 
 /** Номер текущего слайда среди видимых (1-based для отображения) */

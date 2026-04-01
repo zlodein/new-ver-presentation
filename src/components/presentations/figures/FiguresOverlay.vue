@@ -29,15 +29,12 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'select', id: string | null): void
-  (e: 'delete', id: string): void
-  (e: 'layerMove', payload: { id: string; delta: number; slideId?: string }): void
 }>()
 
 const rootRef = ref<HTMLDivElement | null>(null)
-const stageHostRef = ref<HTMLDivElement | null>(null)
+const stageRef = ref<any>(null)
+const layerRef = ref<any>(null)
 
-/** Минимальный z-index панели инструментов (поверх медиа). Из --booklet-figures-overlay-z */
-const figuresOverlayZBaseResolved = ref(20)
 /** Слой медиа слайда (--booklet-figure-media-z), обычно 5 — для расчёта z canvas фигур */
 const mediaZResolved = ref(5)
 
@@ -128,7 +125,6 @@ function syncFiguresCssVarsFromRoot() {
     return Number.isFinite(n) ? Math.max(0, n) : fallback
   }
 
-  figuresOverlayZBaseResolved.value = readZ('--booklet-figures-overlay-z', 20)
   mediaZResolved.value = readZ('--booklet-figure-media-z', 5)
   syncContentBoxFromScaleRoot()
 }
@@ -166,16 +162,6 @@ const konvaStackZ = computed(() => {
   return clamp(kz + mediaZResolved.value - 3, 1, 99)
 })
 
-/** Панель слоёв и трансформер — выше полей ввода редактора (z-index ~150) */
-const toolbarStackZ = computed(() =>
-  Math.max(
-    konvaStackZ.value + 2,
-    figuresOverlayZBaseResolved.value,
-    mediaZResolved.value + 6,
-    props.enabled ? 220 : 0,
-  ),
-)
-
 let stage: Konva.Stage | null = null
 let layer: Konva.Layer | null = null
 let transformer: Konva.Transformer | null = null
@@ -185,14 +171,13 @@ function bindResizeObserver() {
   resizeObserver?.disconnect()
   resizeObserver = null
   if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') return
-  const host = stageHostRef.value
   const anchor = resolveAnchorEl()
   resizeObserver = new ResizeObserver(() => {
     syncFiguresCssVarsFromRoot()
     fitStage()
   })
   if (anchor) resizeObserver.observe(anchor)
-  if (host) resizeObserver.observe(host)
+  if (rootRef.value) resizeObserver.observe(rootRef.value)
 }
 
 /** Блокирует rebuildLayer во время drag / transform и короткого «кликового» цикла по фигуре */
@@ -362,19 +347,6 @@ function reorderKonvaByZ(force = false) {
   layer.batchDraw()
 }
 
-function onLayerMove(delta: number) {
-  const sel = selected.value
-  if (!sel) return
-  /* Иначе watcher rebuildLayer и reorderKonvaByZ не сработают: interactionLock остаётся true после mousedown по фигуре до pointerup (клик по кнопке слоя часто раньше отпускания или без общего pointerup). */
-  endInteraction()
-  emit('layerMove', { id: sel.id, delta, slideId: props.slide.id })
-  nextTick(() => {
-    reorderKonvaByZ(true)
-    updateTransformerSelection()
-    patchTransformerHitThrough()
-  })
-}
-
 const editorGridCfg = computed(() => {
   const g = (props.slide.data as Record<string, unknown> | undefined)?.editorGrid as
     | Record<string, unknown>
@@ -384,41 +356,6 @@ const editorGridCfg = computed(() => {
   const stepPct = clamp(stepPctRaw, 1, 25)
   const snap = enabled && (g?.snap == null ? true : Boolean(g.snap))
   return { enabled, stepPct, snap }
-})
-
-const selected = computed(() => {
-  if (!props.selectedInstanceId) return null
-  return instances.value.find((i) => i.id === props.selectedInstanceId) ?? null
-})
-
-const EDGE_TOOLBAR_PCT = 5
-
-const toolbarPositionStyle = computed(() => {
-  if (!props.enabled || !props.selectedInstanceId || !selected.value) return {}
-  const sel = selected.value
-  return {
-    left: `${sel.x}%`,
-    top: `${sel.y}%`,
-    width: `${sel.w}%`,
-    height: `${sel.h}%`,
-  }
-})
-
-/** У края слайда — панель с противоположной стороны bbox фигуры */
-const toolbarButtonHClass = computed(() => {
-  if (!selected.value) return 'right-1'
-  const x = Number(selected.value.x ?? 0)
-  const w = Number(selected.value.w ?? 0)
-  return x + w >= 100 - EDGE_TOOLBAR_PCT ? 'left-1' : 'right-1'
-})
-
-const toolbarButtonVClass = computed(() => {
-  if (!selected.value) return 'top-1'
-  const y = Number(selected.value.y ?? 0)
-  const h = Number(selected.value.h ?? 0)
-  if (y <= EDGE_TOOLBAR_PCT) return 'bottom-1'
-  if (y + h >= 100 - EDGE_TOOLBAR_PCT) return 'top-1'
-  return 'top-1'
 })
 
 const figuresContentBoxStyle = computed(() => ({
@@ -450,20 +387,9 @@ const konvaWrapStyle = computed(() => {
   }
 })
 
-const toolbarWrapStyle = computed(() => ({
-  ...figuresContentBoxStyle.value,
-  pointerEvents: 'none' as const,
-  zIndex: toolbarStackZ.value,
-}))
-
 const stageHostStyle = computed(() => ({
-  position: 'absolute' as const,
-  inset: 0,
-  zIndex: 0,
-  display: 'block' as const,
-  boxSizing: 'border-box' as const,
-  margin: 0,
-  padding: 0,
+  width: contentBoxPx.value.width,
+  height: contentBoxPx.value.height,
   pointerEvents: props.enabled ? ('auto' as const) : ('none' as const),
   touchAction: props.enabled ? ('none' as const) : ('auto' as const),
 }))
@@ -674,10 +600,11 @@ function layoutSizeOfTransformedHost(host: HTMLElement): { w: number; h: number 
 }
 
 function fitStage() {
-  const host = stageHostRef.value
-  if (!stage || !host) return
+  if (!stage) return
   syncFiguresCssVarsFromRoot()
-  const { w, h } = layoutSizeOfTransformedHost(host)
+  const hostEl = rootRef.value
+  if (!hostEl) return
+  const { w, h } = layoutSizeOfTransformedHost(hostEl)
   stage.width(w)
   stage.height(h)
   applyCanvasSharpness()
@@ -904,21 +831,13 @@ function onWindowBlur() {
 
 onMounted(() => {
   nextTick(() => syncFiguresCssVarsFromRoot())
-
-  const host = stageHostRef.value
-  if (!host) return
-
+  const stageNode = stageRef.value?.getNode?.() as Konva.Stage | undefined
+  const layerNode = layerRef.value?.getNode?.() as Konva.Layer | undefined
+  if (!stageNode || !layerNode) return
+  stage = stageNode
+  layer = layerNode
   Konva.pixelRatio = devicePixelRatioClamped()
-
-  const { w: initW, h: initH } = layoutSizeOfTransformedHost(host)
-  stage = new Konva.Stage({
-    container: host,
-    width: initW,
-    height: initH,
-  })
-  layer = new Konva.Layer()
   layer.imageSmoothingEnabled(false)
-  stage.add(layer)
   applyCanvasSharpness()
   stage.on('click tap', onStageClick)
 
@@ -1002,59 +921,9 @@ watch(
 <template>
   <!-- Два корня: Konva с z от max(z) фигур (можно под медиа); панель — всегда выше медиа -->
   <div ref="rootRef" class="figures-konva-stack" data-figures-konva-stack :style="konvaWrapStyle">
-    <div ref="stageHostRef" class="figures-konva-host" :style="stageHostStyle" />
-  </div>
-
-  <div v-if="enabled && selected" class="figures-toolbar-layer" :style="toolbarWrapStyle">
-    <!-- inset-0: проценты bbox — от полного оверлея (как stage), не от сжатого блока по контенту -->
-    <div class="figure-toolbar pointer-events-none absolute inset-0 overflow-visible">
-      <div
-        class="pointer-events-none absolute z-[3] flex flex-col gap-1"
-        :style="toolbarPositionStyle"
-        :class="[toolbarButtonHClass, toolbarButtonVClass]"
-      >
-        <button
-          type="button"
-          class="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-          title="Слой выше"
-          aria-label="Слой выше"
-          @pointerdown.stop
-          @click.stop.prevent="onLayerMove(1)"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5l7 7H5l7-7z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 dark:border-red-900/40"
-          title="Удалить"
-          aria-label="Удалить фигуру"
-          @pointerdown.stop
-          @click.stop.prevent="emit('delete', selected.id)"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-200"
-          title="Слой ниже"
-          aria-label="Слой ниже"
-          @pointerdown.stop
-          @click.stop.prevent="onLayerMove(-1)"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l-7-7h14l-7 7z" />
-          </svg>
-        </button>
-      </div>
-    </div>
+    <v-stage ref="stageRef" class="figures-konva-host" :config="stageHostStyle">
+      <v-layer ref="layerRef" />
+    </v-stage>
   </div>
 </template>
 
@@ -1063,14 +932,6 @@ watch(
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  overflow: visible;
-}
-
-.figures-toolbar-layer {
-  overflow: visible;
-}
-
-.figure-toolbar {
   overflow: visible;
 }
 
