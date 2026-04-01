@@ -60,6 +60,8 @@ const mediaZResolved = ref(5)
  * совпадали с видимой областью блока без лишних отступов родителя.
  */
 const contentBoxPx = ref({ left: 0, top: 0, width: 0, height: 0 })
+/** В редакторе оверлей — сосед .booklet-scale-root; для scope=slide фрейм Konva заполняет figures-konva-stack (как страница), без left/top от якоря. */
+const konvaSlideWideFillsStack = ref(false)
 
 function resolveScaleRootEl(): HTMLElement | null {
   const el = overlayMountEl()
@@ -132,6 +134,7 @@ function setContentBoxIfChanged(next: { left: number; top: number; width: number
 function syncContentBoxFromScaleRoot() {
   const zero = { left: 0, top: 0, width: 0, height: 0 }
   if (typeof window === 'undefined' || !overlayMountEl()) {
+    konvaSlideWideFillsStack.value = false
     setContentBoxIfChanged(zero)
     return
   }
@@ -139,10 +142,20 @@ function syncContentBoxFromScaleRoot() {
   const anchor = resolveAnchorEl()
   const scale = resolveScaleRootEl()
   if (!anchor || !scale) {
+    konvaSlideWideFillsStack.value = false
     setContentBoxIfChanged(zero)
     return
   }
   const scope = normalizeFigureBlockId(props.figureBlockScope)
+  const overlayInsideScale = scale.contains(overlayEl)
+  if (scope === SLIDE_WIDE_BLOCK_ID && !overlayInsideScale) {
+    konvaSlideWideFillsStack.value = true
+    const ow = Math.max(1, Math.round(overlayEl.clientWidth))
+    const oh = Math.max(1, Math.round(overlayEl.clientHeight))
+    setContentBoxIfChanged({ left: 0, top: 0, width: ow, height: oh })
+    return
+  }
+  konvaSlideWideFillsStack.value = false
   // Для полного слоя слайда (scope=slide) Konva должна совпадать с видимой областью слайда целиком,
   // включая padding контейнера. Для блочных scope оставляем привязку к внутреннему контенту.
   const applyAnchorPadding = scope !== SLIDE_WIDE_BLOCK_ID
@@ -161,7 +174,6 @@ function syncContentBoxFromScaleRoot() {
    * к общему родителю давало расхождение с transform на scale; берём разницу offsetLeft/Top у соседей
    * с одним offsetParent (типично общий родитель).
    */
-  const overlayInsideScale = scale.contains(overlayEl)
   let left = offInScale.left + padL
   let top = offInScale.top + padT
   if (!overlayInsideScale) {
@@ -535,8 +547,17 @@ const konvaWrapStyle = computed(() => {
 })
 
 const konvaFrameStyle = computed(() => {
+  const fillStack: Record<string, string | number> = {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    boxSizing: 'border-box',
+    margin: 0,
+    padding: 0,
+  }
   const base: Record<string, string | number> = {
-    ...figuresContentBoxStyle.value,
+    ...(konvaSlideWideFillsStack.value ? fillStack : figuresContentBoxStyle.value),
     /* auto: весь блок как уровень hit; canvas внутри перехватывает события. none на родителе ломал цели в некоторых браузерах. */
     pointerEvents: 'auto',
     touchAction: 'none',
