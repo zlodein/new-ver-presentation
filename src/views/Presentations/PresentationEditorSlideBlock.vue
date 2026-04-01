@@ -185,9 +185,9 @@ watch(
                                 </span>
                               </div>
                             </div>
-                            <label class="mt-3 flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400" data-no-drag="1">
-                              <div class="relative">
-                                <input v-model="slide.data.show_all_currencies" type="checkbox" class="sr-only" />
+                            <label class="mt-3 inline-flex items-center gap-0 text-sm font-medium leading-none text-gray-700 cursor-pointer select-none dark:text-gray-400" data-no-drag="1">
+                              <div class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center self-center">
+                                <input v-model="slide.data.show_all_currencies" type="checkbox" class="absolute h-0 w-0 opacity-0" />
                                 <div
                                   :class="slide.data.show_all_currencies ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
                                   class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
@@ -402,9 +402,9 @@ watch(
                       <div class="booklet-map__left flex flex-col gap-2 min-h-0">
                         <div class="booklet-map__img flex-1 min-h-0">
                           <LocationMap
-                            :key="`${slide.id}-${Number(slide.data?.lat)}-${Number(slide.data?.lng)}`"
-                            :lat="Number(slide.data?.lat)"
-                            :lng="Number(slide.data?.lng)"
+                            :key="`${slide.id}-${String(slide.data?.address ?? '').trim()}-${Number(slide.data?.lat)}-${Number(slide.data?.lng)}`"
+                            :lat="String(slide.data?.address ?? '').trim() ? Number(slide.data?.lat) : Number.NaN"
+                            :lng="String(slide.data?.address ?? '').trim() ? Number(slide.data?.lng) : Number.NaN"
                           />
                         </div>
                       </div>
@@ -472,9 +472,9 @@ watch(
                           >
                             <span>{{ pe.locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}</span>
                           </button>
-                          <label class="flex items-center text-sm font-medium text-gray-700 cursor-pointer select-none dark:text-gray-400">
-                            <div class="relative">
-                              <input v-model="slide.data.show_metro" type="checkbox" class="sr-only" />
+                          <label class="inline-flex items-center gap-0 text-sm font-medium leading-none text-gray-700 cursor-pointer select-none dark:text-gray-400">
+                            <div class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center self-center">
+                              <input v-model="slide.data.show_metro" type="checkbox" class="absolute h-0 w-0 opacity-0" />
                               <div
                                 :class="slide.data.show_metro ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
                                 class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"

@@ -1785,13 +1785,7 @@ function setLocationInputRef(slideId: string, el: HTMLInputElement | null) {
   else delete locationInputRefs.value[slideId]
 }
 
-const activeDadataSlideId = computed(() => {
-  const r = dadataSuggestionsBySlideId.value
-  for (const id of Object.keys(r)) {
-    if ((r[id]?.length ?? 0) > 0) return id
-  }
-  return null
-})
+const activeDadataSlideId = ref<string | null>(null)
 
 function updateDadataDropdownPosition() {
   const id = activeDadataSlideId.value
@@ -1814,6 +1808,11 @@ function updateDadataDropdownPosition() {
 watch(activeDadataSlideId, () => {
   nextTick(updateDadataDropdownPosition)
 })
+
+function handleDadataLayoutChange() {
+  if (!activeDadataSlideId.value) return
+  updateDadataDropdownPosition()
+}
 
 const DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address'
 
@@ -1860,6 +1859,7 @@ async function fetchDadataSuggestions(slideId: string, query: string): Promise<v
 }
 
 function onLocationAddressInput(slide: SlideItem, v: string) {
+  activeDadataSlideId.value = slide.id
   const idx = slides.value.findIndex((item) => item.id === slide.id)
   if (idx === -1) return
   const target = slides.value[idx]
@@ -1892,15 +1892,19 @@ function onLocationAddressInput(slide: SlideItem, v: string) {
 }
 
 function onLocationAddressFocus(_slide: SlideItem) {
+  activeDadataSlideId.value = _slide.id
   if (dadataBlurTimer.value) {
     clearTimeout(dadataBlurTimer.value)
     dadataBlurTimer.value = null
   }
+  nextTick(updateDadataDropdownPosition)
 }
 
 function onLocationAddressBlur() {
   dadataBlurTimer.value = setTimeout(() => {
     dadataSuggestionsBySlideId.value = {}
+    activeDadataSlideId.value = null
+    dadataDropdownStyle.value = {}
     dadataBlurTimer.value = null
   }, 200)
 }
@@ -1922,6 +1926,8 @@ function applyDadataSuggestion(slide: SlideItem, item: DadataSuggestionItem) {
     ...(hasCoords ? { lat: item.geo_lat, lng: item.geo_lon } : {}),
   }
   dadataSuggestionsBySlideId.value[slide.id] = []
+  activeDadataSlideId.value = null
+  dadataDropdownStyle.value = {}
   if (!hasCoords) {
     geocodeAddress(target)
   }
@@ -2996,6 +3002,8 @@ let editorMounted = true
 onMounted(async () => {
   // Обработчик клика вне меню
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('resize', handleDadataLayoutChange, { passive: true })
+  document.addEventListener('scroll', handleDadataLayoutChange, true)
 
   if (route.path === '/dashboard/presentations/new') {
     router.replace('/dashboard/presentations')
@@ -3063,6 +3071,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   editorMounted = false
   window.removeEventListener('beforeunload', backupToLocalStorage)
+  window.removeEventListener('resize', handleDadataLayoutChange)
+  document.removeEventListener('scroll', handleDadataLayoutChange, true)
   document.removeEventListener('click', handleClickOutside)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   Object.values(locationGeocodeTimerBySlideId.value).forEach((tid) => clearTimeout(tid))
