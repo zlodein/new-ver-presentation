@@ -973,7 +973,7 @@
                     </span>
                     <div class="min-w-0 flex-1 select-none">
                       <div
-                        class="editor-sidebar-thumb-frame relative w-full overflow-hidden rounded-lg border border-gray-200/90 bg-gray-100 shadow-inner dark:border-gray-600 dark:bg-gray-900/50"
+                        class="editor-sidebar-thumb-frame relative w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-gray-200/90 bg-gray-100 shadow-inner [contain:paint] dark:border-gray-600 dark:bg-gray-900/50"
                         :style="{ aspectRatio: `${BOOKLET_PAGE_W} / ${BOOKLET_PAGE_H}` }"
                       >
                         <div
@@ -982,6 +982,7 @@
                             width: `${BOOKLET_PAGE_W}px`,
                             height: `${BOOKLET_PAGE_H}px`,
                             transform: `scale(${sidebarThumbScale})`,
+                            transformOrigin: 'top left',
                           }"
                         >
                           <div
@@ -989,10 +990,7 @@
                             :style="presentationStyle"
                             :data-image-frame="presentationSettings.imageFrame"
                           >
-                            <div
-                              class="booklet-page relative h-full w-full"
-                              :class="slide.type === 'location' ? 'overflow-visible' : 'overflow-hidden'"
-                            >
+                            <div class="booklet-page relative h-full w-full overflow-hidden">
                               <div class="booklet-page__inner">
                                 <div class="booklet-scale-root h-full w-full">
                                   <PresentationEditorSlideBlock :slide="slide" />
@@ -1002,9 +1000,9 @@
                           </div>
                         </div>
                       </div>
-                      <div class="mt-1.5 flex items-start justify-between gap-2">
+                      <div class="mt-1.5 flex items-center justify-between gap-2">
                         <span
-                          class="min-w-0 flex-1 truncate text-left text-xs font-medium leading-tight"
+                          class="min-w-0 flex-1 truncate text-left text-xs font-medium leading-snug"
                           :class="activeSlideIndex === index ? 'text-brand-700 dark:text-brand-300' : 'text-gray-600 dark:text-gray-400'"
                         >
                           {{ getSlideLabel(slide) }}
@@ -1397,7 +1395,11 @@ function updateSidebarThumbScale() {
   const pl = parseFloat(cs.paddingLeft) || 0
   const pr = parseFloat(cs.paddingRight) || 0
   const contentW = el.clientWidth - pl - pr
-  const thumbW = Math.max(0, contentW - 32 - 8)
+  /* Строка миниатюры: p-2 (8+8) + ручка w-8 + gap-2 + рамка превью ~2px + запас от субпикселей */
+  const rowPadX = 16
+  const dragAndGap = 32 + 8
+  const bleedGuard = 3
+  const thumbW = Math.max(0, contentW - rowPadX - dragAndGap - bleedGuard)
   if (thumbW > 0) sidebarThumbScale.value = thumbW / BOOKLET_PAGE_W
 }
 
@@ -3643,5 +3645,10 @@ async function exportToPDF() {
   height: 794px;
   max-width: none;
   aspect-ratio: auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.editor-sidebar .editor-sidebar-thumb-frame .booklet-page__inner {
+  overflow: hidden;
 }
 </style>
