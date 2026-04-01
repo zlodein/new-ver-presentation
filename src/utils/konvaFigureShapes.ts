@@ -366,6 +366,24 @@ function curvedConnectorPathD(inst: FigureInstance, def?: FigureDefinition): str
 }
 
 /**
+ * У части SVG-геометрий есть внутренние поля в viewBox (не 0..100 по фактическому контуру).
+ * Нормализуем контур к 0..100, чтобы визуально фигура могла прилегать к границам bbox в редакторе.
+ */
+function normalizeFigureGroupToUnitBox(group: Konva.Group): Konva.Group {
+  if (!group.getChildren().length) return group
+  const box = group.getClientRect({ skipShadow: true, skipStroke: false })
+  if (!Number.isFinite(box.width) || !Number.isFinite(box.height)) return group
+  if (box.width <= 1e-6 || box.height <= 1e-6) return group
+  const sx = 100 / box.width
+  const sy = 100 / box.height
+  group.x(-box.x * sx)
+  group.y(-box.y * sy)
+  group.scaleX(sx)
+  group.scaleY(sy)
+  return group
+}
+
+/**
  * Содержимое фигуры в локальных координатах 0..100 (как прежний SVG viewBox).
  * Поворот и масштаб под проценты слайда задаётся снаружи.
  */
@@ -396,7 +414,7 @@ export function buildFigureContentGroup(
     applyFillStroke(shape, inst, def)
     applyShadow(shape, inst)
     g.add(shape)
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
   if (kind === 'ellipse' || kind === 'circle') {
@@ -411,7 +429,7 @@ export function buildFigureContentGroup(
     applyFillStroke(shape, inst, def)
     applyShadow(shape, inst)
     g.add(shape)
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
   if (kind === 'polygon') {
@@ -426,7 +444,7 @@ export function buildFigureContentGroup(
       applyShadow(shape, inst)
       g.add(shape)
     }
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
   if (kind === 'star') {
@@ -442,7 +460,7 @@ export function buildFigureContentGroup(
       applyShadow(shape, inst)
       g.add(shape)
     }
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
   if (kind === 'path') {
@@ -457,7 +475,7 @@ export function buildFigureContentGroup(
       applyShadow(shape, inst)
       g.add(shape)
     }
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
   if (kind === 'line') {
@@ -505,7 +523,7 @@ export function buildFigureContentGroup(
         g.add(tri)
       }
     }
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
   if (kind === 'polyline' || kind === 'scribble') {
@@ -525,7 +543,7 @@ export function buildFigureContentGroup(
       shape.hitStrokeWidth(Math.max(16, sw || 8))
       g.add(shape)
     }
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
   if (kind === 'connector') {
@@ -604,8 +622,8 @@ export function buildFigureContentGroup(
         g.add(tri)
       }
     }
-    return g
+    return normalizeFigureGroupToUnitBox(g)
   }
 
-  return g
+  return normalizeFigureGroupToUnitBox(g)
 }
