@@ -65,6 +65,9 @@ function resolveAnchorEl(): HTMLElement | null {
   const scale = resolveScaleRootEl()
   if (!scale) return null
   const scope = normalizeFigureBlockId(props.figureBlockScope)
+  // Для "всего слайда" используем сам scale-root как якорь,
+  // чтобы Konva совпадала с видимой рабочей областью с учетом padding.
+  if (scope === SLIDE_WIDE_BLOCK_ID) return scale
   const safe =
     typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
       ? CSS.escape(scope)
@@ -101,11 +104,18 @@ function syncContentBoxFromScaleRoot() {
   }
   const ar = anchor.getBoundingClientRect()
   const pr = pageInner.getBoundingClientRect()
+  const cs = getComputedStyle(anchor)
+  const padL = Number.parseFloat(cs.paddingLeft || '0') || 0
+  const padT = Number.parseFloat(cs.paddingTop || '0') || 0
+  const padR = Number.parseFloat(cs.paddingRight || '0') || 0
+  const padB = Number.parseFloat(cs.paddingBottom || '0') || 0
+  const innerW = Math.max(1, Math.round(ar.width - padL - padR))
+  const innerH = Math.max(1, Math.round(ar.height - padT - padB))
   setContentBoxIfChanged({
-    left: Math.round(ar.left - pr.left),
-    top: Math.round(ar.top - pr.top),
-    width: Math.max(1, Math.round(ar.width)),
-    height: Math.max(1, Math.round(ar.height)),
+    left: Math.round(ar.left - pr.left + padL),
+    top: Math.round(ar.top - pr.top + padT),
+    width: innerW,
+    height: innerH,
   })
 }
 
