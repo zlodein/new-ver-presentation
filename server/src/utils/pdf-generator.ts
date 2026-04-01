@@ -241,7 +241,6 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
           : []
         const { limit, grid } = getImageGridLimit(dataObj, 'location')
         const images = toImageUrls((dataObj.images as unknown[]) || [], limit)
-        const hasImages = images.some(Boolean)
         const lat = Number(dataObj.lat)
         const lng = Number(dataObj.lng)
         const hasCoords = Number.isFinite(lat) && Number.isFinite(lng)
@@ -270,7 +269,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                         </ul>
                       ` : ''}
                     </div>
-                    ${hasImages ? `<div class="booklet-map__grid image-grid-bound" data-image-grid="${escapeHtml(grid)}">${images.filter(Boolean).map((url) => `<div class="booklet-map__grid-img"><img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>`).join('')}</div>` : ''}
+                    <div class="booklet-map__grid image-grid-bound" data-image-grid="${escapeHtml(grid)}">${images.map((url) => `<div class="booklet-map__grid-img">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>`).join('')}</div>
                   </div>
                 </div>
               </div>
@@ -292,7 +291,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
               <div class="booklet-content booklet-img">
                 <div class="booklet-img__wrap">
                   ${heading ? `<h2 class="booklet-img__title mb-2">${heading}</h2>` : ''}
-                  ${imageUrl ? `<div class="booklet-img__img"><img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
+                  <div class="booklet-img__img">${imageUrl ? `<img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>
                 </div>
               </div>
               ${figLayer(dataObj)}
@@ -338,11 +337,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
               <div class="booklet-content booklet-char">
                 <div class="booklet-char__wrap">
                   <h2 class="booklet-char__title">${escapeHtml(heading)}</h2>
-                  ${imageUrl ? `
-                    <div class="booklet-char__img">
-                      <img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt="">
-                    </div>
-                  ` : ''}
+                  <div class="booklet-char__img">${imageUrl ? `<img src="${toAbsoluteImageUrl(imageUrl, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>
                   <div class="booklet-char__content">
                     <div class="booklet-char__table">
                       ${items.map((item) => `
@@ -413,7 +408,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const hasTopRow = avatarUrl || contactName || phone
         const topRow = hasTopRow ? `
           <div class="booklet-contacts__top" style="display:flex;align-items:flex-start;gap:1rem;">
-            ${avatarUrl ? `<div class="booklet-contacts__avatar-wrap" style="flex-shrink:0;display:flex;justify-content:center;"><div class="booklet-contacts__avatar"><img src="${toAbsoluteImageUrl(avatarUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div></div>` : ''}
+            <div class="booklet-contacts__avatar-wrap" style="flex-shrink:0;display:flex;justify-content:center;"><div class="booklet-contacts__avatar">${avatarUrl ? `<img src="${toAbsoluteImageUrl(avatarUrl, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div></div>
             <div class="booklet-contacts__name-phone" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.25rem;">
               ${contactName ? `<p style="margin:0;font-size:1.125rem;font-weight:600;">${escapeHtml(contactName)}</p>` : ''}
               ${phone ? `<p style="margin:0;">${escapeHtml(phone)}</p>` : ''}
@@ -440,7 +435,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     ${aboutBlock}
                     ${websiteBlock}
                   </div>
-                  ${contactImageUrl ? `<div class="booklet-contacts__block booklet-contacts__img"><img src="${toAbsoluteImageUrl(contactImageUrl, baseUrl).replace(/"/g, '&quot;')}" alt=""></div>` : ''}
+                  <div class="booklet-contacts__block booklet-contacts__img">${contactImageUrl ? `<img src="${toAbsoluteImageUrl(contactImageUrl, baseUrl).replace(/"/g, '&quot;')}" alt="">` : ''}</div>
                 </div>
               </div>
               ${figLayer(dataObj)}
@@ -455,7 +450,9 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const text = dataObj.text ? String(dataObj.text) : ''
         const content = dataObj.content ? String(dataObj.content) : ''
         const items = Array.isArray(dataObj.items) ? (dataObj.items as Array<{ label?: string; value?: string; text?: string }>) : []
-        const images = toImageUrls((dataObj.images as unknown[]) || [], 8)
+        const rawImgArr = Array.isArray(dataObj.images) ? (dataObj.images as unknown[]) : []
+        const images = toImageUrls(rawImgArr, 8)
+        const showFallbackImageGrid = rawImgArr.length > 0 || images.some(Boolean)
         return `
           <div class="booklet-page">
             <div class="booklet-page__inner">
@@ -470,7 +467,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
                     <div class="booklet-char__item font-medium">${escapeHtml(String(item.value ?? ''))}</div>
                   </div>
                 `).join('')}</div>` : ''}
-                ${images.some(Boolean) ? `<div class="mt-4 grid grid-cols-2 gap-2">${images.filter(Boolean).map((url) => `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="" class="h-24 w-full object-cover rounded" />`).join('')}</div>` : ''}
+                ${showFallbackImageGrid ? `<div class="mt-4 grid grid-cols-2 gap-2">${images.slice(0, 4).map((url) => `<div class="booklet-pdf-fallback-cell h-24 w-full overflow-hidden rounded" style="background:var(--theme-main-color)">${url ? `<img src="${toAbsoluteImageUrl(url, baseUrl).replace(/"/g, '&quot;')}" alt="" class="h-full w-full object-cover" />` : ''}</div>`).join('')}</div>` : ''}
               </div>
               ${figLayer(dataObj)}
               </div>
@@ -504,7 +501,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .booklet-page { page-break-after: always; position: relative; width: 100vw; height: 100vh; min-height: 100vh; max-height: 100vh; background-color: #eeeeee; padding: 1rem; overflow: hidden; }
     .booklet-page:has(.pdf-figures-overlay) { overflow: visible; }
     .booklet-page:last-child { page-break-after: auto; }
-    .presentation-slider-wrap.booklet-view { --theme-main-color: ${themeColor}; }
+    .presentation-slider-wrap.booklet-view { --theme-main-color: ${themeColor}; --theme-color: ${themeColor}; }
     .presentation-slider-wrap.booklet-view .booklet-page__inner { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; padding: 0; box-sizing: border-box; overflow: hidden; background: #fff; }
     .presentation-slider-wrap.booklet-view .booklet-page__inner:has(.pdf-figures-overlay) { overflow: visible; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root { position: absolute; left: 0; top: 0; width: 70.16%; height: 70.16%; transform: scale(1.42518); transform-origin: 0 0; padding: 1rem; box-sizing: border-box; }
@@ -514,8 +511,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .pdf-figures-overlay .pdf-fig-item { position: absolute; transform-origin: center center; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-content { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-main__wrap { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; }
-    .presentation-slider-wrap.booklet-view .booklet-main__img { position: relative; flex: 0 0 55%; min-width: 200px; min-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #C4C4C4; box-sizing: border-box; }
+    .presentation-slider-wrap.booklet-view .booklet-main__img { position: relative; flex: 0 0 55%; min-width: 200px; min-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--theme-main-color); box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-main__img img, .presentation-slider-wrap.booklet-view .booklet-img__img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img, .presentation-slider-wrap.booklet-view .booklet-grid__img img, .presentation-slider-wrap.booklet-view .booklet-char__img img, .presentation-slider-wrap.booklet-view .booklet-layout__img img, .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img img, .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img, .presentation-slider-wrap.booklet-view .booklet-map__grid-img img, .presentation-slider-wrap.booklet-view .booklet-galery__img img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: cover; object-position: center; display: block; }
+    .presentation-slider-wrap.booklet-view .booklet-img__wrap { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; box-sizing: border-box; }
+    .presentation-slider-wrap.booklet-view .booklet-img__img { position: relative; flex: 1; min-height: 200px; width: 100%; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; border-radius: 8px; }
     .presentation-slider-wrap.booklet-view .booklet-main__content { flex: 1 1 45%; min-width: 200px; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 25px 25px; overflow: hidden; background: #ffffff; }
     .presentation-slider-wrap.booklet-view .booklet-main__top, .presentation-slider-wrap.booklet-view .booklet-main__center { flex: 0 0 auto; line-height: 1.3; font-weight: 400; letter-spacing: 0.02em; color: #1a1a1a; overflow-wrap: break-word; word-break: break-word; }
     .presentation-slider-wrap.booklet-view .booklet-main__top { font-size: 28px; }
@@ -564,10 +563,10 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="1x3"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="1x3"] { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="3x2"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="2x3"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
+    .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img { position: relative; min-height: 0; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-char__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-char__title { grid-column: 1 / -1; }
-    .presentation-slider-wrap.booklet-view .booklet-char__img { position: relative; min-height: 180px; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; grid-row: 2; grid-column: 1; }
+    .presentation-slider-wrap.booklet-view .booklet-char__img { position: relative; min-height: 180px; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; grid-row: 2; grid-column: 1; }
     .presentation-slider-wrap.booklet-view .booklet-char__content { display: flex; flex-direction: column; min-height: 0; grid-row: 2; grid-column: 2; overflow: auto; }
     .presentation-slider-wrap.booklet-view .booklet-char__table { flex: 1; margin-top: 0; display: flex; flex-direction: column; gap: 0; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-char__row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); align-items: center; font-size: 14px; font-weight: 400; }
@@ -581,7 +580,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="1x3"] { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-layout__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
+    .presentation-slider-wrap.booklet-view .booklet-layout__img { position: relative; min-height: 0; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-layout__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-map__wrap { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 1rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-map__left { display: flex; flex-direction: column; min-height: 0; }
@@ -600,11 +599,11 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="1x3"] { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-map__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .presentation-slider-wrap.booklet-view .booklet-map__grid-img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
+    .presentation-slider-wrap.booklet-view .booklet-map__grid-img { position: relative; min-height: 0; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-map__grid-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; height: 100%; min-height: 320px; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__left { display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
-    .presentation-slider-wrap.booklet-view .booklet-contacts__avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: #e8e8e8; flex-shrink: 0; }
+    .presentation-slider-wrap.booklet-view .booklet-contacts__avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: var(--theme-main-color); flex-shrink: 0; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-galery__wrap { display: flex; flex-direction: column; gap: 0; width: 100%; height: 100%; min-height: 0; max-height: 100%; box-sizing: border-box; overflow: hidden; }
     .presentation-slider-wrap.booklet-view .booklet-galery__grid { display: grid; gap: 8px; flex: 1; min-height: 0; overflow: hidden; }
@@ -616,11 +615,11 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="1x3"] { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-galery__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .presentation-slider-wrap.booklet-view .booklet-galery__img { position: relative; min-height: 0; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; z-index: 5; }
-    .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img { position: relative; min-height: 120px; overflow: hidden; background: #e8e8e8; display: flex; align-items: center; justify-content: center; }
+    .presentation-slider-wrap.booklet-view .booklet-galery__img { position: relative; min-height: 0; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; z-index: 5; }
+    .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img { position: relative; min-height: 120px; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .presentation-slider-wrap.booklet-view .booklet-contacts__block.booklet-contacts__content { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-height: 0; overflow: auto; }
-    .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; background: #e8e8e8; }
+    .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; background: var(--theme-main-color); }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .map-placeholder { width: 100%; height: 100%; min-height: 180px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.875rem; }
     /* City template: cover-only point overrides */

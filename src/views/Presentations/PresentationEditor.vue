@@ -1591,11 +1591,15 @@ function resetPresentationSettings() {
   presentationSettings.value = { ...DEFAULT_PRESENTATION_SETTINGS }
 }
 
-const presentationStyle = computed(() => ({
-  fontFamily: presentationSettings.value.fontFamily,
-  '--booklet-image-radius': presentationSettings.value.imageBorderRadius,
-  '--theme-color': presentationSettings.value.themeColor || DEFAULT_PRESENTATION_SETTINGS.themeColor,
-} as Record<string, string>))
+const presentationStyle = computed(() => {
+  const tc = presentationSettings.value.themeColor || DEFAULT_PRESENTATION_SETTINGS.themeColor
+  return {
+    fontFamily: presentationSettings.value.fontFamily,
+    '--booklet-image-radius': presentationSettings.value.imageBorderRadius,
+    '--theme-color': tc,
+    '--theme-main-color': tc,
+  } as Record<string, string>
+})
 
 /** Мета презентации: статус, публичная ссылка, shortId (только владелец) */
 const presentationMeta = ref<{

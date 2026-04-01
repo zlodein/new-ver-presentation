@@ -51,6 +51,7 @@
                     alt=""
                     class="cursor-pointer"
                     @click="openGallery(getGalleryGlobalIndex(index, 0))"
+                    @error="onImageError"
                   >
                 </div>
                 <div class="booklet-main__content">
@@ -83,7 +84,7 @@
                   data-editor-block="description-images"
                 >
                   <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-info__block booklet-info__img">
-                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))" @error="onImageError">
                   </div>
                 </div>
               </div>
@@ -101,7 +102,7 @@
                   data-editor-block="infrastructure-images"
                 >
                   <div v-for="(url, i) in viewSlideImages(slide, getEffectiveViewImageLimit(slide))" :key="i" class="booklet-stroen__block booklet-stroen__img">
-                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))" @error="onImageError">
                   </div>
                 </div>
               </div>
@@ -134,7 +135,7 @@
                   </div>
                   <div class="booklet-map__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                     <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-map__grid-img">
-                      <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
+                      <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))" @error="onImageError">
                     </div>
                   </div>
                 </div>
@@ -144,8 +145,15 @@
             <div v-else-if="slide.type === 'image'" class="booklet-content booklet-img" data-editor-block="slide">
               <div class="booklet-img__wrap">
                 <h2 v-if="slide.data?.heading ?? slide.data?.title" class="booklet-img__title mb-2">{{ slide.data?.heading ?? slide.data?.title }}</h2>
-                <div v-if="slide.data?.imageUrl ?? slide.data?.image" class="booklet-img__img">
-                  <img :src="String(slide.data?.imageUrl ?? slide.data?.image)" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
+                <div class="booklet-img__img">
+                  <img
+                    v-if="slide.data?.imageUrl ?? slide.data?.image"
+                    :src="String(slide.data?.imageUrl ?? slide.data?.image)"
+                    alt=""
+                    class="cursor-pointer"
+                    @click="openGallery(getGalleryGlobalIndex(index, 0))"
+                    @error="onImageError"
+                  >
                 </div>
               </div>
             </div>
@@ -155,7 +163,7 @@
                 <h2 class="booklet-galery__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ГАЛЕРЕЯ' }}</h2>
                 <div class="booklet-galery__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                   <div v-for="(url, i) in viewSlideImages(slide, getViewImageLimit(slide))" :key="i" class="booklet-galery__img">
-                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))" @error="onImageError">
                   </div>
                 </div>
               </div>
@@ -164,8 +172,15 @@
             <div v-else-if="slide.type === 'characteristics'" class="booklet-content booklet-char" data-editor-block="slide">
               <div class="booklet-char__wrap">
                 <h2 class="booklet-char__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ХАРАКТЕРИСТИКИ' }}</h2>
-                <div v-if="slide.data?.charImageUrl || slide.data?.image" class="booklet-char__img">
-                  <img :src="String(slide.data?.charImageUrl ?? slide.data?.image)" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
+                <div class="booklet-char__img">
+                  <img
+                    v-if="slide.data?.charImageUrl || slide.data?.image"
+                    :src="String(slide.data?.charImageUrl ?? slide.data?.image)"
+                    alt=""
+                    class="cursor-pointer"
+                    @click="openGallery(getGalleryGlobalIndex(index, 0))"
+                    @error="onImageError"
+                  >
                 </div>
                 <div class="booklet-char__content">
                   <div v-if="Array.isArray(slide.data?.items)" class="booklet-char__table">
@@ -183,7 +198,7 @@
                 <h2 class="booklet-layout__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ПЛАНИРОВКА' }}</h2>
                 <div class="booklet-layout__grid image-grid-bound" :data-image-grid="getImageGrid(slide)">
                   <div v-for="(url, i) in viewLayoutImages(slide)" :key="i" class="booklet-layout__img">
-                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))">
+                    <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))" @error="onImageError">
                   </div>
                 </div>
               </div>
@@ -194,9 +209,15 @@
                 <div class="booklet-contacts__left flex flex-col gap-4">
                   <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
                   <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide)) || (slide.data?.contactName ?? slide.data?.contact_name) || (slide.data?.phone ?? slide.data?.contact_phone)" class="booklet-contacts__top row flex items-start gap-4">
-                    <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" class="booklet-contacts__avatar-wrap shrink-0 flex justify-center">
+                    <div class="booklet-contacts__avatar-wrap shrink-0 flex justify-center">
                       <div class="booklet-contacts__avatar flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">
-                        <img :src="resolveImageUrl(contactsAvatarOrLogoUrl(slide))" alt="" class="h-full w-full object-cover">
+                        <img
+                          v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide))"
+                          :src="resolveImageUrl(contactsAvatarOrLogoUrl(slide))"
+                          alt=""
+                          class="h-full w-full object-cover"
+                          @error="onImageError"
+                        >
                       </div>
                     </div>
                     <div class="booklet-contacts__name-phone min-w-0 flex-1 flex flex-col gap-1">
@@ -220,8 +241,15 @@
                     <a :href="String(slide.data.websiteUrl).trim()" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline dark:text-brand-400">{{ slide.data.websiteUrl }}</a>
                   </div>
                 </div>
-                <div v-if="contactImageUrl(slide)" class="booklet-contacts__block booklet-contacts__img">
-                  <img :src="resolveImageUrl(contactImageUrl(slide))" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, 0))">
+                <div class="booklet-contacts__block booklet-contacts__img">
+                  <img
+                    v-if="contactImageUrl(slide)"
+                    :src="resolveImageUrl(contactImageUrl(slide))"
+                    alt=""
+                    class="cursor-pointer"
+                    @click="openGallery(getGalleryGlobalIndex(index, 0))"
+                    @error="onImageError"
+                  >
                 </div>
               </div>
             </div>
@@ -259,14 +287,15 @@
                 <hr v-else-if="block.type === 'divider'" class="booklet-ai-divider" :style="customBlockStyle(block.style)">
                 <div
                   v-else-if="block.type === 'image_placeholder'"
-                  class="booklet-ai-image-placeholder flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500"
-                  :style="customBlockStyle(block.style)"
+                  class="booklet-ai-image-placeholder flex min-h-[120px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-gray-400 dark:border-gray-600 dark:text-gray-500"
+                  :style="[{ backgroundColor: 'var(--theme-color, #fcfcfc)' }, customBlockStyle(block.style)]"
                 >
                   <img
                     v-if="block.imageUrl"
                     :src="String(block.imageUrl)"
                     alt=""
                     class="max-h-48 w-auto object-contain rounded"
+                    @error="onImageError"
                   >
                   <span v-else class="text-sm">Изображение</span>
                 </div>
@@ -284,7 +313,21 @@
                 </div>
               </div>
               <div v-if="Array.isArray(slide.data?.images) && (slide.data.images as unknown[]).length" class="mt-4 grid grid-cols-2 gap-2">
-                <img v-for="(url, i) in viewSlideImages(slide, 4)" :key="i" :src="url" alt="" class="h-24 w-full cursor-pointer object-cover rounded" v-show="url" @click="url && openGallery(getGalleryGlobalIndex(index, i))">
+                <div
+                  v-for="(url, i) in viewSlideImages(slide, 4)"
+                  :key="i"
+                  class="h-24 w-full overflow-hidden rounded"
+                  style="background-color: var(--theme-color, #fcfcfc)"
+                >
+                  <img
+                    v-if="url"
+                    :src="url"
+                    alt=""
+                    class="h-full w-full cursor-pointer object-cover"
+                    @click="openGallery(getGalleryGlobalIndex(index, i))"
+                    @error="onImageError"
+                  >
+                </div>
               </div>
             </div>
             <FiguresOverlay
@@ -371,20 +414,39 @@ async function refreshFigures() {
   }
 }
 
+const DEFAULT_THEME_HEX = '#fcfcfc'
+
+function normalizeThemeColor(raw: unknown): string {
+  if (typeof raw !== 'string') return DEFAULT_THEME_HEX
+  const t = raw.trim()
+  return /^#[0-9A-Fa-f]{6}$/.test(t) ? t : DEFAULT_THEME_HEX
+}
+
 /** Стили отображения (шрифт, скругления, размеры шрифтов) из настроек презентации */
 const presentationStyle = computed<Record<string, string>>(() => {
   const s = presentation.value?.content?.settings as Record<string, string> | undefined
-  if (!s) return {}
+  const themeHex = normalizeThemeColor(s?.themeColor)
+  const base: Record<string, string> = {
+    '--theme-color': themeHex,
+    '--theme-main-color': themeHex,
+  }
+  if (!s) return base
   return {
+    ...base,
     ...(s.fontFamily ? { fontFamily: s.fontFamily } : {}),
     ...(s.imageBorderRadius != null ? { '--booklet-image-radius': s.imageBorderRadius } : {}),
-    ...(s.themeColor ? { '--theme-color': s.themeColor } : {}),
     ...(s.fontSizePresentationTitle != null ? { '--booklet-font-size-presentation-title': s.fontSizePresentationTitle } : {}),
     ...(s.fontSizeHeading != null ? { '--booklet-font-size-heading': s.fontSizeHeading } : {}),
     ...(s.fontSizeText != null ? { '--booklet-font-size-text': s.fontSizeText } : {}),
     ...(s.fontSizePrice != null ? { '--booklet-font-size-price': s.fontSizePrice } : {}),
   }
 })
+
+/** Скрываем битый img — виден фон ячейки цветом темы */
+function onImageError(e: Event) {
+  const el = e.target as HTMLImageElement | null
+  if (el) el.style.display = 'none'
+}
 
 /** Размер шрифта для строки «тип сделки и цена» — задаём инлайном, чтобы гарантированно перекрыть другие стили */
 const priceLineStyle = computed<{ fontSize: string } | undefined>(() => {
