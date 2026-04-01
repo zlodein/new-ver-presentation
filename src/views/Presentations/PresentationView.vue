@@ -334,6 +334,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
+import '@/assets/booklet-template-city.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'

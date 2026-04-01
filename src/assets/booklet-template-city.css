@@ -1,0 +1,6 @@
+/* City template starts from Base template intentionally.
+   Keep this file for gradual, point-by-point overrides. */
+
+.presentation-slider-wrap.booklet-view[data-template="city"] {
+  /* No overrides yet: identical to `basic`. */
+}
