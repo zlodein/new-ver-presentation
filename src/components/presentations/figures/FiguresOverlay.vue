@@ -32,6 +32,7 @@ const emit = defineEmits<{
 }>()
 
 const rootRef = ref<HTMLDivElement | null>(null)
+const frameRef = ref<HTMLDivElement | null>(null)
 const stageRef = ref<any>(null)
 const layerRef = ref<any>(null)
 
@@ -188,6 +189,7 @@ function bindResizeObserver() {
   })
   if (anchor) resizeObserver.observe(anchor)
   if (rootRef.value) resizeObserver.observe(rootRef.value)
+  if (frameRef.value) resizeObserver.observe(frameRef.value)
 }
 
 /** Блокирует rebuildLayer во время drag / transform и короткого «кликового» цикла по фигуре */
@@ -384,11 +386,21 @@ const figuresContentBoxStyle = computed(() => ({
 
 const konvaWrapStyle = computed(() => {
   const base: Record<string, string | number> = {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    zIndex: konvaStackZ.value,
+    isolation: 'isolate',
+    touchAction: 'none',
+  }
+  return base
+})
+
+const konvaFrameStyle = computed(() => {
+  const base: Record<string, string | number> = {
     ...figuresContentBoxStyle.value,
     /* auto: весь блок как уровень hit; canvas внутри перехватывает события. none на родителе ломал цели в некоторых браузерах. */
     pointerEvents: 'auto',
-    zIndex: konvaStackZ.value,
-    isolation: 'isolate',
     touchAction: 'none',
   }
   if (!editorGridCfg.value.enabled) return base
@@ -401,8 +413,8 @@ const konvaWrapStyle = computed(() => {
 })
 
 const stageHostStyle = computed(() => ({
-  width: contentBoxPx.value.width,
-  height: contentBoxPx.value.height,
+  width: '100%',
+  height: '100%',
   pointerEvents: props.enabled ? ('auto' as const) : ('none' as const),
   touchAction: props.enabled ? ('none' as const) : ('auto' as const),
 }))
@@ -615,7 +627,7 @@ function layoutSizeOfTransformedHost(host: HTMLElement): { w: number; h: number 
 function fitStage() {
   if (!stage) return
   syncFiguresCssVarsFromRoot()
-  const hostEl = rootRef.value
+  const hostEl = frameRef.value
   if (!hostEl) return
   const { w, h } = layoutSizeOfTransformedHost(hostEl)
   stage.width(w)
@@ -947,9 +959,11 @@ watch(
 <template>
   <!-- Два корня: Konva с z от max(z) фигур (можно под медиа); панель — всегда выше медиа -->
   <div ref="rootRef" class="figures-konva-stack" data-figures-konva-stack :style="konvaWrapStyle">
-    <v-stage ref="stageRef" class="figures-konva-host" :config="stageHostStyle">
-      <v-layer ref="layerRef" />
-    </v-stage>
+    <div ref="frameRef" class="figures-konva-frame" :style="konvaFrameStyle">
+      <v-stage ref="stageRef" class="figures-konva-host" :config="stageHostStyle">
+        <v-layer ref="layerRef" />
+      </v-stage>
+    </div>
   </div>
 </template>
 
@@ -959,6 +973,9 @@ watch(
   margin: 0;
   padding: 0;
   overflow: visible;
+}
+
+.figures-konva-frame {
   outline: 1px dashed rgba(37, 99, 235, 0.35);
   outline-offset: 0;
 }
