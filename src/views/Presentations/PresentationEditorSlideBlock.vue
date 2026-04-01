@@ -259,16 +259,14 @@ watch(
                           />
                           <button
                             type="button"
-                            :class="[
-                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
-                              pe.generateTextLoading === slide.id ? 'max-w-[10rem] md:max-w-[10rem]' : 'max-w-[2.5rem] md:max-w-[2rem] md:hover:max-w-[10rem]'
-                            ]"
+                            class="booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center gap-1.5 rounded-md border bg-white/95 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 shadow-sm disabled:opacity-70 dark:bg-gray-900/95 dark:text-gray-100"
+                            style="z-index: 999;"
                             :disabled="pe.generateTextLoading === slide.id"
                             @click="pe.generateTextWithAI(slide, 'description')"
                           >
                             <img src="/images/icons/gigachat-logo.svg" alt="" class="h-4 w-4 shrink-0" width="16" height="16" />
-                            <span v-if="pe.generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse hidden md:inline">Генерация...</span>
-                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap hidden md:inline">сгенерировать</span>
+                            <span v-if="pe.generateTextLoading === slide.id" class="booklet-btn__slide shrink-0 whitespace-nowrap animate-pulse">Генерация...</span>
+                            <span v-else class="booklet-btn__slide shrink-0 whitespace-nowrap">GigaChat</span>
                           </button>
                         </div>
                       </div>
@@ -345,16 +343,14 @@ watch(
                           />
                           <button
                             type="button"
-                            :class="[
-                              'booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center overflow-hidden rounded-md border py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 transition-[max-width] duration-200 disabled:opacity-70',
-                              pe.generateTextLoading === slide.id ? 'max-w-[10rem] md:max-w-[10rem]' : 'max-w-[2.5rem] md:max-w-[2rem] md:hover:max-w-[10rem]'
-                            ]"
+                            class="booklet-btn booklet-btn--generate group absolute bottom-[10px] right-[20px] inline-flex items-center gap-1.5 rounded-md border bg-white/95 py-1.5 pl-2.5 pr-2.5 text-xs font-medium text-gray-700 shadow-sm disabled:opacity-70 dark:bg-gray-900/95 dark:text-gray-100"
+                            style="z-index: 999;"
                             :disabled="pe.generateTextLoading === slide.id"
                             @click="pe.generateTextWithAI(slide, 'infrastructure')"
                           >
                             <img src="/images/icons/gigachat-logo.svg" alt="" class="h-4 w-4 shrink-0" width="16" height="16" />
-                            <span v-if="pe.generateTextLoading === slide.id" class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap animate-pulse hidden md:inline">Генерация...</span>
-                            <span v-else class="booklet-btn__slide ml-[15px] shrink-0 whitespace-nowrap hidden md:inline">сгенерировать</span>
+                            <span v-if="pe.generateTextLoading === slide.id" class="booklet-btn__slide shrink-0 whitespace-nowrap animate-pulse">Генерация...</span>
+                            <span v-else class="booklet-btn__slide shrink-0 whitespace-nowrap">GigaChat</span>
                           </button>
                         </div>
                       </div>
