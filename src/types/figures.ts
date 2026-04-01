@@ -70,6 +70,8 @@ export interface FigureStyle {
 export interface FigureInstance {
   id: string
   figureId: string
+  /** Локальный snapshot геометрии, чтобы фигура рендерилась в view/PDF без отдельной загрузки библиотеки фигур. */
+  figureDef?: FigureDefinition
   /**
    * Область шаблона (data-editor-block): позиции x,y,w,h в процентах 0..100 от этой области.
    * Без поля или `slide` — весь контент слайда (.booklet-content).

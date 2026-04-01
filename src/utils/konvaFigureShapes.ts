@@ -391,7 +391,7 @@ export function buildFigureContentGroup(
   inst: FigureInstance,
   figuresById: Record<string, FigureDefinition>,
 ): Konva.Group {
-  const def = figuresById[inst.figureId]
+  const def = figuresById[inst.figureId] ?? (inst.figureDef as FigureDefinition | undefined)
   const g = new Konva.Group({ listening: false })
   const kind = geometryKind(def)
 

@@ -170,6 +170,7 @@ function addFigure(figureId: string) {
   const inst: FigureInstance = {
     id: genId(),
     figureId,
+    figureDef: figuresById.value[figureId] ? { ...figuresById.value[figureId] } : undefined,
     blockId: normalizeFigureBlockId(props.figureBlockScope),
     x: 30,
     y: 25,
@@ -507,6 +508,20 @@ function setShadowOpacity(v: number) {
               @input="setSolidColor(($event.target as HTMLInputElement).value)"
             />
           </div>
+        </div>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <button type="button" class="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" @click="moveLayer(1)">
+            Слой выше
+          </button>
+          <button type="button" class="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" @click="moveLayer(-1)">
+            Слой ниже
+          </button>
+          <button type="button" class="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" @click="bringToFront">
+            Вперед
+          </button>
+          <button type="button" class="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20" @click="removeSelected">
+            Удалить
+          </button>
         </div>
 
         <div class="mt-3 space-y-2">

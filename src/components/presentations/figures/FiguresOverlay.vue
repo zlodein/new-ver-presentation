@@ -404,7 +404,7 @@ const konvaFrameStyle = computed(() => {
     pointerEvents: 'auto',
     touchAction: 'none',
   }
-  if (!editorGridCfg.value.enabled) return base
+  if (!props.enabled || !editorGridCfg.value.enabled) return base
   const alpha = 0.18
   return {
     ...base,
