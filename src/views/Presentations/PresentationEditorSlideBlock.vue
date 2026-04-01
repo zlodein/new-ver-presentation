@@ -472,12 +472,19 @@ watch(
                           >
                             <span>{{ pe.locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}</span>
                           </button>
-                          <label class="flex cursor-pointer select-none items-start gap-3 text-sm font-medium leading-snug text-gray-700 dark:text-gray-400">
-                            <span class="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
-                              <input v-model="slide.data.show_metro" type="checkbox" class="peer sr-only" />
+                          <label
+                            class="inline-flex w-full cursor-pointer select-none items-center gap-3 text-sm font-medium leading-none text-gray-700 dark:text-gray-400"
+                            data-no-drag="1"
+                          >
+                            <span class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
+                              <input
+                                v-model="slide.data.show_metro"
+                                type="checkbox"
+                                class="peer absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none rounded-md opacity-0"
+                              />
                               <span
                                 :class="slide.data.show_metro ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
-                                class="pointer-events-none flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/40 hover:border-brand-500 dark:hover:border-brand-500"
+                                class="pointer-events-none flex h-full w-full items-center justify-center rounded-md border-[1.25px] peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/40 peer-focus-visible:ring-offset-0 hover:border-brand-500 dark:hover:border-brand-500"
                                 aria-hidden="true"
                               >
                                 <span :class="slide.data.show_metro ? '' : 'opacity-0'">
@@ -487,7 +494,7 @@ watch(
                                 </span>
                               </span>
                             </span>
-                            <span>Показывать метро в презентации</span>
+                            <span class="min-w-0 flex-1">Показывать метро в презентации</span>
                           </label>
                           <div
                             v-if="(slide.data?.metro_stations as Array<unknown>)?.length"

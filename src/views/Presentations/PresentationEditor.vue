@@ -3352,7 +3352,8 @@ async function exportToPDF() {
   padding: 25px 25px !important;
   background: #ffffff !important;
 }
-.editor-slider-wrap .presentation-slider-wrap.booklet-view input,
+/* Чекбоксы/радио не включаем: им нужны absolute/sr-only без «relative + z-index», иначе смещается кастомная разметка */
+.editor-slider-wrap .presentation-slider-wrap.booklet-view input:not([type='checkbox']):not([type='radio']),
 .editor-slider-wrap .presentation-slider-wrap.booklet-view select,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea {
   background-color: #fff !important;
@@ -3379,7 +3380,7 @@ async function exportToPDF() {
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea::placeholder {
   color: #9ca3af !important;
 }
-.editor-slider-wrap .presentation-slider-wrap.booklet-view input:focus,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view input:not([type='checkbox']):not([type='radio']):focus,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view select:focus,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view textarea:focus {
   outline: none !important;
