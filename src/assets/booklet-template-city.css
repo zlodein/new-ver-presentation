@@ -1,6 +1,102 @@
-/* City template starts from Base template intentionally.
-   Keep this file for gradual, point-by-point overrides. */
+/* City template overrides: point-by-point changes over Base */
 
-.presentation-slider-wrap.booklet-view[data-template="city"] {
-  /* No overrides yet: identical to `basic`. */
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-scale-root {
+  padding: 0;
+  --booklet-scale-padding: 0;
+}
+
+/* Cover: full image area */
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__wrap {
+  position: relative;
+}
+
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__img {
+  flex: 1 1 100%;
+  min-width: 100%;
+  min-height: 100%;
+  border-radius: 0;
+}
+
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__content {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  background: transparent !important;
+  pointer-events: none;
+}
+
+/* Hide top line on cover */
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__top {
+  display: none;
+}
+
+/* Center title/subtitle with dark glass substrate */
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(80%, 780px);
+  margin: 0;
+  padding: 16px 22px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff !important;
+  text-align: center;
+  text-shadow: none;
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__center textarea,
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__center input {
+  color: #fff !important;
+  text-align: center;
+}
+
+/* Deal type / price / currency as top-right badge */
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom {
+  position: absolute;
+  top: 90px;
+  right: 18px;
+  margin-top: 0;
+  pointer-events: auto;
+}
+
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__price-block {
+  border-radius: 9999px;
+  background: rgba(17, 24, 39, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__price-block input,
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__price-block select,
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__price-block option {
+  color: #fff !important;
+}
+
+/* Remove "show all currencies" UI and values on city cover */
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom > label,
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom .booklet-main__currencies-grid,
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom > .mt-2.grid {
+  display: none !important;
+}
+
+/* View mode badge styling (non-editor cover line) */
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom--view {
+  top: 90px;
+  right: 18px;
+  left: auto;
+  background: rgba(17, 24, 39, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 9999px;
+  padding: 8px 14px;
+  color: #fff;
+}
+
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom--view .booklet-main__deal-type,
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom--view .booklet-main__price,
+.presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom--view .booklet-main__price-suffix {
+  color: #fff !important;
 }
