@@ -402,9 +402,9 @@ watch(
                       <div class="booklet-map__left flex flex-col gap-2 min-h-0">
                         <div class="booklet-map__img flex-1 min-h-0">
                           <LocationMap
-                            :key="`${slide.id}-${String(slide.data?.address ?? '').trim()}-${Number(slide.data?.lat)}-${Number(slide.data?.lng)}`"
-                            :lat="String(slide.data?.address ?? '').trim() ? Number(slide.data?.lat) : Number.NaN"
-                            :lng="String(slide.data?.address ?? '').trim() ? Number(slide.data?.lng) : Number.NaN"
+                            :key="`${slide.id}-${Number(slide.data?.lat)}-${Number(slide.data?.lng)}`"
+                            :lat="Number(slide.data?.lat)"
+                            :lng="Number(slide.data?.lng)"
                           />
                         </div>
                       </div>
@@ -472,8 +472,8 @@ watch(
                           >
                             <span>{{ pe.locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}</span>
                           </button>
-                          <label class="inline-flex items-center gap-0 text-sm font-medium leading-none text-gray-700 cursor-pointer select-none dark:text-gray-400">
-                            <div class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center self-center">
+                          <label class="flex items-center text-sm font-medium leading-none text-gray-700 cursor-pointer select-none dark:text-gray-400">
+                            <div class="relative flex h-5 w-5 shrink-0 items-center justify-center self-center">
                               <input v-model="slide.data.show_metro" type="checkbox" class="absolute h-0 w-0 opacity-0" />
                               <div
                                 :class="slide.data.show_metro ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"

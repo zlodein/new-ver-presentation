@@ -1785,7 +1785,13 @@ function setLocationInputRef(slideId: string, el: HTMLInputElement | null) {
   else delete locationInputRefs.value[slideId]
 }
 
-const activeDadataSlideId = ref<string | null>(null)
+const activeDadataSlideId = computed(() => {
+  const r = dadataSuggestionsBySlideId.value
+  for (const id of Object.keys(r)) {
+    if ((r[id]?.length ?? 0) > 0) return id
+  }
+  return null
+})
 
 function updateDadataDropdownPosition() {
   const id = activeDadataSlideId.value
@@ -1859,7 +1865,6 @@ async function fetchDadataSuggestions(slideId: string, query: string): Promise<v
 }
 
 function onLocationAddressInput(slide: SlideItem, v: string) {
-  activeDadataSlideId.value = slide.id
   const idx = slides.value.findIndex((item) => item.id === slide.id)
   if (idx === -1) return
   const target = slides.value[idx]
@@ -1892,7 +1897,6 @@ function onLocationAddressInput(slide: SlideItem, v: string) {
 }
 
 function onLocationAddressFocus(_slide: SlideItem) {
-  activeDadataSlideId.value = _slide.id
   if (dadataBlurTimer.value) {
     clearTimeout(dadataBlurTimer.value)
     dadataBlurTimer.value = null
@@ -1903,7 +1907,6 @@ function onLocationAddressFocus(_slide: SlideItem) {
 function onLocationAddressBlur() {
   dadataBlurTimer.value = setTimeout(() => {
     dadataSuggestionsBySlideId.value = {}
-    activeDadataSlideId.value = null
     dadataDropdownStyle.value = {}
     dadataBlurTimer.value = null
   }, 200)
@@ -1926,7 +1929,6 @@ function applyDadataSuggestion(slide: SlideItem, item: DadataSuggestionItem) {
     ...(hasCoords ? { lat: item.geo_lat, lng: item.geo_lon } : {}),
   }
   dadataSuggestionsBySlideId.value[slide.id] = []
-  activeDadataSlideId.value = null
   dadataDropdownStyle.value = {}
   if (!hasCoords) {
     geocodeAddress(target)
