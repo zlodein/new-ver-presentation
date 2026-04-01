@@ -35,6 +35,7 @@ const rootRef = ref<HTMLDivElement | null>(null)
 const frameRef = ref<HTMLDivElement | null>(null)
 const stageRef = ref<any>(null)
 const layerRef = ref<any>(null)
+const DEBUG_KONVA_BOUNDS = true
 
 /** Слой медиа слайда (--booklet-figure-media-z), обычно 5 — для расчёта z canvas фигур */
 const mediaZResolved = ref(5)
@@ -140,6 +141,7 @@ function syncFiguresCssVarsFromRoot() {
 
   mediaZResolved.value = readZ('--booklet-figure-media-z', 5)
   syncContentBoxFromScaleRoot()
+  logOverlayState('sync-css-vars')
 }
 
 /** Подписка на z фигур: один canvas — общий z-index; max(z) задаёт «глубину» относительно медиа слайда */
@@ -288,6 +290,7 @@ function clampOuterInsideStage(outer: Konva.Group) {
     outer.x(nx)
     outer.y(ny)
   }
+  logFigureState('clamp-outer', outer)
 }
 
 function snapRotationDeg(raw: number): number {
@@ -583,6 +586,7 @@ function createTransformer(): Konva.Transformer {
     }
     const inst = getInstances().find((i) => i.id === id)
     if (inst) syncInstanceFromTransformNode(outer, figureContent, inst)
+    logFigureState('transform-end', outer)
     endInteraction()
     patchTransformerHitThrough()
   })
@@ -628,6 +632,7 @@ function fitStage() {
   const { w, h } = layoutSizeOfTransformedHost(hostEl)
   stage.width(w)
   stage.height(h)
+  logOverlayState('fit-stage')
   applyCanvasSharpness()
   if (!interactionLock.value) rebuildLayer()
   else {
@@ -635,6 +640,76 @@ function fitStage() {
     transformer?.forceUpdate()
     patchTransformerHitThrough()
   }
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+function toRectLike(rect: { x: number; y: number; width: number; height: number }) {
+  return {
+    x: round2(rect.x),
+    y: round2(rect.y),
+    width: round2(rect.width),
+    height: round2(rect.height),
+  }
+}
+
+function logOverlayState(tag: string) {
+  if (!DEBUG_KONVA_BOUNDS || typeof window === 'undefined') return
+  const scale = resolveScaleRootEl()
+  const anchor = resolveAnchorEl()
+  const frame = frameRef.value
+  const root = rootRef.value
+  const stageW = stage?.width() ?? null
+  const stageH = stage?.height() ?? null
+  const scaleRect = scale?.getBoundingClientRect()
+  const anchorRect = anchor?.getBoundingClientRect()
+  const frameRect = frame?.getBoundingClientRect()
+  const rootRect = root?.getBoundingClientRect()
+  console.groupCollapsed(`[KonvaDebug][${tag}] slide=${String(props.slide?.id ?? 'n/a')}`)
+  console.log('scope', normalizeFigureBlockId(props.figureBlockScope))
+  console.log('contentBoxPx', { ...contentBoxPx.value })
+  console.log('stageSize', { width: stageW, height: stageH })
+  console.log('rootRect', rootRect ? toRectLike(rootRect) : null)
+  console.log('frameRect', frameRect ? toRectLike(frameRect) : null)
+  console.log('scaleRect', scaleRect ? toRectLike(scaleRect) : null)
+  console.log('anchorRect', anchorRect ? toRectLike(anchorRect) : null)
+  if (anchor) {
+    const cs = getComputedStyle(anchor)
+    console.log('anchorPadding', {
+      left: cs.paddingLeft,
+      top: cs.paddingTop,
+      right: cs.paddingRight,
+      bottom: cs.paddingBottom,
+    })
+  }
+  console.groupEnd()
+}
+
+function logFigureState(tag: string, outer: Konva.Group) {
+  if (!DEBUG_KONVA_BOUNDS || !stage || !layer) return
+  const hit = outer.findOne('.figureHit') as Konva.Rect | null
+  const clientRect = outer.getClientRect({ relativeTo: layer, skipShadow: false, skipStroke: false })
+  const stageRect = { x: 0, y: 0, width: stage.width(), height: stage.height() }
+  console.groupCollapsed(`[KonvaDebug][${tag}] fig=${String(outer.getAttr('figureInstanceId') ?? 'n/a')}`)
+  console.log('outer', {
+    x: round2(outer.x()),
+    y: round2(outer.y()),
+    rotation: round2(outer.rotation()),
+    offsetX: round2(outer.offsetX()),
+    offsetY: round2(outer.offsetY()),
+  })
+  console.log('hitRect', hit ? { w: round2(hit.width()), h: round2(hit.height()) } : null)
+  console.log('clientRect', toRectLike(clientRect))
+  console.log('stageRect', stageRect)
+  console.log('distanceToEdges', {
+    left: round2(clientRect.x),
+    top: round2(clientRect.y),
+    right: round2(stageRect.width - (clientRect.x + clientRect.width)),
+    bottom: round2(stageRect.height - (clientRect.y + clientRect.height)),
+  })
+  console.groupEnd()
 }
 
 function rebuildLayer() {
@@ -738,11 +813,13 @@ function rebuildLayer() {
       outer.on('dragmove', () => {
         /* Не пишем x/y в реактивную модель на каждом dragmove — глубокий watch на figures вызывает syncFiguresCssVarsFromRoot и тяжёлые перерисовки Vue, из‑за чего перетаскивание «тормозит». Синхронизация — в dragend. */
         layer?.batchDraw()
+        logFigureState('drag-move', outer)
       })
 
       outer.on('dragend', () => {
         clampOuterInsideStage(outer)
         syncInstancePositionFromNode(outer, inst)
+        logFigureState('drag-end', outer)
         endInteraction()
       })
 
