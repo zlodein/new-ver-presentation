@@ -623,36 +623,48 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-map__img { position: relative; min-height: 200px; flex: 1; overflow: hidden; border-radius: 8px; display: flex; flex-direction: column; background: #e8e8e8; }
     .presentation-slider-wrap.booklet-view .booklet-map__img > * { flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .map-placeholder { width: 100%; height: 100%; min-height: 180px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.875rem; }
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-page__inner {
-      background:
-        radial-gradient(circle at 92% 12%, rgba(255, 74, 53, 0.14) 0, rgba(255, 74, 53, 0) 34%),
-        radial-gradient(circle at 8% 88%, rgba(60, 67, 83, 0.09) 0, rgba(60, 67, 83, 0) 30%),
-        #fff;
-    }
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-img__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-galery__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-layout__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info__block.booklet-info__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen__block.booklet-stroen__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts__block.booklet-contacts__img,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map__img { border-radius: 12px; box-shadow: 0 10px 24px rgba(26, 32, 44, 0.14); }
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__content,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info__block.booklet-info__content,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen__block.booklet-stroen__content,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char__content,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map__content,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts__left { background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 247, 251, 0.94) 100%); border-radius: 12px; padding: 16px; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] { --theme-main-color: #2c7f8d; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__img { padding: 35px 0 35px 35px; background: var(--theme-main-color, #2c7f8d); box-shadow: 7px 7px 7px rgba(73,71,71,.2); }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__content { padding: 40px 22px 24px 26px; background: #fff; }
     .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__top,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__center,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__center { color: #010217; text-shadow: 0 4px 4px rgba(0,0,0,.25); font-weight: 400; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-main__bottom--view .booklet-main__deal-type { color: #c6010d; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-galery,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char { position: relative; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-galery::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char::before { content: ''; position: absolute; top: 20px; right: 20px; width: 140px; height: 110px; background: var(--theme-main-color, #2c7f8d); z-index: 1; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info::after,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen::after,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map::after,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts::after,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-galery::after,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char::after { content: ''; position: absolute; bottom: 20px; left: 20px; width: 100px; height: 92px; background: var(--theme-main-color, #2c7f8d); z-index: 1; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info__block,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen__block,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts__block,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char__img,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char__content,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map__img,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map__info,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-galery__img,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-layout__img { box-shadow: -2px 4px 10px rgba(12,23,27,.25); z-index: 2; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info__block.booklet-info__img::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen__block.booklet-stroen__img::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts__block.booklet-contacts__img::before,
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-galery__img::before { content: ''; position: absolute; inset: 0; border: 15px solid rgba(255,255,255,.5); z-index: 3; }
     .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-info__title,
     .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-stroen__title,
     .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-char__title,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-layout__title,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-galery__title,
     .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-map__title,
-    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts__title { color: #1f2937; font-weight: 700; letter-spacing: 0.01em; }
+    .presentation-slider-wrap.booklet-view[data-template="city"] .booklet-contacts__title { color: #010217; text-shadow: 4px 4px 4px rgba(0,0,0,.25); font-weight: 400; }
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-main__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-img__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-info__block.booklet-info__img::after,
