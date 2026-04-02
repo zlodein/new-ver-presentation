@@ -515,7 +515,14 @@
   flex: 0 0 auto !important;
 }
 
-/* Декоративные квадраты темы: только этот шаблон (характеристики 150×150; описание/инфраструктура 50×50 по углам колонки фото) */
+/* Декоративные квадраты темы: только этот шаблон (характеристики 150×150; описание/инфраструктура 50×50 по углам колонки фото).
+   Псевдо на .booklet-char__wrap — не занимают ::after у .booklet-char__img (рамка кадра). Смещение -1rem компенсирует padding у .booklet-content. */
+.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-char,
+.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-info,
+.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-stroen {
+  overflow: visible;
+}
+
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap {
   position: relative;
   isolation: isolate;
@@ -533,17 +540,19 @@
 }
 
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::before {
-  top: 0;
-  left: 0;
+  top: -1rem;
+  left: -1rem;
 }
 
+/* Нижний правый угол колонки фото (сетка 1fr 1fr, gap 1rem) */
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::after {
-  bottom: 0;
-  right: 0;
+  bottom: -1rem;
+  left: calc((100% - 1rem) / 2 - 150px);
 }
 
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__img,
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__content {
+  position: relative;
   z-index: 1;
 }
 
@@ -557,7 +566,7 @@
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__grid::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -1rem;
   z-index: 0;
   pointer-events: none;
   background-image:
@@ -568,4 +577,12 @@
   background-size: 50px 50px;
   background-position: 0 0, 100% 0, 0 100%, 100% 100%;
   background-repeat: no-repeat;
+}
+
+/* Мобильный редактор: одна колонка — нижний квадрат у правого нижнего угла фото */
+@media screen and (max-width: 768px) {
+  .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed)[data-template="urban_real_estate"] .booklet-char__wrap::after {
+    left: auto;
+    right: -1rem;
+  }
 }
