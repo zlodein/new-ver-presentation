@@ -643,7 +643,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="1x3"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="1x3"] { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="3x2"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="3x2"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .presentation-slider-wrap.booklet-view .booklet-info__grid.image-grid-bound[data-image-grid="2x3"], .presentation-slider-wrap.booklet-view .booklet-stroen__grid.image-grid-bound[data-image-grid="2x3"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img { position: relative; min-height: 0; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; }
+    .presentation-slider-wrap.booklet-view .booklet-info__block.booklet-info__img, .presentation-slider-wrap.booklet-view .booklet-stroen__block.booklet-stroen__img { position: relative; z-index: 1; min-height: 0; overflow: hidden; background: var(--theme-main-color); display: flex; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view .booklet-content.booklet-char { display: flex; flex-direction: column; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-char__shell { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-char__title-col { flex-shrink: 0; margin-bottom: 0.75rem; }
@@ -853,9 +853,27 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-map__content { grid-column: 3 !important; grid-row: 1 !important; min-height: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__shell { display: grid; grid-template-columns: auto 1fr; column-gap: 1rem; align-items: stretch; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__title-col { grid-column: 1; min-width: 2.25rem; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; column-gap: 1rem; row-gap: 0; align-items: stretch; flex: 1; min-height: 0; min-width: 0; }
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__img { grid-column: 1; grid-row: 1; min-height: 0; }
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__content { grid-column: 2; grid-row: 1; min-height: 0; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; column-gap: 1rem; row-gap: 0; align-items: stretch; flex: 1; min-height: 0; min-width: 0; position: relative; isolation: isolate; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::before,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::after { content: ''; position: absolute; width: 150px; height: 150px; background: var(--theme-color, #fcfcfc); z-index: 0; pointer-events: none; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::before { top: 0; left: 0; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::after { bottom: 0; right: 0; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__img { grid-column: 1; grid-row: 1; min-height: 0; z-index: 1; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__content { grid-column: 2; grid-row: 1; min-height: 0; z-index: 1; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-info__grid,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__grid { position: relative; isolation: isolate; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-info__grid::before,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__grid::before {
+      content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(var(--theme-color, #fcfcfc), var(--theme-color, #fcfcfc)),
+        linear-gradient(var(--theme-color, #fcfcfc), var(--theme-color, #fcfcfc)),
+        linear-gradient(var(--theme-color, #fcfcfc), var(--theme-color, #fcfcfc)),
+        linear-gradient(var(--theme-color, #fcfcfc), var(--theme-color, #fcfcfc));
+      background-size: 50px 50px;
+      background-position: 0 0, 100% 0, 0 100%, 100% 100%;
+      background-repeat: no-repeat;
+    }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__shell { display: grid; grid-template-columns: auto 1fr; column-gap: 1rem; align-items: stretch; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__title-col { grid-column: 1; min-width: 2.25rem; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__wrap { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; align-items: stretch; gap: 1.5rem; min-height: 280px; flex: 1; width: 100%; min-width: 0; height: auto; box-sizing: border-box; }
