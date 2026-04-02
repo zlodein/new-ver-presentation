@@ -413,6 +413,9 @@
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-galery__grid {
@@ -461,6 +464,22 @@
 .presentation-slider-wrap.booklet-view .booklet-char__title-col {
   flex-shrink: 0;
   margin-bottom: 0.75rem;
+}
+
+/* Базовый шаблон: заголовки описания / инфраструктуры / характеристик — по центру */
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-info__title-col,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-stroen__title-col,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-char__title-col {
+  align-items: center;
+}
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-info__title,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-info__title input,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-stroen__title,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-stroen__title input,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-char__title,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-char__title input {
+  text-align: center;
+  width: 100%;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-char__shell .booklet-char__wrap {
@@ -554,6 +573,8 @@
 .presentation-slider-wrap.booklet-view .booklet-layout__title-wrapper {
   flex: 0 0 auto;
   margin-bottom: 1rem;
+  width: 100%;
+  text-align: center;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-layout__title {
@@ -562,6 +583,9 @@
   font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-layout__grid {
@@ -882,6 +906,9 @@
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-map__img {
@@ -980,7 +1007,17 @@
   flex-direction: column;
   gap: 1rem;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: visible;
+  overflow-y: auto;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__messengers {
+  width: 100%;
+  min-width: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__messengers a {
+  flex-shrink: 0;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-contacts__title,

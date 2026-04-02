@@ -60,6 +60,42 @@ function toAbsoluteImageUrl(url: string, baseUrl: string): string {
   return baseUrl.replace(/\/$/, '') + '/' + u
 }
 
+/** Как во Vue: из API может прийти строка "true" / "1" */
+function settingBool(v: unknown): boolean {
+  if (v === true || v === 1) return true
+  if (typeof v === 'string') return v === 'true' || v === '1' || v.toLowerCase() === 'yes'
+  return false
+}
+
+/** Иконки мессенджеров — те же пути, что в MessengerIcons.vue (для PDF с абсолютным baseUrl) */
+const PDF_MESSENGER_ICONS: Array<{ key: string; path: string }> = [
+  { key: 'twitter', path: '/images/icons/twitter-color.svg' },
+  { key: 'whatsapp', path: '/images/icons/whatsapp-color.svg' },
+  { key: 'telegram', path: '/images/icons/telegram-color.svg' },
+  { key: 'viber', path: '/images/icons/viber-color.svg' },
+  { key: 'instagram', path: '/images/icons/instagram-color.svg' },
+  { key: 'vk', path: '/images/icons/vk-color.svg' },
+  { key: 'max', path: '/images/icons/max-color.svg' },
+  { key: 'x', path: '/images/icons/x-color.svg' },
+]
+
+function renderPdfMessengerIcons(messengers: Record<string, string>, baseUrl: string): string {
+  const parts: string[] = []
+  for (const { key, path } of PDF_MESSENGER_ICONS) {
+    const href = String(messengers[key] || '').trim()
+    if (!href) continue
+    const iconSrc = toAbsoluteImageUrl(path, baseUrl).replace(/"/g, '&quot;')
+    const safeHref = escapeHtml(href)
+    parts.push(
+      `<a href="${safeHref}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:0.5rem;background:#f3f4f6;flex-shrink:0;text-decoration:none;" title="${escapeHtml(key)}">` +
+        `<img src="${iconSrc}" alt="" width="16" height="16" style="width:1rem;height:1rem;object-fit:contain;display:block;" />` +
+        `</a>`,
+    )
+  }
+  if (!parts.length) return ''
+  return `<div class="booklet-contacts__messengers" style="display:flex;flex-wrap:wrap;gap:0.35rem;width:100%;align-items:center;">${parts.join('')}</div>`
+}
+
 const DEFAULT_IMAGE_GRID_BY_TYPE: Record<string, string> = {
   description: '1x2',
   infrastructure: '1x2',
@@ -146,7 +182,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const dealType = String(dataObj.deal_type || 'Аренда')
         const price = Number(dataObj.price_value || 0)
         const currency = String(dataObj.currency || 'RUB')
-        const showAllCurrencies = Boolean(dataObj.show_all_currencies)
+        const showAllCurrencies = settingBool(dataObj.show_all_currencies)
         const currencySymbols: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€', CNY: '¥', KZT: '₸' }
         const symbol = currencySymbols[currency] || '₽'
         const formatPrice = (num: number) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
@@ -432,7 +468,6 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
         const avatarUrl = String(dataObj.avatarUrl || dataObj.logoUrl || '').trim()
         const contactImageUrl = String(dataObj.contactImageUrl || (Array.isArray(dataObj.images) && dataObj.images[0] ? dataObj.images[0] : '')).trim()
         const messengers = dataObj.messengers && typeof dataObj.messengers === 'object' ? dataObj.messengers as Record<string, string> : null
-        const hasMessengers = messengers && Object.keys(messengers).length > 0
 
         const hasTopRow = avatarUrl || contactName || phone
         const topRow = hasTopRow ? `
@@ -443,7 +478,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
               ${phone ? `<p style="margin:0;">${escapeHtml(phone)}</p>` : ''}
             </div>
           </div>` : ''
-        const messengersBlock = hasMessengers ? `<div class="booklet-contacts__messengers" style="width:100%;">${Object.entries(messengers!).map(([k, v]) => v ? `<span style="margin-right:0.5rem;">${escapeHtml(k)}: ${escapeHtml(String(v))}</span>` : '').filter(Boolean).join('')}</div>` : ''
+        const messengersBlock = messengers ? renderPdfMessengerIcons(messengers, baseUrl) : ''
         const emailBlock = email ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;">${escapeHtml(email)}</p></div>` : ''
         const addressBlock = address ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;">${escapeHtml(address)}</p></div>` : ''
         const aboutBlock = aboutText ? `<div class="booklet-contacts__block" style="width:100%;"><p style="margin:0;white-space:pre-wrap;">${escapeHtml(aboutText)}</p></div>` : ''
@@ -537,7 +572,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view { --theme-main-color: ${themeColor}; --theme-color: ${themeColor}; }
     .presentation-slider-wrap.booklet-view .booklet-page__inner { position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; padding: 0; box-sizing: border-box; overflow: hidden; background: #fff; }
     .presentation-slider-wrap.booklet-view .booklet-page__inner:has(.pdf-figures-overlay) { overflow: visible; }
-    .presentation-slider-wrap.booklet-view .booklet-scale-root { position: absolute; left: 0; top: 0; width: 70.16%; height: 70.16%; transform: scale(1.42518); transform-origin: 0 0; padding: 1rem; box-sizing: border-box; }
+    .presentation-slider-wrap.booklet-view .booklet-scale-root { position: absolute; left: 0; top: 0; width: 70.16%; height: 70.16%; transform: scale(1.42518); transform-origin: 0 0; padding: 1rem 1rem 1rem 1.5rem; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-scale-root:has(.pdf-figures-overlay) { overflow: visible; }
     /* Заполняем область .booklet-scale-root без лишних отступов у контейнера оверлея */
     .presentation-slider-wrap.booklet-view .pdf-figures-overlay { position: absolute; left: 0; top: 0; right: 0; bottom: 0; width: 100%; height: 100%; margin: 0; padding: 0; box-sizing: border-box; pointer-events: none; overflow: visible; }
@@ -567,13 +602,21 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex { display: flex; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .flex-wrap { flex-wrap: wrap; }
     .presentation-slider-wrap.booklet-view .booklet-main__bottom--view .justify-end { justify-content: flex-end; }
+    .presentation-slider-wrap.booklet-view:not([data-template="urban_real_estate"]) .booklet-info__title-col,
+    .presentation-slider-wrap.booklet-view:not([data-template="urban_real_estate"]) .booklet-stroen__title-col,
+    .presentation-slider-wrap.booklet-view:not([data-template="urban_real_estate"]) .booklet-char__title-col { align-items: center; }
+    .presentation-slider-wrap.booklet-view:not([data-template="urban_real_estate"]) .booklet-info__title-col .booklet-info__title,
+    .presentation-slider-wrap.booklet-view:not([data-template="urban_real_estate"]) .booklet-stroen__title-col .booklet-stroen__title,
+    .presentation-slider-wrap.booklet-view:not([data-template="urban_real_estate"]) .booklet-char__title-col .booklet-char__title { text-align: center; width: 100%; }
+    .presentation-slider-wrap.booklet-view .booklet-galery__title,
+    .presentation-slider-wrap.booklet-view .booklet-layout__title { text-align: center; width: 100%; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-content.booklet-info, .presentation-slider-wrap.booklet-view .booklet-content.booklet-stroen { display: flex; flex-direction: column; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-info__shell, .presentation-slider-wrap.booklet-view .booklet-stroen__shell { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-info__title-col, .presentation-slider-wrap.booklet-view .booklet-stroen__title-col { flex-shrink: 0; margin-bottom: 0.75rem; }
     .presentation-slider-wrap.booklet-view .booklet-info__shell .booklet-info__wrap, .presentation-slider-wrap.booklet-view .booklet-stroen__shell .booklet-stroen__wrap { flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view .booklet-info__wrap, .presentation-slider-wrap.booklet-view .booklet-stroen__wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; width: 100%; height: 100%; min-height: 320px; }
     .presentation-slider-wrap.booklet-view .booklet-info__title-col .booklet-info__title, .presentation-slider-wrap.booklet-view .booklet-stroen__title-col .booklet-stroen__title, .presentation-slider-wrap.booklet-view .booklet-char__title-col .booklet-char__title, .presentation-slider-wrap.booklet-view .booklet-layout__title, .presentation-slider-wrap.booklet-view .booklet-galery__title, .presentation-slider-wrap.booklet-view .booklet-contacts__title-col .booklet-contacts__title { margin: 0 0 0 0; font-size: 28px; font-weight: 400; letter-spacing: 0.02em; color: #1a1a1a; }
-    .presentation-slider-wrap.booklet-view .booklet-map__title { margin: 0 0 1rem 0; font-size: 28px; font-weight: 400; letter-spacing: 0.02em; color: #1a1a1a; grid-column: 1 / -1; }
+    .presentation-slider-wrap.booklet-view .booklet-map__title { margin: 0 0 1rem 0; font-size: 28px; font-weight: 400; letter-spacing: 0.02em; color: #1a1a1a; grid-column: 1 / -1; text-align: center; width: 100%; box-sizing: border-box; }
     .presentation-slider-wrap.booklet-view .booklet-info__text, .presentation-slider-wrap.booklet-view .booklet-stroen__text { flex: 1; min-height: 0; overflow: auto; font-size: 17px; line-height: 1.5; color: #444; overflow-wrap: break-word; word-break: break-word; }
     .presentation-slider-wrap.booklet-view .booklet-info__grid, .presentation-slider-wrap.booklet-view .booklet-stroen__grid { display: grid; gap: 12px; min-height: 0; flex: 1; }
     .presentation-slider-wrap.booklet-view .booklet-info__wrap[data-block-layout="text-right"] { direction: rtl; }
@@ -658,6 +701,13 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view .map-placeholder { width: 100%; height: 100%; min-height: 180px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.875rem; }
     /* Шаблон «Городская недвижимость»: обложка (фон + градиент + блоки как в веб) */
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-scale-root { padding: 0; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-info,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-stroen,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-char,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-galery,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-layout,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-map,
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-contacts { padding-left: 1.35rem !important; padding-right: 1.15rem !important; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__wrap { position: relative; overflow: hidden; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__wrap::after {
       content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -666,7 +716,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__img { flex: 1 1 100%; min-width: 100%; min-height: 100%; border-radius: 0; z-index: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__content { position: absolute; inset: 0; padding: 0; background: transparent; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; }
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__top { display: block; padding: 1.25rem 1.5rem 0; color: rgba(255,255,255,0.92); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__top { display: block; padding: 1.25rem 1.5rem 0; color: rgba(255,255,255,0.92) !important; font-size: 0.75rem !important; font-weight: 600 !important; letter-spacing: 0.2em !important; text-transform: uppercase !important; line-height: 1.35 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__center {
       position: absolute; top: 44%; left: 50%; transform: translate(-50%, -50%);
       width: min(88%, 820px); margin: 0; padding: 1.25rem 1.5rem; border-radius: 1rem;
@@ -681,22 +731,60 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom--view .booklet-main__deal-type,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom--view .booklet-main__price,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom--view .booklet-main__price-suffix { color: #fff !important; }
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__currencies-grid { display: none !important; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom .booklet-main__currencies-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.25rem 1rem;
+      text-align: right;
+      color: rgba(255, 255, 255, 0.9) !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      max-width: max-content;
+      margin-left: auto;
+      font-size: 0.875rem;
+    }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-info__shell,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__shell { display: grid; grid-template-columns: auto 1fr; column-gap: 1rem; align-items: stretch; flex: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-info .booklet-info__wrap,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-content.booklet-stroen .booklet-stroen__wrap { flex: 1; min-height: 0; grid-column: 2; min-width: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-info__title-col,
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__title-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0.5rem; grid-column: 1; min-width: 2.25rem; align-self: stretch; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__title-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; grid-column: 1; min-width: 2.25rem; align-self: stretch; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-info__title-col .booklet-info__title,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__title-col .booklet-stroen__title,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__title-col .booklet-char__title,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__title-col .booklet-contacts__title,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__title,
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__title,
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-map__title { margin: 0; padding: 0; writing-mode: vertical-rl; text-orientation: mixed; text-align: center; line-height: 1; flex: 0 0 auto; align-self: stretch; justify-self: center; direction: ltr; white-space: nowrap; transform: rotate(180deg); transform-origin: center center; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__title { margin: 0; padding: 0; writing-mode: vertical-rl; text-orientation: mixed; text-align: center; line-height: 1; flex: 0 0 auto; align-self: stretch; justify-self: center; direction: ltr; white-space: nowrap; transform: rotate(180deg); transform-origin: center center; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-map__wrap {
+      display: grid !important;
+      grid-template-columns: auto 1fr 1fr !important;
+      grid-template-rows: 1fr !important;
+      column-gap: 1rem;
+      row-gap: 0;
+      align-items: stretch;
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+    }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-map__title {
+      grid-column: 1 !important;
+      grid-row: 1 !important;
+      margin: 0 !important;
+      padding: 0;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      text-align: center;
+      line-height: 1;
+      align-self: stretch;
+      justify-self: center;
+      direction: ltr;
+      white-space: nowrap;
+      transform: rotate(180deg);
+      transform-origin: center center;
+    }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-map__left { grid-column: 2 !important; grid-row: 1 !important; min-height: 0; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-map__content { grid-column: 3 !important; grid-row: 1 !important; min-height: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__shell { display: grid; grid-template-columns: auto 1fr; column-gap: 1rem; align-items: stretch; flex: 1; min-height: 0; }
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__title-col { grid-column: 1; min-width: 2.25rem; align-self: stretch; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__title-col { grid-column: 1; min-width: 2.25rem; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; column-gap: 1rem; row-gap: 0; align-items: stretch; flex: 1; min-height: 0; min-width: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__img { grid-column: 1; grid-row: 1; min-height: 0; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__content { grid-column: 2; grid-row: 1; min-height: 0; }

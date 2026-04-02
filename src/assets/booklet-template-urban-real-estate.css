@@ -58,12 +58,19 @@
   background: transparent !important;
 }
 
-/* Верхняя строка — акцент / надзаголовок */
+/* Верхняя строка — акцент / надзаголовок (редактор: input; просмотр/ссылка: v-html в .booklet-main__top) */
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__top {
   display: block;
   position: relative;
   padding: 1.25rem 1.5rem 0;
   pointer-events: auto;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  line-height: 1.35 !important;
 }
 
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__top-input {
@@ -190,13 +197,21 @@
   color: #fff !important;
 }
 
-.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom > label,
-.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom .booklet-main__currencies-grid {
+/* Чекбокс «все валюты» только в редакторе; в просмотре/PDF — показываем сетку пересчёта */
+.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom > label {
   display: none !important;
 }
 
-.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom > .mt-2.grid {
-  display: none !important;
+.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-main__bottom .booklet-main__currencies-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem 1rem;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  max-width: max-content;
+  margin-left: auto;
+  font-size: 0.875rem;
 }
 
 /* Редактор: чекбокс и пересчёт валют остаются видимыми */
@@ -286,7 +301,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 0.5rem;
   grid-column: 1;
   min-width: 2.25rem;
@@ -367,6 +382,10 @@
   grid-column: 1;
   min-width: 2.25rem;
   align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap {
@@ -464,7 +483,8 @@
   gap: 1rem;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: visible;
+  overflow-y: auto;
   justify-content: flex-start;
 }
 

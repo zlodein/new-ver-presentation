@@ -64,7 +64,7 @@
                       {{ currencySymbol(slide.data?.currency) }}
                       <span v-if="slide.data?.deal_type === 'Аренда'" class="booklet-main__price-suffix font-normal">/ месяц</span>
                     </div>
-                    <div v-if="slide.data?.show_all_currencies" class="booklet-main__bottom-line booklet-main__currencies-grid mt-2 inline-grid grid-cols-2 gap-x-4 gap-y-1 justify-items-end text-sm text-gray-600">
+                    <div v-if="showAllCurrenciesEnabled(slide)" class="booklet-main__bottom-line booklet-main__currencies-grid mt-2 inline-grid grid-cols-2 gap-x-4 gap-y-1 justify-items-end text-sm text-gray-600">
                       <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                     </div>
                   </div>
@@ -581,6 +581,14 @@ const EXCHANGE_RATES: Record<string, number> = {
   EUR: 0.01,
   CNY: 0.078,
   KZT: 4.9,
+}
+
+/** Из API show_all_currencies может прийти строкой */
+function showAllCurrenciesEnabled(slide: ViewSlideItem): boolean {
+  const v = slide.data?.show_all_currencies
+  if (v === true || v === 1) return true
+  if (typeof v === 'string') return v === 'true' || v === '1' || v.toLowerCase() === 'yes'
+  return false
 }
 
 function coverConvertedPrices(slide: ViewSlideItem): string[] {
