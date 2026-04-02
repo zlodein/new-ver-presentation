@@ -150,11 +150,11 @@ watch(
                             class="booklet-main__bottom relative"
                             :style="{ zIndex: priceZIndex }"
                           >
-                            <div class="booklet-main__price-block flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs">
-                              <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
+                            <div class="booklet-main__price-block booklet-main__price-panel flex flex-nowrap items-stretch overflow-hidden">
+                              <div class="booklet-main__price-segment booklet-main__price-segment--deal relative z-20 flex shrink-0 items-center">
                                 <select
                                   v-model="slide.data.deal_type"
-                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-3 pr-7 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
+                                  class="booklet-main__deal-select dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-3 pr-7 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
                                 >
                                   <option value="Аренда">Аренда</option>
                                   <option value="Продажа">Продажа</option>
@@ -163,19 +163,19 @@ watch(
                                   <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 </span>
                               </div>
-                              <div class="booklet-main__price flex-1 min-w-0">
+                              <div class="booklet-main__price booklet-main__price-segment booklet-main__price-segment--amount flex-1 min-w-0">
                                 <input
                                   :value="pe.coverPriceValue(slide)"
                                   type="text"
                                   :placeholder="pe.coverPricePlaceholder(slide)"
-                                  class="dark:bg-dark-900 h-11 w-full border-0 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                                  class="booklet-main__price-input dark:bg-dark-900 h-11 w-full border-0 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                                   @input="pe.onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
                                 />
                               </div>
-                              <div class="relative z-20 flex shrink-0 items-center border-l border-gray-300 bg-transparent dark:border-gray-700">
+                              <div class="booklet-main__price-segment booklet-main__price-segment--currency relative z-20 flex shrink-0 items-center">
                                 <select
                                   :value="slide.data.currency"
-                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-2 pr-6 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
+                                  class="booklet-main__currency-select dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-2 pr-6 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
                                   @change="pe.onCoverCurrencyChange(slide, $event)"
                                 >
                                   <option v-for="c in pe.CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
@@ -214,26 +214,27 @@ watch(
                     v-else-if="slide.type === 'description'"
                     class="booklet-content booklet-info relative"
                   >
-                    <div class="booklet-info__heading-row flex flex-nowrap items-center gap-1.5">
-                      <input
-                        :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
-                        type="text"
-                        placeholder="ОПИСАНИЕ"
-                        class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                        @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
-                      />
-                      <div v-if="pe.canEditImages" class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
-                        <button
-                          type="button"
-                          class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
-                          style="background-color: var(--color-green-600);"
-                          title="Макет и сетка изображений"
-                          @click="pe.openPalettePopup(slide.id, $event)"
-                        >
-                          <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
-                        </button>
+                    <div class="booklet-info__shell">
+                      <div class="booklet-info__title-col flex flex-col items-center gap-2">
+                        <input
+                          :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
+                          type="text"
+                          placeholder="ОПИСАНИЕ"
+                          class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0 md:flex-none"
+                          @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
+                        />
+                        <div v-if="pe.canEditImages" class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                          <button
+                            type="button"
+                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                            style="background-color: var(--color-green-600);"
+                            title="Макет и сетка изображений"
+                            @click="pe.openPalettePopup(slide.id, $event)"
+                          >
+                            <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
+                          </button>
+                        </div>
                       </div>
-                    </div>
                     <div class="booklet-info__wrap" :data-block-layout="pe.getBlockLayout(slide)">
                       <div
                         class="booklet-info__block booklet-info__content"
@@ -287,6 +288,7 @@ watch(
                         </div>
                       </div>
                     </div>
+                    </div>
                   </div>
 
                   <!-- 3. Инфраструктура (как на presentation-realty.ru/view) -->
@@ -294,25 +296,26 @@ watch(
                     v-else-if="slide.type === 'infrastructure'"
                     class="booklet-content booklet-stroen relative"
                   >
-                    <div class="booklet-stroen__heading-row flex flex-nowrap items-center gap-1.5">
-                      <input
-                        v-model="slide.data.heading"
-                        type="text"
-                        placeholder="ИНФРАСТРУКТУРА"
-                        class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                      />
-                      <div v-if="pe.canEditImages" class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
-                        <button
-                          type="button"
-                          class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
-                          style="background-color: var(--color-green-600);"
-                          title="Макет и сетка изображений"
-                          @click="pe.openPalettePopup(slide.id, $event)"
-                        >
-                          <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
-                        </button>
+                    <div class="booklet-stroen__shell">
+                      <div class="booklet-stroen__title-col flex flex-col items-center gap-2">
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="ИНФРАСТРУКТУРА"
+                          class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0 md:flex-none"
+                        />
+                        <div v-if="pe.canEditImages" class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                          <button
+                            type="button"
+                            class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                            style="background-color: var(--color-green-600);"
+                            title="Макет и сетка изображений"
+                            @click="pe.openPalettePopup(slide.id, $event)"
+                          >
+                            <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
+                          </button>
+                        </div>
                       </div>
-                    </div>
                     <div class="booklet-stroen__wrap" :data-block-layout="pe.getBlockLayout(slide)">
                       <div
                         class="booklet-stroen__block booklet-stroen__content"
@@ -365,6 +368,7 @@ watch(
                           <img v-if="img" :src="img" alt="">
                         </div>
                       </div>
+                    </div>
                     </div>
                   </div>
 
@@ -569,14 +573,15 @@ watch(
                     class="booklet-content booklet-char"
                     data-editor-block="slide"
                   >
-                    <div class="booklet-char__heading-row">
-                      <input
-                        v-model="slide.data.heading"
-                        type="text"
-                        placeholder="ХАРАКТЕРИСТИКИ"
-                        class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                      />
-                    </div>
+                    <div class="booklet-char__shell">
+                      <div class="booklet-char__title-col flex flex-col items-center justify-center">
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="ХАРАКТЕРИСТИКИ"
+                          class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                        />
+                      </div>
                     <div class="booklet-char__wrap">
                       <div class="booklet-char__img relative">
                         <template v-if="pe.canEditImages">
@@ -641,6 +646,7 @@ watch(
                           </button>
                         </div>
                       </div>
+                    </div>
                     </div>
                   </div>
 
@@ -708,14 +714,15 @@ watch(
                     class="booklet-content booklet-contacts"
                     data-editor-block="slide"
                   >
-                    <div class="booklet-contacts__heading-row">
-                      <input
-                        v-model="slide.data.heading"
-                        type="text"
-                        placeholder="Контакты"
-                        class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
-                      />
-                    </div>
+                    <div class="booklet-contacts__shell">
+                      <div class="booklet-contacts__title-col flex flex-col items-center justify-center">
+                        <input
+                          v-model="slide.data.heading"
+                          type="text"
+                          placeholder="Контакты"
+                          class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
+                        />
+                      </div>
                     <div class="booklet-contacts__wrap">
                       <div class="booklet-contacts__block booklet-contacts__img relative">
                         <input
@@ -803,6 +810,7 @@ watch(
                           <label :for="'contacts-photo-' + slide.id">Загрузить или сменить фото слева</label>
                         </div>
                       </div>
+                    </div>
                     </div>
                   </div>
 
