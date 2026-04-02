@@ -136,9 +136,12 @@
   padding: 0;
   writing-mode: vertical-rl;
   text-orientation: mixed;
+  text-align: center;
+  direction: rtl;
   line-height: 1;
   flex: 0 0 auto;
   align-self: stretch;
+  justify-self: center;
   white-space: nowrap;
 }
 
