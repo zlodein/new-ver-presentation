@@ -751,9 +751,77 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-info__title-col .booklet-info__title,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__title-col .booklet-stroen__title,
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__title-col .booklet-char__title,
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__title-col .booklet-contacts__title,
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__title,
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__title { margin: 0; padding: 0; writing-mode: vertical-rl; text-orientation: mixed; text-align: center; line-height: 1; flex: 0 0 auto; align-self: stretch; justify-self: center; direction: ltr; white-space: nowrap; transform: rotate(180deg); transform-origin: center center; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__title-col .booklet-contacts__title { margin: 0; padding: 0; writing-mode: vertical-rl; text-orientation: mixed; text-align: center; line-height: 1; flex: 0 0 auto; align-self: stretch; justify-self: center; direction: ltr; white-space: nowrap; transform: rotate(180deg); transform-origin: center center; }
+    /* Галерея и планировка: как в просмотре — заголовок слева (вертикально), сетка изображений справа */
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__wrap {
+      display: grid !important;
+      grid-template-columns: auto 1fr !important;
+      grid-template-rows: 1fr !important;
+      column-gap: 1rem;
+      row-gap: 0;
+      align-items: stretch;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      max-height: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__title {
+      grid-column: 1 !important;
+      grid-row: 1 !important;
+      margin: 0 !important;
+      padding: 0;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      text-align: center;
+      line-height: 1;
+      align-self: stretch;
+      justify-self: center;
+      direction: ltr;
+      white-space: nowrap;
+      transform: rotate(180deg);
+      transform-origin: center center;
+    }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__grid {
+      grid-column: 2 !important;
+      grid-row: 1 !important;
+      min-height: 0;
+      flex: 1;
+    }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__wrap {
+      display: grid !important;
+      grid-template-columns: auto 1fr !important;
+      grid-template-rows: 1fr !important;
+      column-gap: 1rem;
+      row-gap: 0;
+      align-items: stretch;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__title {
+      grid-column: 1 !important;
+      grid-row: 1 !important;
+      margin: 0 !important;
+      padding: 0;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      text-align: center;
+      line-height: 1;
+      align-self: stretch;
+      justify-self: center;
+      direction: ltr;
+      white-space: nowrap;
+      transform: rotate(180deg);
+      transform-origin: center center;
+    }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__grid {
+      grid-column: 2 !important;
+      grid-row: 1 !important;
+      min-height: 0;
+      flex: 1;
+    }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-map__wrap {
       display: grid !important;
       grid-template-columns: auto 1fr 1fr !important;
