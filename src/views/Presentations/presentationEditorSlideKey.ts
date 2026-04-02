@@ -3,7 +3,7 @@ import type { SlideItem } from '@/types/presentationSlide'
 
 export type DadataSuggestionItem = { value: string; geo_lat?: number; geo_lon?: number }
 
-/** Контекст для тела слайда (inject в PresentationEditorSlideBlock) */
+/** Контекст для тела слайда (inject в slide-blocks/PresentationEditorSlideBlock*.vue) */
 export type PresentationEditorSlideInject = {
   canEditImages: boolean
   generateTextLoading: string | null

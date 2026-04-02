@@ -484,7 +484,7 @@
                 >
                   <div class="booklet-page__inner">
                     <div class="booklet-scale-root w-full h-full">
-                      <PresentationEditorSlideBlock :slide="slide" />
+                      <component :is="editorSlideBlockComponent" :slide="slide" />
                     </div>
                   </div>
                 </div>
@@ -1032,7 +1032,7 @@
                             <div class="booklet-page relative h-full w-full overflow-hidden">
                               <div class="booklet-page__inner">
                                 <div class="booklet-scale-root h-full w-full">
-                                  <PresentationEditorSlideBlock :slide="slide" />
+                                  <component :is="editorSlideBlockComponent" :slide="slide" />
                                 </div>
                               </div>
                             </div>
@@ -1228,7 +1228,8 @@ import type { Swiper as SwiperType } from 'swiper'
 import draggable from 'vuedraggable'
 import 'swiper/css'
 import '@/assets/booklet-slides.css'
-import '@/assets/booklet-template-city.css'
+import '@/assets/booklet-template-basic.css'
+import '@/assets/booklet-template-urban-real-estate.css'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
@@ -1238,7 +1239,14 @@ import type { PresentationFull } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
 import { usePhoneMask } from '@/composables/usePhoneMask'
 import type { SlideItem } from '@/types/presentationSlide'
-import PresentationEditorSlideBlock from './PresentationEditorSlideBlock.vue'
+import { createDefaultSlidesBasic, genSlideId } from '@/presentation-templates/basic/defaultSlides'
+import {
+  BOOKLET_TEMPLATE_BASIC,
+  BOOKLET_TEMPLATE_URBAN_REAL_ESTATE,
+  normalizeBookletTemplateId,
+} from '@/data/bookletTemplates'
+import PresentationEditorSlideBlockBasic from './slide-blocks/PresentationEditorSlideBlockBasic.vue'
+import PresentationEditorSlideBlockUrbanRealEstate from './slide-blocks/PresentationEditorSlideBlockUrbanRealEstate.vue'
 import {
   PRESENTATION_EDITOR_SLIDE_KEY,
   type PresentationEditorSlideInject,
@@ -1369,40 +1377,7 @@ const SLIDE_TYPE_OPTIONS = [
   { type: 'contacts', label: 'Контакты' },
 ]
 
-const SLIDE_TYPES = [
-  { type: 'cover', label: 'Обложка' },
-  { type: 'characteristics', label: 'Характеристики' },
-  { type: 'description', label: 'Описание' },
-  { type: 'infrastructure', label: 'Инфраструктура' },
-  { type: 'location', label: 'Местоположение' },
-  { type: 'gallery', label: 'Галерея' },
-  { type: 'layout', label: 'Планировка' },
-  { type: 'contacts', label: 'Контакты' },
-] as const
-
-function genSlideId() {
-  return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
-
-const defaultSlides = SLIDE_TYPES.map(({ type }) => ({
-  id: genSlideId(),
-  type,
-  data:
-    type === 'cover'
-      ? {
-          figures: [],
-          title: 'Новая презентация',
-          subtitle: '',
-          deal_type: 'Аренда',
-          currency: 'RUB',
-          price_value: 0,
-          show_all_currencies: false,
-        }
-      : type === 'location'
-        ? { figures: [], heading: 'Местоположение', address: '', lat: 55.755864, lng: 37.617698, show_metro: true, metro_stations: [] }
-        : { figures: [] },
-  hidden: false,
-}))
+const defaultSlides = createDefaultSlidesBasic()
 
 const slides = ref<SlideItem[]>([...defaultSlides])
 const swiperInstance = ref<SwiperType | null>(null)
@@ -1534,8 +1509,8 @@ const FONT_OPTIONS = [
   { value: '"Source Sans 3", sans-serif', label: 'Source Sans Pro' },
 ]
 const TEMPLATE_OPTIONS = [
-  { value: 'basic', label: 'Базовый шаблон' },
-  { value: 'city', label: 'Городская' },
+  { value: BOOKLET_TEMPLATE_BASIC, label: 'Базовый шаблон' },
+  { value: BOOKLET_TEMPLATE_URBAN_REAL_ESTATE, label: 'Городская недвижимость' },
 ]
 const RADIUS_OPTIONS = [
   { value: '0', label: 'Без скругления' },
@@ -1574,7 +1549,7 @@ const FONT_SIZE_PRICE_OPTIONS = [
   { value: '28px', label: '28 px' },
 ]
 const DEFAULT_PRESENTATION_SETTINGS = {
-  template: 'basic',
+  template: BOOKLET_TEMPLATE_BASIC,
   fontFamily: 'system-ui',
   imageBorderRadius: '0',
   imageFrame: 'none',
@@ -1586,6 +1561,12 @@ const DEFAULT_PRESENTATION_SETTINGS = {
   exportEnabled: '0',
 }
 const presentationSettings = ref<Record<string, string>>({ ...DEFAULT_PRESENTATION_SETTINGS })
+
+const editorSlideBlockComponent = computed(() =>
+  presentationSettings.value.template === BOOKLET_TEMPLATE_URBAN_REAL_ESTATE
+    ? PresentationEditorSlideBlockUrbanRealEstate
+    : PresentationEditorSlideBlockBasic
+)
 
 function resetPresentationSettings() {
   presentationSettings.value = { ...DEFAULT_PRESENTATION_SETTINGS }
@@ -3015,7 +2996,7 @@ onMounted(async () => {
       const contentWithSettings = data?.content as { slides?: unknown[]; settings?: Record<string, string> } | undefined
       if (contentWithSettings?.settings && typeof contentWithSettings.settings === 'object') {
         const s = contentWithSettings.settings
-        if (s.template != null) presentationSettings.value.template = s.template
+        if (s.template != null) presentationSettings.value.template = normalizeBookletTemplateId(s.template)
         if (s.exportEnabled != null) presentationSettings.value.exportEnabled = s.exportEnabled
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
@@ -3074,7 +3055,7 @@ function loadFromLocalStorage() {
       }
       if (saved.settings && typeof saved.settings === 'object') {
         const s = saved.settings as Record<string, string>
-        if (s.template != null) presentationSettings.value.template = s.template
+        if (s.template != null) presentationSettings.value.template = normalizeBookletTemplateId(s.template)
         if (s.exportEnabled != null) presentationSettings.value.exportEnabled = s.exportEnabled
         if (s.fontFamily != null) presentationSettings.value.fontFamily = s.fontFamily
         if (s.imageBorderRadius != null) presentationSettings.value.imageBorderRadius = s.imageBorderRadius
@@ -3092,6 +3073,7 @@ function loadFromLocalStorage() {
 }
 
 async function doSave(options?: { status?: string; skipRedirect?: boolean; createNotification?: boolean }) {
+  presentationSettings.value.template = normalizeBookletTemplateId(presentationSettings.value.template)
   mergeProfileIntoContactsSlides()
   const cover = slides.value.find((s) => s.type === 'cover')
   const title = (cover?.type === 'cover' && cover.data?.title)

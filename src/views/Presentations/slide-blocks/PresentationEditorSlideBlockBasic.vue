@@ -4,7 +4,7 @@ import type { SlideItem } from '@/types/presentationSlide'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import { metroLineColor } from '@/data/metroLineColors'
-import { PRESENTATION_EDITOR_SLIDE_KEY, type PresentationEditorSlideInject } from './presentationEditorSlideKey'
+import { PRESENTATION_EDITOR_SLIDE_KEY, type PresentationEditorSlideInject } from '../presentationEditorSlideKey'
 
 const { slide } = defineProps<{ slide: SlideItem }>()
 

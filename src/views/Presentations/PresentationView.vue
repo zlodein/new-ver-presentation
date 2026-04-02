@@ -31,7 +31,7 @@
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
         :data-image-frame="(presentation?.content?.settings as Record<string, string> | undefined)?.imageFrame ?? 'none'"
-        :data-template="(presentation?.content?.settings as Record<string, string> | undefined)?.template ?? 'basic'"
+        :data-template="bookletTemplateId"
       >
       <div
         v-for="(slide, index) in visibleSlides"
@@ -372,13 +372,15 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
-import '@/assets/booklet-template-city.css'
+import '@/assets/booklet-template-basic.css'
+import '@/assets/booklet-template-urban-real-estate.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
 import { figureBlockScopesForSlide } from '@/utils/figureBlockScopes'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
+import { normalizeBookletTemplateId } from '@/data/bookletTemplates'
 import type { FigureDefinition } from '@/types/figures'
 interface ViewSlideItem {
   type: string
@@ -395,6 +397,12 @@ const presentation = ref<{
   coverImage?: string
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string; imageFrame?: string; template?: string } }
 } | null>(null)
+
+const bookletTemplateId = computed(() =>
+  normalizeBookletTemplateId(
+    (presentation.value?.content?.settings as Record<string, string> | undefined)?.template
+  )
+)
 
 const figures = ref<FigureDefinition[]>([])
 const figuresById = computed(() => Object.fromEntries(figures.value.map((f) => [f.id, f])) as Record<string, FigureDefinition>)
