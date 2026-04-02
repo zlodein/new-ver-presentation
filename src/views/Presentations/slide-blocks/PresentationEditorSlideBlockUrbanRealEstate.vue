@@ -718,13 +718,26 @@ watch(
                     </div>
                   </div>
 
-                  <!-- 9. Контакты: заголовок «Контакты», блок аватар+имя/о себе, мессенджеры, телефон, email -->
+                  <!-- 9. Контакты (urban): слева крупное фото, справа контент; внизу справа — ссылка на загрузку того же фото -->
                   <div
                     v-else-if="slide.type === 'contacts'"
                     class="booklet-content booklet-contacts"
                     data-editor-block="slide"
                   >
                     <div class="booklet-contacts__wrap">
+                      <div class="booklet-contacts__block booklet-contacts__img relative">
+                        <input
+                          :id="'contacts-photo-' + slide.id"
+                          type="file"
+                          accept="image/*"
+                          class="hidden"
+                          @change="pe.onContactsImageUpload(slide, $event, 0)"
+                        />
+                        <template v-if="pe.canEditImages">
+                          <label class="booklet-upload-btn cursor-pointer" :for="'contacts-photo-' + slide.id"></label>
+                        </template>
+                        <img v-if="pe.contactsImageDisplayUrl(slide)" :src="pe.contactsImageDisplayUrl(slide)" alt="">
+                      </div>
                       <div class="booklet-contacts__left flex flex-col gap-4">
                         <input
                           v-model="slide.data.heading"
@@ -800,14 +813,9 @@ watch(
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                           />
                         </div>
-                      </div>
-                      <div class="booklet-contacts__block booklet-contacts__img relative">
-                        <template v-if="pe.canEditImages">
-                          <label class="booklet-upload-btn cursor-pointer">
-                            <input type="file" accept="image/*" class="hidden" @change="pe.onContactsImageUpload(slide, $event, 0)" />
-                          </label>
-                        </template>
-                        <img v-if="pe.contactsImageDisplayUrl(slide)" :src="pe.contactsImageDisplayUrl(slide)" alt="">
+                        <div v-if="pe.canEditImages" class="booklet-contacts__upload-footer">
+                          <label :for="'contacts-photo-' + slide.id">Загрузить или сменить фото слева</label>
+                        </div>
                       </div>
                     </div>
                   </div>
