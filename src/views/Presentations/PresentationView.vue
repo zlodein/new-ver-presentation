@@ -73,9 +73,11 @@
             </div>
             <!-- 2. Описание (с блоком текста и сеткой 2 фото) -->
             <div v-else-if="slide.type === 'description'" class="booklet-content booklet-info">
+              <div class="booklet-info__heading-row">
+                <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
+              </div>
               <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-info__block booklet-info__content" data-editor-block="description-text">
-                  <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
                   <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.text ?? slide.data?.content ?? ''))" />
                 </div>
                 <div
@@ -91,9 +93,11 @@
             </div>
             <!-- 3. Инфраструктура -->
             <div v-else-if="slide.type === 'infrastructure'" class="booklet-content booklet-stroen">
+              <div class="booklet-stroen__heading-row">
+                <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
+              </div>
               <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-stroen__block booklet-stroen__content" data-editor-block="infrastructure-text">
-                  <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
                   <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.content ?? slide.data?.text ?? ''))" />
                 </div>
                 <div
@@ -165,8 +169,10 @@
             </div>
             <!-- 7. Характеристики -->
             <div v-else-if="slide.type === 'characteristics'" class="booklet-content booklet-char" data-editor-block="slide">
-              <div class="booklet-char__wrap">
+              <div class="booklet-char__heading-row">
                 <h2 class="booklet-char__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ХАРАКТЕРИСТИКИ' }}</h2>
+              </div>
+              <div class="booklet-char__wrap">
                 <div class="booklet-char__img">
                   <img
                     v-if="slide.data?.charImageUrl || slide.data?.image"
@@ -200,9 +206,11 @@
             </div>
             <!-- 9. Контакты: лого/аватар слева по центру, справа ФИО и телефон; соцсети, email, адрес, доп. текст, сайт. Пустые поля не выводим. -->
             <div v-else-if="slide.type === 'contacts'" class="booklet-content booklet-contacts" data-editor-block="slide">
+              <div class="booklet-contacts__heading-row">
+                <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
+              </div>
               <div class="booklet-contacts__wrap">
                 <div class="booklet-contacts__left flex flex-col gap-4">
-                  <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
                   <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide)) || (slide.data?.contactName ?? slide.data?.contact_name) || (slide.data?.phone ?? slide.data?.contact_phone)" class="booklet-contacts__top row flex items-start gap-4">
                     <div class="booklet-contacts__avatar-wrap shrink-0 flex justify-center">
                       <div class="booklet-contacts__avatar flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">

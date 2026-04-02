@@ -445,18 +445,29 @@
 }
 
 /* ---------- Характеристики (booklet-char) ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-char {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-char__heading-row {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-char__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   gap: 1rem;
   width: 100%;
-  height: 100%;
-  min-height: 320px;
+  flex: 1;
+  min-height: 280px;
 }
 
-.presentation-slider-wrap.booklet-view .booklet-char__title {
-  grid-column: 1 / -1;
+.presentation-slider-wrap.booklet-view .booklet-char__heading-row .booklet-char__title,
+.presentation-slider-wrap.booklet-view .booklet-char__heading-row .booklet-char__title input {
   margin: 0;
   font-size: 28px;
   font-weight: 400;
@@ -573,6 +584,22 @@
 }
 
 /* ---------- Описание (booklet-info) ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-info {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-info__heading-row {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-info .booklet-info__wrap {
+  flex: 1;
+  min-height: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-info__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -690,6 +717,22 @@
 }
 
 /* ---------- Инфраструктура (booklet-stroen) ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-stroen {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-stroen__heading-row {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-stroen .booklet-stroen__wrap {
+  flex: 1;
+  min-height: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-stroen__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -874,6 +917,22 @@
 }
 
 /* ---------- Контакты: 50% слева список контактов + аватар/лого сверху, 50% справа изображение ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-contacts {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__heading-row {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-contacts .booklet-contacts__wrap {
+  flex: 1;
+  min-height: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-contacts__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;

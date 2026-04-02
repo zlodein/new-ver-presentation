@@ -118,7 +118,7 @@ watch(
                           </template>
                           <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
                         </div>
-                        <div class="booklet-main__content relative z-0">
+                        <div class="booklet-main__content relative z-[2]">
                           <div class="booklet-main__top">
                             <textarea
                               ref="coverTopInputRef"
@@ -214,41 +214,31 @@ watch(
                     v-else-if="slide.type === 'description'"
                     class="booklet-content booklet-info relative"
                   >
+                    <div class="booklet-info__heading-row flex flex-nowrap items-center gap-1.5">
+                      <input
+                        :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
+                        type="text"
+                        placeholder="ОПИСАНИЕ"
+                        class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                        @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
+                      />
+                      <div v-if="pe.canEditImages" class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                        <button
+                          type="button"
+                          class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                          style="background-color: var(--color-green-600);"
+                          title="Макет и сетка изображений"
+                          @click="pe.openPalettePopup(slide.id, $event)"
+                        >
+                          <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
+                        </button>
+                      </div>
+                    </div>
                     <div class="booklet-info__wrap" :data-block-layout="pe.getBlockLayout(slide)">
                       <div
                         class="booklet-info__block booklet-info__content"
                         data-editor-block="description-text"
                       >
-                        <div v-if="pe.canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
-                          <input
-                            :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
-                            type="text"
-                            placeholder="ОПИСАНИЕ"
-                            class="booklet-info__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                            @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
-                          />
-                          <!-- Мобильная кнопка палитры: 50×50, по центру по вертикали с инпутом заголовка -->
-                          <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
-                            <button
-                              type="button"
-                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
-                              style="background-color: var(--color-green-600);"
-                              title="Макет и сетка изображений"
-                              @click="pe.openPalettePopup(slide.id, $event)"
-                            >
-                              <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
-                            </button>
-                          </div>
-                        </div>
-                        <template v-else>
-                          <input
-                            :value="slide.data?.heading ?? 'ОПИСАНИЕ'"
-                            type="text"
-                            placeholder="ОПИСАНИЕ"
-                            class="booklet-info__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                            @input="(slide.data as Record<string, string>).heading = ($event.target as HTMLInputElement).value"
-                          />
-                        </template>
                         <div class="booklet-info__text relative">
                           <textarea
                             :value="String(slide.data?.text ?? '')"
@@ -304,38 +294,30 @@ watch(
                     v-else-if="slide.type === 'infrastructure'"
                     class="booklet-content booklet-stroen relative"
                   >
+                    <div class="booklet-stroen__heading-row flex flex-nowrap items-center gap-1.5">
+                      <input
+                        v-model="slide.data.heading"
+                        type="text"
+                        placeholder="ИНФРАСТРУКТУРА"
+                        class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
+                      />
+                      <div v-if="pe.canEditImages" class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
+                        <button
+                          type="button"
+                          class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
+                          style="background-color: var(--color-green-600);"
+                          title="Макет и сетка изображений"
+                          @click="pe.openPalettePopup(slide.id, $event)"
+                        >
+                          <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
+                        </button>
+                      </div>
+                    </div>
                     <div class="booklet-stroen__wrap" :data-block-layout="pe.getBlockLayout(slide)">
                       <div
                         class="booklet-stroen__block booklet-stroen__content"
                         data-editor-block="infrastructure-text"
                       >
-                        <div v-if="pe.canEditImages" class="flex flex-nowrap items-center gap-1.5 mb-1">
-                          <input
-                            v-model="slide.data.heading"
-                            type="text"
-                            placeholder="ИНФРАСТРУКТУРА"
-                            class="booklet-stroen__title min-w-0 flex-1 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                          />
-                          <div class="booklet-palette-btn-mob shrink-0 md:hidden flex items-center">
-                            <button
-                              type="button"
-                              class="booklet-palette-btn relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-lg text-white transition-opacity hover:opacity-90"
-                              style="background-color: var(--color-green-600);"
-                              title="Макет и сетка изображений"
-                              @click="pe.openPalettePopup(slide.id, $event)"
-                            >
-                              <svg class="h-[22px] w-[22px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5 L4.5 15"/></svg>
-                            </button>
-                          </div>
-                        </div>
-                        <template v-else>
-                          <input
-                            v-model="slide.data.heading"
-                            type="text"
-                            placeholder="ИНФРАСТРУКТУРА"
-                            class="booklet-stroen__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
-                          />
-                        </template>
                         <div class="booklet-stroen__text relative">
                           <textarea
                             :value="String(slide.data?.content ?? '')"
@@ -587,13 +569,15 @@ watch(
                     class="booklet-content booklet-char"
                     data-editor-block="slide"
                   >
-                    <div class="booklet-char__wrap">
+                    <div class="booklet-char__heading-row">
                       <input
                         v-model="slide.data.heading"
                         type="text"
                         placeholder="ХАРАКТЕРИСТИКИ"
                         class="booklet-char__title w-full border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                       />
+                    </div>
+                    <div class="booklet-char__wrap">
                       <div class="booklet-char__img relative">
                         <template v-if="pe.canEditImages">
                           <label class="booklet-upload-btn cursor-pointer">
@@ -724,14 +708,16 @@ watch(
                     class="booklet-content booklet-contacts"
                     data-editor-block="slide"
                   >
+                    <div class="booklet-contacts__heading-row">
+                      <input
+                        v-model="slide.data.heading"
+                        type="text"
+                        placeholder="Контакты"
+                        class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
+                      />
+                    </div>
                     <div class="booklet-contacts__wrap">
                       <div class="booklet-contacts__left flex flex-col gap-4">
-                        <input
-                          v-model="slide.data.heading"
-                          type="text"
-                          placeholder="Контакты"
-                          class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
-                        />
                         <div class="booklet-contacts__top row flex items-start gap-4">
                           <div class="booklet-contacts__avatar-wrap shrink-0 flex justify-center">
                             <div class="booklet-contacts__avatar group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-brand-500 text-2xl font-semibold text-white dark:border-gray-800">
