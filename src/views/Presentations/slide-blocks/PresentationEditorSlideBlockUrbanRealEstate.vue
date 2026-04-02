@@ -720,7 +720,7 @@ watch(
                           v-model="slide.data.heading"
                           type="text"
                           placeholder="Контакты"
-                          class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 text-base font-semibold focus:outline-none focus:ring-0"
+                          class="booklet-contacts__title mb-0 w-full flex-shrink-0 border-0 bg-transparent p-0 focus:outline-none focus:ring-0"
                         />
                       </div>
                     <div class="booklet-contacts__wrap">

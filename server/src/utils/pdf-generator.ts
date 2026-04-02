@@ -883,7 +883,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__left { grid-column: 2; grid-row: 1; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__block.booklet-contacts__img { grid-column: 1; grid-row: 1; min-height: 280px; }
     .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__block.booklet-contacts__img img { min-height: 100%; height: 100%; object-fit: cover; }
-    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__title-col .booklet-contacts__title { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; color: #1a1a1a; }
+    .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__title-col .booklet-contacts__title { font-size: 28px; font-weight: 400; letter-spacing: 0.02em; color: #1a1a1a; }
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-main__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-img__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-info__block.booklet-info__img::after,
@@ -892,7 +892,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-galery__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-layout__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="default"] .booklet-contacts__block.booklet-contacts__img::after {
-      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 6; box-sizing: border-box;
       border: 4px solid rgba(0,0,0,.3); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px rgba(0,0,0,.3);
     }
     .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-main__img::after,
@@ -903,7 +903,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-galery__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-layout__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="minimal"] .booklet-contacts__block.booklet-contacts__img::after {
-      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 6; box-sizing: border-box;
       border: 1px solid rgba(0,0,0,.12); box-shadow: 0 1px 3px rgba(0,0,0,.08);
     }
     .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-main__img::after,
@@ -914,7 +914,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-galery__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-layout__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="vintage"] .booklet-contacts__block.booklet-contacts__img::after {
-      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 6; box-sizing: border-box;
       border: 2px solid #c9b896; box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
     }
     .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-main__img::after,
@@ -925,7 +925,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
     .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-galery__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-layout__img::after,
     .presentation-slider-wrap.booklet-view[data-image-frame="polaroid"] .booklet-contacts__block.booklet-contacts__img::after {
-      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; box-sizing: border-box;
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 6; box-sizing: border-box;
       border: 3px solid #f2ebe0; box-shadow: 0 2px 8px rgba(0,0,0,.1);
     }
     @media print {

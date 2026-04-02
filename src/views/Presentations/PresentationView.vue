@@ -962,7 +962,7 @@ onBeforeUnmount(() => {
   aspect-ratio: 1123 / 794;
   width: 100%;
   min-height: 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 5px solid #fff;
   scroll-margin-top: 4rem; /* отступ при scrollIntoView, чтобы блок не уходил под sticky-навигацию */
 }
 .booklet-page--stacked .booklet-page__inner {
