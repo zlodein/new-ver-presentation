@@ -348,6 +348,7 @@
   column-gap: 1rem;
   row-gap: 0;
   align-items: stretch;
+  overflow: visible;
 }
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__title {
   margin: 0;
@@ -585,6 +586,7 @@
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__grid {
   position: relative;
   isolation: isolate;
+  overflow: visible;
 }
 
 .presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__grid::before,
