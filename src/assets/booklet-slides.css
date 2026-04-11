@@ -413,6 +413,9 @@
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-galery__grid {
@@ -445,18 +448,56 @@
 }
 
 /* ---------- Характеристики (booklet-char) ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-char {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-char__shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-char__title-col {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+/* Базовый шаблон: заголовки описания / инфраструктуры / характеристик — по центру */
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-info__title-col,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-stroen__title-col,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-char__title-col {
+  align-items: center;
+}
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-info__title,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-info__title input,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-stroen__title,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-stroen__title input,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-char__title,
+.presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-char__title input {
+  text-align: center;
+  width: 100%;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-char__shell .booklet-char__wrap {
+  flex: 1;
+  min-height: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-char__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   gap: 1rem;
   width: 100%;
-  height: 100%;
-  min-height: 320px;
+  min-height: 280px;
 }
 
-.presentation-slider-wrap.booklet-view .booklet-char__title {
-  grid-column: 1 / -1;
+.presentation-slider-wrap.booklet-view .booklet-char__title-col .booklet-char__title,
+.presentation-slider-wrap.booklet-view .booklet-char__title-col .booklet-char__title input {
   margin: 0;
   font-size: 28px;
   font-weight: 400;
@@ -532,6 +573,8 @@
 .presentation-slider-wrap.booklet-view .booklet-layout__title-wrapper {
   flex: 0 0 auto;
   margin-bottom: 1rem;
+  width: 100%;
+  text-align: center;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-layout__title {
@@ -540,6 +583,9 @@
   font-weight: 400;
   letter-spacing: 0.02em;
   color: #1a1a1a;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-layout__grid {
@@ -573,6 +619,29 @@
 }
 
 /* ---------- Описание (booklet-info) ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-info {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-info__shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-info__title-col {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-info__shell .booklet-info__wrap {
+  flex: 1;
+  min-height: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-info__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -690,6 +759,29 @@
 }
 
 /* ---------- Инфраструктура (booklet-stroen) ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-stroen {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-stroen__shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-stroen__title-col {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-stroen__shell .booklet-stroen__wrap {
+  flex: 1;
+  min-height: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-stroen__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -814,6 +906,9 @@
   letter-spacing: 0.02em;
   color: #1a1a1a;
   flex-shrink: 0;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-map__img {
@@ -874,6 +969,29 @@
 }
 
 /* ---------- Контакты: 50% слева список контактов + аватар/лого сверху, 50% справа изображение ---------- */
+.presentation-slider-wrap.booklet-view .booklet-content.booklet-contacts {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__title-col {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__shell .booklet-contacts__wrap {
+  flex: 1;
+  min-height: 0;
+}
+
 .presentation-slider-wrap.booklet-view .booklet-contacts__wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -889,7 +1007,17 @@
   flex-direction: column;
   gap: 1rem;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: visible;
+  overflow-y: auto;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__messengers {
+  width: 100%;
+  min-width: 0;
+}
+
+.presentation-slider-wrap.booklet-view .booklet-contacts__messengers a {
+  flex-shrink: 0;
 }
 
 .presentation-slider-wrap.booklet-view .booklet-contacts__title,
@@ -982,7 +1110,7 @@
   cursor: pointer;
   opacity: 0.5;
   transition: opacity 0.2s ease;
-  z-index: 3;
+  z-index: 7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1022,7 +1150,7 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 2;
+  z-index: 6;
   box-sizing: border-box;
   border: 4px solid rgba(0, 0, 0, .3);
   box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px rgba(0, 0, 0, .3);
@@ -1042,7 +1170,7 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 2;
+  z-index: 6;
   box-sizing: border-box;
   border: 1px solid rgba(0, 0, 0, .12);
   box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
@@ -1062,7 +1190,7 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 2;
+  z-index: 6;
   box-sizing: border-box;
   border: 2px solid #c9b896;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4);
@@ -1082,7 +1210,7 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 2;
+  z-index: 6;
   box-sizing: border-box;
   border: 3px solid #f2ebe0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
@@ -1410,5 +1538,5 @@
   }
 }
 
-/* City template overrides moved to `booklet-template-city.css`. */
+/* Переопределения по шаблонам: booklet-template-basic.css, booklet-template-urban-real-estate.css */
 

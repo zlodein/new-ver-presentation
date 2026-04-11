@@ -31,7 +31,7 @@
         class="presentation-view-fixed presentation-view-wrap presentation-slider-wrap booklet-view mx-auto w-[1123px] max-w-full rounded-xl bg-white shadow-lg dark:bg-gray-900"
         :style="presentationStyle"
         :data-image-frame="(presentation?.content?.settings as Record<string, string> | undefined)?.imageFrame ?? 'none'"
-        :data-template="(presentation?.content?.settings as Record<string, string> | undefined)?.template ?? 'basic'"
+        :data-template="bookletTemplateId"
       >
       <div
         v-for="(slide, index) in visibleSlides"
@@ -64,7 +64,7 @@
                       {{ currencySymbol(slide.data?.currency) }}
                       <span v-if="slide.data?.deal_type === 'Аренда'" class="booklet-main__price-suffix font-normal">/ месяц</span>
                     </div>
-                    <div v-if="slide.data?.show_all_currencies" class="booklet-main__bottom-line booklet-main__currencies-grid mt-2 inline-grid grid-cols-2 gap-x-4 gap-y-1 justify-items-end text-sm text-gray-600">
+                    <div v-if="showAllCurrenciesEnabled(slide)" class="booklet-main__bottom-line booklet-main__currencies-grid mt-2 inline-grid grid-cols-2 gap-x-4 gap-y-1 justify-items-end text-sm text-gray-600">
                       <span v-for="line in coverConvertedPrices(slide)" :key="line" v-text="line" />
                     </div>
                   </div>
@@ -73,9 +73,12 @@
             </div>
             <!-- 2. Описание (с блоком текста и сеткой 2 фото) -->
             <div v-else-if="slide.type === 'description'" class="booklet-content booklet-info">
+              <div class="booklet-info__shell">
+                <div class="booklet-info__title-col">
+                  <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
+                </div>
               <div class="booklet-info__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-info__block booklet-info__content" data-editor-block="description-text">
-                  <h2 class="booklet-info__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ОПИСАНИЕ' }}</h2>
                   <div v-if="slide.data?.text || slide.data?.content" class="booklet-info__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.text ?? slide.data?.content ?? ''))" />
                 </div>
                 <div
@@ -88,12 +91,16 @@
                   </div>
                 </div>
               </div>
+              </div>
             </div>
             <!-- 3. Инфраструктура -->
             <div v-else-if="slide.type === 'infrastructure'" class="booklet-content booklet-stroen">
+              <div class="booklet-stroen__shell">
+                <div class="booklet-stroen__title-col">
+                  <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
+                </div>
               <div class="booklet-stroen__wrap" :data-block-layout="getBlockLayout(slide)">
                 <div class="booklet-stroen__block booklet-stroen__content" data-editor-block="infrastructure-text">
-                  <h2 class="booklet-stroen__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ИНФРАСТРУКТУРА' }}</h2>
                   <div v-if="slide.data?.content || slide.data?.text" class="booklet-stroen__text booklet-info__text--formatted" v-html="formatDescriptionHtml(String(slide.data?.content ?? slide.data?.text ?? ''))" />
                 </div>
                 <div
@@ -105,6 +112,7 @@
                     <img v-if="url" :src="url" alt="" class="cursor-pointer" @click="openGallery(getGalleryGlobalIndex(index, i))" @error="onImageError">
                   </div>
                 </div>
+              </div>
               </div>
             </div>
             <!-- 4. Местоположение: слева карта, справа адрес и метро (без сетки фото) -->
@@ -165,8 +173,11 @@
             </div>
             <!-- 7. Характеристики -->
             <div v-else-if="slide.type === 'characteristics'" class="booklet-content booklet-char" data-editor-block="slide">
+              <div class="booklet-char__shell">
+                <div class="booklet-char__title-col">
+                  <h2 class="booklet-char__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ХАРАКТЕРИСТИКИ' }}</h2>
+                </div>
               <div class="booklet-char__wrap">
-                <h2 class="booklet-char__title">{{ slide.data?.heading ?? slide.data?.title ?? 'ХАРАКТЕРИСТИКИ' }}</h2>
                 <div class="booklet-char__img">
                   <img
                     v-if="slide.data?.charImageUrl || slide.data?.image"
@@ -186,6 +197,7 @@
                   </div>
                 </div>
               </div>
+              </div>
             </div>
             <!-- 8. Планировка: сетка изображений -->
             <div v-else-if="slide.type === 'layout'" class="booklet-content booklet-layout" data-editor-block="slide">
@@ -200,9 +212,12 @@
             </div>
             <!-- 9. Контакты: лого/аватар слева по центру, справа ФИО и телефон; соцсети, email, адрес, доп. текст, сайт. Пустые поля не выводим. -->
             <div v-else-if="slide.type === 'contacts'" class="booklet-content booklet-contacts" data-editor-block="slide">
+              <div class="booklet-contacts__shell">
+                <div class="booklet-contacts__title-col">
+                  <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
+                </div>
               <div class="booklet-contacts__wrap">
                 <div class="booklet-contacts__left flex flex-col gap-4">
-                  <h2 class="booklet-contacts__title mb-0">{{ slide.data?.heading ?? slide.data?.contact_title ?? 'Контакты' }}</h2>
                   <div v-if="resolveImageUrl(contactsAvatarOrLogoUrl(slide)) || (slide.data?.contactName ?? slide.data?.contact_name) || (slide.data?.phone ?? slide.data?.contact_phone)" class="booklet-contacts__top row flex items-start gap-4">
                     <div class="booklet-contacts__avatar-wrap shrink-0 flex justify-center">
                       <div class="booklet-contacts__avatar flex h-20 w-20 overflow-hidden rounded-full border border-gray-200 dark:border-gray-800">
@@ -246,6 +261,7 @@
                     @error="onImageError"
                   >
                 </div>
+              </div>
               </div>
             </div>
             <!-- AI-макет: рендер страниц с блоками и стилями -->
@@ -372,13 +388,15 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
-import '@/assets/booklet-template-city.css'
+import '@/assets/booklet-template-basic.css'
+import '@/assets/booklet-template-urban-real-estate.css'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
 import { figureBlockScopesForSlide } from '@/utils/figureBlockScopes'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
+import { normalizeBookletTemplateId } from '@/data/bookletTemplates'
 import type { FigureDefinition } from '@/types/figures'
 interface ViewSlideItem {
   type: string
@@ -395,6 +413,12 @@ const presentation = ref<{
   coverImage?: string
   content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; imageBorderRadius?: string; imageFrame?: string; template?: string } }
 } | null>(null)
+
+const bookletTemplateId = computed(() =>
+  normalizeBookletTemplateId(
+    (presentation.value?.content?.settings as Record<string, string> | undefined)?.template
+  )
+)
 
 const figures = ref<FigureDefinition[]>([])
 const figuresById = computed(() => Object.fromEntries(figures.value.map((f) => [f.id, f])) as Record<string, FigureDefinition>)
@@ -557,6 +581,14 @@ const EXCHANGE_RATES: Record<string, number> = {
   EUR: 0.01,
   CNY: 0.078,
   KZT: 4.9,
+}
+
+/** Из API show_all_currencies может прийти строкой */
+function showAllCurrenciesEnabled(slide: ViewSlideItem): boolean {
+  const v = slide.data?.show_all_currencies
+  if (v === true || v === 1) return true
+  if (typeof v === 'string') return v === 'true' || v === '1' || v.toLowerCase() === 'yes'
+  return false
 }
 
 function coverConvertedPrices(slide: ViewSlideItem): string[] {
@@ -930,7 +962,7 @@ onBeforeUnmount(() => {
   aspect-ratio: 1123 / 794;
   width: 100%;
   min-height: 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 5px solid #fff;
   scroll-margin-top: 4rem; /* отступ при scrollIntoView, чтобы блок не уходил под sticky-навигацию */
 }
 .booklet-page--stacked .booklet-page__inner {
