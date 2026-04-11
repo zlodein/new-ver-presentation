@@ -138,7 +138,7 @@
             !isExpanded && !isHovered ? 'lg:text-center' : '',
           ]"
         >
-          © 2026 E-Presentation. Все права защищены.
+          © 2026 e-presentation.ru
         </p>
       </div>
     </div>
@@ -165,7 +165,7 @@ const menuGroups = computed(() => [
   {
     title: 'Меню',
     items: [
-      { name: 'О нас', icon: InfoCircleIcon },
+      { name: 'О нас', icon: InfoCircleIcon, path: '/about' },
       { name: 'Тарифы', icon: PieChartIcon, path: '/tariffs' },
     ],
   },

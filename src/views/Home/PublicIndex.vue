@@ -3,9 +3,9 @@
     <div class="space-y-8">
       <HomeSlider v-if="sliderSlides.length > 0" :slides="sliderSlides" />
       <div
-        class="flex min-h-[40vh] flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-12 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-16"
+        class="flex min-h-[40vh] flex-col items-start justify-center rounded-2xl border border-gray-200 bg-white px-5 py-12 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-16"
       >
-        <div class="mx-auto w-full max-w-[630px] text-center">
+        <div class="w-full max-w-[630px] text-left">
           <h1
             class="mb-4 text-2xl font-semibold text-gray-800 dark:text-white sm:text-3xl"
           >

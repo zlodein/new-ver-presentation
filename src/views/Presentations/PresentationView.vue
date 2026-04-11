@@ -358,7 +358,7 @@
       </Teleport>
       <!-- Подвал: копирайт и ссылки (режим просмотра и публичная ссылка) -->
       <footer class="mt-6 border-t border-gray-200 py-4 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-        <p class="mb-2">© 2026 E-Presentation. Все права защищены.</p>
+        <p class="mb-2">© 2026 e-presentation.ru</p>
         <p class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <a href="/privacy" class="hover:text-gray-700 dark:hover:text-gray-300">Политика конфиденциальности</a>
           <a href="/terms" class="hover:text-gray-700 dark:hover:text-gray-300">Правила и условия</a>

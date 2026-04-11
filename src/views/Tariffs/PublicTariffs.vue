@@ -1,30 +1,32 @@
 <template>
   <PublicLayout>
-    <div class="mx-auto w-full max-w-[480px]">
+    <div class="w-full max-w-[480px]">
       <h2
-        class="mb-2 text-center text-title-sm font-bold text-gray-800 dark:text-white/90"
+        class="mb-2 text-left text-title-sm font-bold text-gray-800 dark:text-white/90"
       >
         Тарифы: максимум возможностей для каждого!
       </h2>
       <template v-if="isLoggedIn">
-        <p v-if="currentTariffLabel" class="mb-7 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p v-if="currentTariffLabel" class="mb-7 text-left text-sm text-gray-500 dark:text-gray-400">
           Текущий тариф: <strong class="text-gray-700 dark:text-gray-300">{{ currentTariffLabel }}</strong>
           <span v-if="currentTariff === 'test_drive'" class="mt-1 block">
             Сменить тариф на «Эксперт» можно ниже для снятия ограничений.
           </span>
         </p>
-        <p v-else class="mb-7 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p v-else class="mb-7 text-left text-sm text-gray-500 dark:text-gray-400">
           Выберите тариф для начала работы
         </p>
       </template>
-      <p v-else class="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
-        Войдите или зарегистрируйтесь, чтобы выбрать тариф и оплатить. После авторизации тариф будет присвоен вашему аккаунту.
-      </p>
-      <p v-else class="mb-7 text-center text-sm">
-        <router-link to="/signin?redirect=%2Ftariffs" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">Войти</router-link>
-        <span class="text-gray-500 dark:text-gray-400"> · </span>
-        <router-link to="/signup?redirect=%2Ftariffs" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">Регистрация</router-link>
-      </p>
+      <template v-else>
+        <p class="mb-4 text-left text-sm text-gray-500 dark:text-gray-400">
+          Войдите или зарегистрируйтесь, чтобы выбрать тариф и оплатить. После авторизации тариф будет присвоен вашему аккаунту.
+        </p>
+        <p class="mb-7 text-left text-sm">
+          <router-link to="/signin?redirect=%2Ftariffs" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">Войти</router-link>
+          <span class="text-gray-500 dark:text-gray-400"> · </span>
+          <router-link to="/signup?redirect=%2Ftariffs" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">Регистрация</router-link>
+        </p>
+      </template>
     </div>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:gap-6">

@@ -18,6 +18,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/about',
+      name: 'PublicAbout',
+      component: () => import('../views/Home/PublicAbout.vue'),
+      meta: {
+        title: 'О нас',
+      },
+    },
+    {
       path: '/tariffs',
       name: 'PublicTariffs',
       component: () => import('../views/Tariffs/PublicTariffs.vue'),

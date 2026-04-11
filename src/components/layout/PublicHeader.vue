@@ -2,7 +2,7 @@
   <header
     class="sticky top-0 z-99999 flex w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 lg:border-b"
   >
-    <div class="flex w-full flex-col items-center justify-between grow mx-auto max-w-(--breakpoint-2xl) md:px-6 lg:flex-row">
+    <div class="flex w-full flex-col items-stretch justify-between grow mx-auto max-w-(--breakpoint-2xl) md:px-6 lg:flex-row lg:items-center">
       <div
         class="flex w-full items-center justify-between gap-2 px-3 py-3 sm:gap-4 md:justify-normal md:border-b-0 lg:px-0 lg:py-4"
       >
