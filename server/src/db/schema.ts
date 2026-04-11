@@ -203,6 +203,13 @@ export const figures = pgTable(
   (table) => [index('figures_created_at_idx').on(table.createdAt)],
 )
 
+/** Ключ-значение для CMS: страницы, тарифы, флаги сайта. */
+export const cmsSettings = pgTable('cms_settings', {
+  key: varchar('key', { length: 64 }).primaryKey(),
+  payload: jsonb('payload').notNull().$type<Record<string, unknown>>(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
 export type User = typeof users.$inferSelect
@@ -224,3 +231,5 @@ export type TemplatePg = typeof templates.$inferSelect
 export type NewTemplatePg = typeof templates.$inferInsert
 export type FigurePg = typeof figures.$inferSelect
 export type NewFigurePg = typeof figures.$inferInsert
+export type CmsSettingsPg = typeof cmsSettings.$inferSelect
+export type NewCmsSettingsPg = typeof cmsSettings.$inferInsert

@@ -227,6 +227,13 @@ export const figures = mysqlTable('figures', {
   createdIdx: index('figures_created_at_idx').on(table.created_at),
 }))
 
+/** Ключ-значение для CMS: страницы, тарифы, флаги сайта (JSON в longtext). */
+export const cmsSettings = mysqlTable('cms_settings', {
+  key: varchar('key', { length: 64 }).primaryKey(),
+  payload: longtext('payload').notNull(),
+  updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+})
+
 export type UserMySQL = typeof users.$inferSelect
 export type NewUserMySQL = typeof users.$inferInsert
 export type PresentationMySQL = typeof presentations.$inferSelect
@@ -250,5 +257,7 @@ export type TemplateMySQL = typeof templates.$inferSelect
 export type NewTemplateMySQL = typeof templates.$inferInsert
 export type FigureMySQL = typeof figures.$inferSelect
 export type NewFigureMySQL = typeof figures.$inferInsert
+export type CmsSettingsMySQL = typeof cmsSettings.$inferSelect
+export type NewCmsSettingsMySQL = typeof cmsSettings.$inferInsert
 export type UserSessionMySQL = typeof userSessions.$inferSelect
 export type NewUserSessionMySQL = typeof userSessions.$inferInsert

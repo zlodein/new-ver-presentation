@@ -1,12 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { promises as fs } from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const PAGE_SETTINGS_PATH = path.join(__dirname, '../../data/page-settings.json')
+import {
+  getPageBlobFromStorage,
+  setPageBlobToStorage,
+} from '../services/cms-settings-storage.js'
 
 export interface HomeSliderSlide {
   title: string
@@ -23,33 +19,14 @@ export interface HomePageSettings {
 }
 
 /** Произвольный JSON на страницу (home, presentations, contacts и т.д.) */
-type StoredPageBlob = Record<string, unknown>
-
-async function loadPageSettings(): Promise<Record<string, StoredPageBlob>> {
-  try {
-    const raw = await fs.readFile(PAGE_SETTINGS_PATH, 'utf-8')
-    return JSON.parse(raw) as Record<string, StoredPageBlob>
-  } catch {
-    return {}
-  }
-}
-
-async function savePageSettings(data: Record<string, StoredPageBlob>): Promise<void> {
-  const dir = path.dirname(PAGE_SETTINGS_PATH)
-  await fs.mkdir(dir, { recursive: true })
-  await fs.writeFile(PAGE_SETTINGS_PATH, JSON.stringify(data, null, 2), 'utf-8')
-}
+export type StoredPageBlob = Record<string, unknown>
 
 export async function getPageSettings(pageId: string): Promise<StoredPageBlob | null> {
-  const all = await loadPageSettings()
-  const v = all[pageId]
-  return v && typeof v === 'object' ? v : null
+  return getPageBlobFromStorage(pageId)
 }
 
 export async function setPageSettings(pageId: string, settings: StoredPageBlob): Promise<void> {
-  const all = await loadPageSettings()
-  all[pageId] = settings
-  await savePageSettings(all)
+  await setPageBlobToStorage(pageId, settings)
 }
 
 export async function pageSettingsRoutes(app: FastifyInstance) {
