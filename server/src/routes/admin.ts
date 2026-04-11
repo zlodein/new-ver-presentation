@@ -13,7 +13,7 @@ import * as pgSchema from '../db/schema.js'
 import { fileStore } from '../db/file-store.js'
 import { deletePresentationImagesFolder, deleteSupportTicketFolder, deleteUploadFileByDbPath } from './upload.js'
 import { sendTestMail } from '../services/mailer.js'
-import { getPageSettings, setPageSettings, type HomePageSettings } from './page-settings.js'
+import { getPageSettings, setPageSettings } from './page-settings.js'
 import { getSiteSettings, setSiteSettings, type SiteSettings } from './site-settings.js'
 
 function toIsoDate(d: Date | string): string {
@@ -78,13 +78,15 @@ export async function adminRoutes(app: FastifyInstance) {
   )
 
   /** PUT /api/admin/pages/:pageId — сохранить настройки страницы (только админ) */
-  app.put<{ Params: { pageId: string }; Body: HomePageSettings }>(
+  app.put<{ Params: { pageId: string }; Body: Record<string, unknown> }>(
     '/api/admin/pages/:pageId',
     { preHandler: [requireAdmin] },
-    async (req: FastifyRequest<{ Params: { pageId: string }; Body: HomePageSettings }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { pageId: string }; Body: Record<string, unknown> }>, reply: FastifyReply) => {
       try {
         const { pageId } = req.params
-        const settings = req.body ?? {}
+        const body = req.body
+        const settings =
+          body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : {}
         if (!pageId || !/^[a-z0-9_-]+$/.test(pageId)) {
           return reply.status(400).send({ error: 'Недопустимый pageId' })
         }

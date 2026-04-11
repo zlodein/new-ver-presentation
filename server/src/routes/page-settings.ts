@@ -22,27 +22,31 @@ export interface HomePageSettings {
   }
 }
 
-async function loadPageSettings(): Promise<Record<string, HomePageSettings>> {
+/** Произвольный JSON на страницу (home, presentations, contacts и т.д.) */
+type StoredPageBlob = Record<string, unknown>
+
+async function loadPageSettings(): Promise<Record<string, StoredPageBlob>> {
   try {
     const raw = await fs.readFile(PAGE_SETTINGS_PATH, 'utf-8')
-    return JSON.parse(raw) as Record<string, HomePageSettings>
+    return JSON.parse(raw) as Record<string, StoredPageBlob>
   } catch {
     return {}
   }
 }
 
-async function savePageSettings(data: Record<string, HomePageSettings>): Promise<void> {
+async function savePageSettings(data: Record<string, StoredPageBlob>): Promise<void> {
   const dir = path.dirname(PAGE_SETTINGS_PATH)
   await fs.mkdir(dir, { recursive: true })
   await fs.writeFile(PAGE_SETTINGS_PATH, JSON.stringify(data, null, 2), 'utf-8')
 }
 
-export async function getPageSettings(pageId: string): Promise<HomePageSettings | null> {
+export async function getPageSettings(pageId: string): Promise<StoredPageBlob | null> {
   const all = await loadPageSettings()
-  return all[pageId] ?? null
+  const v = all[pageId]
+  return v && typeof v === 'object' ? v : null
 }
 
-export async function setPageSettings(pageId: string, settings: HomePageSettings): Promise<void> {
+export async function setPageSettings(pageId: string, settings: StoredPageBlob): Promise<void> {
   const all = await loadPageSettings()
   all[pageId] = settings
   await savePageSettings(all)

@@ -61,7 +61,7 @@ import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import { PageIcon } from '@/icons'
+import { PageIcon, MailIcon, DocsIcon } from '@/icons'
 import { api } from '@/api/client'
 
 const currentPageTitle = 'Настройка страниц'
@@ -102,6 +102,18 @@ const publicPages = [
     description: 'Слайдер, блоки контента',
     path: '/dashboard/admin/pages/home',
     icon: PageIcon,
+  },
+  {
+    name: 'Презентации',
+    description: 'Герой, каталог PDF и ссылок, FAQ',
+    path: '/dashboard/admin/pages/presentations',
+    icon: DocsIcon,
+  },
+  {
+    name: 'Контакты',
+    description: 'Тексты и реквизиты',
+    path: '/dashboard/admin/pages/contacts',
+    icon: MailIcon,
   },
 ]
 

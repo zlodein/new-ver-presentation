@@ -321,6 +321,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/dashboard/admin/pages/presentations',
+      name: 'Admin Page Presentations',
+      component: () => import('../views/Admin/AdminPagePresentations.vue'),
+      meta: {
+        title: 'Страница «Презентации»',
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/dashboard/admin/pages/contacts',
+      name: 'Admin Page Contacts',
+      component: () => import('../views/Admin/AdminPageContacts.vue'),
+      meta: {
+        title: 'Страница «Контакты»',
+        requiresAdmin: true,
+      },
+    },
+    {
       path: '/dashboard/line-chart',
       name: 'Line Chart',
       component: () => import('../views/Chart/LineChart/LineChart.vue'),

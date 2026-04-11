@@ -1,42 +1,41 @@
 <template>
   <PublicLayout>
     <div class="space-y-8">
-      <!-- Герой в стиле главной: светлая карточка + акцент бренда -->
       <div
         class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
       >
         <div class="border-b border-gray-100 bg-gradient-to-r from-brand-500/10 via-transparent to-transparent px-5 py-3 dark:border-white/10 dark:from-brand-500/15">
           <p class="text-xs font-medium uppercase tracking-wider text-brand-700 dark:text-brand-400">
-            Каталог шаблонов
+            {{ page.kicker }}
           </p>
         </div>
         <div class="px-5 py-10 sm:px-8 sm:py-12">
-          <h1 class="mb-4 max-w-3xl text-left text-2xl font-semibold leading-tight text-gray-800 dark:text-white sm:text-3xl lg:text-4xl">
-            Презентации для профессионального<br class="hidden sm:inline" />
-            представления объектов недвижимости
-          </h1>
+          <h1
+            class="mb-4 max-w-3xl text-left text-2xl font-semibold leading-tight text-gray-800 dark:text-white sm:text-3xl lg:text-4xl"
+            v-html="heroTitleHtml"
+          />
           <p class="mb-8 max-w-2xl text-left text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-            Подбор оформления под тип объекта: городская, загородная и коммерческая недвижимость. Шаблоны адаптированы
-            под типовую структуру сделки и готовы к наполнению в редакторе сервиса.
+            {{ page.heroSubtitle }}
           </p>
           <div class="flex flex-wrap gap-3">
             <router-link
-              to="/tariffs"
+              v-if="page.primaryCta?.label && page.primaryCta?.to"
+              :to="page.primaryCta.to"
               class="inline-flex items-center justify-center rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
             >
-              Тарифы и доступ
+              {{ page.primaryCta.label }}
             </router-link>
             <router-link
-              to="/signup"
+              v-if="page.secondaryCta?.label && page.secondaryCta?.to"
+              :to="page.secondaryCta.to"
               class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-800 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:bg-gray-800"
             >
-              Регистрация
+              {{ page.secondaryCta.label }}
             </router-link>
           </div>
         </div>
       </div>
 
-      <!-- Фильтр категорий -->
       <div class="flex flex-wrap gap-2">
         <button
           v-for="cat in categories"
@@ -54,7 +53,6 @@
         </button>
       </div>
 
-      <!-- Сетка шаблонов -->
       <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         <article
           v-for="item in filteredTemplates"
@@ -80,37 +78,47 @@
             <p class="mb-4 flex-1 text-left text-sm text-gray-500 dark:text-gray-400">
               {{ item.blurb }}
             </p>
-            <div class="flex items-end justify-between gap-3 border-t border-gray-100 pt-4 dark:border-white/10">
-              <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.price }}</span>
-              <router-link
-                to="/dashboard/presentations/new"
-                class="shrink-0 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+            <div class="flex flex-col gap-2 border-t border-gray-100 pt-4 dark:border-white/10 sm:flex-row sm:flex-wrap">
+              <button
+                type="button"
+                class="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-white/[0.04] dark:text-gray-200 dark:hover:bg-white/[0.08]"
+                :disabled="!item.pdfUrl?.trim()"
+                @click="openModal('pdf', item)"
               >
-                В редактор →
-              </router-link>
+                Посмотреть в PDF
+              </button>
+              <button
+                type="button"
+                class="inline-flex flex-1 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-medium text-brand-800 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-900/40 dark:bg-brand-950/40 dark:text-brand-200 dark:hover:bg-brand-950/60"
+                :disabled="!item.publicViewUrl?.trim()"
+                @click="openModal('public', item)"
+              >
+                Публичная ссылка
+              </button>
             </div>
           </div>
         </article>
       </div>
 
       <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-        Полный перечень шаблонов и условия использования уточняются в тарифной сетке и в
-        <router-link to="/terms" class="text-brand-600 hover:underline dark:text-brand-400">правилах сервиса</router-link>.
+        Условия использования сервиса и тарифы описаны в разделах
+        <router-link to="/tariffs" class="text-brand-600 hover:underline dark:text-brand-400">«Тарифы»</router-link>
+        и
+        <router-link to="/terms" class="text-brand-600 hover:underline dark:text-brand-400">«Правила»</router-link>.
       </p>
 
-      <!-- FAQ -->
       <div
         class="rounded-2xl border border-gray-200 bg-white px-5 py-8 dark:border-gray-800 dark:bg-white/[0.03] sm:px-8"
       >
         <h2 class="mb-2 text-left text-xl font-semibold text-gray-800 dark:text-white">
-          Вопросы по шаблонам и доступу
+          Вопросы по редактору и публикации
         </h2>
         <p class="mb-8 text-left text-sm text-gray-500 dark:text-gray-400">
-          Краткие ответы по формату работы с каталогом. Подробности — в документации после входа в сервис.
+          Как устроена работа в редакторе e-presentation.ru: PDF, публичный просмотр и настройки отображения.
         </p>
         <div class="space-y-3">
           <details
-            v-for="(faq, i) in faqs"
+            v-for="(faq, i) in page.faq"
             :key="i"
             class="group rounded-xl border border-gray-100 bg-gray-50/50 open:bg-white dark:border-white/10 dark:bg-white/[0.02] dark:open:bg-white/[0.04]"
           >
@@ -129,14 +137,42 @@
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="modal"
+        class="fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 p-4"
+        role="dialog"
+        aria-modal="true"
+        @click.self="modal = null"
+      >
+        <div
+          class="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-900"
+        >
+          <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-white/10">
+            <p class="truncate pr-4 text-sm font-medium text-gray-800 dark:text-white">{{ modal.title }}</p>
+            <button
+              type="button"
+              class="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-white/10"
+              @click="modal = null"
+            >
+              Закрыть
+            </button>
+          </div>
+          <iframe :src="modal.url" class="min-h-[75vh] w-full flex-1 border-0 bg-white dark:bg-gray-950" :title="modal.title" />
+        </div>
+      </div>
+    </Teleport>
   </PublicLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import PublicLayout from '@/components/layout/PublicLayout.vue'
+import { api, hasApi } from '@/api/client'
+import type { DemoCatalogItem, DemoCategory, PresentationsPageSettings } from '@/types/pageSettings'
 
-type Cat = 'all' | 'city' | 'country' | 'commercial'
+type Cat = 'all' | DemoCategory
 
 const categories: { id: Cat; label: string }[] = [
   { id: 'all', label: 'Все' },
@@ -147,47 +183,124 @@ const categories: { id: Cat; label: string }[] = [
 
 const activeCategory = ref<Cat>('all')
 
-const templates = [
-  { id: 1, category: 'city' as const, title: 'Серия «Город · базовая»', blurb: 'Универсальная структура для квартир и апартаментов в многоквартирном фонде.', price: 'от 0 ₽' },
-  { id: 2, category: 'city' as const, title: 'Серия «Город · расширенная»', blurb: 'Дополнительные блоки под планировку, инфраструктуру и юридические параметры.', price: 'от 375 ₽' },
-  { id: 3, category: 'city' as const, title: 'Серия «Город · премиум»', blurb: 'Акцент на визуальную подачу и сравнение вариантов внутри одного объекта.', price: 'от 400 ₽' },
-  { id: 4, category: 'country' as const, title: 'Серия «Загород · дом»', blurb: 'Сценарий для коттеджей и таунхаусов: участок, коммуникации, этажность.', price: 'от 425 ₽' },
-  { id: 5, category: 'country' as const, title: 'Серия «Загород · участок»', blurb: 'Фокус на земельном участке и разрешённом использовании.', price: 'от 450 ₽' },
-  { id: 6, category: 'commercial' as const, title: 'Серия «Офис / торговля»', blurb: 'Помещения под офис, retail и смешанное использование.', price: 'от 475 ₽' },
-  { id: 7, category: 'commercial' as const, title: 'Серия «Склад / производство»', blurb: 'Технические характеристики, логистика, допуски грузового транспорта.', price: 'от 500 ₽' },
-  { id: 8, category: 'city' as const, title: 'Серия «Новостройка»', blurb: 'Совместимость с материалами застройщика и сроками сдачи.', price: 'от 525 ₽' },
-]
+const DEFAULT_PAGE: PresentationsPageSettings = {
+  kicker: 'Каталог шаблонов',
+  heroTitle:
+    'Презентации для профессионального\nпредставления объектов недвижимости',
+  heroSubtitle:
+    'Подбор оформления под тип объекта: городская, загородная и коммерческая недвижимость. Ниже — примеры готовых материалов в PDF и публичном просмотре.',
+  primaryCta: { label: 'Тарифы и доступ', to: '/tariffs' },
+  secondaryCta: { label: 'Регистрация', to: '/signup' },
+  catalog: [
+    { id: '1', category: 'city', title: 'Серия «Город · базовая»', blurb: 'Универсальная структура для квартир и апартаментов в многоквартирном фонде.', pdfUrl: '', publicViewUrl: '' },
+    { id: '2', category: 'city', title: 'Серия «Город · расширенная»', blurb: 'Дополнительные блоки под планировку, инфраструктуру и юридические параметры.', pdfUrl: '', publicViewUrl: '' },
+    { id: '3', category: 'city', title: 'Серия «Город · премиум»', blurb: 'Акцент на визуальную подачу и сравнение вариантов внутри одного объекта.', pdfUrl: '', publicViewUrl: '' },
+    { id: '4', category: 'country', title: 'Серия «Загород · дом»', blurb: 'Сценарий для коттеджей и таунхаусов: участок, коммуникации, этажность.', pdfUrl: '', publicViewUrl: '' },
+    { id: '5', category: 'country', title: 'Серия «Загород · участок»', blurb: 'Фокус на земельном участке и разрешённом использовании.', pdfUrl: '', publicViewUrl: '' },
+    { id: '6', category: 'commercial', title: 'Серия «Офис / торговля»', blurb: 'Помещения под офис, retail и смешанное использование.', pdfUrl: '', publicViewUrl: '' },
+    { id: '7', category: 'commercial', title: 'Серия «Склад / производство»', blurb: 'Технические характеристики, логистика, допуски грузового транспорта.', pdfUrl: '', publicViewUrl: '' },
+    { id: '8', category: 'city', title: 'Серия «Новостройка»', blurb: 'Совместимость с материалами застройщика и сроками сдачи.', pdfUrl: '', publicViewUrl: '' },
+  ],
+  faq: [
+    {
+      q: 'Как получить PDF из редактора?',
+      a: 'В редакторе презентации сохраните изменения и нажмите «Экспорт в PDF». Файл формируется на сервере и скачивается в браузере. Кнопка доступна, если в настройках презентации включён экспорт в PDF или презентация опубликована — точные условия зависят от тарифа.',
+    },
+    {
+      q: 'Что такое публичная ссылка?',
+      a: 'В редакторе можно включить публичный доступ к просмотру: будет сгенерирована короткая ссылка на страницу просмотра в браузере без входа в личный кабинет. Ссылку можно скопировать и отправить клиенту.',
+    },
+    {
+      q: 'Что настраивается в презентации?',
+      a: 'Доступны слайды с наборами блоков (тексты, изображения, контакты и др.), порядок слайдов и загрузка фото. В настройках презентации задаются шрифты и параметры отображения — они применяются в редакторе, в публичном просмотре и при выгрузке в PDF.',
+    },
+    {
+      q: 'Какие требования к фотоматериалам?',
+      a: 'Рекомендуется использовать снимки с достаточным разрешением для экрана и печати (ориентир — не ниже 1920 px по длинной стороне), форматы JPG или PNG в пределах лимитов загрузки в интерфейсе редактора.',
+    },
+    {
+      q: 'Как передать материал клиенту?',
+      a: 'Можно отправить PDF по почте или в мессенджере либо дать публичную ссылку на онлайн-просмотр, если эта опция включена для вашей презентации и тарифа.',
+    },
+  ],
+}
 
-const filteredTemplates = computed(() => {
-  if (activeCategory.value === 'all') return templates
-  return templates.filter((t) => t.category === activeCategory.value)
+const page = ref<PresentationsPageSettings>({ ...DEFAULT_PAGE })
+
+const modal = ref<{ mode: 'pdf' | 'public'; url: string; title: string } | null>(null)
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+const heroTitleHtml = computed(() => {
+  const raw = page.value.heroTitle || DEFAULT_PAGE.heroTitle || ''
+  return escapeHtml(raw).replace(/\n/g, '<br />')
 })
 
-function categoryLabel(c: 'city' | 'country' | 'commercial') {
+const filteredTemplates = computed(() => {
+  const list = page.value.catalog?.length ? page.value.catalog : DEFAULT_PAGE.catalog!
+  if (activeCategory.value === 'all') return list
+  return list.filter((t) => t.category === activeCategory.value)
+})
+
+function categoryLabel(c: DemoCategory) {
   const m = { city: 'Городская', country: 'Загородная', commercial: 'Коммерческая' }
   return m[c]
 }
 
-const faqs = [
-  {
-    q: 'В каком формате выдаётся готовая презентация?',
-    a: 'Итоговый материал доступен для выгрузки в PDF. Набор опций (публичная ссылка, дополнительные форматы) зависит от подключённого тарифа — см. раздел «Тарифы».',
-  },
-  {
-    q: 'Можно ли менять шаблон после выбора?',
-    a: 'Да, в рамках редактора допускается корректировка текстов, изображений и порядка блоков. Ограничения по количеству объектов на одну покупку определяются пользовательским соглашением.',
-  },
-  {
-    q: 'Какие требования предъявляются к фотоматериалам?',
-    a: 'Рекомендуется использовать исходники с разрешением не ниже 1920 px по длинной стороне, форматы JPG или PNG, объём файла в пределах, указанных в интерфейсе загрузки.',
-  },
-  {
-    q: 'Как передаётся презентация клиенту?',
-    a: 'Допустимы отправка PDF по e-mail или мессенджерам, а также передача ссылки на онлайн-просмотр — при наличии соответствующей опции в тарифе.',
-  },
-  {
-    q: 'Предусмотрена ли адаптация под фирменный стиль агентства?',
-    a: 'В стандартных шаблонах доступны настройки оформления и размещение логотипа. Индивидуальная разработка макета обсуждается отдельно с поддержкой сервиса.',
-  },
-]
+function resolvePreviewUrl(raw: string): string {
+  const u = (raw || '').trim()
+  if (!u) return ''
+  if (/^https?:\/\//i.test(u)) return u
+  const path = u.startsWith('/') ? u : `/${u}`
+  if (typeof window === 'undefined') return path
+  try {
+    return new URL(path, window.location.origin).href
+  } catch {
+    return path
+  }
+}
+
+function openModal(mode: 'pdf' | 'public', item: DemoCatalogItem) {
+  const raw = mode === 'pdf' ? item.pdfUrl : item.publicViewUrl
+  const url = resolvePreviewUrl(raw || '')
+  if (!url) return
+  modal.value = { mode, url, title: item.title }
+}
+
+function mergeSettings(raw: PresentationsPageSettings | null | undefined) {
+  const s = raw && typeof raw === 'object' ? raw : {}
+  const merged: PresentationsPageSettings = {
+    kicker: typeof s.kicker === 'string' && s.kicker.trim() ? s.kicker : DEFAULT_PAGE.kicker,
+    heroTitle: typeof s.heroTitle === 'string' && s.heroTitle.trim() ? s.heroTitle : DEFAULT_PAGE.heroTitle,
+    heroSubtitle:
+      typeof s.heroSubtitle === 'string' && s.heroSubtitle.trim() ? s.heroSubtitle : DEFAULT_PAGE.heroSubtitle,
+    primaryCta:
+      s.primaryCta?.label && s.primaryCta?.to
+        ? { label: s.primaryCta.label, to: s.primaryCta.to }
+        : DEFAULT_PAGE.primaryCta,
+    secondaryCta:
+      s.secondaryCta?.label && s.secondaryCta?.to
+        ? { label: s.secondaryCta.label, to: s.secondaryCta.to }
+        : DEFAULT_PAGE.secondaryCta,
+    catalog: Array.isArray(s.catalog) && s.catalog.length > 0 ? (s.catalog as DemoCatalogItem[]) : DEFAULT_PAGE.catalog,
+    faq: Array.isArray(s.faq) && s.faq.length > 0 ? (s.faq as { q: string; a: string }[]) : DEFAULT_PAGE.faq,
+  }
+  page.value = merged
+}
+
+onMounted(async () => {
+  if (!hasApi()) return
+  try {
+    const res = await api.get<{ settings: PresentationsPageSettings }>('/api/site/pages/presentations')
+    mergeSettings(res?.settings)
+  } catch {
+    mergeSettings(undefined)
+  }
+})
 </script>
