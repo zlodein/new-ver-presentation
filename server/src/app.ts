@@ -24,6 +24,7 @@ import { taskRoutes } from './routes/tasks.js'
 import { supportRoutes } from './routes/support.js'
 import { pageSettingsRoutes } from './routes/page-settings.js'
 import { siteSettingsRoutes } from './routes/site-settings.js'
+import { tariffSettingsRoutes } from './routes/tariff-settings.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -111,6 +112,7 @@ export async function buildApp() {
   await app.register(supportRoutes, { prefix: '/' })
   await app.register(pageSettingsRoutes, { prefix: '/' })
   await app.register(siteSettingsRoutes, { prefix: '/' })
+  await app.register(tariffSettingsRoutes, { prefix: '/' })
 
   return app
 }

@@ -2,7 +2,7 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard title="Тарифы пользователей">
+      <ComponentCard title="Подключённые тарифы у пользователей">
         <div
           class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
         >
@@ -164,7 +164,7 @@ interface TariffUser {
   tariff_updated_at?: string | null
 }
 
-const currentPageTitle = ref('Тарифы')
+const currentPageTitle = ref('Тарифы пользователей')
 const users = ref<TariffUser[]>([])
 const loading = ref(true)
 const error = ref('')

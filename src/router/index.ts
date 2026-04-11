@@ -280,7 +280,16 @@ const router = createRouter({
       name: 'Admin Tariffs',
       component: () => import('../views/Admin/AdminTariffs.vue'),
       meta: {
-        title: 'Тарифы',
+        title: 'Тарифы пользователей',
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/dashboard/admin/tariff-settings',
+      name: 'Admin Tariff Settings',
+      component: () => import('../views/Admin/AdminTariffSettings.vue'),
+      meta: {
+        title: 'Контент страницы тарифов',
         requiresAdmin: true,
       },
     },

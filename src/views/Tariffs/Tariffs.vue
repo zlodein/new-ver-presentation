@@ -5,55 +5,50 @@
       <h2
         class="mb-2 text-center text-title-sm font-bold text-gray-800 dark:text-white/90"
       >
-        Тарифы: максимум возможностей для каждого!
+        {{ cfg.pageTitle }}
       </h2>
       <p v-if="currentTariffLabel" class="mb-7 text-center text-sm text-gray-500 dark:text-gray-400">
         Текущий тариф: <strong class="text-gray-700 dark:text-gray-300">{{ currentTariffLabel }}</strong>
-        <span v-if="currentTariff === 'test_drive'" class="block mt-1">
-          Сменить тариф на «Эксперт» можно ниже для снятия ограничений.
+        <span v-if="currentTariff === 'test_drive'" class="mt-1 block">
+          {{ replaceExpertPlaceholder(cfg.introLoggedInHasTariff) }}
         </span>
       </p>
       <p v-else class="mb-7 text-center text-sm text-gray-500 dark:text-gray-400">
-        Выберите тариф для начала работы
+        {{ cfg.introLoggedInNoTariff }}
       </p>
     </div>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:gap-6">
-      <!-- Тест драйв -->
       <div
         class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
       >
         <span class="mb-3 block text-theme-xl font-semibold text-gray-800 dark:text-white/90">
-          Тест драйв
+          {{ cfg.testDrive.title }}
         </span>
         <div class="mb-1 flex items-end">
           <h2 class="text-title-md font-bold text-gray-800 dark:text-white/90">
-            Бесплатно
+            {{ cfg.testDrive.priceMain }}
           </h2>
           <span class="mb-1 ml-1 inline-block text-sm text-gray-500 dark:text-gray-400">
-            один раз
+            {{ cfg.testDrive.priceHint }}
           </span>
         </div>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Ознакомление с возможностями сервиса: одна презентация, до 4 слайдов, без публичной ссылки.
+          {{ cfg.testDrive.description }}
         </p>
         <div class="my-6 h-px w-full bg-gray-200 dark:bg-gray-800" />
         <ul class="mb-8 space-y-3 text-sm text-gray-500 dark:text-gray-400">
-          <li class="flex items-center gap-3">
+          <li v-for="(b, i) in cfg.testDrive.bullets" :key="'p-' + i" class="flex items-center gap-3">
             <CheckIcon />
-            1 презентация
+            {{ b }}
           </li>
-          <li class="flex items-center gap-3">
-            <CheckIcon />
-            До 4 слайдов суммарно
-          </li>
-          <li class="flex items-center gap-3">
-            <CheckIcon />
-            Без публичной ссылки
-          </li>
-          <li class="flex items-center gap-3 text-gray-400 dark:text-gray-500">
+          <li
+            v-for="(b, i) in cfg.testDrive.restrictions"
+            :key="'n-' + i"
+            class="flex items-center gap-3 text-gray-400 dark:text-gray-500"
+          >
             <CrossIcon />
-            Задачи и календарь недоступны
+            {{ b }}
           </li>
         </ul>
         <button
@@ -62,31 +57,30 @@
           class="flex w-full items-center justify-center rounded-lg bg-gray-800 p-3.5 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/10 dark:hover:bg-brand-600"
           @click="chooseTariff('test_drive')"
         >
-          {{ canChooseTestDrive ? 'Выбрать тест драйв' : 'Доступен только один раз' }}
+          {{ canChooseTestDrive ? cfg.testDrive.ctaLoggedInAvailable : cfg.testDrive.ctaLoggedInUnavailable }}
         </button>
       </div>
 
-      <!-- Эксперт -->
       <div
         class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
       >
         <span class="mb-3 block text-theme-xl font-semibold text-gray-800 dark:text-white/90">
-          Эксперт
+          {{ cfg.expert.title }}
         </span>
         <div class="mb-1 flex flex-wrap items-end justify-between gap-3">
           <div class="flex flex-wrap items-baseline gap-2">
             <h2 class="text-title-md font-bold text-gray-800 dark:text-white/90">
               {{ expertPriceFormatted }}
             </h2>
-            <template v-if="expertDiscountPercent > 0">
-              <span class="text-sm font-medium text-success-600 dark:text-success-400">−{{ expertDiscountPercent }}%</span>
+            <template v-if="expertDiscountPercentVal > 0">
+              <span class="text-sm font-medium text-success-600 dark:text-success-400">−{{ expertDiscountPercentVal }}%</span>
               <span class="text-sm text-gray-500 line-through dark:text-gray-400">{{ expertOldPriceFormatted }}</span>
             </template>
             <span class="mb-1 inline-block text-sm text-gray-500 dark:text-gray-400">
               за {{ expertQuantityBounded }} {{ pluralize(expertQuantityBounded, 'презентацию', 'презентации', 'презентаций') }}
             </span>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex shrink-0 items-center gap-2">
             <label class="sr-only">Количество презентаций</label>
             <input
               v-model.number="expertQuantity"
@@ -104,21 +98,9 @@
         </p>
         <div class="my-6 h-px w-full bg-gray-200 dark:bg-gray-800" />
         <ul class="mb-8 space-y-3 text-sm text-gray-500 dark:text-gray-400">
-          <li class="flex items-center gap-3">
+          <li v-for="(line, i) in expertFeatureLines" :key="i" class="flex items-center gap-3">
             <CheckIcon />
-            Выбранное количество презентаций: {{ expertQuantityBounded }}
-          </li>
-          <li class="flex items-center gap-3">
-            <CheckIcon />
-            Неограниченное количество слайдов
-          </li>
-          <li class="flex items-center gap-3">
-            <CheckIcon />
-            Публичная ссылка на презентацию
-          </li>
-          <li class="flex items-center gap-3">
-            <CheckIcon />
-            Задачи и календарь
+            {{ line }}
           </li>
         </ul>
         <button
@@ -126,7 +108,7 @@
           class="flex w-full items-center justify-center rounded-lg bg-gray-800 p-3.5 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/10 dark:hover:bg-brand-600"
           @click="chooseTariff('expert')"
         >
-          {{ currentTariff === 'test_drive' ? 'Сменить на Эксперт' : 'Выбрать Эксперт' }}
+          {{ currentTariff === 'test_drive' ? cfg.expert.ctaLoggedInTestDrive : cfg.expert.ctaLoggedInOther }}
         </button>
       </div>
     </div>
@@ -134,46 +116,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useTariffPlansSettings } from '@/composables/useTariffPlansSettings'
 import { api } from '@/api/client'
 
 const CheckIcon = { template: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0"><path d="M13.4017 4.35986L6.12166 11.6399L2.59833 8.11657" stroke="#12B76A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' }
 const CrossIcon = { template: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' }
 
-const EXPERT_BASE_PRICE = 900
-
-function discountPercent(quantity: number): number {
-  if (quantity < 2) return 0
-  if (quantity < 5) return 5
-  if (quantity < 10) return 10
-  if (quantity < 20) return 15
-  if (quantity <= 100) return 20
-  return 20
-}
-
-function expertTotal(quantity: number): number {
-  const q = Math.max(1, Math.min(100, Math.floor(quantity) || 1))
-  const discount = discountPercent(q) / 100
-  return Math.round(q * EXPERT_BASE_PRICE * (1 - discount))
-}
-
-function pluralize(n: number, one: string, few: string, many: string): string {
-  const mod10 = n % 10
-  const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return one
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few
-  return many
-}
-
 const router = useRouter()
 const { currentUser, fetchUser } = useAuth()
-const currentPageTitle = ref('Тарифы')
+const {
+  cfg,
+  load,
+  expertDiscountPercent,
+  expertTotal,
+  pluralize,
+  expertDiscountDescriptionText,
+  expertFeatureLine,
+  tariffShortLabel,
+  replaceExpertPlaceholder,
+} = useTariffPlansSettings()
+
 const expertQuantity = ref(1)
 const choosing = ref(false)
+
+const currentPageTitle = computed(() => cfg.value.pageTitle)
+
+onMounted(() => {
+  load()
+})
 
 const canChooseTestDrive = computed(() => {
   const u = currentUser.value
@@ -181,20 +156,13 @@ const canChooseTestDrive = computed(() => {
 })
 
 const currentTariff = computed(() => currentUser.value?.tariff ?? null)
-const currentTariffLabel = computed(() => {
-  const t = currentTariff.value
-  if (t === 'test_drive') return 'Тест драйв'
-  if (t === 'expert') return 'Эксперт'
-  return ''
-})
+const currentTariffLabel = computed(() => tariffShortLabel(currentTariff.value))
 
 const expertQuantityBounded = computed(() =>
   Math.max(1, Math.min(100, Math.floor(expertQuantity.value) || 1))
 )
 
-const expertDiscountPercent = computed(() =>
-  discountPercent(expertQuantityBounded.value)
-)
+const expertDiscountPercentVal = computed(() => expertDiscountPercent(expertQuantityBounded.value))
 
 const expertPriceFormatted = computed(() => {
   const total = expertTotal(expertQuantityBounded.value)
@@ -203,18 +171,17 @@ const expertPriceFormatted = computed(() => {
 
 const expertOldPriceFormatted = computed(() => {
   const q = expertQuantityBounded.value
-  const total = q * EXPERT_BASE_PRICE
+  const total = q * cfg.value.expert.basePrice
   return `${total.toLocaleString('ru-RU')} ₽`
 })
 
-const expertDiscountDescription = computed(() => {
+const expertDiscountDescription = computed(() =>
+  expertDiscountDescriptionText(expertQuantityBounded.value)
+)
+
+const expertFeatureLines = computed(() => {
   const q = expertQuantityBounded.value
-  const pct = expertDiscountPercent.value
-  if (pct === 0) {
-    return '900 ₽ за презентацию. Динамическая система скидок в зависимости от количества, максимальная скидка 20%.'
-  }
-  const word = q === 1 ? 'презентации' : 'презентациях'
-  return `Динамическая система скидок: при ${q} ${word} — скидка ${pct}%. Максимальный процент скидки 20%.`
+  return cfg.value.expert.features.map((t) => expertFeatureLine(t, q))
 })
 
 async function chooseTariff(tariff: 'test_drive' | 'expert') {
@@ -232,5 +199,4 @@ async function chooseTariff(tariff: 'test_drive' | 'expert') {
     choosing.value = false
   }
 }
-
 </script>

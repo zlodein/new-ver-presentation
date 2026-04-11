@@ -222,12 +222,16 @@
                           </label>
                         </div>
                         <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                          <div
+                            class="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500 text-xs font-semibold text-white"
+                          >
                             <img
-                              :src="getAvatarUrl(user.user_img)"
+                              v-if="resolveUserImageUrl(user.user_img)"
+                              :src="resolveUserImageUrl(user.user_img)!"
                               :alt="getFullName(user)"
-                              class="w-full h-full object-cover"
+                              class="h-full w-full object-cover"
                             />
+                            <span v-else>{{ userInitialsFrom(user) }}</span>
                           </div>
                           <div>
                             <p class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
@@ -400,7 +404,8 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import AdminUserDetailModal from './AdminUserDetailModal.vue'
-import { api, getApiBase, setToken, ApiError } from '@/api/client'
+import { api, setToken, ApiError } from '@/api/client'
+import { resolveUserImageUrl, userInitialsFrom } from '@/composables/useUserAvatar'
 import { useAuth } from '@/composables/useAuth'
 import { formatApiDate, formatApiDateTime } from '@/composables/useApiDate'
 
@@ -452,13 +457,6 @@ const currentPage = ref(1)
 function getFullName(u: AdminUser) {
   const parts = [u.name, u.last_name, u.middle_name].filter(Boolean)
   return parts.join(' ').trim()
-}
-
-function getAvatarUrl(userImg: string | null) {
-  if (!userImg || !userImg.trim()) return '/images/user/user-17.jpg'
-  if (userImg.startsWith('http')) return userImg
-  const base = getApiBase()
-  return base ? `${base.replace(/\/$/, '')}${userImg.startsWith('/') ? '' : '/'}${userImg}` : userImg
 }
 
 function userToExcelRow(u: AdminUser): Record<string, string> {

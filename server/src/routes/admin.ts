@@ -15,6 +15,7 @@ import { deletePresentationImagesFolder, deleteSupportTicketFolder, deleteUpload
 import { sendTestMail } from '../services/mailer.js'
 import { getPageSettings, setPageSettings } from './page-settings.js'
 import { getSiteSettings, setSiteSettings, type SiteSettings } from './site-settings.js'
+import { getTariffSettingsBlob, setTariffSettingsBlob } from './tariff-settings.js'
 
 function toIsoDate(d: Date | string): string {
   if (d instanceof Date) return d.toISOString().slice(0, 19).replace('T', ' ')
@@ -122,6 +123,35 @@ export async function adminRoutes(app: FastifyInstance) {
       } catch (err) {
         req.log.error(err)
         return reply.status(500).send({ error: 'Ошибка сохранения настроек' })
+      }
+    }
+  )
+
+  /** GET /api/admin/tariff-settings — контент страницы тарифов (только админ) */
+  app.get('/api/admin/tariff-settings', { preHandler: [requireAdmin] }, async (_req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const settings = await getTariffSettingsBlob()
+      return reply.send({ settings })
+    } catch (err) {
+      _req.log.error(err)
+      return reply.status(500).send({ error: 'Ошибка загрузки настроек тарифов' })
+    }
+  })
+
+  /** PUT /api/admin/tariff-settings — сохранить контент страницы тарифов (только админ) */
+  app.put<{ Body: Record<string, unknown> }>(
+    '/api/admin/tariff-settings',
+    { preHandler: [requireAdmin] },
+    async (req: FastifyRequest<{ Body: Record<string, unknown> }>, reply: FastifyReply) => {
+      try {
+        const body = req.body ?? {}
+        const settings =
+          body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : {}
+        await setTariffSettingsBlob(settings)
+        return reply.send({ success: true })
+      } catch (err) {
+        req.log.error(err)
+        return reply.status(500).send({ error: 'Ошибка сохранения настроек тарифов' })
       }
     }
   )
