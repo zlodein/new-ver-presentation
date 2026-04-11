@@ -148,7 +148,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { logoUrl } from '@/config/logos'
-import { InfoCircleIcon, PieChartIcon } from '@/icons'
+import { InfoCircleIcon, PieChartIcon, PageIcon, MailIcon } from '@/icons'
 import HorizontalDots from '@/icons/HorizontalDots.vue'
 
 defineProps<{
@@ -166,7 +166,9 @@ const menuGroups = computed(() => [
     title: 'Меню',
     items: [
       { name: 'О нас', icon: InfoCircleIcon, path: '/about' },
+      { name: 'Презентации', icon: PageIcon, path: '/presentations' },
       { name: 'Тарифы', icon: PieChartIcon, path: '/tariffs' },
+      { name: 'Контакты', icon: MailIcon, path: '/contacts' },
     ],
   },
 ])

@@ -26,6 +26,22 @@ const router = createRouter({
       },
     },
     {
+      path: '/presentations',
+      name: 'PublicPresentations',
+      component: () => import('../views/Home/PublicPresentations.vue'),
+      meta: {
+        title: 'Презентации',
+      },
+    },
+    {
+      path: '/contacts',
+      name: 'PublicContacts',
+      component: () => import('../views/Home/PublicContacts.vue'),
+      meta: {
+        title: 'Контакты',
+      },
+    },
+    {
       path: '/tariffs',
       name: 'PublicTariffs',
       component: () => import('../views/Tariffs/PublicTariffs.vue'),
