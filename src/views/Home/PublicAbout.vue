@@ -1,142 +1,267 @@
 <template>
   <PublicLayout>
-    <div class="space-y-10 lg:space-y-14">
+    <div class="about-page space-y-0 pb-8">
+      <!-- Hero -->
       <section
-        class="overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-brand-500/10 via-white to-gray-50 px-6 py-12 dark:border-gray-800 dark:from-brand-500/15 dark:via-gray-900 dark:to-gray-950 sm:px-10 sm:py-16"
+        class="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-stone-950 text-stone-100 shadow-2xl shadow-stone-900/20 dark:border-white/10 dark:shadow-black/40"
       >
-        <p class="mb-1 text-sm font-medium uppercase tracking-wide text-brand-600 dark:text-brand-400">
-          E-Presentation
-        </p>
-        <p class="mb-4 text-sm">
-          <a
-            href="https://e-presentation.ru"
-            class="text-gray-600 underline decoration-gray-300 underline-offset-2 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400"
-            rel="noopener noreferrer"
+        <div
+          class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(217,119,6,0.18),transparent)]"
+        />
+        <div
+          class="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.25]"
+          style="
+            background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.06\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+          "
+        />
+        <div class="relative px-6 py-16 sm:px-12 sm:py-20 lg:px-16 lg:py-24">
+          <div class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span
+              class="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200/90"
+            >
+              E-Presentation
+            </span>
+            <a
+              href="https://e-presentation.ru"
+              class="text-sm text-stone-400 transition hover:text-amber-200/90"
+              rel="noopener noreferrer"
+            >
+              e-presentation.ru
+            </a>
+          </div>
+          <h1
+            class="mb-6 max-w-4xl font-serif text-[2rem] font-normal leading-[1.15] tracking-tight text-white sm:text-5xl lg:text-[3.25rem]"
           >
-            e-presentation.ru
-          </a>
-        </p>
-        <h1 class="mb-4 max-w-3xl text-left text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-          Онлайн-сервис для профессионалов в недвижимости
-        </h1>
-        <p class="mb-8 max-w-2xl text-left text-base text-gray-600 dark:text-gray-400">
-          За кулисами создания презентаций, которые помогают быстрее донести ценность объекта до клиента.
-        </p>
-        <div class="flex flex-wrap gap-3">
-          <router-link
-            to="/tariffs"
-            class="inline-flex items-center justify-center rounded-xl bg-brand-500 px-5 py-3 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
+            Презентации уровня<br class="hidden sm:block" />
+            <span class="text-stone-300">для сделок уровня</span>
+            <span class="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent"> премиум</span>
+          </h1>
+          <p
+            class="mb-10 max-w-2xl text-lg leading-relaxed text-stone-400 sm:text-xl"
           >
-            Тарифы
-          </router-link>
-          <router-link
-            to="/signup"
-            class="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-800 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:bg-gray-800"
-          >
-            Создать аккаунт
-          </router-link>
+            Инструмент для тех, кто продаёт недвижимость всерьёз: сдержанная эстетика, скорость и контроль на каждом
+            шаге — без шума и визуального шаблона «для всех».
+          </p>
+          <div class="flex flex-wrap items-center gap-4">
+            <router-link
+              to="/tariffs"
+              class="group inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-600 to-amber-500 px-8 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-900/30 transition hover:from-amber-500 hover:to-amber-400"
+            >
+              Тарифы
+              <span class="ml-2 inline-block transition group-hover:translate-x-0.5">→</span>
+            </router-link>
+            <router-link
+              to="/signup"
+              class="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 py-3.5 text-sm font-medium text-stone-100 backdrop-blur-sm transition hover:border-white/30 hover:bg-white/10"
+            >
+              Создать аккаунт
+            </router-link>
+          </div>
         </div>
       </section>
 
-      <section class="rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03] sm:px-8">
-        <h2 class="mb-4 text-left text-xl font-semibold text-gray-900 dark:text-white">
-          Миссия
-        </h2>
-        <p class="max-w-3xl text-left text-gray-600 dark:text-gray-400">
-          Облегчаем продажу недвижимости через быстрые и понятные инструменты создания презентаций, сокращая время на
-          подготовку и повышая шансы на успешную сделку.
-        </p>
+      <!-- Кредо -->
+      <section class="relative -mt-6 px-1 sm:px-0">
+        <div
+          class="mx-auto max-w-5xl rounded-2xl border border-stone-200/90 bg-white px-8 py-10 shadow-xl shadow-stone-200/50 dark:border-white/10 dark:bg-stone-900/80 dark:shadow-black/30 sm:px-12 sm:py-12"
+        >
+          <div class="mb-4 h-px w-16 bg-gradient-to-r from-amber-600 to-transparent dark:from-amber-500" />
+          <p class="font-serif text-2xl font-normal leading-snug text-stone-800 dark:text-stone-100 sm:text-3xl">
+            Мы верим, что упаковка объекта — не украшение, а часть переговоров.
+          </p>
+          <p class="mt-6 max-w-3xl text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+            Когда материал выглядит дорого и собранно, клиент дольше удерживает внимание на цифрах и планировке — там,
+            где решается сделка.
+          </p>
+        </div>
       </section>
 
-      <section>
-        <h2 class="mb-6 text-left text-xl font-semibold text-gray-900 dark:text-white">
-          Ценности
-        </h2>
-        <p class="mb-8 max-w-3xl text-left text-sm text-gray-500 dark:text-gray-400">
-          То, что движет нами вперёд.
-        </p>
-        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <div
-            v-for="item in values"
+      <!-- Миссия -->
+      <section class="px-1 pt-10 sm:px-0 sm:pt-14">
+        <div class="grid gap-10 lg:grid-cols-12 lg:gap-12">
+          <div class="lg:col-span-4">
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-700 dark:text-amber-500/80">
+              Миссия
+            </p>
+            <h2 class="font-serif text-3xl font-normal text-stone-900 dark:text-white">
+              Меньше суеты — больше сделок
+            </h2>
+          </div>
+          <div class="lg:col-span-8">
+            <p class="text-base leading-relaxed text-stone-600 dark:text-stone-400">
+              Облегчаем продажу недвижимости через инструменты, в которых не нужно разбираться часами. Вы сокращаете
+              время на подготовку, сохраняете единый визуальный стандарт для бренда агентства и повышаете шансы довести
+              клиента до показа и оффера.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ценности -->
+      <section class="px-1 pt-14 sm:px-0 sm:pt-20">
+        <div class="mb-12 max-w-2xl">
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-700 dark:text-amber-500/80">
+            Ценности
+          </p>
+          <h2 class="font-serif text-3xl font-normal text-stone-900 dark:text-white sm:text-4xl">
+            То, что для нас не обсуждается
+          </h2>
+          <p class="mt-3 text-sm text-stone-500 dark:text-stone-400">
+            Стандарты, которые держим в продукте и в общении с вами.
+          </p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <article
+            v-for="(item, i) in values"
             :key="item.title"
-            class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
+            class="group relative overflow-hidden rounded-2xl border border-stone-200/90 bg-gradient-to-b from-white to-stone-50/80 p-8 transition duration-300 hover:border-amber-200/60 hover:shadow-lg hover:shadow-stone-200/40 dark:border-white/10 dark:from-stone-900/50 dark:to-stone-950 dark:hover:border-amber-500/20 dark:hover:shadow-black/20"
           >
-            <h3 class="mb-2 text-left font-semibold text-gray-900 dark:text-white">
+            <div
+              class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-stone-200/80 bg-stone-100/80 text-amber-800 dark:border-white/10 dark:bg-white/5 dark:text-amber-400/90"
+            >
+              <component :is="item.icon" class="h-6 w-6" stroke-width="1.25" />
+            </div>
+            <h3 class="mb-3 font-serif text-xl text-stone-900 dark:text-white">
               {{ item.title }}
             </h3>
-            <p class="text-left text-sm text-gray-600 dark:text-gray-400">
+            <p class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">
               {{ item.text }}
             </p>
+            <span
+              class="absolute bottom-6 right-8 font-serif text-5xl font-light tabular-nums text-stone-200/90 transition group-hover:text-amber-200/30 dark:text-white/[0.06] dark:group-hover:text-amber-400/10"
+              >{{ String(i + 1).padStart(2, '0') }}</span
+            >
+          </article>
+        </div>
+      </section>
+
+      <!-- История -->
+      <section class="px-1 pt-14 sm:px-0 sm:pt-20">
+        <div
+          class="overflow-hidden rounded-3xl border border-stone-200/90 bg-stone-50/50 dark:border-white/10 dark:bg-stone-900/40"
+        >
+          <div class="grid lg:grid-cols-2">
+            <div class="relative min-h-[280px] bg-gradient-to-br from-stone-800 via-stone-900 to-stone-950 p-10 lg:min-h-[320px]">
+              <div
+                class="absolute inset-0 opacity-40"
+                style="
+                  background-image: radial-gradient(circle at 30% 20%, rgba(217, 119, 6, 0.25), transparent 50%);
+                "
+              />
+              <div class="relative flex h-full flex-col justify-end">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-400/90">История</p>
+                <p class="mt-2 font-serif text-2xl leading-snug text-white">
+                  От задачи «сделать быстро» — к продукту «сделать достойно»
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-col justify-center p-10 lg:p-12">
+              <p class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                Сервис вырос из практической потребности: ускорить подготовку материалов по объектам и при этом не
+                терять визуальный уровень без штата дизайнеров. Так появился E-Presentation — с фокусом на рынок
+                недвижимости и редактором, в котором можно собрать сильный лендинг или презентацию без лишних кликов.
+              </p>
+              <details
+                class="group mt-8 rounded-xl border border-stone-200/80 bg-white/60 px-5 py-4 dark:border-white/10 dark:bg-stone-950/40"
+              >
+                <summary
+                  class="cursor-pointer list-none text-sm font-medium text-stone-800 dark:text-stone-200 [&::-webkit-details-marker]:hidden"
+                >
+                  <span class="flex items-center justify-between gap-2">
+                    Подробнее о пути проекта
+                    <span
+                      class="text-stone-400 transition group-open:rotate-180 dark:text-stone-500"
+                    >▼</span>
+                  </span>
+                </summary>
+                <div class="mt-4 space-y-3 border-t border-stone-200/80 pt-4 text-sm leading-relaxed text-stone-600 dark:border-white/10 dark:text-stone-400">
+                  <p>
+                    Вместе с дизайнерами и разработчиками мы собрали шаблоны под типовые сценарии: городская, загородная
+                    и коммерческая недвижимость. Затем упростили структуру — чтобы с первого входа было ясно, куда
+                    нажимать.
+                  </p>
+                  <p>
+                    Непрерывное тестирование и обратная связь пользователей помогают нам устранять сбои и улучшать опыт.
+                  </p>
+                </div>
+              </details>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03] sm:px-8">
-        <h2 class="mb-4 text-left text-xl font-semibold text-gray-900 dark:text-white">
-          История создания проекта
-        </h2>
-        <p class="mb-6 max-w-3xl text-left text-gray-600 dark:text-gray-400">
-          Сервис вырос из практической задачи: нужно было ускорить подготовку материалов по объектам и сделать их
-          визуально сильными без команды дизайнеров. Так появился E-Presentation — с фокусом на рынок недвижимости и
-          удобный редактор.
-        </p>
-        <details class="group rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900/40">
-          <summary
-            class="cursor-pointer list-none text-left text-sm font-medium text-brand-600 dark:text-brand-400 [&::-webkit-details-marker]:hidden"
-          >
-            Подробнее о пути проекта
-          </summary>
-          <div class="mt-4 space-y-3 text-left text-sm text-gray-600 dark:text-gray-400">
-            <p>
-              Мы совместно с дизайнерами и разработчиками собрали шаблоны под типовые сценарии: городская, загородная и
-              коммерческая недвижимость. Затем упростили структуру, чтобы разобраться в интерфейсе можно было за пару
-              минут.
+      <!-- Отзывы -->
+      <section class="px-1 pt-14 sm:px-0 sm:pt-20">
+        <div class="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-700 dark:text-amber-500/80">
+              Доверие
             </p>
-            <p>
-              Регулярное тестирование и обратная связь пользователей помогают нам исправлять ошибки и улучшать сервис.
-            </p>
+            <h2 class="font-serif text-3xl font-normal text-stone-900 dark:text-white sm:text-4xl">
+              Что говорят коллеги по рынку
+            </h2>
           </div>
-        </details>
-      </section>
-
-      <section>
-        <h2 class="mb-6 text-left text-xl font-semibold text-gray-900 dark:text-white">
-          Отзывы
-        </h2>
-        <div class="grid gap-5 md:grid-cols-2">
+          <div class="h-px flex-1 bg-gradient-to-r from-transparent via-stone-300 to-transparent dark:via-white/15 sm:ml-8 sm:max-w-md" />
+        </div>
+        <div class="grid gap-6 md:grid-cols-2">
           <figure
             v-for="(q, i) in quotes"
             :key="i"
-            class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
+            class="relative overflow-hidden rounded-2xl border border-stone-200/90 bg-white p-8 pt-12 dark:border-white/10 dark:bg-stone-900/60"
           >
-            <blockquote class="mb-4 text-left text-sm text-gray-600 dark:text-gray-400">
-              «{{ q.text }}»
+            <span class="absolute left-6 top-4 font-serif text-6xl leading-none text-amber-600/15 dark:text-amber-400/10"
+              >«</span
+            >
+            <blockquote class="relative mb-8 text-base leading-relaxed text-stone-700 dark:text-stone-300">
+              {{ q.text }}
             </blockquote>
-            <figcaption class="text-left">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">{{ q.name }}</span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">{{ q.role }}</span>
+            <figcaption class="flex items-center gap-4 border-t border-stone-100 pt-6 dark:border-white/10">
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-stone-200 to-stone-300 text-sm font-semibold text-stone-700 dark:from-stone-700 dark:to-stone-800 dark:text-stone-200"
+              >
+                {{ q.initials }}
+              </div>
+              <div>
+                <span class="block font-medium text-stone-900 dark:text-white">{{ q.name }}</span>
+                <span class="text-xs uppercase tracking-wider text-stone-500 dark:text-stone-500">{{ q.role }}</span>
+              </div>
             </figcaption>
           </figure>
         </div>
       </section>
 
-      <section
-        class="flex flex-col items-start justify-between gap-4 rounded-2xl border border-brand-200 bg-brand-500/5 px-6 py-8 dark:border-brand-900/50 dark:bg-brand-500/10 sm:flex-row sm:items-center sm:px-8"
-      >
-        <div>
-          <h2 class="mb-1 text-left text-lg font-semibold text-gray-900 dark:text-white">
-            Попробовать сервис
-          </h2>
-          <p class="text-left text-sm text-gray-600 dark:text-gray-400">
-            Выберите тариф или начните с бесплатного ознакомления.
-          </p>
-        </div>
-        <router-link
-          to="/tariffs"
-          class="inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-500 px-5 py-3 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
+      <!-- CTA -->
+      <section class="px-1 pt-14 sm:px-0 sm:pt-20">
+        <div
+          class="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-gradient-to-br from-stone-900 via-stone-950 to-black px-8 py-12 text-center sm:px-12 sm:py-16 dark:border-white/10"
         >
-          Тарифы
-        </router-link>
+          <div
+            class="pointer-events-none absolute -left-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-amber-500/10 blur-3xl"
+          />
+          <div
+            class="pointer-events-none absolute -right-20 top-0 h-48 w-48 rounded-full bg-amber-600/5 blur-2xl"
+          />
+          <h2 class="relative font-serif text-2xl text-white sm:text-3xl">
+            Готовы показать объект так, как он заслуживает?
+          </h2>
+          <p class="relative mx-auto mt-4 max-w-lg text-sm text-stone-400">
+            Выберите тариф или начните с бесплатного ознакомления — и оцените сервис в деле.
+          </p>
+          <div class="relative mt-8 flex flex-wrap justify-center gap-4">
+            <router-link
+              to="/tariffs"
+              class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-amber-400 px-10 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-900/40 transition hover:from-amber-400 hover:to-amber-300"
+            >
+              Смотреть тарифы
+            </router-link>
+            <router-link
+              to="/signin"
+              class="inline-flex items-center justify-center rounded-full border border-white/20 px-10 py-3.5 text-sm font-medium text-white transition hover:bg-white/10"
+            >
+              Войти
+            </router-link>
+          </div>
+        </div>
       </section>
     </div>
   </PublicLayout>
@@ -144,27 +269,34 @@
 
 <script setup lang="ts">
 import PublicLayout from '@/components/layout/PublicLayout.vue'
+import { Gem, Layers, ShieldCheck, Sparkles, Users } from 'lucide-vue-next'
+import type { Component } from 'vue'
 
-const values = [
+const values: { title: string; text: string; icon: Component }[] = [
   {
     title: 'Простота',
-    text: 'Сложные задачи — через понятный интерфейс: шаг за шагом, без лишней теории.',
+    text: 'Сложное делаем прозрачным: понятные шаги, без перегруза интерфейса.',
+    icon: Layers,
   },
   {
     title: 'Эффективность',
-    text: 'Меньше времени на вёрстку — больше на клиентов и сделки.',
+    text: 'Меньше часов на подготовку — больше времени на клиентов и закрытие сделок.',
+    icon: Sparkles,
   },
   {
     title: 'Качество',
-    text: 'Аккуратная типографика и шаблоны, которые выглядят профессионально на любых экранах.',
+    text: 'Типографика и сетка, которые держат уровень на больших экранах и в мобильной отправке.',
+    icon: Gem,
   },
   {
     title: 'Доверие',
-    text: 'Прозрачные правила использования сервиса и поддержка, если что-то пошло не так.',
+    text: 'Предсказуемые правила сервиса и поддержка, если нужна помощь.',
+    icon: ShieldCheck,
   },
   {
     title: 'Партнёрство',
-    text: 'Мы развиваем продукт вместе с пользователями и учитываем обратную связь.',
+    text: 'Мы развиваем продукт вместе с вами: замечания и идеи доходят до команды.',
+    icon: Users,
   },
 ]
 
@@ -172,12 +304,20 @@ const quotes = [
   {
     text: 'Очень удобно собрать презентацию за несколько минут: загрузил фото, заполнил поля — можно отправлять клиенту.',
     name: 'Елена П.',
+    initials: 'ЕП',
     role: 'Эксперт по недвижимости',
   },
   {
     text: 'Шаблоны на любой вкус, поддержка отвечает быстро. Рекомендую коллегам из отдела продаж.',
     name: 'Алексей З.',
+    initials: 'АЗ',
     role: 'Руководитель агентства',
   },
 ]
 </script>
+
+<style scoped>
+.about-page {
+  font-feature-settings: 'kern' 1, 'liga' 1;
+}
+</style>
