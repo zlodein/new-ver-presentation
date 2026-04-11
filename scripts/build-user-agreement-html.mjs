@@ -28,12 +28,17 @@ function inlineBold(s) {
   return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
 }
 
+/** Убирает типичные экранирования из исходного .md (1\. → 1., privacy\_policy → privacy_policy) */
+function stripMdEscapes(s) {
+  return s.replace(/\\([._])/g, '$1')
+}
+
 const lines = t.split(/\r?\n/)
 const out = []
 let inUl = false
 
 for (const line of lines) {
-  const L = line.trim()
+  const L = stripMdEscapes(line.trim())
   if (!L) {
     if (inUl) {
       out.push('</ul>')
@@ -67,6 +72,9 @@ for (const line of lines) {
 if (inUl) out.push('</ul>')
 
 let html = out.join('\n')
+
+/** На случай экранирований внутри уже собранного HTML */
+html = stripMdEscapes(html)
 
 /** На случай, если в исходнике снова попадёт старый домен */
 html = html
