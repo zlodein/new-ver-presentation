@@ -308,6 +308,15 @@ const oauthErrorMessages: Record<string, string> = {
 }
 
 onMounted(async () => {
+  const rawRedirect = route.query.redirect
+  if (typeof rawRedirect === 'string') {
+    const sanitizedRedirect = sanitizeRedirect(rawRedirect, '')
+    if (sanitizedRedirect !== rawRedirect) {
+      await router.replace(sanitizedRedirect ? { path: '/signin', query: { redirect: sanitizedRedirect } } : { path: '/signin' })
+      return
+    }
+  }
+
   const errorFromQuery = route.query.error as string | undefined
   if (errorFromQuery) {
     error.value = oauthErrorMessages[errorFromQuery] || 'Ошибка входа. Попробуйте снова.'

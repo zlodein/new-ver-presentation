@@ -1,6 +1,26 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken, api, getApiBase, hasApi } from '@/api/client'
 
+const AUTH_PATHS = new Set(['/signin', '/signin/2fa', '/signup', '/reset-password', '/verify'])
+
+function sanitizeRedirectTarget(rawRedirect: unknown, fallback = '/dashboard'): string {
+  if (typeof rawRedirect !== 'string' || !rawRedirect) return fallback
+  let candidate = rawRedirect
+  for (let i = 0; i < 2; i += 1) {
+    try {
+      const decoded = decodeURIComponent(candidate)
+      if (decoded === candidate) break
+      candidate = decoded
+    } catch {
+      break
+    }
+  }
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) return fallback
+  const pathOnly = candidate.split('?')[0] || candidate
+  if (AUTH_PATHS.has(pathOnly)) return fallback
+  return candidate
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, from, savedPosition) {
@@ -496,6 +516,17 @@ router.onError((err) => {
 export default router
 
 router.beforeEach(async (to, from, next) => {
+  if (to.path === '/signin') {
+    const rawRedirect = to.query.redirect
+    if (typeof rawRedirect === 'string') {
+      const sanitizedRedirect = sanitizeRedirectTarget(rawRedirect, '')
+      if (sanitizedRedirect !== rawRedirect) {
+        next(sanitizedRedirect ? { path: '/signin', query: { redirect: sanitizedRedirect } } : { path: '/signin' })
+        return
+      }
+    }
+  }
+
   const token = getToken()
 
   // Страница «Сайт в разработке» — всегда разрешена
@@ -539,7 +570,8 @@ router.beforeEach(async (to, from, next) => {
 
   const requiresAuth = to.path.startsWith('/dashboard') || to.path === '/administration'
   if (requiresAuth && !token) {
-    next({ path: '/signin', query: { redirect: to.fullPath } })
+    const redirect = sanitizeRedirectTarget(to.fullPath, '/dashboard')
+    next({ path: '/signin', query: { redirect } })
     return
   }
   const requiresAdmin = to.meta?.requiresAdmin === true
@@ -551,7 +583,8 @@ router.beforeEach(async (to, from, next) => {
         return
       }
     } catch {
-      next({ path: '/signin', query: { redirect: to.fullPath } })
+      const redirect = sanitizeRedirectTarget(to.fullPath, '/dashboard')
+      next({ path: '/signin', query: { redirect } })
       return
     }
   }
