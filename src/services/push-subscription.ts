@@ -1,4 +1,4 @@
-import { api } from '@/api/client'
+import { ApiError, api, getToken } from '@/api/client'
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -10,23 +10,29 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export async function ensurePushSubscription() {
+  if (!getToken()) return
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
   if (Notification.permission === 'denied') return
-  const registration = await navigator.serviceWorker.register('/push-sw.js')
-  const existing = await registration.pushManager.getSubscription()
-  const keyRes = await api.get<{ publicKey: string | null }>('/api/push/public-key')
-  if (!keyRes.publicKey) return
-  const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
-  if (permission !== 'granted') return
-  const subscription = existing || await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(keyRes.publicKey),
-  })
-  const json = subscription.toJSON() as { endpoint: string; keys?: { p256dh?: string; auth?: string } }
-  await api.post('/api/push/subscribe', {
-    platform: 'web',
-    endpoint: json.endpoint,
-    p256dh: json.keys?.p256dh,
-    auth: json.keys?.auth,
-  })
+  try {
+    const registration = await navigator.serviceWorker.register('/push-sw.js')
+    const existing = await registration.pushManager.getSubscription()
+    const keyRes = await api.get<{ publicKey: string | null }>('/api/push/public-key')
+    if (!keyRes.publicKey) return
+    const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
+    if (permission !== 'granted') return
+    const subscription = existing || await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(keyRes.publicKey),
+    })
+    const json = subscription.toJSON() as { endpoint: string; keys?: { p256dh?: string; auth?: string } }
+    await api.post('/api/push/subscribe', {
+      platform: 'web',
+      endpoint: json.endpoint,
+      p256dh: json.keys?.p256dh,
+      auth: json.keys?.auth,
+    })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return
+    throw error
+  }
 }
