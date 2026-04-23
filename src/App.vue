@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import ThemeProvider from './components/layout/ThemeProvider.vue'
 import SidebarProvider from './components/layout/SidebarProvider.vue'
 import { useAuth } from './composables/useAuth'
@@ -18,6 +18,13 @@ const { fetchUser, currentUser } = useAuth()
 onMounted(async () => {
   // Загрузить данные пользователя при старте приложения
   await fetchUser()
-  initOneSignal(currentUser.value?.id)
 })
+
+watch(
+  () => currentUser.value?.id,
+  (userId) => {
+    initOneSignal(userId)
+  },
+  { immediate: true }
+)
 </script>
