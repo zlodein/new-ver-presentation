@@ -3,6 +3,7 @@ import { eq, desc, and, inArray } from 'drizzle-orm'
 import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
+import { fanoutNotificationToPush } from '../services/notification-fanout.js'
 
 import { toIsoDateRequired } from '../utils/date.js'
 
@@ -184,6 +185,11 @@ export async function notificationRoutes(app: FastifyInstance) {
           where: eq(mysqlSchema.notifications.id, notificationId),
         })
         if (!created) return reply.status(500).send({ error: 'Ошибка создания уведомления' })
+        await fanoutNotificationToPush(String(userIdNum), {
+          title: created.title,
+          message: created.message ?? undefined,
+          type: created.type,
+        })
         return reply.status(201).send({
           id: String(created.id),
           title: created.title,
@@ -201,6 +207,11 @@ export async function notificationRoutes(app: FastifyInstance) {
         message,
         type,
       }).returning()
+      await fanoutNotificationToPush(userId, {
+        title: notification.title,
+        message: notification.message ?? undefined,
+        type: notification.type,
+      })
 
       return reply.status(201).send({
         id: notification.id,

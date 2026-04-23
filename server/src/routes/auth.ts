@@ -14,6 +14,9 @@ import * as mysqlSchema from '../db/schema-mysql.js'
 import { fileStore } from '../db/file-store.js'
 import { sendRegistrationNotification, sendVerificationCodeEmail, sendPasswordResetCodeEmail } from '../services/mailer.js'
 import { createSession } from './sessions.js'
+import QRCode from 'qrcode'
+import { createTwoFactorSetup, decryptTwoFactorSecret, encryptTwoFactorSecret, generateBackupCodes, hashBackupCodes, verifyBackupCode, verifyTotp } from '../services/two-factor.js'
+import { logCriticalAuthMailFailure } from '../services/mailer.js'
 
 const SALT_ROUNDS = 10
 const SERVER_ERR = 'Ошибка сервера. При использовании файлового хранилища проверьте папку server/data.'
@@ -90,6 +93,11 @@ function generate6DigitCode(): string {
 }
 
 const CODE_EXPIRY_MINUTES = 15
+const TWO_FA_PENDING_EXPIRES = '10m'
+
+function sanitizeOtp(input: string): string {
+  return String(input || '').replace(/\D/g, '').slice(0, 6)
+}
 
 export async function authRoutes(app: FastifyInstance) {
   // ——— OAuth: редирект на провайдера ———
@@ -441,7 +449,7 @@ export async function authRoutes(app: FastifyInstance) {
         const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000)
         fileStore.createVerificationCode({ email: normalizedEmail, code, type: 'email_verification', userId: user.id, expiresAt })
         sendVerificationCodeEmail({ email: user.email, code, name: user.firstName || user.lastName }).catch((err) => {
-          console.error('[auth] Код подтверждения не отправлен:', err instanceof Error ? err.message : err)
+          logCriticalAuthMailFailure('register:file_store', user.email, err)
         })
         sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch(() => {})
         return reply.send({ pendingVerification: true, email: normalizedEmail })
@@ -503,7 +511,7 @@ export async function authRoutes(app: FastifyInstance) {
           req.log.warn({ err }, 'verification_codes table missing, run migrate_verification_codes.sql')
         }
         sendVerificationCodeEmail({ email: normalizedEmail, code, name: name?.trim() || firstName?.trim() || null }).catch((err) => {
-          console.error('[auth] Код подтверждения не отправлен:', err instanceof Error ? err.message : err)
+          logCriticalAuthMailFailure('register:mysql', normalizedEmail, err)
         })
         sendRegistrationNotification({ email: normalizedEmail, name: name?.trim() || firstName?.trim() || null, lastName: last_name?.trim() || lastName?.trim() || null }).catch(() => {})
         return reply.send({ pendingVerification: true, email: normalizedEmail })
@@ -534,7 +542,7 @@ export async function authRoutes(app: FastifyInstance) {
         req.log.warn({ err }, 'verification_codes table missing, run migrate_verification_codes_pg.sql')
       }
       sendVerificationCodeEmail({ email: user.email, code, name: user.firstName || user.lastName }).catch((err) => {
-        console.error('[auth] Код подтверждения не отправлен:', err instanceof Error ? err.message : err)
+        logCriticalAuthMailFailure('register:pg', user.email, err)
       })
       sendRegistrationNotification({ email: user.email, name: user.firstName, lastName: user.lastName }).catch(() => {})
       return reply.send({ pendingVerification: true, email: normalizedEmail })
@@ -704,6 +712,160 @@ export async function authRoutes(app: FastifyInstance) {
     }
   })
 
+  app.post('/api/auth/2fa/verify-login', { config: { rateLimit: { max: 8, timeWindow: '1 minute' } } }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const body = req.body as { pendingToken?: string; code?: string; backupCode?: string }
+    if (!body?.pendingToken) return reply.status(400).send({ error: 'pendingToken обязателен' })
+    let pending: { sub: string; email: string; tfa: boolean }
+    try {
+      pending = await req.server.jwt.verify<{ sub: string; email: string; tfa: boolean }>(body.pendingToken)
+    } catch {
+      return reply.status(401).send({ error: 'Сессия подтверждения истекла', code: 'two_factor_pending_expired' })
+    }
+    if (!pending.tfa) return reply.status(400).send({ error: 'Некорректный pending token' })
+    if (useFileStore) return reply.status(501).send({ error: '2FA недоступно в файловом режиме' })
+    const otp = sanitizeOtp(body.code || '')
+    const backupCode = String(body.backupCode || '').trim().toUpperCase()
+    if (!otp && !backupCode) return reply.status(400).send({ error: 'Нужен OTP код или backup code' })
+
+    if (useMysql) {
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const userId = Number(pending.sub)
+      if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
+      const user = await mysqlDb.query.users.findFirst({
+        where: eq(mysqlSchema.users.id, userId),
+        columns: { id: true, email: true, name: true, last_name: true, two_factor_enabled: true, two_factor_secret_enc: true, two_factor_backup_codes_hash: true },
+      })
+      if (!user || user.two_factor_enabled !== 'true' || !user.two_factor_secret_enc) return reply.status(401).send({ error: '2FA не настроена' })
+      let verified = false
+      if (otp) {
+        verified = verifyTotp(decryptTwoFactorSecret(user.two_factor_secret_enc), otp)
+      } else if (backupCode) {
+        const check = verifyBackupCode(backupCode, user.two_factor_backup_codes_hash ?? null)
+        verified = check.ok
+        if (check.ok) {
+          await mysqlDb.update(mysqlSchema.users).set({ two_factor_backup_codes_hash: JSON.stringify(check.remainingHashes), updated_at: new Date() }).where(eq(mysqlSchema.users.id, user.id))
+        }
+      }
+      if (!verified) return reply.status(401).send({ error: 'Неверный код 2FA', code: 'two_factor_invalid_code' })
+      const { sessionId } = await createSession(req, String(user.id), reply)
+      const token = await reply.jwtSign({ sub: String(user.id), email: user.email, sid: sessionId }, { expiresIn: '7d' })
+      return reply.send({ token, user: { id: String(user.id), email: user.email, name: user.name, last_name: user.last_name, firstName: user.name, lastName: user.last_name } })
+    }
+
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    const user = await pgDb.query.users.findFirst({
+      where: eq(pgSchema.users.id, pending.sub),
+      columns: { id: true, email: true, firstName: true, lastName: true, twoFactorEnabled: true, twoFactorSecretEnc: true, twoFactorBackupCodesHash: true },
+    })
+    if (!user || user.twoFactorEnabled !== 'true' || !user.twoFactorSecretEnc) return reply.status(401).send({ error: '2FA не настроена' })
+    let verified = false
+    if (otp) {
+      verified = verifyTotp(decryptTwoFactorSecret(user.twoFactorSecretEnc), otp)
+    } else if (backupCode) {
+      const check = verifyBackupCode(backupCode, user.twoFactorBackupCodesHash ?? null)
+      verified = check.ok
+      if (check.ok) {
+        await pgDb.update(pgSchema.users).set({ twoFactorBackupCodesHash: JSON.stringify(check.remainingHashes), updatedAt: new Date() }).where(eq(pgSchema.users.id, user.id))
+      }
+    }
+    if (!verified) return reply.status(401).send({ error: 'Неверный код 2FA', code: 'two_factor_invalid_code' })
+    const { sessionId } = await createSession(req, user.id, reply)
+    const token = await reply.jwtSign({ sub: user.id, email: user.email, sid: sessionId }, { expiresIn: '7d' })
+    return reply.send({ token, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } })
+  })
+
+  app.post('/api/auth/2fa/setup', { preHandler: [app.authenticate], config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req: FastifyRequest, reply: FastifyReply) => {
+    if (useFileStore || !db) return reply.status(501).send({ error: '2FA недоступно в file-store' })
+    const payload = req.user as { sub: string; email: string }
+    const setup = createTwoFactorSetup(payload.email)
+    const qrCodeDataUrl = await QRCode.toDataURL(setup.otpauthUrl)
+    const encryptedSecret = encryptTwoFactorSecret(setup.secretBase32)
+    if (useMysql) {
+      const uid = Number(payload.sub)
+      if (Number.isNaN(uid)) return reply.status(401).send({ error: 'Пользователь не найден' })
+      await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).update(mysqlSchema.users).set({ two_factor_secret_enc: encryptedSecret, updated_at: new Date() }).where(eq(mysqlSchema.users.id, uid))
+    } else {
+      await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).update(pgSchema.users).set({ twoFactorSecretEnc: encryptedSecret, updatedAt: new Date() }).where(eq(pgSchema.users.id, payload.sub))
+    }
+    return reply.send({ otpauthUrl: setup.otpauthUrl, qrCodeDataUrl })
+  })
+
+  app.post('/api/auth/2fa/enable', { preHandler: [app.authenticate], config: { rateLimit: { max: 8, timeWindow: '1 minute' } } }, async (req: FastifyRequest, reply: FastifyReply) => {
+    if (useFileStore || !db) return reply.status(501).send({ error: '2FA недоступно в file-store' })
+    const payload = req.user as { sub: string }
+    const body = req.body as { code?: string }
+    const otp = sanitizeOtp(body.code || '')
+    if (otp.length !== 6) return reply.status(400).send({ error: 'Укажите 6-значный код' })
+    const backupCodes = generateBackupCodes()
+    const backupHashes = await hashBackupCodes(backupCodes)
+    if (useMysql) {
+      const uid = Number(payload.sub)
+      if (Number.isNaN(uid)) return reply.status(401).send({ error: 'Пользователь не найден' })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const user = await mysqlDb.query.users.findFirst({ where: eq(mysqlSchema.users.id, uid), columns: { two_factor_secret_enc: true } })
+      if (!user?.two_factor_secret_enc) return reply.status(400).send({ error: 'Сначала выполните setup 2FA' })
+      if (!verifyTotp(decryptTwoFactorSecret(user.two_factor_secret_enc), otp)) return reply.status(400).send({ error: 'Неверный код 2FA' })
+      await mysqlDb.update(mysqlSchema.users).set({ two_factor_enabled: 'true', two_factor_backup_codes_hash: backupHashes, two_factor_enabled_at: new Date(), updated_at: new Date() }).where(eq(mysqlSchema.users.id, uid))
+      return reply.send({ enabled: true, backupCodes })
+    }
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    const user = await pgDb.query.users.findFirst({ where: eq(pgSchema.users.id, payload.sub), columns: { twoFactorSecretEnc: true } })
+    if (!user?.twoFactorSecretEnc) return reply.status(400).send({ error: 'Сначала выполните setup 2FA' })
+    if (!verifyTotp(decryptTwoFactorSecret(user.twoFactorSecretEnc), otp)) return reply.status(400).send({ error: 'Неверный код 2FA' })
+    await pgDb.update(pgSchema.users).set({ twoFactorEnabled: 'true', twoFactorBackupCodesHash: backupHashes, twoFactorEnabledAt: new Date(), updatedAt: new Date() }).where(eq(pgSchema.users.id, payload.sub))
+    return reply.send({ enabled: true, backupCodes })
+  })
+
+  app.post('/api/auth/2fa/disable', { preHandler: [app.authenticate], config: { rateLimit: { max: 8, timeWindow: '1 minute' } } }, async (req: FastifyRequest, reply: FastifyReply) => {
+    if (useFileStore || !db) return reply.status(501).send({ error: '2FA недоступно в file-store' })
+    const payload = req.user as { sub: string }
+    const body = req.body as { code?: string }
+    const otp = sanitizeOtp(body.code || '')
+    if (otp.length !== 6) return reply.status(400).send({ error: 'Укажите 6-значный код' })
+    if (useMysql) {
+      const uid = Number(payload.sub)
+      if (Number.isNaN(uid)) return reply.status(401).send({ error: 'Пользователь не найден' })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const user = await mysqlDb.query.users.findFirst({ where: eq(mysqlSchema.users.id, uid), columns: { two_factor_secret_enc: true, two_factor_enabled: true } })
+      if (!user?.two_factor_secret_enc || user.two_factor_enabled !== 'true') return reply.send({ enabled: false })
+      if (!verifyTotp(decryptTwoFactorSecret(user.two_factor_secret_enc), otp)) return reply.status(400).send({ error: 'Неверный код 2FA' })
+      await mysqlDb.update(mysqlSchema.users).set({ two_factor_enabled: 'false', two_factor_secret_enc: null, two_factor_backup_codes_hash: null, two_factor_enabled_at: null, updated_at: new Date() }).where(eq(mysqlSchema.users.id, uid))
+      return reply.send({ enabled: false })
+    }
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    const user = await pgDb.query.users.findFirst({ where: eq(pgSchema.users.id, payload.sub), columns: { twoFactorSecretEnc: true, twoFactorEnabled: true } })
+    if (!user?.twoFactorSecretEnc || user.twoFactorEnabled !== 'true') return reply.send({ enabled: false })
+    if (!verifyTotp(decryptTwoFactorSecret(user.twoFactorSecretEnc), otp)) return reply.status(400).send({ error: 'Неверный код 2FA' })
+    await pgDb.update(pgSchema.users).set({ twoFactorEnabled: 'false', twoFactorSecretEnc: null, twoFactorBackupCodesHash: null, twoFactorEnabledAt: null, updatedAt: new Date() }).where(eq(pgSchema.users.id, payload.sub))
+    return reply.send({ enabled: false })
+  })
+
+  app.post('/api/auth/2fa/backup-codes/regenerate', { preHandler: [app.authenticate], config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req: FastifyRequest, reply: FastifyReply) => {
+    if (useFileStore || !db) return reply.status(501).send({ error: '2FA недоступно в file-store' })
+    const payload = req.user as { sub: string }
+    const body = req.body as { code?: string }
+    const otp = sanitizeOtp(body.code || '')
+    if (otp.length !== 6) return reply.status(400).send({ error: 'Укажите 6-значный код' })
+    const backupCodes = generateBackupCodes()
+    const backupHashes = await hashBackupCodes(backupCodes)
+    if (useMysql) {
+      const uid = Number(payload.sub)
+      if (Number.isNaN(uid)) return reply.status(401).send({ error: 'Пользователь не найден' })
+      const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
+      const user = await mysqlDb.query.users.findFirst({ where: eq(mysqlSchema.users.id, uid), columns: { two_factor_secret_enc: true, two_factor_enabled: true } })
+      if (!user?.two_factor_secret_enc || user.two_factor_enabled !== 'true') return reply.status(400).send({ error: '2FA не включена' })
+      if (!verifyTotp(decryptTwoFactorSecret(user.two_factor_secret_enc), otp)) return reply.status(400).send({ error: 'Неверный код 2FA' })
+      await mysqlDb.update(mysqlSchema.users).set({ two_factor_backup_codes_hash: backupHashes, updated_at: new Date() }).where(eq(mysqlSchema.users.id, uid))
+      return reply.send({ backupCodes })
+    }
+    const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+    const user = await pgDb.query.users.findFirst({ where: eq(pgSchema.users.id, payload.sub), columns: { twoFactorSecretEnc: true, twoFactorEnabled: true } })
+    if (!user?.twoFactorSecretEnc || user.twoFactorEnabled !== 'true') return reply.status(400).send({ error: '2FA не включена' })
+    if (!verifyTotp(decryptTwoFactorSecret(user.twoFactorSecretEnc), otp)) return reply.status(400).send({ error: 'Неверный код 2FA' })
+    await pgDb.update(pgSchema.users).set({ twoFactorBackupCodesHash: backupHashes, updatedAt: new Date() }).where(eq(pgSchema.users.id, payload.sub))
+    return reply.send({ backupCodes })
+  })
+
   app.post<{ Body: { email: string; password: string } }>('/api/auth/login', async (req: FastifyRequest<{ Body: { email: string; password: string } }>, reply: FastifyReply) => {
     try {
       const { email, password } = req.body
@@ -740,18 +902,19 @@ export async function authRoutes(app: FastifyInstance) {
           is_active?: number
           auth_provider?: string | null
           email_verified?: string
+          two_factor_enabled?: string
         }
         let user: MysqlUserRow | null
         try {
           user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
             where: eq(mysqlSchema.users.email, normalizedEmail),
-            columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true, email_verified: true },
+            columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true, email_verified: true, two_factor_enabled: true },
           }) as MysqlUserRow | null
         } catch (err) {
           if (isUnknownColumnError(err)) {
             user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
               where: eq(mysqlSchema.users.email, normalizedEmail),
-              columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true },
+              columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true, two_factor_enabled: true },
             }) as MysqlUserRow | null
           } else throw err
         }
@@ -773,6 +936,10 @@ export async function authRoutes(app: FastifyInstance) {
             .where(eq(mysqlSchema.users.id, user.id))
         } catch (err) {
           if (!isUnknownColumnError(err)) req.log.warn(err, 'Не удалось обновить last_login_at')
+        }
+        if (user.two_factor_enabled === 'true') {
+          const pendingToken = await reply.jwtSign({ sub: String(user.id), email: user.email, tfa: true }, { expiresIn: TWO_FA_PENDING_EXPIRES })
+          return reply.send({ twoFactorRequired: true, pendingToken })
         }
         const { sessionId } = await createSession(req, String(user.id), reply)
         const token = await reply.jwtSign({ sub: String(user.id), email: user.email, sid: sessionId }, { expiresIn: '7d' })
@@ -798,13 +965,17 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
         where: eq(pgSchema.users.email, normalizedEmail),
-        columns: { id: true, email: true, firstName: true, lastName: true, passwordHash: true, emailVerified: true },
+        columns: { id: true, email: true, firstName: true, lastName: true, passwordHash: true, emailVerified: true, twoFactorEnabled: true },
       })
       if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
         return reply.status(401).send({ error: 'Неверный email или пароль' })
       }
       if (user.emailVerified === 'false') {
         return reply.status(403).send({ error: 'Подтвердите email. Проверьте почту — мы отправили код.', code: 'email_not_verified' })
+      }
+      if (user.twoFactorEnabled === 'true') {
+        const pendingToken = await reply.jwtSign({ sub: user.id, email: user.email, tfa: true }, { expiresIn: TWO_FA_PENDING_EXPIRES })
+        return reply.send({ twoFactorRequired: true, pendingToken })
       }
       const { sessionId } = await createSession(req, user.id, reply)
       const token = await reply.jwtSign({ sub: user.id, email: user.email, sid: sessionId }, { expiresIn: '7d' })
@@ -831,7 +1002,7 @@ export async function authRoutes(app: FastifyInstance) {
         const userId = Number(payload.sub)
         if (Number.isNaN(userId)) return reply.status(401).send({ error: 'Пользователь не найден' })
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, presentation_display_preferences: true, auth_provider: true, role_id: true, created_at: true, tariff: true, test_drive_used: true }
+        const baseColumns = { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, birthday: true, gender: true, position: true, messengers: true, presentation_display_preferences: true, auth_provider: true, role_id: true, created_at: true, tariff: true, test_drive_used: true, two_factor_enabled: true }
         const expertColumns = { expert_plan_quantity: true, expert_presentations_used: true }
         const workColumns = { workplace: true, work_position: true, company_logo: true, work_email: true, work_phone: true, work_website: true }
         let user: Record<string, unknown> | null = null
@@ -880,6 +1051,7 @@ export async function authRoutes(app: FastifyInstance) {
           messengers: messengersData,
           presentation_display_preferences: prefsData ?? undefined,
           auth_provider: user.auth_provider ?? undefined,
+          twoFactorEnabled: user.two_factor_enabled === 'true',
           company_name: user.workplace ?? undefined,
           work_position: user.work_position ?? undefined,
           company_logo: user.company_logo ?? undefined,
@@ -898,7 +1070,7 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const user = await (db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>).query.users.findFirst({
         where: eq(pgSchema.users.id, payload.sub),
-        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true, tariff: true, testDriveUsed: true, expertPlanQuantity: true, expertPresentationsUsed: true },
+        columns: { id: true, email: true, firstName: true, lastName: true, createdAt: true, tariff: true, testDriveUsed: true, expertPlanQuantity: true, expertPresentationsUsed: true, twoFactorEnabled: true },
       })
       if (!user) return reply.status(401).send({ error: 'Пользователь не найден' })
       const { testDriveUsed: tdu, expertPlanQuantity: eqty, expertPresentationsUsed: eused, ...rest } = user
@@ -907,6 +1079,7 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.send({
         ...rest,
         tariff: user.tariff ?? undefined,
+        twoFactorEnabled: user.twoFactorEnabled === 'true',
         testDriveUsed: tdu === 'true',
         expertPlanQuantity: planQty,
         expertPresentationsUsed: usedCount,
@@ -1014,7 +1187,7 @@ export async function authRoutes(app: FastifyInstance) {
         if (!user) return reply.send({ message: 'Если такой email зарегистрирован, на него придёт код подтверждения.' })
         fileStore.createVerificationCode({ email: normalizedEmail, code, type: 'password_reset', userId: user.id, expiresAt })
         sendPasswordResetCodeEmail({ email: normalizedEmail, code, name: user.firstName || user.lastName }).catch((err) => {
-          console.error('[auth] Код восстановления не отправлен:', err instanceof Error ? err.message : err)
+          logCriticalAuthMailFailure('forgot_password:file_store', normalizedEmail, err)
         })
         return reply.send({ message: 'Если такой email зарегистрирован, на него придёт 6-значный код.' })
       }
@@ -1056,7 +1229,7 @@ export async function authRoutes(app: FastifyInstance) {
         })
       }
       sendPasswordResetCodeEmail({ email: normalizedEmail, code, name: userName }).catch((err) => {
-        console.error('[auth] Код восстановления не отправлен:', err instanceof Error ? err.message : err)
+        logCriticalAuthMailFailure('forgot_password:db', normalizedEmail, err)
       })
       return reply.send({ message: 'Если такой email зарегистрирован, на него придёт 6-значный код.' })
     } catch (err) {

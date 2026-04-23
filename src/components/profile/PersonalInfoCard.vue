@@ -311,6 +311,40 @@
                       </div>
                     </div>
                   </template>
+
+                  <div class="col-span-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h5 class="mb-4 text-base font-medium text-gray-800 dark:text-white/90">Двухфакторная авторизация (2FA)</h5>
+                    <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                      Статус: <strong>{{ currentUser?.twoFactorEnabled ? 'Включена' : 'Выключена' }}</strong>
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                      <button
+                        v-if="!currentUser?.twoFactorEnabled"
+                        type="button"
+                        @click="setupTwoFactor"
+                        class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                      >
+                        Настроить 2FA
+                      </button>
+                      <button
+                        v-if="currentUser?.twoFactorEnabled"
+                        type="button"
+                        @click="disableTwoFactor"
+                        class="rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-400"
+                      >
+                        Отключить 2FA
+                      </button>
+                    </div>
+                    <div v-if="twoFactorQrDataUrl" class="mt-4 space-y-3">
+                      <img :src="twoFactorQrDataUrl" alt="QR для 2FA" class="h-40 w-40 rounded-lg border border-gray-200 p-2 dark:border-gray-700" />
+                      <input v-model="twoFactorCode" type="text" inputmode="numeric" maxlength="6" placeholder="Код из приложения" class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+                      <button type="button" @click="enableTwoFactor" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600">Включить 2FA</button>
+                    </div>
+                    <div v-if="backupCodes.length" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                      <p class="font-medium mb-2">Резервные коды (сохраните их):</p>
+                      <p>{{ backupCodes.join(', ') }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -352,6 +386,9 @@ const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 /** Пользователь нажал «Хочу сменить пароль» — показываем поля пароля (чтобы браузер не предлагал сохранить пароль при простом сохранении профиля) */
 const wantToChangePassword = ref(false)
+const twoFactorQrDataUrl = ref('')
+const twoFactorCode = ref('')
+const backupCodes = ref<string[]>([])
 
 type MessengerKey = 'whatsapp' | 'telegram' | 'viber' | 'instagram' | 'twitter' | 'x' | 'vk' | 'max'
 
@@ -517,6 +554,45 @@ const saveProfile = async (e: Event) => {
     }
   } finally {
     loading.value = false
+  }
+}
+
+const setupTwoFactor = async () => {
+  error.value = ''
+  try {
+    const res = await api.post<{ qrCodeDataUrl: string }>('/api/auth/2fa/setup')
+    twoFactorQrDataUrl.value = res.qrCodeDataUrl
+    twoFactorCode.value = ''
+    backupCodes.value = []
+  } catch (err) {
+    error.value = err instanceof ApiError ? err.message : 'Ошибка настройки 2FA'
+  }
+}
+
+const enableTwoFactor = async () => {
+  error.value = ''
+  try {
+    const res = await api.post<{ enabled: boolean; backupCodes: string[] }>('/api/auth/2fa/enable', { code: twoFactorCode.value })
+    backupCodes.value = res.backupCodes || []
+    twoFactorQrDataUrl.value = ''
+    twoFactorCode.value = ''
+    await fetchUser()
+  } catch (err) {
+    error.value = err instanceof ApiError ? err.message : 'Ошибка включения 2FA'
+  }
+}
+
+const disableTwoFactor = async () => {
+  const code = prompt('Введите код из приложения для отключения 2FA')
+  if (!code) return
+  error.value = ''
+  try {
+    await api.post('/api/auth/2fa/disable', { code })
+    backupCodes.value = []
+    twoFactorQrDataUrl.value = ''
+    await fetchUser()
+  } catch (err) {
+    error.value = err instanceof ApiError ? err.message : 'Ошибка отключения 2FA'
   }
 }
 

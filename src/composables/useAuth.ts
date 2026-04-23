@@ -32,10 +32,18 @@ export function useAuth() {
 
   async function login(email: string, password: string) {
     const res = await api.post<AuthResponse>('/api/auth/login', { email, password })
-    setToken(res.token)
-    token.value = res.token
-    user.value = res.user
-    return res.user
+    if (res.twoFactorRequired && res.pendingToken) {
+      return { twoFactorRequired: true, pendingToken: res.pendingToken } as unknown as AuthUser
+    }
+    if (!res.token || !res.user) {
+      throw new Error('Некорректный ответ авторизации')
+    }
+    const authToken: string = res.token as string
+    const authUser: AuthResponse['user'] = res.user as AuthResponse['user']
+    setToken(authToken)
+    token.value = authToken
+    user.value = authUser ?? null
+    return authUser as AuthUser
   }
 
   async function register(data: {
@@ -49,6 +57,9 @@ export function useAuth() {
     const res = await api.post<AuthResponse & { pendingVerification?: boolean; email?: string }>('/api/auth/register', data)
     if (res.pendingVerification && res.email) {
       return { pendingVerification: true, email: res.email } as unknown as AuthUser
+    }
+    if (!res.token || !res.user) {
+      throw new Error('Некорректный ответ регистрации')
     }
     setToken(res.token)
     token.value = res.token

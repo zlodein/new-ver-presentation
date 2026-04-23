@@ -55,27 +55,51 @@ export function isMailConfigured(): boolean {
 }
 
 /** Отправить тестовое письмо и вернуть результат (для диагностики). Вызов: GET /api/admin/mail-test от имени админа. */
-export async function sendTestMail(): Promise<{ ok: boolean; message: string }> {
+export async function sendTestMail(): Promise<{ ok: boolean; message: string; details?: Record<string, unknown> }> {
   const transport = getTransporter()
   if (!transport) {
-    return { ok: false, message: 'SMTP не настроен: задайте SMTP_HOST, SMTP_USER, SMTP_PASS в server/.env' }
+    return {
+      ok: false,
+      message: 'SMTP не настроен: задайте SMTP_HOST, SMTP_USER, SMTP_PASS в server/.env',
+      details: { smtpHost: SMTP_HOST ?? null, smtpPort: SMTP_PORT, smtpUser: SMTP_USER ?? null, from: MAIL_FROM },
+    }
   }
   const to = MAIL_TO
   const subject = '[E-Presentation] Тест почты ' + new Date().toISOString()
   const html = '<p>Это тестовое письмо. Если вы его видите, отправка работает.</p>'
   try {
-    await transport.sendMail({
+    const info = await transport.sendMail({
       from: MAIL_FROM,
       to,
       subject,
       html,
     })
     console.log('[mailer] Тестовое письмо отправлено →', to)
-    return { ok: true, message: 'Письмо отправлено на ' + to }
+    return {
+      ok: true,
+      message: 'Письмо отправлено на ' + to,
+      details: {
+        smtpHost: SMTP_HOST ?? null,
+        smtpPort: SMTP_PORT,
+        from: MAIL_FROM,
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response,
+        envelope: info.envelope,
+      },
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[mailer] Ошибка тестовой отправки:', msg)
-    return { ok: false, message: 'Ошибка: ' + msg }
+    return {
+      ok: false,
+      message: 'Ошибка: ' + msg,
+      details: {
+        smtpHost: SMTP_HOST ?? null,
+        smtpPort: SMTP_PORT,
+        from: MAIL_FROM,
+      },
+    }
   }
 }
 
@@ -108,6 +132,11 @@ export async function sendMail(options: { to?: string; subject: string; html: st
     console.error('[mailer] Ошибка отправки письма:', msg)
     if (stack) console.error('[mailer]', stack)
   }
+}
+
+export function logCriticalAuthMailFailure(context: string, email: string, err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err)
+  console.error('[mailer][critical-auth]', { context, email, msg, smtpHost: SMTP_HOST ?? null, from: MAIL_FROM })
 }
 
 /** Уведомление о новой регистрации */

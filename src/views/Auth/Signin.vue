@@ -323,7 +323,14 @@ const handleSubmit = async () => {
   }
   loading.value = true
   try {
-    await login(email.value.trim(), password.value)
+    const loginResult = await login(email.value.trim(), password.value) as { twoFactorRequired?: boolean; pendingToken?: string }
+    if (loginResult?.twoFactorRequired && loginResult.pendingToken) {
+      router.push({
+        path: '/signin/2fa',
+        query: { pendingToken: loginResult.pendingToken, email: email.value.trim() },
+      })
+      return
+    }
     await fetchUser()
     const redirect = (route.query.redirect as string) || '/dashboard'
     const u = currentUser.value as { tariff?: string } | null

@@ -42,6 +42,10 @@ export const users = mysqlTable('users', {
   test_drive_used: varchar('test_drive_used', { length: 10 }).notNull().default('false'), // 'true' | 'false'
   expert_plan_quantity: int('expert_plan_quantity', { unsigned: true }).default(1), // лимит презентаций на тарифе Эксперт (1–100)
   expert_presentations_used: int('expert_presentations_used', { unsigned: true }).notNull().default(0), // сколько уже создано (удалённые тоже считаются)
+  two_factor_enabled: varchar('two_factor_enabled', { length: 10 }).notNull().default('false'),
+  two_factor_secret_enc: longtext('two_factor_secret_enc'),
+  two_factor_backup_codes_hash: longtext('two_factor_backup_codes_hash'),
+  two_factor_enabled_at: timestamp('two_factor_enabled_at'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -192,6 +196,27 @@ export const supportReplies = mysqlTable('support_replies', {
   requestIdIdx: index('support_replies_request_id_idx').on(table.support_request_id),
 }))
 
+/** Push-подписки устройств пользователя (web+mobile), привязанные к auth-сессии. */
+export const userPushSubscriptions = mysqlTable('user_push_subscriptions', {
+  id: int('id', { unsigned: true }).primaryKey().autoincrement(),
+  user_id: int('user_id', { unsigned: true }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  session_id: varchar('session_id', { length: 64 }).notNull(),
+  platform: varchar('platform', { length: 20 }).notNull(), // web | ios | android
+  endpoint: varchar('endpoint', { length: 1024 }),
+  token: varchar('token', { length: 1024 }),
+  p256dh: varchar('p256dh', { length: 1024 }),
+  auth: varchar('auth', { length: 1024 }),
+  app_version: varchar('app_version', { length: 50 }),
+  user_agent: varchar('user_agent', { length: 512 }),
+  last_seen_at: timestamp('last_seen_at').defaultNow().notNull(),
+  revoked_at: timestamp('revoked_at'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('push_subscriptions_user_id_idx').on(table.user_id),
+  sessionIdx: index('push_subscriptions_session_id_idx').on(table.session_id),
+  platformIdx: index('push_subscriptions_platform_idx').on(table.platform),
+}))
+
 /** Компании/агентства: владелец и единая библиотека ресурсов (логотипы, шрифты, палитра, иконки). */
 export const companies = mysqlTable('companies', {
   id: int('id', { unsigned: true }).primaryKey().autoincrement(),
@@ -252,3 +277,5 @@ export type FigureMySQL = typeof figures.$inferSelect
 export type NewFigureMySQL = typeof figures.$inferInsert
 export type UserSessionMySQL = typeof userSessions.$inferSelect
 export type NewUserSessionMySQL = typeof userSessions.$inferInsert
+export type UserPushSubscriptionMySQL = typeof userPushSubscriptions.$inferSelect
+export type NewUserPushSubscriptionMySQL = typeof userPushSubscriptions.$inferInsert

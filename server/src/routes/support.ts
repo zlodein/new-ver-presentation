@@ -7,6 +7,7 @@ import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { toIsoDate } from '../utils/date.js'
 import { sendSupportRequestNotification } from '../services/mailer.js'
+import { fanoutNotificationToPush } from '../services/notification-fanout.js'
 
 /** Отображаемый ID тикета: для MySQL #123, для PG #A1B2C3D4 (первые 8 символов UUID) */
 function formatTicketId(id: string | number, isPg: boolean): string {
@@ -405,6 +406,7 @@ export async function supportRoutes(app: FastifyInstance) {
                 type: 'support',
                 source_id: String(reqId),
               })
+              await fanoutNotificationToPush(String(ownerId), { title: 'Новый ответ в поддержке', message: `Новый ответ в тикете «${subject}»`, type: 'support', sourceId: String(reqId) })
             } else if (!isAdmin) {
               const admins = await mysqlDb.query.users.findMany({
                 where: eq(mysqlSchema.users.role_id, 2),
@@ -420,6 +422,7 @@ export async function supportRoutes(app: FastifyInstance) {
                     type: 'support',
                     source_id: String(reqId),
                   })
+                  await fanoutNotificationToPush(String(aid), { title: 'Новый ответ в поддержке', message: `Новый ответ в тикете «${subject}»`, type: 'support', sourceId: String(reqId) })
                 }
               }
             }
@@ -468,6 +471,7 @@ export async function supportRoutes(app: FastifyInstance) {
             type: 'support',
             sourceId: idRaw,
           })
+          await fanoutNotificationToPush(ticketUserId, { title: 'Новый ответ в поддержке', message: `Новый ответ в тикете «${ticket.subject || 'Поддержка'}»`, type: 'support', sourceId: idRaw })
         }
         return reply.status(201).send({
           id: created.id,

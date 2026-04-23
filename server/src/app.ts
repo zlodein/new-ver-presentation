@@ -5,6 +5,7 @@ import cookie from '@fastify/cookie'
 import fjwt from '@fastify/jwt'
 import multipart from '@fastify/multipart'
 import staticFiles from '@fastify/static'
+import rateLimit from '@fastify/rate-limit'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { db, useFileStore, useMysql } from './db/index.js'
@@ -24,6 +25,7 @@ import { taskRoutes } from './routes/tasks.js'
 import { supportRoutes } from './routes/support.js'
 import { pageSettingsRoutes } from './routes/page-settings.js'
 import { siteSettingsRoutes } from './routes/site-settings.js'
+import { pushRoutes } from './routes/push.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -47,6 +49,11 @@ export async function buildApp() {
   })
 
   await app.register(fjwt, { secret })
+  await app.register(rateLimit, {
+    global: false,
+    max: 10,
+    timeWindow: '1 minute',
+  })
   
   try {
     await app.register(multipart, {
@@ -111,6 +118,7 @@ export async function buildApp() {
   await app.register(supportRoutes, { prefix: '/' })
   await app.register(pageSettingsRoutes, { prefix: '/' })
   await app.register(siteSettingsRoutes, { prefix: '/' })
+  await app.register(pushRoutes, { prefix: '/' })
 
   return app
 }

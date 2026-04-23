@@ -427,6 +427,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/signin/2fa',
+      name: 'SigninTwoFactor',
+      component: () => import('../views/Auth/SigninTwoFactor.vue'),
+      meta: {
+        title: 'Подтверждение 2FA',
+      },
+    },
+    {
       path: '/signup',
       name: 'Signup',
       component: () => import('../views/Auth/Signup.vue'),
@@ -508,7 +516,7 @@ router.beforeEach(async (to, from, next) => {
 
     if (siteDisabled) {
       // Вход, регистрация и подтверждение разрешены
-      if (to.path === '/signin' || to.path === '/signup' || to.path === '/verify' || to.path === '/reset-password') {
+      if (to.path === '/signin' || to.path === '/signin/2fa' || to.path === '/signup' || to.path === '/verify' || to.path === '/reset-password') {
         const title = to.meta?.title
         document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
         next()

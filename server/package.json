@@ -24,23 +24,31 @@
     "@fastify/cors": "^10.0.1",
     "@fastify/jwt": "^9.0.1",
     "@fastify/multipart": "^9.0.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@fastify/static": "^8.0.0",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.28.0",
     "drizzle-orm": "^0.36.0",
     "fastify": "^5.1.0",
+    "firebase-admin": "^13.8.0",
     "mysql2": "^3.16.3",
     "nodemailer": "^6.9.16",
     "pg": "^8.13.0",
     "puppeteer": "^23.11.1",
-    "sharp": "^0.33.0"
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.0",
+    "speakeasy": "^2.0.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.0",
     "@types/nodemailer": "^6.4.16",
     "@types/pg": "^8.11.10",
+    "@types/qrcode": "^1.5.6",
+    "@types/speakeasy": "^2.0.10",
+    "@types/web-push": "^3.6.4",
     "tsx": "^4.19.2",
     "typescript": "~5.7.3"
   }

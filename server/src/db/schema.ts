@@ -22,6 +22,10 @@ export const users = pgTable(
     emailVerified: varchar('email_verified', { length: 10 }).notNull().default('false'), // подтверждение email при регистрации
     expertPlanQuantity: varchar('expert_plan_quantity', { length: 5 }).default('1'), // лимит презентаций на тарифе Эксперт (1–100), varchar для совместимости
     expertPresentationsUsed: varchar('expert_presentations_used', { length: 10 }).notNull().default('0'), // сколько уже создано
+    twoFactorEnabled: varchar('two_factor_enabled', { length: 10 }).notNull().default('false'),
+    twoFactorSecretEnc: text('two_factor_secret_enc'),
+    twoFactorBackupCodesHash: text('two_factor_backup_codes_hash'),
+    twoFactorEnabledAt: timestamp('two_factor_enabled_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -167,6 +171,26 @@ export const supportReplies = pgTable('support_replies', {
   index('support_replies_request_id_idx').on(table.supportRequestId),
 ])
 
+export const userPushSubscriptions = pgTable('user_push_subscriptions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sessionId: varchar('session_id', { length: 64 }).notNull(),
+  platform: varchar('platform', { length: 20 }).notNull(), // web | ios | android
+  endpoint: text('endpoint'),
+  token: text('token'),
+  p256dh: text('p256dh'),
+  auth: text('auth'),
+  appVersion: varchar('app_version', { length: 50 }),
+  userAgent: text('user_agent'),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('push_subscriptions_user_id_idx').on(table.userId),
+  index('push_subscriptions_session_id_idx').on(table.sessionId),
+  index('push_subscriptions_platform_idx').on(table.platform),
+])
+
 /** Именованные шаблоны групп слайдов (админка) */
 export const templates = pgTable(
   'templates',
@@ -220,6 +244,8 @@ export type SupportReply = typeof supportReplies.$inferSelect
 export type NewSupportReply = typeof supportReplies.$inferInsert
 export type UserSession = typeof userSessions.$inferSelect
 export type NewUserSession = typeof userSessions.$inferInsert
+export type UserPushSubscription = typeof userPushSubscriptions.$inferSelect
+export type NewUserPushSubscription = typeof userPushSubscriptions.$inferInsert
 export type TemplatePg = typeof templates.$inferSelect
 export type NewTemplatePg = typeof templates.$inferInsert
 export type FigurePg = typeof figures.$inferSelect

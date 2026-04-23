@@ -10,6 +10,7 @@ import { generatePDF } from '../utils/pdf-generator.js'
 import { getAllFiguresForPdf } from '../utils/pdf-figure-definitions.js'
 import type { ViewSlideItem } from '../utils/types.js'
 import { toIsoDateRequired } from '../utils/date.js'
+import { fanoutNotificationToPush } from '../services/notification-fanout.js'
 
 function toIsoDate(d: Date | string): string {
   return toIsoDateRequired(d)
@@ -651,6 +652,7 @@ export async function presentationRoutes(app: FastifyInstance) {
               message: 'Для увеличения лимита выберите в разделе «Тарифы» дополнительное количество презентаций.',
               type: 'presentation',
             })
+            await fanoutNotificationToPush(String(userIdNum), { title: 'Лимит презентаций исчерпан', message: 'Для увеличения лимита выберите в разделе «Тарифы» дополнительное количество презентаций.', type: 'presentation' })
           } catch (notifErr) {
             req.log.warn(notifErr, 'Ошибка создания уведомления о лимите')
           }
@@ -747,6 +749,7 @@ export async function presentationRoutes(app: FastifyInstance) {
               message: 'Для увеличения лимита выберите в разделе «Тарифы» дополнительное количество презентаций.',
               type: 'presentation',
             })
+          await fanoutNotificationToPush(userId!, { title: 'Лимит презентаций исчерпан', message: 'Для увеличения лимита выберите в разделе «Тарифы» дополнительное количество презентаций.', type: 'presentation' })
         } catch (notifErr) {
           req.log.warn(notifErr, 'Ошибка создания уведомления о лимите')
         }
@@ -870,6 +873,7 @@ export async function presentationRoutes(app: FastifyInstance) {
               type: 'presentation',
               source_id: String(u.id),
             })
+            await fanoutNotificationToPush(String(ownerId), { title: 'Опубликование', message: `Презентация «${u.title}» опубликована.`, type: 'presentation', sourceId: String(u.id) })
           } catch (notifErr) {
             console.error('[presentations] Ошибка создания уведомления об публикации:', notifErr)
           }
@@ -925,6 +929,7 @@ export async function presentationRoutes(app: FastifyInstance) {
               type: 'presentation',
               sourceId: updated.id,
             })
+          await fanoutNotificationToPush(userId!, { title: 'Опубликование', message: `Презентация «${updated.title}» опубликована.`, type: 'presentation', sourceId: updated.id })
         } catch (notifErr) {
           console.error('[presentations] Ошибка создания уведомления об публикации:', notifErr)
         }

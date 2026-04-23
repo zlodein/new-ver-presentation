@@ -142,6 +142,7 @@ export interface AuthUser {
   lastName?: string | null
   // Регистрация: 'email' | 'google' | 'yandex' и т.д. — для отображения смены пароля
   auth_provider?: string | null
+  twoFactorEnabled?: boolean
   // Работа
   company_name?: string | null
   work_position?: string | null
@@ -172,8 +173,10 @@ export interface PresentationDisplayPreferences {
 }
 
 export interface AuthResponse {
-  user: AuthUser
-  token: string
+  user?: AuthUser
+  token?: string
+  twoFactorRequired?: boolean
+  pendingToken?: string
 }
 
 export interface PresentationListItem {

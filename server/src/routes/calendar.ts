@@ -4,6 +4,7 @@ import { db, useFileStore, useMysql } from '../db/index.js'
 import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { toIsoDateRequired } from '../utils/date.js'
+import { fanoutNotificationToPush } from '../services/notification-fanout.js'
 
 function toIsoDate(d: Date | string): string {
   return toIsoDateRequired(d)
@@ -74,6 +75,7 @@ export async function calendarRoutes(app: FastifyInstance) {
                   type: 'calendar',
                   source_id: String(e.id),
                 })
+                await fanoutNotificationToPush(String(userIdNum), { title: 'Истекшее событие в календаре', message: baseMsg, type: 'calendar', sourceId: String(e.id) })
               } catch (notifErr) {
                 console.error('[calendar] Ошибка создания уведомления об истекшем событии:', notifErr)
               }
@@ -138,6 +140,7 @@ export async function calendarRoutes(app: FastifyInstance) {
                 type: 'calendar',
                 sourceId: e.id,
               })
+              await fanoutNotificationToPush(userId, { title: 'Истекшее событие в календаре', message: baseMsg, type: 'calendar', sourceId: e.id })
             } catch (notifErr) {
               console.error('[calendar] Ошибка создания уведомления об истекшем событии:', notifErr)
             }
@@ -233,6 +236,7 @@ export async function calendarRoutes(app: FastifyInstance) {
             type: 'calendar',
             source_id: String(created.id),
           })
+          await fanoutNotificationToPush(String(userIdNum), { title: isExpired ? 'Истекшее событие в календаре' : 'Новое событие в календаре', message: baseMsg, type: 'calendar', sourceId: String(created.id) })
         } catch (notifErr) {
           console.error('[calendar] Ошибка создания уведомления:', notifErr)
           // Не прерываем выполнение, если уведомление не создалось
@@ -283,6 +287,7 @@ export async function calendarRoutes(app: FastifyInstance) {
           type: 'calendar',
           sourceId: event.id,
         })
+        await fanoutNotificationToPush(userId, { title: isExpired ? 'Истекшее событие в календаре' : 'Новое событие в календаре', message: baseMsg, type: 'calendar', sourceId: event.id })
       } catch (notifErr) {
         console.error('[calendar] Ошибка создания уведомления:', notifErr)
         // Не прерываем выполнение, если уведомление не создалось
