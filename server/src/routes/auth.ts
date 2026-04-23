@@ -914,7 +914,8 @@ export async function authRoutes(app: FastifyInstance) {
           if (isUnknownColumnError(err)) {
             user = await (db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>).query.users.findFirst({
               where: eq(mysqlSchema.users.email, normalizedEmail),
-              columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true, two_factor_enabled: true },
+              // Legacy MySQL schema: without email_verified / two_factor_enabled columns.
+              columns: { id: true, email: true, name: true, last_name: true, middle_name: true, user_img: true, personal_phone: true, position: true, messengers: true, password: true, is_active: true, auth_provider: true },
             }) as MysqlUserRow | null
           } else throw err
         }
