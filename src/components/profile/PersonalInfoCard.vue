@@ -334,11 +334,57 @@
                       >
                         Отключить 2FA
                       </button>
+                      <button
+                        v-if="currentUser?.twoFactorEnabled"
+                        type="button"
+                        @click="showRegenerateCodesForm = !showRegenerateCodesForm"
+                        class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                      >
+                        Новые резервные коды
+                      </button>
                     </div>
                     <div v-if="twoFactorQrDataUrl" class="mt-4 space-y-3">
                       <img :src="twoFactorQrDataUrl" alt="QR для 2FA" class="h-40 w-40 rounded-lg border border-gray-200 p-2 dark:border-gray-700" />
                       <input v-model="twoFactorCode" type="text" inputmode="numeric" maxlength="6" placeholder="Код из приложения" class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
-                      <button type="button" @click="enableTwoFactor" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600">Включить 2FA</button>
+                      <button type="button" :disabled="twoFactorBusy" @click="enableTwoFactor" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60">
+                        {{ twoFactorBusy ? 'Включение...' : 'Включить 2FA' }}
+                      </button>
+                    </div>
+                    <div v-if="showDisableTwoFactorForm && currentUser?.twoFactorEnabled" class="mt-4 space-y-3">
+                      <input
+                        v-model="disableTwoFactorCode"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="6"
+                        placeholder="Код из приложения для отключения"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                      />
+                      <div class="flex flex-wrap gap-3">
+                        <button type="button" :disabled="twoFactorBusy" @click="confirmDisableTwoFactor" class="rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 disabled:opacity-60">
+                          {{ twoFactorBusy ? 'Отключение...' : 'Подтвердить отключение' }}
+                        </button>
+                        <button type="button" @click="showDisableTwoFactorForm = false" class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                    <div v-if="showRegenerateCodesForm && currentUser?.twoFactorEnabled" class="mt-4 space-y-3">
+                      <input
+                        v-model="regenerateTwoFactorCode"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="6"
+                        placeholder="Код из приложения для новых backup-кодов"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                      />
+                      <div class="flex flex-wrap gap-3">
+                        <button type="button" :disabled="twoFactorBusy" @click="regenerateBackupCodes" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60">
+                          {{ twoFactorBusy ? 'Генерация...' : 'Сгенерировать коды' }}
+                        </button>
+                        <button type="button" @click="showRegenerateCodesForm = false" class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                          Отмена
+                        </button>
+                      </div>
                     </div>
                     <div v-if="backupCodes.length" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
                       <p class="font-medium mb-2">Резервные коды (сохраните их):</p>
@@ -388,7 +434,12 @@ const showNewPassword = ref(false)
 const wantToChangePassword = ref(false)
 const twoFactorQrDataUrl = ref('')
 const twoFactorCode = ref('')
+const disableTwoFactorCode = ref('')
+const regenerateTwoFactorCode = ref('')
 const backupCodes = ref<string[]>([])
+const showDisableTwoFactorForm = ref(false)
+const showRegenerateCodesForm = ref(false)
+const twoFactorBusy = ref(false)
 
 type MessengerKey = 'whatsapp' | 'telegram' | 'viber' | 'instagram' | 'twitter' | 'x' | 'vk' | 'max'
 
@@ -563,6 +614,10 @@ const setupTwoFactor = async () => {
     const res = await api.post<{ qrCodeDataUrl: string }>('/api/auth/2fa/setup')
     twoFactorQrDataUrl.value = res.qrCodeDataUrl
     twoFactorCode.value = ''
+    disableTwoFactorCode.value = ''
+    regenerateTwoFactorCode.value = ''
+    showDisableTwoFactorForm.value = false
+    showRegenerateCodesForm.value = false
     backupCodes.value = []
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : 'Ошибка настройки 2FA'
@@ -570,29 +625,66 @@ const setupTwoFactor = async () => {
 }
 
 const enableTwoFactor = async () => {
+  if (twoFactorBusy.value) return
   error.value = ''
+  twoFactorBusy.value = true
   try {
     const res = await api.post<{ enabled: boolean; backupCodes: string[] }>('/api/auth/2fa/enable', { code: twoFactorCode.value })
     backupCodes.value = res.backupCodes || []
     twoFactorQrDataUrl.value = ''
     twoFactorCode.value = ''
+    disableTwoFactorCode.value = ''
+    regenerateTwoFactorCode.value = ''
+    showDisableTwoFactorForm.value = false
+    showRegenerateCodesForm.value = false
     await fetchUser()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : 'Ошибка включения 2FA'
+  } finally {
+    twoFactorBusy.value = false
   }
 }
 
 const disableTwoFactor = async () => {
-  const code = prompt('Введите код из приложения для отключения 2FA')
-  if (!code) return
+  showDisableTwoFactorForm.value = !showDisableTwoFactorForm.value
+  showRegenerateCodesForm.value = false
   error.value = ''
+}
+
+const confirmDisableTwoFactor = async () => {
+  if (twoFactorBusy.value) return
+  error.value = ''
+  twoFactorBusy.value = true
   try {
-    await api.post('/api/auth/2fa/disable', { code })
+    await api.post('/api/auth/2fa/disable', { code: disableTwoFactorCode.value })
     backupCodes.value = []
     twoFactorQrDataUrl.value = ''
+    twoFactorCode.value = ''
+    disableTwoFactorCode.value = ''
+    regenerateTwoFactorCode.value = ''
+    showDisableTwoFactorForm.value = false
+    showRegenerateCodesForm.value = false
     await fetchUser()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : 'Ошибка отключения 2FA'
+  } finally {
+    twoFactorBusy.value = false
+  }
+}
+
+const regenerateBackupCodes = async () => {
+  if (twoFactorBusy.value) return
+  error.value = ''
+  twoFactorBusy.value = true
+  try {
+    const res = await api.post<{ backupCodes: string[] }>('/api/auth/2fa/backup-codes/regenerate', { code: regenerateTwoFactorCode.value })
+    backupCodes.value = res.backupCodes || []
+    regenerateTwoFactorCode.value = ''
+    showRegenerateCodesForm.value = false
+  } catch (err) {
+    error.value = err instanceof ApiError ? err.message : 'Ошибка генерации backup-кодов'
+  } finally {
+    twoFactorBusy.value = false
   }
 }
 
