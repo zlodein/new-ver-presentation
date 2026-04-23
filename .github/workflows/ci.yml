@@ -12,6 +12,7 @@ on:
 
 env:
   NODE_VERSION: '20'
+  PUPPETEER_SKIP_DOWNLOAD: '1'
 
 jobs:
   lint:
