@@ -18,6 +18,7 @@ declare global {
     OneSignalDeferred?: Array<(oneSignal: OneSignalInstance) => void | Promise<void>>
     __ONESIGNAL_INIT_DONE__?: boolean
     __ONESIGNAL_INIT_PROMISE__?: Promise<void>
+    __ONESIGNAL_LEGACY_SW_CLEANUP_PROMISE__?: Promise<void>
   }
 }
 
@@ -62,11 +63,13 @@ async function unregisterLegacyPushServiceWorkers(): Promise<void> {
 export function initOneSignal(userId?: string): void {
   if (!ONE_SIGNAL_APP_ID) return
   getDeferredQueue().push(async (OneSignal) => {
-    await unregisterLegacyPushServiceWorkers()
-
     if (!window.__ONESIGNAL_INIT_DONE__ && !window.__ONESIGNAL_INIT_PROMISE__) {
       window.__ONESIGNAL_INIT_PROMISE__ = (async () => {
         try {
+          if (!window.__ONESIGNAL_LEGACY_SW_CLEANUP_PROMISE__) {
+            window.__ONESIGNAL_LEGACY_SW_CLEANUP_PROMISE__ = unregisterLegacyPushServiceWorkers()
+          }
+          await window.__ONESIGNAL_LEGACY_SW_CLEANUP_PROMISE__
           await OneSignal.init({
             appId: ONE_SIGNAL_APP_ID,
             safari_web_id: ONE_SIGNAL_SAFARI_WEB_ID,
@@ -79,6 +82,10 @@ export function initOneSignal(userId?: string): void {
           const msg = err instanceof Error ? err.message : String(err)
           if (msg.includes('already initialized') || msg.includes('SDK already initialized')) {
             window.__ONESIGNAL_INIT_DONE__ = true
+            return
+          }
+          if (msg.includes('Registration failed - storage error') || msg.includes('AbortError')) {
+            console.warn('[onesignal] browser storage/service worker state is corrupted or blocked:', msg)
             return
           }
           throw err
