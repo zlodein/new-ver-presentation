@@ -11,13 +11,13 @@ import { onMounted } from 'vue'
 import ThemeProvider from './components/layout/ThemeProvider.vue'
 import SidebarProvider from './components/layout/SidebarProvider.vue'
 import { useAuth } from './composables/useAuth'
-import { ensurePushSubscription } from './services/push-subscription'
+import { initOneSignal } from './services/onesignal'
 
-const { fetchUser } = useAuth()
+const { fetchUser, currentUser } = useAuth()
 
 onMounted(async () => {
   // Загрузить данные пользователя при старте приложения
   await fetchUser()
-  await ensurePushSubscription()
+  initOneSignal(currentUser.value?.id)
 })
 </script>
