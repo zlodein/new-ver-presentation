@@ -4,7 +4,54 @@ import * as pgSchema from '../db/schema.js'
 import * as mysqlSchema from '../db/schema-mysql.js'
 import { sendMobilePush, sendWebPush } from './push.js'
 
+async function sendOneSignalPush(userId: string, payload: { title: string; message?: string; type?: string; sourceId?: string }): Promise<boolean> {
+  const appId = process.env.ONESIGNAL_APP_ID?.trim()
+  const restApiKey = process.env.ONESIGNAL_REST_API_KEY?.trim()
+  if (!appId || !restApiKey) return false
+
+  const body = {
+    app_id: appId,
+    target_channel: 'push',
+    include_aliases: { external_id: [userId] },
+    headings: {
+      en: payload.title,
+      ru: payload.title,
+    },
+    contents: {
+      en: payload.message?.trim() || payload.title,
+      ru: payload.message?.trim() || payload.title,
+    },
+    data: {
+      type: payload.type ?? 'info',
+      sourceId: payload.sourceId ?? '',
+    },
+  }
+
+  try {
+    const res = await fetch('https://api.onesignal.com/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Key ${restApiKey}`,
+      },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '')
+      console.warn('[onesignal] send failed', res.status, errText)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.warn('[onesignal] send failed', err)
+    return false
+  }
+}
+
 export async function fanoutNotificationToPush(userId: string, payload: { title: string; message?: string; type?: string; sourceId?: string }) {
+  const sentViaOneSignal = await sendOneSignalPush(userId, payload)
+  if (sentViaOneSignal) return
+
   if (!db) return
   if (useMysql) {
     const uid = Number(userId)
