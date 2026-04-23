@@ -49,31 +49,89 @@ export async function pushRoutes(app: FastifyInstance) {
       const uid = Number(authUser.sub)
       if (Number.isNaN(uid)) return reply.status(401).send({ error: 'Не авторизован' })
       const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
-      await mysqlDb.insert(mysqlSchema.userPushSubscriptions).values({
-        user_id: uid,
-        session_id: authUser.sid,
-        platform: body.platform,
-        endpoint: body.endpoint ?? null,
-        token: body.token ?? null,
-        p256dh: body.p256dh ?? null,
-        auth: body.auth ?? null,
-        app_version: body.appVersion ?? null,
-        user_agent: String(req.headers['user-agent'] || ''),
+      const endpoint = body.endpoint ?? null
+      const token = body.token ?? null
+      const existing = await mysqlDb.query.userPushSubscriptions.findFirst({
+        where:
+          endpoint
+            ? and(eq(mysqlSchema.userPushSubscriptions.user_id, uid), eq(mysqlSchema.userPushSubscriptions.endpoint, endpoint))
+            : and(eq(mysqlSchema.userPushSubscriptions.user_id, uid), eq(mysqlSchema.userPushSubscriptions.token, token ?? '')),
+        columns: { id: true },
       })
+      if (existing) {
+        await mysqlDb
+          .update(mysqlSchema.userPushSubscriptions)
+          .set({
+            session_id: authUser.sid,
+            platform: body.platform,
+            endpoint,
+            token,
+            p256dh: body.p256dh ?? null,
+            auth: body.auth ?? null,
+            app_version: body.appVersion ?? null,
+            user_agent: String(req.headers['user-agent'] || ''),
+            last_seen_at: new Date(),
+            revoked_at: null,
+          })
+          .where(eq(mysqlSchema.userPushSubscriptions.id, existing.id))
+      } else {
+        await mysqlDb.insert(mysqlSchema.userPushSubscriptions).values({
+          user_id: uid,
+          session_id: authUser.sid,
+          platform: body.platform,
+          endpoint,
+          token,
+          p256dh: body.p256dh ?? null,
+          auth: body.auth ?? null,
+          app_version: body.appVersion ?? null,
+          user_agent: String(req.headers['user-agent'] || ''),
+          last_seen_at: new Date(),
+          revoked_at: null,
+        })
+      }
       return reply.send({ ok: true })
     }
     const pgDb = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
-    await pgDb.insert(pgSchema.userPushSubscriptions).values({
-      userId: authUser.sub,
-      sessionId: authUser.sid,
-      platform: body.platform,
-      endpoint: body.endpoint ?? null,
-      token: body.token ?? null,
-      p256dh: body.p256dh ?? null,
-      auth: body.auth ?? null,
-      appVersion: body.appVersion ?? null,
-      userAgent: String(req.headers['user-agent'] || ''),
+    const endpoint = body.endpoint ?? null
+    const token = body.token ?? null
+    const existing = await pgDb.query.userPushSubscriptions.findFirst({
+      where:
+        endpoint
+          ? and(eq(pgSchema.userPushSubscriptions.userId, authUser.sub), eq(pgSchema.userPushSubscriptions.endpoint, endpoint))
+          : and(eq(pgSchema.userPushSubscriptions.userId, authUser.sub), eq(pgSchema.userPushSubscriptions.token, token ?? '')),
+      columns: { id: true },
     })
+    if (existing) {
+      await pgDb
+        .update(pgSchema.userPushSubscriptions)
+        .set({
+          sessionId: authUser.sid,
+          platform: body.platform,
+          endpoint,
+          token,
+          p256dh: body.p256dh ?? null,
+          auth: body.auth ?? null,
+          appVersion: body.appVersion ?? null,
+          userAgent: String(req.headers['user-agent'] || ''),
+          lastSeenAt: new Date(),
+          revokedAt: null,
+        })
+        .where(eq(pgSchema.userPushSubscriptions.id, existing.id))
+    } else {
+      await pgDb.insert(pgSchema.userPushSubscriptions).values({
+        userId: authUser.sub,
+        sessionId: authUser.sid,
+        platform: body.platform,
+        endpoint,
+        token,
+        p256dh: body.p256dh ?? null,
+        auth: body.auth ?? null,
+        appVersion: body.appVersion ?? null,
+        userAgent: String(req.headers['user-agent'] || ''),
+        lastSeenAt: new Date(),
+        revokedAt: null,
+      })
+    }
     return reply.send({ ok: true })
   })
 
