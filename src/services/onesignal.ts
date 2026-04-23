@@ -1,9 +1,14 @@
+type OneSignalInitOptions = {
+  appId: string
+  safari_web_id?: string
+  notifyButton?: { enable?: boolean }
+  /** Относительный путь от корня сайта (без ведущего /). См. OneSignal Web SDK. */
+  serviceWorkerPath?: string
+  serviceWorkerParam?: { scope?: string }
+}
+
 type OneSignalInstance = {
-  init: (options: {
-    appId: string
-    safari_web_id?: string
-    notifyButton?: { enable?: boolean }
-  }) => Promise<void>
+  init: (options: OneSignalInitOptions) => Promise<void>
   login?: (externalId: string) => Promise<void>
   setExternalUserId?: (externalId: string) => Promise<void>
 }
@@ -42,17 +47,43 @@ export function isOneSignalConfigured(): boolean {
   return Boolean(ONE_SIGNAL_APP_ID)
 }
 
+/** Старый кастомный SW (`/push-sw.js`) конфликтует с OneSignal на scope `/` — снимаем регистрацию. */
+async function unregisterLegacyPushServiceWorkers(): Promise<void> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
+  const regs = await navigator.serviceWorker.getRegistrations()
+  await Promise.all(
+    regs.map(async (reg) => {
+      const url = reg.active?.scriptURL ?? reg.installing?.scriptURL ?? reg.waiting?.scriptURL ?? ''
+      if (url.includes('push-sw.js')) await reg.unregister()
+    })
+  )
+}
+
 export function initOneSignal(userId?: string): void {
   if (!ONE_SIGNAL_APP_ID) return
   getDeferredQueue().push(async (OneSignal) => {
+    await unregisterLegacyPushServiceWorkers()
+
     if (!window.__ONESIGNAL_INIT_DONE__ && !window.__ONESIGNAL_INIT_PROMISE__) {
-      window.__ONESIGNAL_INIT_PROMISE__ = OneSignal.init({
-        appId: ONE_SIGNAL_APP_ID,
-        safari_web_id: ONE_SIGNAL_SAFARI_WEB_ID,
-        notifyButton: { enable: true },
-      }).then(() => {
-        window.__ONESIGNAL_INIT_DONE__ = true
-      }).finally(() => {
+      window.__ONESIGNAL_INIT_PROMISE__ = (async () => {
+        try {
+          await OneSignal.init({
+            appId: ONE_SIGNAL_APP_ID,
+            safari_web_id: ONE_SIGNAL_SAFARI_WEB_ID,
+            notifyButton: { enable: true },
+            serviceWorkerPath: 'OneSignalSDKWorker.js',
+            serviceWorkerParam: { scope: '/' },
+          })
+          window.__ONESIGNAL_INIT_DONE__ = true
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          if (msg.includes('already initialized') || msg.includes('SDK already initialized')) {
+            window.__ONESIGNAL_INIT_DONE__ = true
+            return
+          }
+          throw err
+        }
+      })().finally(() => {
         window.__ONESIGNAL_INIT_PROMISE__ = undefined
       })
     }
