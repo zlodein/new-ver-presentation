@@ -12,6 +12,7 @@ declare global {
   interface Window {
     OneSignalDeferred?: Array<(oneSignal: OneSignalInstance) => void | Promise<void>>
     __ONESIGNAL_INIT_DONE__?: boolean
+    __ONESIGNAL_INIT_PROMISE__?: Promise<void>
   }
 }
 
@@ -44,13 +45,19 @@ export function isOneSignalConfigured(): boolean {
 export function initOneSignal(userId?: string): void {
   if (!ONE_SIGNAL_APP_ID) return
   getDeferredQueue().push(async (OneSignal) => {
-    if (!window.__ONESIGNAL_INIT_DONE__) {
-      await OneSignal.init({
+    if (!window.__ONESIGNAL_INIT_DONE__ && !window.__ONESIGNAL_INIT_PROMISE__) {
+      window.__ONESIGNAL_INIT_PROMISE__ = OneSignal.init({
         appId: ONE_SIGNAL_APP_ID,
         safari_web_id: ONE_SIGNAL_SAFARI_WEB_ID,
         notifyButton: { enable: true },
+      }).then(() => {
+        window.__ONESIGNAL_INIT_DONE__ = true
+      }).finally(() => {
+        window.__ONESIGNAL_INIT_PROMISE__ = undefined
       })
-      window.__ONESIGNAL_INIT_DONE__ = true
+    }
+    if (window.__ONESIGNAL_INIT_PROMISE__) {
+      await window.__ONESIGNAL_INIT_PROMISE__
     }
 
     if (userId) {
