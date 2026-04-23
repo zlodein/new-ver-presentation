@@ -266,6 +266,26 @@ const keepLoggedIn = ref(false)
 const error = ref('')
 const loading = ref(false)
 
+const AUTH_PATHS = new Set(['/signin', '/signin/2fa', '/signup', '/reset-password', '/verify'])
+
+function sanitizeRedirect(rawRedirect: unknown, fallback = '/dashboard'): string {
+  if (typeof rawRedirect !== 'string' || !rawRedirect) return fallback
+  let candidate = rawRedirect
+  for (let i = 0; i < 2; i += 1) {
+    try {
+      const decoded = decodeURIComponent(candidate)
+      if (decoded === candidate) break
+      candidate = decoded
+    } catch {
+      break
+    }
+  }
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) return fallback
+  const pathOnly = candidate.split('?')[0] || candidate
+  if (AUTH_PATHS.has(pathOnly)) return fallback
+  return candidate
+}
+
 /** URL для редиректа на OAuth провайдера (Яндекс или VK). */
 function oauthUrl(provider: 'yandex' | 'vk'): string {
   const base = getApiBase()
@@ -297,7 +317,7 @@ onMounted(async () => {
     setToken(tokenFromQuery)
     try {
       await fetchUser()
-      const redirect = (route.query.redirect as string) || '/dashboard'
+      const redirect = sanitizeRedirect(route.query.redirect, '/dashboard')
       const u = currentUser.value as { tariff?: string } | null
       const goToTariffs = redirect === '/tariffs' || redirect.startsWith('/tariffs?')
       router.replace(goToTariffs ? redirect : (u && (u.tariff == null || u.tariff === '') ? '/dashboard/tariffs' : redirect))
@@ -332,7 +352,7 @@ const handleSubmit = async () => {
       return
     }
     await fetchUser()
-    const redirect = (route.query.redirect as string) || '/dashboard'
+    const redirect = sanitizeRedirect(route.query.redirect, '/dashboard')
     const u = currentUser.value as { tariff?: string } | null
     const goToTariffs = redirect === '/tariffs' || redirect.startsWith('/tariffs?')
     if (goToTariffs) {

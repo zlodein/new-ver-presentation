@@ -3,6 +3,7 @@ const IS_PROD = (import.meta as ImportMeta & { env: { PROD?: boolean } }).env?.P
 const REQUEST_TIMEOUT_MS = 30000
 
 const TOKEN_KEY = 'auth_token'
+const AUTH_PAGES = new Set(['/signin', '/signin/2fa', '/signup', '/reset-password', '/verify'])
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
@@ -27,6 +28,13 @@ function buildUrl(path: string): string {
   const base = API_BASE
   const p = path.startsWith('/') ? path : `/${path}`
   return base ? `${base}${p}` : p
+}
+
+function buildSigninLocation(): string {
+  const currentPath = window.location.pathname
+  if (AUTH_PAGES.has(currentPath)) return '/signin'
+  const redirect = encodeURIComponent(window.location.pathname + window.location.search)
+  return `/signin?redirect=${redirect}`
 }
 
 async function request<T>(
@@ -81,8 +89,7 @@ async function request<T>(
     if (!res.ok) {
       if (res.status === 401) {
         setToken(null)
-        const redirect = encodeURIComponent(window.location.pathname + window.location.search)
-        window.location.href = `/signin?redirect=${redirect}`
+        window.location.href = buildSigninLocation()
         throw new ApiError(401, 'Сессия истекла. Войдите снова.', data)
       }
       throw new ApiError(res.status, errMsg, data)
