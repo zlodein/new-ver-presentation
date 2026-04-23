@@ -9,10 +9,8 @@ async function sendOneSignalPush(userId: string, payload: { title: string; messa
   const restApiKey = process.env.ONESIGNAL_REST_API_KEY?.trim()
   if (!appId || !restApiKey) return false
 
-  const body = {
+  const messageBase = {
     app_id: appId,
-    target_channel: 'push',
-    include_aliases: { external_id: [userId] },
     headings: {
       en: payload.title,
       ru: payload.title,
@@ -27,7 +25,7 @@ async function sendOneSignalPush(userId: string, payload: { title: string; messa
     },
   }
 
-  try {
+  const send = async (body: Record<string, unknown>) => {
     const res = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
@@ -36,12 +34,40 @@ async function sendOneSignalPush(userId: string, payload: { title: string; messa
       },
       body: JSON.stringify(body),
     })
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '')
-      console.warn('[onesignal] send failed', res.status, errText)
+    const text = await res.text().catch(() => '')
+    let parsed: Record<string, unknown> | null = null
+    if (text) {
+      try {
+        parsed = JSON.parse(text) as Record<string, unknown>
+      } catch {
+        parsed = null
+      }
+    }
+    return { ok: res.ok, status: res.status, text, parsed }
+  }
+
+  try {
+    // Современный формат таргетинга OneSignal (User Model, alias external_id).
+    const aliasAttempt = await send({
+      ...messageBase,
+      target_channel: 'push',
+      include_aliases: { external_id: [userId] },
+    })
+    if (aliasAttempt.ok) {
+      const recipients = Number((aliasAttempt.parsed as { recipients?: unknown } | null)?.recipients ?? 0)
+      if (Number.isFinite(recipients) && recipients > 0) return true
+      // Fallback для старых профилей/SDK, где external_id мог быть установлен старым методом.
+      const legacyAttempt = await send({
+        ...messageBase,
+        include_external_user_ids: [userId],
+        channel_for_external_user_ids: 'push',
+      })
+      if (legacyAttempt.ok) return true
+      console.warn('[onesignal] legacy send failed', legacyAttempt.status, legacyAttempt.text)
       return false
     }
-    return true
+    console.warn('[onesignal] alias send failed', aliasAttempt.status, aliasAttempt.text)
+    return false
   } catch (err) {
     console.warn('[onesignal] send failed', err)
     return false

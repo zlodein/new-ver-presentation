@@ -5,6 +5,7 @@ type OneSignalInstance = {
     notifyButton?: { enable?: boolean }
   }) => Promise<void>
   login?: (externalId: string) => Promise<void>
+  setExternalUserId?: (externalId: string) => Promise<void>
 }
 
 declare global {
@@ -52,8 +53,22 @@ export function initOneSignal(userId?: string): void {
       window.__ONESIGNAL_INIT_DONE__ = true
     }
 
-    if (userId && OneSignal.login) {
-      await OneSignal.login(userId)
+    if (userId) {
+      let bound = false
+      if (OneSignal.login) {
+        await OneSignal.login(userId)
+        bound = true
+      }
+      if (!bound) {
+        const userApi = (OneSignal as { User?: { addAlias?: (label: string, id: string) => Promise<void> } }).User
+        if (userApi?.addAlias) {
+          await userApi.addAlias('external_id', userId)
+          bound = true
+        }
+      }
+      if (!bound && OneSignal.setExternalUserId) {
+        await OneSignal.setExternalUserId(userId)
+      }
     }
   })
 }
