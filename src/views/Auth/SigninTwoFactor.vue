@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
@@ -90,12 +90,28 @@ function setInputRef(el: unknown, i: number) {
   if (el) (inputRefs.value[i] as HTMLInputElement) = el as HTMLInputElement
 }
 
+function otpFilled(): boolean {
+  return digits.value.join('').length === 6
+}
+
+/** Автовход при полном 6-значном TOTP; резервный код — только по кнопке. */
+function maybeAutoVerify() {
+  if (loading.value) return
+  if (backupCode.value.trim()) return
+  if (!otpFilled()) return
+  void nextTick(() => {
+    if (loading.value || backupCode.value.trim() || !otpFilled()) return
+    void verify()
+  })
+}
+
 function onDigitInput(ev: Event, i: number) {
   const val = (ev.target as HTMLInputElement).value.replace(/\D/g, '').slice(-1)
   digits.value[i] = val
   if (val && i < 5) {
     inputRefs.value[i + 1]?.focus()
   }
+  maybeAutoVerify()
 }
 
 function onDigitKeydown(ev: KeyboardEvent, i: number) {
@@ -112,6 +128,7 @@ function onPaste(ev: ClipboardEvent) {
   }
   const next = Math.min(pasted.length, 5)
   inputRefs.value[next]?.focus()
+  maybeAutoVerify()
 }
 
 async function verify() {
