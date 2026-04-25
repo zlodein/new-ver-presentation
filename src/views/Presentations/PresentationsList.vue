@@ -144,7 +144,8 @@
             class="flex flex-1 flex-col"
           >
             <div
-              class="relative aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
+              class="relative w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
+              :style="{ aspectRatio: `${BOOKLET_PAGE_W} / ${BOOKLET_PAGE_H}` }"
               @touchstart.passive="onSliderTouchStart(presentation.id, $event)"
               @touchend.passive="onSliderTouchEnd(presentation.id, presentation, $event)"
             >
@@ -159,30 +160,18 @@
                 >
                   <div
                     class="editor-sidebar-thumb-frame relative h-full w-full overflow-hidden border-y border-gray-200/70 bg-gray-100 [contain:paint] dark:border-gray-700/80 dark:bg-gray-900/60"
-                    :style="{ aspectRatio: `${BOOKLET_PAGE_W} / ${BOOKLET_PAGE_H}` }"
                   >
                     <div
-                      class="pointer-events-none absolute left-0 top-0 origin-top-left will-change-transform"
-                      :style="{
-                        width: `${BOOKLET_PAGE_W}px`,
-                        height: `${BOOKLET_PAGE_H}px`,
-                        transform: `scale(${CARD_THUMB_SCALE})`,
-                        transformOrigin: 'top left',
-                      }"
+                      class="presentation-slider-wrap booklet-view h-full w-full max-w-none rounded-none shadow-none"
+                      :style="cardPresentationStyle(presentation)"
+                      :data-image-frame="getCardSettings(presentation).imageFrame"
+                      :data-template="getCardSettings(presentation).template"
                     >
-                      <div
-                        class="presentation-slider-wrap booklet-view editor-sidebar-thumb-booklet max-w-none shadow-none"
-                        :style="cardPresentationStyle(presentation)"
-                        :data-image-frame="getCardSettings(presentation).imageFrame"
-                        :data-template="getCardSettings(presentation).template"
-                      >
-                        <div class="booklet-page relative h-full w-full overflow-hidden">
-                          <div class="booklet-page__inner">
-                            <div class="booklet-scale-root h-full w-full">
-                              <component :is="cardSlideComponentForPresentation(presentation)" :slide="slide" />
-                            </div>
+                      <div class="booklet-page relative h-full w-full overflow-hidden">
+                        <div class="booklet-page__inner">
+                          <div class="booklet-scale-root h-full w-full">
+                            <component :is="cardSlideComponentForPresentation(presentation)" :slide="slide" />
                           </div>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -195,7 +184,7 @@
                     v-if="presentation.coverImage"
                     :src="presentation.coverImage"
                     :alt="presentation.title"
-                    class="h-full w-full object-cover transition group-hover:scale-105"
+                    class="h-full w-full object-contain transition group-hover:scale-105"
                   />
                   <div v-else class="flex h-full w-full items-center justify-center">
                     <span class="text-4xl text-gray-400 dark:text-gray-500">
@@ -557,7 +546,6 @@ const error = ref('')
 const counts = ref<{ published: number; draft: number; deleted: number } | null>(null)
 const BOOKLET_PAGE_W = 1123
 const BOOKLET_PAGE_H = 794
-const CARD_THUMB_SCALE = 0.24
 const DEFAULT_CARD_SETTINGS = {
   template: BOOKLET_TEMPLATE_BASIC,
   fontFamily: 'system-ui',
@@ -650,7 +638,7 @@ provide(PRESENTATION_EDITOR_SLIDE_KEY, previewSlideInject)
 function getCardSlides(presentation: Presentation): SlideItem[] {
   const rawSlides = presentation.previewContent?.slides
   if (!Array.isArray(rawSlides) || rawSlides.length === 0) return []
-  return rawSlides
+  const prepared = rawSlides
     .map((raw, index) => {
       const obj = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {}
       const data = (obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data))
@@ -663,7 +651,10 @@ function getCardSlides(presentation: Presentation): SlideItem[] {
         hidden: Boolean(obj.hidden),
       } satisfies SlideItem
     })
-    .filter((slide) => !slide.hidden)
+  const firstCover = prepared.find((slide) => slide.type === 'cover')
+  const visibleOthers = prepared.filter((slide) => !slide.hidden && slide !== firstCover)
+  if (firstCover) return [{ ...firstCover, hidden: false }, ...visibleOthers]
+  return visibleOthers
 }
 
 function getCardSlideIndex(presentationId: string): number {
