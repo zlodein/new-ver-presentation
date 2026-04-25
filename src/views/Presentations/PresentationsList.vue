@@ -172,6 +172,7 @@
                           <div class="booklet-scale-root h-full w-full">
                             <component :is="cardSlideComponentForPresentation(presentation)" :slide="slide" />
                           </div>
+                        </div>
                       </div>
                     </div>
                   </div>
