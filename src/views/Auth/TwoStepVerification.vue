@@ -1,77 +1,98 @@
 <template>
   <FullScreenLayout>
     <div class="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
-      <div class="relative flex flex-col justify-center w-full min-h-screen dark:bg-gray-900">
-        <div class="w-full max-w-md pt-10 mx-auto">
-          <router-link
-            :to="backLink"
-            class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-          >
-            <svg class="stroke-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            {{ type === 'password_reset' ? 'Назад к восстановлению' : 'Назад к регистрации' }}
-          </router-link>
-        </div>
-        <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-4 pb-16">
-          <div class="mb-5 sm:mb-8">
-            <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              {{ type === 'password_reset' ? 'Подтверждение восстановления' : 'Подтверждение регистрации' }}
-            </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              Код подтверждения отправлен на <strong>{{ maskedEmail }}</strong>. Введите его в поле ниже.
-            </p>
-          </div>
-
-          <form @submit.prevent="handleVerify" class="space-y-5">
-            <div v-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
-              {{ error }}
-            </div>
-            <div v-if="success" class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300">
-              {{ success }}
-            </div>
-
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Введите 6-значный код
-              </label>
-              <div class="flex justify-center gap-2 sm:gap-3">
-                <input
-                  v-for="(_, i) in 6"
-                  :key="i"
-                  :ref="(el) => setInputRef(el, i)"
-                  v-model="digits[i]"
-                  type="text"
-                  inputmode="numeric"
-                  maxlength="1"
-                  class="h-12 w-10 sm:h-14 sm:w-12 text-center text-lg font-semibold rounded-lg border border-gray-300 bg-transparent dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                  @input="onDigitInput($event, i)"
-                  @keydown="onDigitKeydown($event, i)"
-                  @paste="onPaste"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              :disabled="loading || code.length !== 6"
-              class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed"
+      <div class="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900">
+        <div class="flex flex-col flex-1 w-full lg:w-1/2">
+          <div class="w-full max-w-md pt-10 mx-auto">
+            <router-link
+              to="/dashboard"
+              class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             >
-              {{ loading ? 'Проверка...' : (type === 'password_reset' ? 'Подтвердить и сменить пароль' : 'Подтвердить') }}
-            </button>
+              <svg class="stroke-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Назад в панель
+            </router-link>
+          </div>
+          <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+            <div class="mb-5 sm:mb-8">
+              <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
+                {{ type === 'password_reset' ? 'Подтверждение восстановления' : 'Two Step Verification' }}
+              </h1>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{
+                  type === 'password_reset'
+                    ? `Код отправлен на ${maskedEmail}. Введите его в поле ниже.`
+                    : 'A verification code has been sent to your email. Please enter it in the field below.'
+                }}
+              </p>
+            </div>
 
-            <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-              Не пришёл код?
+            <form @submit.prevent="handleVerify" class="space-y-5">
+              <div v-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+                {{ error }}
+              </div>
+              <div v-if="success" class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300">
+                {{ success }}
+              </div>
+
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Type your 6 digits security code
+                </label>
+                <div class="grid grid-cols-6 gap-2 sm:gap-3">
+                  <input
+                    v-for="(_, i) in 6"
+                    :key="i"
+                    :ref="(el) => setInputRef(el, i)"
+                    v-model="digits[i]"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="1"
+                    class="h-11 w-full rounded-lg border border-gray-300 bg-transparent text-center text-base font-semibold text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 sm:h-12 sm:text-lg"
+                    @input="onDigitInput($event, i)"
+                    @keydown="onDigitKeydown($event, i)"
+                    @paste="onPaste"
+                  />
+                </div>
+              </div>
+
               <button
-                type="button"
-                @click="resendCode"
-                :disabled="resendCooldown > 0 || resendLoading"
-                class="text-brand-500 hover:text-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="submit"
+                :disabled="loading || code.length !== 6"
+                class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {{ resendCooldown > 0 ? `Отправить повторно (${resendCooldown} с)` : (resendLoading ? 'Отправка...' : 'Отправить повторно') }}
+                {{ loading ? 'Проверка...' : (type === 'password_reset' ? 'Подтвердить и сменить пароль' : 'Verify My Account') }}
               </button>
-            </p>
-          </form>
+
+              <p class="text-sm text-center text-gray-500 dark:text-gray-400">
+                Didn’t get the code?
+                <button
+                  type="button"
+                  @click="resendCode"
+                  :disabled="resendCooldown > 0 || resendLoading"
+                  class="text-brand-500 hover:text-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {{ resendCooldown > 0 ? `Resend (${resendCooldown}s)` : (resendLoading ? 'Sending...' : 'Resend') }}
+                </button>
+              </p>
+            </form>
+          </div>
+        </div>
+        <div
+          class="relative items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid"
+        >
+          <div class="flex items-center justify-center z-1">
+            <common-grid-shape />
+            <div class="flex flex-col items-center max-w-xs">
+              <router-link to="/" class="block mb-4">
+                <img width="{231}" height="{48}" :src="logoUrl('auth-logo.svg')" alt="Logo" />
+              </router-link>
+              <p class="text-center text-gray-400 dark:text-white/60">
+                Free and Open-Source Tailwind CSS Admin Dashboard Template
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -82,8 +103,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
+import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import { api, hasApi, ApiError, setToken } from '@/api/client'
 import { useAuth } from '@/composables/useAuth'
+import { logoUrl } from '@/config/logos'
 
 const route = useRoute()
 const router = useRouter()
@@ -99,10 +122,6 @@ const maskedEmail = computed(() => {
   const masked = local.length > 2 ? local.slice(0, 2) + '***' : '***'
   return `${masked}@${domain}`
 })
-
-const backLink = computed(() =>
-  type.value === 'password_reset' ? '/reset-password' : '/signup'
-)
 
 const digits = ref<string[]>(['', '', '', '', '', ''])
 const inputRefs = ref<(HTMLInputElement | null)[]>([])
