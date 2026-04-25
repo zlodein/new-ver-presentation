@@ -155,7 +155,7 @@
                 <div
                   v-for="(slide, slideIdx) in getCardSlides(presentation)"
                   :key="`${presentation.id}-${slideIdx}`"
-                  class="h-full shrink-0 basis-full"
+                  class="h-full min-w-full shrink-0"
                 >
                   <div
                     class="editor-sidebar-thumb-frame relative h-full w-full overflow-hidden border-y border-gray-200/70 bg-gray-100 [contain:paint] dark:border-gray-700/80 dark:bg-gray-900/60"
@@ -189,7 +189,7 @@
                 </div>
                 <div
                   v-if="getCardSlides(presentation).length === 0"
-                  class="h-full shrink-0 basis-full"
+                  class="h-full min-w-full shrink-0"
                 >
                   <img
                     v-if="presentation.coverImage"
@@ -697,8 +697,7 @@ function sliderTrackStyle(presentation: Presentation): Record<string, string> {
   const slideCount = Math.max(slides.length, 1)
   const slideIndex = Math.min(getCardSlideIndex(presentation.id), slideCount - 1)
   return {
-    width: `${slideCount * 100}%`,
-    transform: `translateX(-${slideIndex * (100 / slideCount)}%)`,
+    transform: `translateX(-${slideIndex * 100}%)`,
   }
 }
 
