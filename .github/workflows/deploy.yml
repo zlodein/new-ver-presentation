@@ -64,8 +64,7 @@ jobs:
           cp server/package-lock.json deploy/backend/
           cp -r server/drizzle deploy/backend/ 2>/dev/null || true
           cp -r server/sql deploy/backend/ 2>/dev/null || true
-          cp deploy/nginx-fastpanel-e-presentation.ru.includes deploy/
-          cp deploy/nginx-standalone-e-presentation.conf deploy/
+          # nginx-*.includes / nginx-standalone*.conf уже лежат в deploy/ в репозитории — не копировать самих в себя
           cp scripts/apply-nginx-spa-on-server.sh deploy/
           tar -czf deploy.tar.gz deploy/
 
