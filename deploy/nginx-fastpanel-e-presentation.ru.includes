@@ -1,6 +1,9 @@
-# Дополнительные директивы для сайта e-presentation.ru (FastPanel2).
+# Дополнительные директивы для FastPanel2 (только то, что нельзя дублировать в основном vhost).
 # Копируется в: /etc/nginx/fastpanel2-sites/e_presentati_usr/e-presentation.ru.includes
-# Порядок: сначала /api (длиннее префикс), затем SPA fallback для history mode.
+#
+# ВАЖНО: в основном server {} у FastPanel уже есть `location / { ... }` — второй `location /`
+# в includes даёт «duplicate location "/"». SPA (try_files → index.html) добавляет скрипт
+# scripts/apply-nginx-spa-on-server.sh в файл *.conf этого же каталога.
 
 location /api {
     proxy_pass http://127.0.0.1:3001;
@@ -14,8 +17,4 @@ location /api {
     proxy_cache_bypass $http_upgrade;
     proxy_connect_timeout 60s;
     proxy_read_timeout 60s;
-}
-
-location / {
-    try_files $uri $uri/ /index.html;
 }
