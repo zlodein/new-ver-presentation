@@ -98,6 +98,44 @@ function displayTitleFromContent(content: unknown, fallbackTitle: string): strin
   return fallbackTitle
 }
 
+function isLikelyImageUrl(value: string): boolean {
+  const v = value.trim().toLowerCase()
+  if (!v) return false
+  if (v.startsWith('data:image/')) return true
+  if (v.includes('/uploads/')) return true
+  return /\.(avif|webp|png|jpe?g|gif|bmp|svg)(\?.*)?$/.test(v)
+}
+
+function collectImageUrlsFromUnknown(input: unknown, acc: string[], seen: Set<string>, depth = 0): void {
+  if (depth > 6 || input == null) return
+  if (typeof input === 'string') {
+    if (isLikelyImageUrl(input) && !seen.has(input)) {
+      seen.add(input)
+      acc.push(input)
+    }
+    return
+  }
+  if (Array.isArray(input)) {
+    for (const item of input) collectImageUrlsFromUnknown(item, acc, seen, depth + 1)
+    return
+  }
+  if (typeof input === 'object') {
+    for (const value of Object.values(input as Record<string, unknown>)) {
+      collectImageUrlsFromUnknown(value, acc, seen, depth + 1)
+    }
+  }
+}
+
+/** Для карточек списка: собираем дополнительные изображения из слайдов (без обложки). */
+function extractPreviewImages(content: unknown, coverImage?: string | null, maxCount = 8): string[] {
+  const normalized = normContent(content)
+  const urls: string[] = []
+  const seen = new Set<string>()
+  collectImageUrlsFromUnknown(normalized.slides, urls, seen)
+  const normalizedCover = typeof coverImage === 'string' ? coverImage.trim() : ''
+  return urls.filter((url) => url !== normalizedCover).slice(0, maxCount)
+}
+
 function normContent(c: unknown): { slides: unknown[]; settings?: ContentSettings } {
   let slides: unknown[] = []
   let rawObj: { slides?: unknown[]; settings?: Record<string, unknown> } | undefined
@@ -245,6 +283,7 @@ export async function presentationRoutes(app: FastifyInstance) {
             id: p.id,
             title,
             coverImage: p.coverImage ?? undefined,
+            previewImages: extractPreviewImages(content, p.coverImage),
             updatedAt: toIsoDate(p.updatedAt as string | Date),
             status: (p as { status?: string }).status ?? 'draft',
           }
@@ -299,6 +338,7 @@ export async function presentationRoutes(app: FastifyInstance) {
             id: String(p.id),
             title,
             coverImage: p.cover_image ?? undefined,
+            previewImages: extractPreviewImages(p.slides_data, p.cover_image),
             updatedAt: toIsoDate(p.updated_at),
             status: p.status ?? 'draft',
             isPublic: Boolean(p.is_public),
@@ -343,6 +383,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           id: p.id,
           title,
           coverImage: p.coverImage ?? undefined,
+          previewImages: extractPreviewImages(p.content, p.coverImage),
           updatedAt: toIsoDate(p.updatedAt),
           status: p.status ?? 'draft',
           deletedAt: p.deletedAt ? toIsoDate(p.deletedAt) : undefined,

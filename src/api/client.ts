@@ -190,6 +190,7 @@ export interface PresentationListItem {
   id: string
   title: string
   coverImage?: string
+  previewImages?: string[]
   updatedAt: string
   status?: string
   deletedAt?: string | null

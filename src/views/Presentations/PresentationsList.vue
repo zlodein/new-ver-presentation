@@ -145,19 +145,31 @@
           >
             <div
               class="relative aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
+              @touchstart.passive="onSliderTouchStart(presentation.id, $event)"
+              @touchend.passive="onSliderTouchEnd(presentation.id, presentation, $event)"
             >
-              <img
-                v-if="presentation.coverImage"
-                :src="presentation.coverImage"
-                :alt="presentation.title"
-                class="h-full w-full object-cover transition group-hover:scale-105"
-              />
-              <span
-                v-else
-                class="text-4xl text-gray-400 dark:text-gray-500"
+              <div
+                class="flex h-full w-full transition-transform duration-300 ease-out"
+                :style="sliderTrackStyle(presentation)"
               >
-                {{ presentation.title?.charAt(0) || 'П' }}
-              </span>
+                <div
+                  v-for="(image, imageIdx) in getCardImages(presentation)"
+                  :key="`${presentation.id}-${imageIdx}`"
+                  class="h-full shrink-0 basis-full"
+                >
+                  <img
+                    v-if="image"
+                    :src="image"
+                    :alt="`${presentation.title || 'Презентация'} — слайд ${imageIdx + 1}`"
+                    class="h-full w-full object-cover transition group-hover:scale-105"
+                  />
+                  <div v-else class="flex h-full w-full items-center justify-center">
+                    <span class="text-4xl text-gray-400 dark:text-gray-500">
+                      {{ presentation.title?.charAt(0) || 'П' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
               <span
                 v-if="presentation.status"
                 class="absolute left-2 top-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm"
@@ -165,6 +177,36 @@
               >
                 {{ presentation.status === 'published' ? 'Опубликовано' : 'Черновик' }}
               </span>
+              <template v-if="getCardImages(presentation).length > 1">
+                <button
+                  type="button"
+                  class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1 text-gray-700 shadow-sm transition hover:bg-white dark:bg-gray-800/90 dark:text-gray-300"
+                  title="Предыдущий слайд"
+                  @click.stop.prevent="prevCardSlide(presentation)"
+                >
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1 text-gray-700 shadow-sm transition hover:bg-white dark:bg-gray-800/90 dark:text-gray-300"
+                  title="Следующий слайд"
+                  @click.stop.prevent="nextCardSlide(presentation)"
+                >
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <div class="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-black/40 px-2 py-1">
+                  <span
+                    v-for="(_, dotIdx) in getCardImages(presentation)"
+                    :key="`${presentation.id}-dot-${dotIdx}`"
+                    class="h-1.5 w-1.5 rounded-full"
+                    :class="getCardSlideIndex(presentation.id) === dotIdx ? 'bg-white' : 'bg-white/50'"
+                  />
+                </div>
+              </template>
             </div>
             <div class="flex flex-1 flex-col p-4">
               <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
@@ -446,6 +488,7 @@ interface Presentation {
   id: string
   title: string
   coverImage?: string
+  previewImages?: string[]
   updatedAt: string
   status?: string
   deletedAt?: string | null
@@ -457,9 +500,72 @@ interface PresentationWithDeleted extends Presentation {
 
 const activeTab = ref<TabKind>('published')
 const presentations = ref<Presentation[]>([])
+const sliderIndexByPresentationId = ref<Record<string, number>>({})
+const touchStartXByPresentationId = ref<Record<string, number>>({})
 const loading = ref(false)
 const error = ref('')
 const counts = ref<{ published: number; draft: number; deleted: number } | null>(null)
+
+function getCardImages(presentation: Presentation): string[] {
+  const images: string[] = []
+  if (presentation.coverImage && presentation.coverImage.trim()) images.push(presentation.coverImage)
+  const previews = Array.isArray(presentation.previewImages) ? presentation.previewImages : []
+  for (const image of previews) {
+    if (!image || !image.trim()) continue
+    if (!images.includes(image)) images.push(image)
+  }
+  if (images.length === 0) images.push('')
+  return images
+}
+
+function getCardSlideIndex(presentationId: string): number {
+  const idx = sliderIndexByPresentationId.value[presentationId] ?? 0
+  return idx >= 0 ? idx : 0
+}
+
+function setCardSlideIndex(presentationId: string, index: number, slideCount: number): void {
+  if (slideCount < 2) {
+    sliderIndexByPresentationId.value[presentationId] = 0
+    return
+  }
+  const normalized = (index + slideCount) % slideCount
+  sliderIndexByPresentationId.value[presentationId] = normalized
+}
+
+function nextCardSlide(presentation: Presentation): void {
+  const images = getCardImages(presentation)
+  if (images.length < 2) return
+  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) + 1, images.length)
+}
+
+function prevCardSlide(presentation: Presentation): void {
+  const images = getCardImages(presentation)
+  if (images.length < 2) return
+  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) - 1, images.length)
+}
+
+function sliderTrackStyle(presentation: Presentation): Record<string, string> {
+  const images = getCardImages(presentation)
+  const slideCount = images.length
+  const slideIndex = Math.min(getCardSlideIndex(presentation.id), slideCount - 1)
+  return {
+    width: `${slideCount * 100}%`,
+    transform: `translateX(-${slideIndex * (100 / slideCount)}%)`,
+  }
+}
+
+function onSliderTouchStart(presentationId: string, event: TouchEvent): void {
+  touchStartXByPresentationId.value[presentationId] = event.changedTouches[0]?.clientX ?? 0
+}
+
+function onSliderTouchEnd(presentationId: string, presentation: Presentation, event: TouchEvent): void {
+  const startX = touchStartXByPresentationId.value[presentationId]
+  const endX = event.changedTouches[0]?.clientX ?? startX
+  const delta = endX - startX
+  if (Math.abs(delta) < 30) return
+  if (delta < 0) nextCardSlide(presentation)
+  else prevCardSlide(presentation)
+}
 
 /** Оставляем только id презентации: при формате "1:1" (id:user_id) берём часть до двоеточия. */
 function normalizePresentationId(id: string | number | undefined): string {
