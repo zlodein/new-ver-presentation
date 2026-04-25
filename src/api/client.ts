@@ -190,7 +190,7 @@ export interface PresentationListItem {
   id: string
   title: string
   coverImage?: string
-  previewImages?: string[]
+  previewContent?: { slides: unknown[]; settings?: Record<string, string> }
   updatedAt: string
   status?: string
   deletedAt?: string | null

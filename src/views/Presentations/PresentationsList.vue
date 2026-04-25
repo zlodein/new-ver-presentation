@@ -153,14 +153,48 @@
                 :style="sliderTrackStyle(presentation)"
               >
                 <div
-                  v-for="(image, imageIdx) in getCardImages(presentation)"
-                  :key="`${presentation.id}-${imageIdx}`"
+                  v-for="(slide, slideIdx) in getCardSlides(presentation)"
+                  :key="`${presentation.id}-${slideIdx}`"
+                  class="h-full shrink-0 basis-full"
+                >
+                  <div
+                    class="editor-sidebar-thumb-frame relative h-full w-full overflow-hidden border-y border-gray-200/70 bg-gray-100 [contain:paint] dark:border-gray-700/80 dark:bg-gray-900/60"
+                    :style="{ aspectRatio: `${BOOKLET_PAGE_W} / ${BOOKLET_PAGE_H}` }"
+                  >
+                    <div
+                      class="pointer-events-none absolute left-0 top-0 origin-top-left will-change-transform"
+                      :style="{
+                        width: `${BOOKLET_PAGE_W}px`,
+                        height: `${BOOKLET_PAGE_H}px`,
+                        transform: `scale(${CARD_THUMB_SCALE})`,
+                        transformOrigin: 'top left',
+                      }"
+                    >
+                      <div
+                        class="presentation-slider-wrap booklet-view editor-sidebar-thumb-booklet max-w-none shadow-none"
+                        :style="cardPresentationStyle(presentation)"
+                        :data-image-frame="getCardSettings(presentation).imageFrame"
+                        :data-template="getCardSettings(presentation).template"
+                      >
+                        <div class="booklet-page relative h-full w-full overflow-hidden">
+                          <div class="booklet-page__inner">
+                            <div class="booklet-scale-root h-full w-full">
+                              <component :is="cardSlideComponentForPresentation(presentation)" :slide="slide" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  v-if="getCardSlides(presentation).length === 0"
                   class="h-full shrink-0 basis-full"
                 >
                   <img
-                    v-if="image"
-                    :src="image"
-                    :alt="`${presentation.title || 'Презентация'} — слайд ${imageIdx + 1}`"
+                    v-if="presentation.coverImage"
+                    :src="presentation.coverImage"
+                    :alt="presentation.title"
                     class="h-full w-full object-cover transition group-hover:scale-105"
                   />
                   <div v-else class="flex h-full w-full items-center justify-center">
@@ -177,7 +211,7 @@
               >
                 {{ presentation.status === 'published' ? 'Опубликовано' : 'Черновик' }}
               </span>
-              <template v-if="getCardImages(presentation).length > 1">
+              <template v-if="getCardSlides(presentation).length > 1">
                 <button
                   type="button"
                   class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1 text-gray-700 shadow-sm transition hover:bg-white dark:bg-gray-800/90 dark:text-gray-300"
@@ -200,7 +234,7 @@
                 </button>
                 <div class="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-black/40 px-2 py-1">
                   <span
-                    v-for="(_, dotIdx) in getCardImages(presentation)"
+                    v-for="(_, dotIdx) in getCardSlides(presentation)"
                     :key="`${presentation.id}-dot-${dotIdx}`"
                     class="h-1.5 w-1.5 rounded-full"
                     :class="getCardSlideIndex(presentation.id) === dotIdx ? 'bg-white' : 'bg-white/50'"
@@ -284,6 +318,17 @@ import { api, hasApi, getToken } from '@/api/client'
 import type { PresentationListItem } from '@/api/client'
 import { formatApiDate } from '@/composables/useApiDate'
 import { useAuth } from '@/composables/useAuth'
+import type { SlideItem } from '@/types/presentationSlide'
+import {
+  BOOKLET_TEMPLATE_BASIC,
+  BOOKLET_TEMPLATE_URBAN_REAL_ESTATE,
+  normalizeBookletTemplateId,
+} from '@/data/bookletTemplates'
+import PresentationEditorSlideBlockBasic from './slide-blocks/PresentationEditorSlideBlockBasic.vue'
+import PresentationEditorSlideBlockUrbanRealEstate from './slide-blocks/PresentationEditorSlideBlockUrbanRealEstate.vue'
+import '@/assets/booklet-slides.css'
+import '@/assets/booklet-template-basic.css'
+import '@/assets/booklet-template-urban-real-estate.css'
 const router = useRouter()
 const { currentUser, fetchUser } = useAuth()
 const userTariff = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff)
@@ -488,7 +533,7 @@ interface Presentation {
   id: string
   title: string
   coverImage?: string
-  previewImages?: string[]
+  previewContent?: { slides: unknown[]; settings?: Record<string, string> }
   updatedAt: string
   status?: string
   deletedAt?: string | null
@@ -505,17 +550,34 @@ const touchStartXByPresentationId = ref<Record<string, number>>({})
 const loading = ref(false)
 const error = ref('')
 const counts = ref<{ published: number; draft: number; deleted: number } | null>(null)
+const BOOKLET_PAGE_W = 1123
+const BOOKLET_PAGE_H = 794
+const CARD_THUMB_SCALE = 0.24
+const DEFAULT_CARD_SETTINGS = {
+  template: BOOKLET_TEMPLATE_BASIC,
+  fontFamily: 'system-ui',
+  imageBorderRadius: '0',
+  imageFrame: 'none',
+  themeColor: '#fcfcfc',
+}
 
-function getCardImages(presentation: Presentation): string[] {
-  const images: string[] = []
-  if (presentation.coverImage && presentation.coverImage.trim()) images.push(presentation.coverImage)
-  const previews = Array.isArray(presentation.previewImages) ? presentation.previewImages : []
-  for (const image of previews) {
-    if (!image || !image.trim()) continue
-    if (!images.includes(image)) images.push(image)
-  }
-  if (images.length === 0) images.push('')
-  return images
+function getCardSlides(presentation: Presentation): SlideItem[] {
+  const rawSlides = presentation.previewContent?.slides
+  if (!Array.isArray(rawSlides) || rawSlides.length === 0) return []
+  return rawSlides
+    .map((raw, index) => {
+      const obj = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {}
+      const data = (obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data))
+        ? (obj.data as Record<string, unknown>)
+        : {}
+      return {
+        id: typeof obj.id === 'string' && obj.id ? obj.id : `card-slide-${presentation.id}-${index}`,
+        type: typeof obj.type === 'string' && obj.type ? obj.type : 'cover',
+        data,
+        hidden: Boolean(obj.hidden),
+      } satisfies SlideItem
+    })
+    .filter((slide) => !slide.hidden)
 }
 
 function getCardSlideIndex(presentationId: string): number {
@@ -533,20 +595,20 @@ function setCardSlideIndex(presentationId: string, index: number, slideCount: nu
 }
 
 function nextCardSlide(presentation: Presentation): void {
-  const images = getCardImages(presentation)
-  if (images.length < 2) return
-  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) + 1, images.length)
+  const slides = getCardSlides(presentation)
+  if (slides.length < 2) return
+  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) + 1, slides.length)
 }
 
 function prevCardSlide(presentation: Presentation): void {
-  const images = getCardImages(presentation)
-  if (images.length < 2) return
-  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) - 1, images.length)
+  const slides = getCardSlides(presentation)
+  if (slides.length < 2) return
+  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) - 1, slides.length)
 }
 
 function sliderTrackStyle(presentation: Presentation): Record<string, string> {
-  const images = getCardImages(presentation)
-  const slideCount = images.length
+  const slides = getCardSlides(presentation)
+  const slideCount = Math.max(slides.length, 1)
   const slideIndex = Math.min(getCardSlideIndex(presentation.id), slideCount - 1)
   return {
     width: `${slideCount * 100}%`,
@@ -565,6 +627,34 @@ function onSliderTouchEnd(presentationId: string, presentation: Presentation, ev
   if (Math.abs(delta) < 30) return
   if (delta < 0) nextCardSlide(presentation)
   else prevCardSlide(presentation)
+}
+
+function getCardSettings(presentation: Presentation): Record<string, string> {
+  const settings = presentation.previewContent?.settings ?? {}
+  const template = normalizeBookletTemplateId(typeof settings.template === 'string' ? settings.template : undefined)
+  return {
+    ...DEFAULT_CARD_SETTINGS,
+    ...settings,
+    template,
+  }
+}
+
+function cardSlideComponentForPresentation(presentation: Presentation) {
+  const settings = getCardSettings(presentation)
+  return settings.template === BOOKLET_TEMPLATE_URBAN_REAL_ESTATE
+    ? PresentationEditorSlideBlockUrbanRealEstate
+    : PresentationEditorSlideBlockBasic
+}
+
+function cardPresentationStyle(presentation: Presentation): Record<string, string> {
+  const settings = getCardSettings(presentation)
+  const tc = settings.themeColor || DEFAULT_CARD_SETTINGS.themeColor
+  return {
+    fontFamily: settings.fontFamily || DEFAULT_CARD_SETTINGS.fontFamily,
+    '--booklet-image-radius': settings.imageBorderRadius || DEFAULT_CARD_SETTINGS.imageBorderRadius,
+    '--theme-color': tc,
+    '--theme-main-color': tc,
+  }
 }
 
 /** Оставляем только id презентации: при формате "1:1" (id:user_id) берём часть до двоеточия. */
