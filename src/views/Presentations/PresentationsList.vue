@@ -309,7 +309,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -324,6 +324,11 @@ import {
   BOOKLET_TEMPLATE_URBAN_REAL_ESTATE,
   normalizeBookletTemplateId,
 } from '@/data/bookletTemplates'
+import {
+  PRESENTATION_EDITOR_SLIDE_KEY,
+  type PresentationEditorSlideInject,
+  type DadataSuggestionItem,
+} from './presentationEditorSlideKey'
 import PresentationEditorSlideBlockBasic from './slide-blocks/PresentationEditorSlideBlockBasic.vue'
 import PresentationEditorSlideBlockUrbanRealEstate from './slide-blocks/PresentationEditorSlideBlockUrbanRealEstate.vue'
 import '@/assets/booklet-slides.css'
@@ -560,6 +565,87 @@ const DEFAULT_CARD_SETTINGS = {
   imageFrame: 'none',
   themeColor: '#fcfcfc',
 }
+
+const EMPTY_DADATA_SUGGESTIONS: DadataSuggestionItem[] = []
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => String(item ?? '').trim()).filter(Boolean)
+}
+
+function asCharacteristics(value: unknown): Array<{ label: string; value: string }> {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => {
+    const obj = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
+    return {
+      label: String(obj.label ?? '').trim(),
+      value: String(obj.value ?? '').trim(),
+    }
+  })
+}
+
+const previewSlideInject: PresentationEditorSlideInject = {
+  canEditImages: false,
+  generateTextLoading: null,
+  dadataToken: '',
+  dadataLoadingBySlideId: {},
+  dadataSuggestionsBySlideId: {},
+  activeDadataSlideId: null,
+  dadataDropdownStyle: {},
+  hasCompanyBlockFilled: false,
+  showAdditionalTextInput: false,
+  hasCompanyWebsite: false,
+  CURRENCIES: [
+    { code: 'RUB', symbol: 'RUB' },
+    { code: 'USD', symbol: 'USD' },
+    { code: 'EUR', symbol: 'EUR' },
+  ],
+  coverPriceValue: (slide) => String(slide.data?.price_value ?? ''),
+  coverPricePlaceholder: (slide) => (String(slide.data?.deal_type ?? '') === 'Продажа' ? 'Цена продажи' : 'Цена аренды'),
+  onCoverPriceInput: () => {},
+  onCoverCurrencyChange: () => {},
+  coverConvertedPrices: () => [],
+  getBlockLayout: (slide) => String(slide.data?.blockLayout ?? 'text-left'),
+  getImageGrid: (slide) => String(slide.data?.imageGrid ?? '1x1'),
+  descriptionImages: (slide) => asStringArray(slide.data?.images),
+  onDescriptionImageUpload: () => {},
+  infrastructureImages: (slide) => asStringArray(slide.data?.images),
+  onInfrastructureImageUpload: () => {},
+  setLocationInputRef: () => {},
+  onLocationAddressInput: () => {},
+  onLocationAddressFocus: () => {},
+  onLocationAddressBlur: () => {},
+  applyDadataSuggestion: () => {},
+  locationMetroLoading: () => false,
+  findNearestMetro: () => {},
+  galleryImages3: (slide) => asStringArray(slide.data?.images),
+  onGalleryImageUpload: () => {},
+  charItems: (slide) => asCharacteristics(slide.data?.items),
+  removeCharacteristicItem: () => {},
+  addCharacteristicItem: () => {},
+  layoutImages: (slide) => asStringArray(slide.data?.images),
+  onLayoutImageUpload: () => {},
+  onSingleImageUpload: () => {},
+  openPalettePopup: () => {},
+  generateTextWithAI: () => {},
+  contactsAvatarDisplayUrl: (slide) => String(slide.data?.avatar ?? slide.data?.avatarUrl ?? ''),
+  onContactsAvatarUpload: () => {},
+  contactsImageDisplayUrl: (slide) => String(slide.data?.photo ?? slide.data?.image ?? ''),
+  onContactsImageUpload: () => {},
+  onPhoneInput: () => {},
+  customSlidePageStyle: () => ({}),
+  customBlockTag: () => 'div',
+  customBlockStyle: () => ({}),
+}
+
+previewSlideInject.dadataSuggestionsBySlideId = new Proxy(
+  {},
+  {
+    get: () => EMPTY_DADATA_SUGGESTIONS,
+  }
+) as Record<string, DadataSuggestionItem[]>
+
+provide(PRESENTATION_EDITOR_SLIDE_KEY, previewSlideInject)
 
 function getCardSlides(presentation: Presentation): SlideItem[] {
   const rawSlides = presentation.previewContent?.slides
