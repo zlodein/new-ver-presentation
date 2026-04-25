@@ -98,15 +98,6 @@ function displayTitleFromContent(content: unknown, fallbackTitle: string): strin
   return fallbackTitle
 }
 
-/** Для карточек списка: отдаём слайды для миниатюр как в редакторе. */
-function extractPreviewContent(content: unknown, maxCount = 8): { slides: unknown[]; settings?: ContentSettings } {
-  const normalized = normContent(content)
-  return {
-    slides: normalized.slides.slice(0, maxCount),
-    ...(normalized.settings != null ? { settings: normalized.settings } : {}),
-  }
-}
-
 function normContent(c: unknown): { slides: unknown[]; settings?: ContentSettings } {
   let slides: unknown[] = []
   let rawObj: { slides?: unknown[]; settings?: Record<string, unknown> } | undefined
@@ -254,7 +245,6 @@ export async function presentationRoutes(app: FastifyInstance) {
             id: p.id,
             title,
             coverImage: p.coverImage ?? undefined,
-            previewContent: extractPreviewContent(content),
             updatedAt: toIsoDate(p.updatedAt as string | Date),
             status: (p as { status?: string }).status ?? 'draft',
           }
@@ -309,7 +299,6 @@ export async function presentationRoutes(app: FastifyInstance) {
             id: String(p.id),
             title,
             coverImage: p.cover_image ?? undefined,
-            previewContent: extractPreviewContent(p.slides_data),
             updatedAt: toIsoDate(p.updated_at),
             status: p.status ?? 'draft',
             isPublic: Boolean(p.is_public),
@@ -354,7 +343,6 @@ export async function presentationRoutes(app: FastifyInstance) {
           id: p.id,
           title,
           coverImage: p.coverImage ?? undefined,
-          previewContent: extractPreviewContent(p.content),
           updatedAt: toIsoDate(p.updatedAt),
           status: p.status ?? 'draft',
           deletedAt: p.deletedAt ? toIsoDate(p.deletedAt) : undefined,

@@ -144,56 +144,20 @@
             class="flex flex-1 flex-col"
           >
             <div
-              class="relative w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
-              :style="{ aspectRatio: `${BOOKLET_PAGE_W} / ${BOOKLET_PAGE_H}` }"
-              @touchstart.passive="onSliderTouchStart(presentation.id, $event)"
-              @touchend.passive="onSliderTouchEnd(presentation.id, presentation, $event)"
+              class="relative aspect-video w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
             >
-              <div
-                class="flex h-full w-full transition-transform duration-300 ease-out"
-                :style="sliderTrackStyle(presentation)"
+              <img
+                v-if="presentation.coverImage"
+                :src="presentation.coverImage"
+                :alt="presentation.title"
+                class="h-full w-full object-cover transition group-hover:scale-105"
+              />
+              <span
+                v-else
+                class="text-4xl text-gray-400 dark:text-gray-500"
               >
-                <div
-                  v-for="(slide, slideIdx) in getCardSlides(presentation)"
-                  :key="`${presentation.id}-${slideIdx}`"
-                  class="h-full min-w-full shrink-0"
-                >
-                  <div
-                    class="editor-sidebar-thumb-frame relative h-full w-full overflow-hidden border-y border-gray-200/70 bg-gray-100 [contain:paint] dark:border-gray-700/80 dark:bg-gray-900/60"
-                  >
-                    <div
-                      class="presentation-slider-wrap booklet-view h-full w-full max-w-none rounded-none shadow-none"
-                      :style="cardPresentationStyle(presentation)"
-                      :data-image-frame="getCardSettings(presentation).imageFrame"
-                      :data-template="getCardSettings(presentation).template"
-                    >
-                      <div class="booklet-page relative h-full w-full overflow-hidden">
-                        <div class="booklet-page__inner">
-                          <div class="booklet-scale-root h-full w-full">
-                            <component :is="cardSlideComponentForPresentation(presentation)" :slide="slide" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  v-if="getCardSlides(presentation).length === 0"
-                  class="h-full min-w-full shrink-0"
-                >
-                  <img
-                    v-if="presentation.coverImage"
-                    :src="presentation.coverImage"
-                    :alt="presentation.title"
-                    class="h-full w-full object-contain transition group-hover:scale-105"
-                  />
-                  <div v-else class="flex h-full w-full items-center justify-center">
-                    <span class="text-4xl text-gray-400 dark:text-gray-500">
-                      {{ presentation.title?.charAt(0) || 'П' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                {{ presentation.title?.charAt(0) || 'П' }}
+              </span>
               <span
                 v-if="presentation.status"
                 class="absolute left-2 top-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm"
@@ -201,36 +165,6 @@
               >
                 {{ presentation.status === 'published' ? 'Опубликовано' : 'Черновик' }}
               </span>
-              <template v-if="getCardSlides(presentation).length > 1">
-                <button
-                  type="button"
-                  class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1 text-gray-700 shadow-sm transition hover:bg-white dark:bg-gray-800/90 dark:text-gray-300"
-                  title="Предыдущий слайд"
-                  @click.stop.prevent="prevCardSlide(presentation)"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1 text-gray-700 shadow-sm transition hover:bg-white dark:bg-gray-800/90 dark:text-gray-300"
-                  title="Следующий слайд"
-                  @click.stop.prevent="nextCardSlide(presentation)"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-                <div class="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-black/40 px-2 py-1">
-                  <span
-                    v-for="(_, dotIdx) in getCardSlides(presentation)"
-                    :key="`${presentation.id}-dot-${dotIdx}`"
-                    class="h-1.5 w-1.5 rounded-full"
-                    :class="getCardSlideIndex(presentation.id) === dotIdx ? 'bg-white' : 'bg-white/50'"
-                  />
-                </div>
-              </template>
             </div>
             <div class="flex flex-1 flex-col p-4">
               <h3 class="font-semibold text-gray-800 dark:text-white/90 line-clamp-1">
@@ -299,7 +233,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, provide } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -308,22 +242,6 @@ import { api, hasApi, getToken } from '@/api/client'
 import type { PresentationListItem } from '@/api/client'
 import { formatApiDate } from '@/composables/useApiDate'
 import { useAuth } from '@/composables/useAuth'
-import type { SlideItem } from '@/types/presentationSlide'
-import {
-  BOOKLET_TEMPLATE_BASIC,
-  BOOKLET_TEMPLATE_URBAN_REAL_ESTATE,
-  normalizeBookletTemplateId,
-} from '@/data/bookletTemplates'
-import {
-  PRESENTATION_EDITOR_SLIDE_KEY,
-  type PresentationEditorSlideInject,
-  type DadataSuggestionItem,
-} from './presentationEditorSlideKey'
-import PresentationEditorSlideBlockBasic from './slide-blocks/PresentationEditorSlideBlockBasic.vue'
-import PresentationEditorSlideBlockUrbanRealEstate from './slide-blocks/PresentationEditorSlideBlockUrbanRealEstate.vue'
-import '@/assets/booklet-slides.css'
-import '@/assets/booklet-template-basic.css'
-import '@/assets/booklet-template-urban-real-estate.css'
 const router = useRouter()
 const { currentUser, fetchUser } = useAuth()
 const userTariff = computed(() => (currentUser.value as { tariff?: string } | undefined)?.tariff)
@@ -528,7 +446,6 @@ interface Presentation {
   id: string
   title: string
   coverImage?: string
-  previewContent?: { slides: unknown[]; settings?: Record<string, string> }
   updatedAt: string
   status?: string
   deletedAt?: string | null
@@ -540,199 +457,9 @@ interface PresentationWithDeleted extends Presentation {
 
 const activeTab = ref<TabKind>('published')
 const presentations = ref<Presentation[]>([])
-const sliderIndexByPresentationId = ref<Record<string, number>>({})
-const touchStartXByPresentationId = ref<Record<string, number>>({})
 const loading = ref(false)
 const error = ref('')
 const counts = ref<{ published: number; draft: number; deleted: number } | null>(null)
-const BOOKLET_PAGE_W = 1123
-const BOOKLET_PAGE_H = 794
-const DEFAULT_CARD_SETTINGS = {
-  template: BOOKLET_TEMPLATE_BASIC,
-  fontFamily: 'system-ui',
-  imageBorderRadius: '0',
-  imageFrame: 'none',
-  themeColor: '#fcfcfc',
-}
-
-const EMPTY_DADATA_SUGGESTIONS: DadataSuggestionItem[] = []
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return []
-  return value.map((item) => String(item ?? '').trim()).filter(Boolean)
-}
-
-function asCharacteristics(value: unknown): Array<{ label: string; value: string }> {
-  if (!Array.isArray(value)) return []
-  return value.map((item) => {
-    const obj = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
-    return {
-      label: String(obj.label ?? '').trim(),
-      value: String(obj.value ?? '').trim(),
-    }
-  })
-}
-
-const previewSlideInject: PresentationEditorSlideInject = {
-  canEditImages: false,
-  generateTextLoading: null,
-  dadataToken: '',
-  dadataLoadingBySlideId: {},
-  dadataSuggestionsBySlideId: {},
-  activeDadataSlideId: null,
-  dadataDropdownStyle: {},
-  hasCompanyBlockFilled: false,
-  showAdditionalTextInput: false,
-  hasCompanyWebsite: false,
-  CURRENCIES: [
-    { code: 'RUB', symbol: 'RUB' },
-    { code: 'USD', symbol: 'USD' },
-    { code: 'EUR', symbol: 'EUR' },
-  ],
-  coverPriceValue: (slide) => String(slide.data?.price_value ?? ''),
-  coverPricePlaceholder: (slide) => (String(slide.data?.deal_type ?? '') === 'Продажа' ? 'Цена продажи' : 'Цена аренды'),
-  onCoverPriceInput: () => {},
-  onCoverCurrencyChange: () => {},
-  coverConvertedPrices: () => [],
-  getBlockLayout: (slide) => String(slide.data?.blockLayout ?? 'text-left'),
-  getImageGrid: (slide) => String(slide.data?.imageGrid ?? '1x1'),
-  descriptionImages: (slide) => asStringArray(slide.data?.images),
-  onDescriptionImageUpload: () => {},
-  infrastructureImages: (slide) => asStringArray(slide.data?.images),
-  onInfrastructureImageUpload: () => {},
-  setLocationInputRef: () => {},
-  onLocationAddressInput: () => {},
-  onLocationAddressFocus: () => {},
-  onLocationAddressBlur: () => {},
-  applyDadataSuggestion: () => {},
-  locationMetroLoading: () => false,
-  findNearestMetro: () => {},
-  galleryImages3: (slide) => asStringArray(slide.data?.images),
-  onGalleryImageUpload: () => {},
-  charItems: (slide) => asCharacteristics(slide.data?.items),
-  removeCharacteristicItem: () => {},
-  addCharacteristicItem: () => {},
-  layoutImages: (slide) => asStringArray(slide.data?.images),
-  onLayoutImageUpload: () => {},
-  onSingleImageUpload: () => {},
-  openPalettePopup: () => {},
-  generateTextWithAI: () => {},
-  contactsAvatarDisplayUrl: (slide) => String(slide.data?.avatar ?? slide.data?.avatarUrl ?? ''),
-  onContactsAvatarUpload: () => {},
-  contactsImageDisplayUrl: (slide) => String(slide.data?.photo ?? slide.data?.image ?? ''),
-  onContactsImageUpload: () => {},
-  onPhoneInput: () => {},
-  customSlidePageStyle: () => ({}),
-  customBlockTag: () => 'div',
-  customBlockStyle: () => ({}),
-}
-
-previewSlideInject.dadataSuggestionsBySlideId = new Proxy(
-  {},
-  {
-    get: () => EMPTY_DADATA_SUGGESTIONS,
-  }
-) as Record<string, DadataSuggestionItem[]>
-
-provide(PRESENTATION_EDITOR_SLIDE_KEY, previewSlideInject)
-
-function getCardSlides(presentation: Presentation): SlideItem[] {
-  const rawSlides = presentation.previewContent?.slides
-  if (!Array.isArray(rawSlides) || rawSlides.length === 0) return []
-  const prepared = rawSlides
-    .map((raw, index) => {
-      const obj = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {}
-      const data = (obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data))
-        ? (obj.data as Record<string, unknown>)
-        : {}
-      return {
-        id: typeof obj.id === 'string' && obj.id ? obj.id : `card-slide-${presentation.id}-${index}`,
-        type: typeof obj.type === 'string' && obj.type ? obj.type : 'cover',
-        data,
-        hidden: Boolean(obj.hidden),
-      } satisfies SlideItem
-    })
-  const firstCover = prepared.find((slide) => slide.type === 'cover')
-  const visibleOthers = prepared.filter((slide) => !slide.hidden && slide !== firstCover)
-  if (firstCover) return [{ ...firstCover, hidden: false }, ...visibleOthers]
-  return visibleOthers
-}
-
-function getCardSlideIndex(presentationId: string): number {
-  const idx = sliderIndexByPresentationId.value[presentationId] ?? 0
-  return idx >= 0 ? idx : 0
-}
-
-function setCardSlideIndex(presentationId: string, index: number, slideCount: number): void {
-  if (slideCount < 2) {
-    sliderIndexByPresentationId.value[presentationId] = 0
-    return
-  }
-  const normalized = (index + slideCount) % slideCount
-  sliderIndexByPresentationId.value[presentationId] = normalized
-}
-
-function nextCardSlide(presentation: Presentation): void {
-  const slides = getCardSlides(presentation)
-  if (slides.length < 2) return
-  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) + 1, slides.length)
-}
-
-function prevCardSlide(presentation: Presentation): void {
-  const slides = getCardSlides(presentation)
-  if (slides.length < 2) return
-  setCardSlideIndex(presentation.id, getCardSlideIndex(presentation.id) - 1, slides.length)
-}
-
-function sliderTrackStyle(presentation: Presentation): Record<string, string> {
-  const slides = getCardSlides(presentation)
-  const slideCount = Math.max(slides.length, 1)
-  const slideIndex = Math.min(getCardSlideIndex(presentation.id), slideCount - 1)
-  return {
-    transform: `translateX(-${slideIndex * 100}%)`,
-  }
-}
-
-function onSliderTouchStart(presentationId: string, event: TouchEvent): void {
-  touchStartXByPresentationId.value[presentationId] = event.changedTouches[0]?.clientX ?? 0
-}
-
-function onSliderTouchEnd(presentationId: string, presentation: Presentation, event: TouchEvent): void {
-  const startX = touchStartXByPresentationId.value[presentationId]
-  const endX = event.changedTouches[0]?.clientX ?? startX
-  const delta = endX - startX
-  if (Math.abs(delta) < 30) return
-  if (delta < 0) nextCardSlide(presentation)
-  else prevCardSlide(presentation)
-}
-
-function getCardSettings(presentation: Presentation): Record<string, string> {
-  const settings = presentation.previewContent?.settings ?? {}
-  const template = normalizeBookletTemplateId(typeof settings.template === 'string' ? settings.template : undefined)
-  return {
-    ...DEFAULT_CARD_SETTINGS,
-    ...settings,
-    template,
-  }
-}
-
-function cardSlideComponentForPresentation(presentation: Presentation) {
-  const settings = getCardSettings(presentation)
-  return settings.template === BOOKLET_TEMPLATE_URBAN_REAL_ESTATE
-    ? PresentationEditorSlideBlockUrbanRealEstate
-    : PresentationEditorSlideBlockBasic
-}
-
-function cardPresentationStyle(presentation: Presentation): Record<string, string> {
-  const settings = getCardSettings(presentation)
-  const tc = settings.themeColor || DEFAULT_CARD_SETTINGS.themeColor
-  return {
-    fontFamily: settings.fontFamily || DEFAULT_CARD_SETTINGS.fontFamily,
-    '--booklet-image-radius': settings.imageBorderRadius || DEFAULT_CARD_SETTINGS.imageBorderRadius,
-    '--theme-color': tc,
-    '--theme-main-color': tc,
-  }
-}
 
 /** Оставляем только id презентации: при формате "1:1" (id:user_id) берём часть до двоеточия. */
 function normalizePresentationId(id: string | number | undefined): string {
