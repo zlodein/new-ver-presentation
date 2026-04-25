@@ -67,6 +67,60 @@ rsync -avz --delete \
     --exclude '*.md' \
     dist/ $SERVER_USER@$SERVER_IP:$FRONTEND_DIR/
 
+# Применение корректного Nginx конфига для SPA роутинга
+info "Обновление Nginx конфигурации (SPA fallback)..."
+ssh $SERVER_USER@$SERVER_IP "cat > /etc/nginx/sites-available/e-presentation << 'EOF'
+server {
+    listen 80;
+    server_name e-presentation.ru www.e-presentation.ru;
+
+    root /var/www/e_presentati_usr/data/www/e-presentation.ru;
+    index index.html;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+
+    add_header X-Frame-Options \"SAMEORIGIN\" always;
+    add_header X-Content-Type-Options \"nosniff\" always;
+    add_header X-XSS-Protection \"1; mode=block\" always;
+
+    location /api {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    location ~* \\\.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|map)$ {
+        expires 1y;
+        add_header Cache-Control \"public, immutable\";
+        try_files \$uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control \"no-cache, no-store, must-revalidate\";
+        add_header Pragma \"no-cache\";
+        add_header Expires \"0\";
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+}
+EOF
+ln -sf /etc/nginx/sites-available/e-presentation /etc/nginx/sites-enabled/e-presentation
+nginx -t
+systemctl reload nginx"
+
 # Копирование backend файлов
 info "Копирование backend файлов..."
 rsync -avz --delete \

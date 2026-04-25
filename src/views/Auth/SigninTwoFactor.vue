@@ -11,19 +11,19 @@
               <svg class="stroke-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              Back to sign in
+              Назад ко входу
             </router-link>
           </div>
           <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-            <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Two Step Verification</h1>
+            <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Двухфакторная авторизация</h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Enter the 6-digit code from your authenticator app.
+              Введите 6-значный код из приложения-аутентификатора.
             </p>
             <form @submit.prevent="verify" class="space-y-5">
               <div v-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ error }}</div>
               <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Type your 6 digits security code
+                  Введите 6-значный код безопасности
                 </label>
                 <div class="grid grid-cols-6 gap-2 sm:gap-3">
                   <input
@@ -41,9 +41,9 @@
                   />
                 </div>
               </div>
-              <input v-model="backupCode" type="text" placeholder="Or enter backup code" class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+              <input v-model="backupCode" type="text" placeholder="Или введите резервный код" class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
               <button type="submit" :disabled="loading" class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-60">
-                {{ loading ? 'Verifying...' : 'Verify My Account' }}
+                {{ loading ? 'Проверка...' : 'Подтвердить вход' }}
               </button>
             </form>
           </div>
