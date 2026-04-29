@@ -1,11 +1,16 @@
 /* Pixel-perfect "Универсальный шаблон" на основе template-example.css */
 .presentation-slider-wrap.booklet-view[data-template='universal'] {
   --universal-accent: var(--theme-main-color, #2c7f8d);
-  --universal-bg: #eeeeee;
+  --universal-bg: #ffffff;
   --universal-text: #010217;
   --universal-muted: #434446;
   --universal-image-frame: 15px;
   font-family: 'Roboto', 'Open Sans', sans-serif;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page__inner {
+  background: #ffffff;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content {
@@ -24,7 +29,7 @@
   height: 100%;
   box-shadow: 7px 7px 7px rgba(73, 71, 71, 0.2);
   padding: 35px 0 35px 35px;
-  background: var(--universal-accent);
+  background: #ffffff;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
@@ -111,7 +116,7 @@
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__content,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__content {
-  background: #eeeeee;
+  background: #ffffff;
   box-shadow: -1.92px 3.84px 9.6px rgba(12, 23, 27, 0.25);
   padding: 16px 18px;
 }
@@ -187,7 +192,7 @@
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content {
   grid-column: 3;
-  background: #fbfdfb;
+  background: #ffffff;
   box-shadow: 3px 0 4px rgba(0, 0, 0, 0.25);
 }
 
@@ -250,10 +255,20 @@
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__info,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__left {
   position: relative;
   z-index: 1;
+}
+
+/* Контентные поверхности всегда белые, theme-color только для декора */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__left,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__info,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
+  background: #ffffff;
 }
 
 @media (max-width: 768px) {
