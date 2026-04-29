@@ -1,6 +1,7 @@
 /** Идентификаторы буклетных шаблонов (settings.template) */
 export const BOOKLET_TEMPLATE_BASIC = 'basic'
 export const BOOKLET_TEMPLATE_URBAN_REAL_ESTATE = 'urban_real_estate'
+export const BOOKLET_TEMPLATE_UNIVERSAL = 'universal'
 
 /** Устаревший id; при загрузке заменяется на BOOKLET_TEMPLATE_URBAN_REAL_ESTATE */
 const LEGACY_TEMPLATE_CITY = 'city'
@@ -9,7 +10,13 @@ const LEGACY_TEMPLATE_CITY = 'city'
 export function normalizeBookletTemplateId(raw: string | null | undefined): string {
   const t = (raw ?? '').trim()
   if (t === LEGACY_TEMPLATE_CITY) return BOOKLET_TEMPLATE_URBAN_REAL_ESTATE
-  if (t === BOOKLET_TEMPLATE_BASIC || t === BOOKLET_TEMPLATE_URBAN_REAL_ESTATE) return t
+  if (
+    t === BOOKLET_TEMPLATE_BASIC ||
+    t === BOOKLET_TEMPLATE_URBAN_REAL_ESTATE ||
+    t === BOOKLET_TEMPLATE_UNIVERSAL
+  ) {
+    return t
+  }
   return BOOKLET_TEMPLATE_BASIC
 }
 

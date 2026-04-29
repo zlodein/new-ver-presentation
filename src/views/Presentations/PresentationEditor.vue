@@ -1230,6 +1230,7 @@ import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import '@/assets/booklet-template-basic.css'
 import '@/assets/booklet-template-urban-real-estate.css'
+import universalTemplateCssUrl from '@/assets/booklet-template-universal.css?url'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
@@ -1243,6 +1244,7 @@ import { createDefaultSlidesBasic, genSlideId } from '@/presentation-templates/b
 import {
   BOOKLET_TEMPLATE_BASIC,
   BOOKLET_TEMPLATE_URBAN_REAL_ESTATE,
+  BOOKLET_TEMPLATE_UNIVERSAL,
   normalizeBookletTemplateId,
 } from '@/data/bookletTemplates'
 import PresentationEditorSlideBlockBasic from './slide-blocks/PresentationEditorSlideBlockBasic.vue'
@@ -1511,6 +1513,7 @@ const FONT_OPTIONS = [
 const TEMPLATE_OPTIONS = [
   { value: BOOKLET_TEMPLATE_BASIC, label: 'Базовый шаблон' },
   { value: BOOKLET_TEMPLATE_URBAN_REAL_ESTATE, label: 'Городская недвижимость' },
+  { value: BOOKLET_TEMPLATE_UNIVERSAL, label: 'Универсальный шаблон' },
 ]
 const RADIUS_OPTIONS = [
   { value: '0', label: 'Без скругления' },
@@ -1566,6 +1569,42 @@ const editorSlideBlockComponent = computed(() =>
   presentationSettings.value.template === BOOKLET_TEMPLATE_URBAN_REAL_ESTATE
     ? PresentationEditorSlideBlockUrbanRealEstate
     : PresentationEditorSlideBlockBasic
+)
+
+const UNIVERSAL_TEMPLATE_STYLE_ID = 'booklet-template-universal-dynamic-style'
+let universalTemplateLinkEl: HTMLLinkElement | null = null
+
+function setUniversalTemplateStylesEnabled(enabled: boolean) {
+  if (typeof document === 'undefined') return
+  if (enabled) {
+    if (universalTemplateLinkEl && document.head.contains(universalTemplateLinkEl)) return
+    const existing = document.getElementById(UNIVERSAL_TEMPLATE_STYLE_ID) as HTMLLinkElement | null
+    if (existing) {
+      universalTemplateLinkEl = existing
+      return
+    }
+    const link = document.createElement('link')
+    link.id = UNIVERSAL_TEMPLATE_STYLE_ID
+    link.rel = 'stylesheet'
+    link.href = universalTemplateCssUrl
+    document.head.appendChild(link)
+    universalTemplateLinkEl = link
+    return
+  }
+  if (universalTemplateLinkEl && document.head.contains(universalTemplateLinkEl)) {
+    universalTemplateLinkEl.remove()
+  } else {
+    document.getElementById(UNIVERSAL_TEMPLATE_STYLE_ID)?.remove()
+  }
+  universalTemplateLinkEl = null
+}
+
+watch(
+  () => presentationSettings.value.template,
+  (templateId) => {
+    setUniversalTemplateStylesEnabled(templateId === BOOKLET_TEMPLATE_UNIVERSAL)
+  },
+  { immediate: true }
 )
 
 function resetPresentationSettings() {
@@ -3031,6 +3070,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   editorMounted = false
+  setUniversalTemplateStylesEnabled(false)
   window.removeEventListener('beforeunload', backupToLocalStorage)
   window.removeEventListener('resize', handleDadataLayoutChange)
   document.removeEventListener('scroll', handleDadataLayoutChange, true)

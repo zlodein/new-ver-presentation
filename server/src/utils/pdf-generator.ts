@@ -1,10 +1,13 @@
 import puppeteer from 'puppeteer'
 import { existsSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import type { ViewSlideItem } from './types.js'
 import type { PdfFigureDefinition } from './pdf-figure-definitions.js'
 import { figuresArrayToMap, renderPdfFiguresOverlayHtml } from './pdf-figures-html.js'
 
 const YANDEX_STATIC_API_KEY = process.env.YANDEX_STATIC_API_KEY ?? ''
+const UNIVERSAL_TEMPLATE_CSS_PATH = resolve(process.cwd(), 'src/assets/booklet-template-universal.css')
 
 /** URL статичной карты для PDF (Static API Яндекс.Карт) */
 function getStaticMapImageUrl(lat: number, lng: number, width = 400, height = 300, zoom = 16): string {
@@ -165,7 +168,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const themeColor = typeof settings.themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(settings.themeColor) ? settings.themeColor : '#fcfcfc'
   const templateValue = (settings.template || '').trim()
   const isUrbanRealEstate = templateValue === 'urban_real_estate' || templateValue === 'city'
-  const templateName = isUrbanRealEstate ? 'urban_real_estate' : 'basic'
+  const isUniversal = templateValue === 'universal'
+  const templateName = isUrbanRealEstate ? 'urban_real_estate' : (isUniversal ? 'universal' : 'basic')
   const frameValue = (settings.imageFrame || '').trim()
   const imageFrame = ['default', 'minimal', 'vintage', 'polaroid'].includes(frameValue) ? frameValue : (frameValue === 'none' ? 'none' : 'default')
 
@@ -956,6 +960,14 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
       body { padding: 0; }
     }
   `
+  let universalTemplateCss = ''
+  if (isUniversal) {
+    try {
+      universalTemplateCss = readFileSync(UNIVERSAL_TEMPLATE_CSS_PATH, 'utf8')
+    } catch {
+      universalTemplateCss = ''
+    }
+  }
 
   const googleFontsLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700&family=Open+Sans:ital,wght@0,400;0,600;0,700&family=Raleway:ital,wght@0,400;0,600;0,700&family=Rubik:ital,wght@0,400;0,600;0,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700&display=swap" rel="stylesheet">'
   return `<!DOCTYPE html>
@@ -965,7 +977,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.title}</title>
   ${googleFontsLink}
-  <style>${embeddedCSS}</style>
+  <style>${embeddedCSS}${universalTemplateCss ? `\n${universalTemplateCss}` : ''}</style>
 </head>
 <body>
   <div class="presentation-container presentation-slider-wrap booklet-view" data-image-frame="${imageFrame}" data-template="${templateName}">

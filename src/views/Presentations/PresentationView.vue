@@ -390,13 +390,14 @@ import { useRoute } from 'vue-router'
 import '@/assets/booklet-slides.css'
 import '@/assets/booklet-template-basic.css'
 import '@/assets/booklet-template-urban-real-estate.css'
+import universalTemplateCssUrl from '@/assets/booklet-template-universal.css?url'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
 import FiguresOverlay from '@/components/presentations/figures/FiguresOverlay.vue'
 import { figureBlockScopesForSlide } from '@/utils/figureBlockScopes'
 import { api, hasApi, getToken, getApiBase } from '@/api/client'
 import { metroLineColor } from '@/data/metroLineColors'
-import { normalizeBookletTemplateId } from '@/data/bookletTemplates'
+import { BOOKLET_TEMPLATE_UNIVERSAL, normalizeBookletTemplateId } from '@/data/bookletTemplates'
 import type { FigureDefinition } from '@/types/figures'
 interface ViewSlideItem {
   type: string
@@ -418,6 +419,42 @@ const bookletTemplateId = computed(() =>
   normalizeBookletTemplateId(
     (presentation.value?.content?.settings as Record<string, string> | undefined)?.template
   )
+)
+
+const UNIVERSAL_TEMPLATE_STYLE_ID = 'booklet-template-universal-dynamic-style'
+let universalTemplateLinkEl: HTMLLinkElement | null = null
+
+function setUniversalTemplateStylesEnabled(enabled: boolean) {
+  if (typeof document === 'undefined') return
+  if (enabled) {
+    if (universalTemplateLinkEl && document.head.contains(universalTemplateLinkEl)) return
+    const existing = document.getElementById(UNIVERSAL_TEMPLATE_STYLE_ID) as HTMLLinkElement | null
+    if (existing) {
+      universalTemplateLinkEl = existing
+      return
+    }
+    const link = document.createElement('link')
+    link.id = UNIVERSAL_TEMPLATE_STYLE_ID
+    link.rel = 'stylesheet'
+    link.href = universalTemplateCssUrl
+    document.head.appendChild(link)
+    universalTemplateLinkEl = link
+    return
+  }
+  if (universalTemplateLinkEl && document.head.contains(universalTemplateLinkEl)) {
+    universalTemplateLinkEl.remove()
+  } else {
+    document.getElementById(UNIVERSAL_TEMPLATE_STYLE_ID)?.remove()
+  }
+  universalTemplateLinkEl = null
+}
+
+watch(
+  bookletTemplateId,
+  (templateId) => {
+    setUniversalTemplateStylesEnabled(templateId === BOOKLET_TEMPLATE_UNIVERSAL)
+  },
+  { immediate: true }
 )
 
 const figures = ref<FigureDefinition[]>([])
@@ -946,6 +983,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  setUniversalTemplateStylesEnabled(false)
   window.removeEventListener('hashchange', onHashChange)
 })
 </script>
