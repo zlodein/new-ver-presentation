@@ -32,9 +32,9 @@
   background: var(--universal-accent);
 }
 
-/* На обложке кнопка загрузки как в остальных блоках */
-.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img .booklet-upload-btn {
-  background: rgba(0, 0, 0, 0.45) !important;
+/* Единый фон кнопок загрузки изображений */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-upload-btn {
+  background: #d7d7d7 !important;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
