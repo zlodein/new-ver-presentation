@@ -44,7 +44,11 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: var(--booklet-image-radius, 8px);
+  border-radius: 0;
+  background: transparent;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface:not(:has(img)) {
   background: #d7d7d7;
 }
 
@@ -60,6 +64,33 @@
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface:has(img):hover .booklet-upload-btn {
   opacity: 1 !important;
+  background: rgba(215, 215, 215, 0.55) !important;
+}
+
+/* То же поведение для всех остальных image-блоков шаблона */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__avatar:has(img) .booklet-upload-btn {
+  opacity: 0 !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__avatar:has(img):hover .booklet-upload-btn {
+  opacity: 1 !important;
+  background: rgba(215, 215, 215, 0.55) !important;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img:hover .booklet-upload-btn,
@@ -67,7 +98,16 @@
 .presentation-slider-wrap.booklet-view[data-template='universal'] [class*='__img']:hover .booklet-upload-btn,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img:hover .booklet-upload-btn {
   opacity: 1 !important;
-  background: #d7d7d7 !important;
+  background: rgba(215, 215, 215, 0.55) !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  border-radius: 0;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
@@ -355,6 +395,12 @@
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__info,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
   background: #ffffff;
+}
+
+/* В редакторе обрезаем декор по границам текущего слайда */
+.editor-slider-wrap .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page__inner {
+  overflow: hidden !important;
 }
 
 @media (max-width: 768px) {
