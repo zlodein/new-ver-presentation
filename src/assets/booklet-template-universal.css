@@ -32,9 +32,9 @@
   background: var(--universal-accent);
 }
 
-/* На обложке кнопка загрузки не окрашивается темой */
+/* На обложке кнопка загрузки как в остальных блоках */
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img .booklet-upload-btn {
-  background: transparent !important;
+  background: rgba(0, 0, 0, 0.45) !important;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
@@ -112,11 +112,11 @@
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   white-space: nowrap;
-  text-align: right;
+  text-align: center;
   font-size: 32px;
   line-height: 1;
   color: var(--universal-text);
-  text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  text-shadow: none;
   margin: 0;
 }
 
@@ -125,15 +125,9 @@
   justify-content: center;
 }
 
-.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col .booklet-info__title {
-  writing-mode: horizontal-tb;
-  transform: none;
-  text-align: center;
-  width: 100%;
-}
-
 /* Вертикальные заголовки должны быть отцентрованы по высоте */
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title-col .booklet-stroen__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col .booklet-info__title,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title-col .booklet-char__title,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title-col .booklet-contacts__title,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__title,
@@ -207,7 +201,7 @@
 /* Location */
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__wrap {
   display: grid !important;
-  grid-template-columns: auto 1fr 400px !important;
+  grid-template-columns: auto 1fr 300px !important;
   grid-template-rows: 1fr !important;
   column-gap: 20px;
   row-gap: 0 !important;
