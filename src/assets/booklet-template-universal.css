@@ -35,6 +35,15 @@
 /* Единый фон кнопок загрузки изображений */
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-upload-btn {
   background: #d7d7d7 !important;
+  opacity: 1 !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img:hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img:hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] [class*='__img']:hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img:hover .booklet-upload-btn {
+  opacity: 1 !important;
+  background: #d7d7d7 !important;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
