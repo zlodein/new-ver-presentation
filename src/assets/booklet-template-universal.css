@@ -32,6 +32,11 @@
   background: var(--universal-accent);
 }
 
+/* На обложке кнопка загрузки не окрашивается темой */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img .booklet-upload-btn {
+  background: transparent !important;
+}
+
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
   flex: 0 1 362px;
   min-width: 0;
@@ -87,6 +92,16 @@
   min-height: 100%;
 }
 
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title-col,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title-col,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+}
+
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col .booklet-info__title,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title-col .booklet-stroen__title,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title-col .booklet-char__title,
@@ -117,6 +132,17 @@
   width: 100%;
 }
 
+/* Вертикальные заголовки должны быть отцентрованы по высоте */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title-col .booklet-stroen__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title-col .booklet-char__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title-col .booklet-contacts__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__title {
+  align-self: center;
+  justify-self: center;
+}
+
 /* Description & Infrastructure */
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__wrap,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__wrap {
@@ -131,6 +157,13 @@
   background: #ffffff;
   box-shadow: -1.92px 3.84px 9.6px rgba(12, 23, 27, 0.25);
   padding: 16px 18px;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__block,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__block,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content {
+  box-shadow: none !important;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__text,
@@ -175,8 +208,9 @@
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__wrap {
   display: grid !important;
   grid-template-columns: auto 1fr 400px !important;
+  grid-template-rows: 1fr !important;
   column-gap: 20px;
-  row-gap: 0;
+  row-gap: 0 !important;
   height: 100%;
   min-height: 0;
   align-items: stretch;
@@ -184,10 +218,16 @@
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__title {
   grid-column: 1;
+  grid-row: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__left {
   grid-column: 2;
+  grid-row: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -195,6 +235,7 @@
 
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content {
   grid-column: 3;
+  grid-row: 1;
   background: #ffffff;
   box-shadow: 3px 0 4px rgba(0, 0, 0, 0.25);
   min-height: 0;
