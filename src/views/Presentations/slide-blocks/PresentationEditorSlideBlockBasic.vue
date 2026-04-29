@@ -106,17 +106,19 @@ watch(
                     >
                       <div class="booklet-main__wrap">
                         <div class="booklet-main__img relative z-0">
-                          <template v-if="pe.canEditImages">
-                            <label class="booklet-upload-btn cursor-pointer">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                class="hidden"
-                                @change="pe.onSingleImageUpload(slide, $event, 'coverImageUrl')"
-                              />
-                            </label>
-                          </template>
-                          <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
+                          <div class="booklet-main__img-upload-surface">
+                            <template v-if="pe.canEditImages">
+                              <label class="booklet-upload-btn cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  class="hidden"
+                                  @change="pe.onSingleImageUpload(slide, $event, 'coverImageUrl')"
+                                />
+                              </label>
+                            </template>
+                            <img v-if="slide.data?.coverImageUrl" :src="String(slide.data.coverImageUrl)" alt="">
+                          </div>
                         </div>
                         <div class="booklet-main__content relative z-[2]">
                           <div class="booklet-main__top">
