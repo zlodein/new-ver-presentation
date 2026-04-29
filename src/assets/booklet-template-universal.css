@@ -53,6 +53,15 @@
   opacity: 1 !important;
 }
 
+/* Если изображение уже загружено — не перекрываем его фоном загрузчика */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface:has(img) .booklet-upload-btn {
+  opacity: 0 !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface:has(img):hover .booklet-upload-btn {
+  opacity: 1 !important;
+}
+
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img:hover .booklet-upload-btn,
 .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img:hover .booklet-upload-btn,
 .presentation-slider-wrap.booklet-view[data-template='universal'] [class*='__img']:hover .booklet-upload-btn,
