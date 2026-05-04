@@ -28,6 +28,39 @@ function readUniversalTemplateCss(): string {
   return ''
 }
 
+function normalizePdfTemplateId(raw: unknown): 'basic' | 'urban_real_estate' | 'universal' {
+  const t = String(raw ?? '').trim().toLowerCase()
+  if (t === 'city' || t === 'urban_real_estate' || t === 'urban-real-estate') return 'urban_real_estate'
+  if (t === 'universal' || t === 'universal_real_estate' || t === 'universal-real-estate' || t.includes('universal')) return 'universal'
+  return 'basic'
+}
+
+const UNIVERSAL_TEMPLATE_FALLBACK_CSS = `
+  .presentation-slider-wrap.booklet-view[data-template='universal'] { --universal-accent: var(--theme-main-color, #2c7f8d); background: #fff; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page__inner,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content { background: #fff; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__wrap { display: flex; justify-content: space-between; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img { flex: 0 1 480px; padding: 35px 0 35px 35px; background: var(--universal-accent); }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img img { object-fit: cover; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content { flex: 0 1 362px; background: #fff; padding: 40px 22px 24px 26px; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__top { font-size: 28px !important; color: #010217 !important; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__center { font-size: 25px !important; color: #010217 !important; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__wrap,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__wrap,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__shell,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__shell,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__shell,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__shell { display: grid; grid-template-columns: auto 1fr; column-gap: 22px; }
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__title,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__title,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__title { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 32px; }
+`
+
 /** URL статичной карты для PDF (Static API Яндекс.Карт) */
 function getStaticMapImageUrl(lat: number, lng: number, width = 400, height = 300, zoom = 16): string {
   const ll = `${lng},${lat}`
@@ -193,10 +226,8 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   const fontFamily = fontFamilyRaw && fontFamilyRaw !== 'system-ui' ? fontFamilyRaw : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
   const settings = (data.content?.settings || {}) as Record<string, string>
   const themeColor = typeof settings.themeColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(settings.themeColor) ? settings.themeColor : '#fcfcfc'
-  const templateValue = (settings.template || '').trim()
-  const isUrbanRealEstate = templateValue === 'urban_real_estate' || templateValue === 'city'
-  const isUniversal = templateValue === 'universal'
-  const templateName = isUrbanRealEstate ? 'urban_real_estate' : (isUniversal ? 'universal' : 'basic')
+  const templateName = normalizePdfTemplateId(settings.template)
+  const isUniversal = templateName === 'universal'
   const frameValue = (settings.imageFrame || '').trim()
   const imageFrame = ['default', 'minimal', 'vintage', 'polaroid'].includes(frameValue) ? frameValue : (frameValue === 'none' ? 'none' : 'default')
 
@@ -990,6 +1021,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   let universalTemplateCss = ''
   if (isUniversal) {
     universalTemplateCss = readUniversalTemplateCss()
+    if (!universalTemplateCss) universalTemplateCss = UNIVERSAL_TEMPLATE_FALLBACK_CSS
   }
 
   const googleFontsLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700&family=Open+Sans:ital,wght@0,400;0,600;0,700&family=Raleway:ital,wght@0,400;0,600;0,700&family=Rubik:ital,wght@0,400;0,600;0,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700&display=swap" rel="stylesheet">'
