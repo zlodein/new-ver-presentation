@@ -1294,9 +1294,8 @@ export async function presentationRoutes(app: FastifyInstance) {
         const row = await findPresentationForUser(mysqlDb, idNum!, userIdNum)
         if (!row) return reply.status(404).send({ error: 'Презентация не найдена' })
         const r = row as { id: number; title: string; cover_image: string | null; slides_data: string | null; theme_color?: string | null }
-        const rawContent = typeof r.slides_data === 'string' ? (() => { try { return JSON.parse(r.slides_data) } catch { return null } })() : r.slides_data
         const normalized = normContent(r.slides_data)
-        const pdfSettings = { ...getContentSettings(rawContent), ...(r.theme_color ? { themeColor: r.theme_color } : {}) } as Record<string, string>
+        const pdfSettings = { ...(normalized.settings ?? {}), ...(r.theme_color ? { themeColor: r.theme_color } : {}) } as Record<string, string>
         presentationData = {
           id: String(r.id),
           title: r.title,
