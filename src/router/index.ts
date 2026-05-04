@@ -24,7 +24,7 @@ function sanitizeRedirectTarget(rawRedirect: unknown, fallback = '/dashboard'): 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, from, savedPosition) {
-    /* РЇРєРѕСЂСЏ #block-N РѕР±СЂР°Р±Р°С‚С‹РІР°РµС‚ PresentationView РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё СЃР»Р°Р№РґРѕРІ */
+    /* Якоря #block-N обрабатывает PresentationView после загрузки слайдов */
     if (to.hash && to.hash.startsWith('#block-')) return false
     return savedPosition || { left: 0, top: 0 }
   },
@@ -42,7 +42,7 @@ const router = createRouter({
       name: 'PublicTariffs',
       component: () => import('../views/public-site/Tariffs/PublicTariffs.vue'),
       meta: {
-        title: 'РўР°СЂРёС„С‹',
+        title: 'Тарифы',
       },
     },
     {
@@ -50,7 +50,7 @@ const router = createRouter({
       name: 'PrivacyPolicy',
       component: () => import('../views/public-site/Legal/PrivacyPolicy.vue'),
       meta: {
-        title: 'РџРѕР»РёС‚РёРєР° РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё',
+        title: 'Политика конфиденциальности',
       },
     },
     {
@@ -58,7 +58,7 @@ const router = createRouter({
       name: 'TermsConditions',
       component: () => import('../views/public-site/Legal/TermsConditions.vue'),
       meta: {
-        title: 'РџСЂР°РІРёР»Р° Рё СѓСЃР»РѕРІРёСЏ',
+        title: 'Правила и условия',
       },
     },
     {
@@ -66,7 +66,7 @@ const router = createRouter({
       name: 'Ecommerce',
       component: () => import('../views/user-site/Ecommerce.vue'),
       meta: {
-        title: 'РџР°РЅРµР»СЊ СѓРїСЂР°РІР»РµРЅРёСЏ',
+        title: 'Панель управления',
       },
     },
     {
@@ -74,7 +74,7 @@ const router = createRouter({
       name: 'Presentations',
       component: () => import('../views/user-site/Presentations/PresentationsList.vue'),
       meta: {
-        title: 'РџСЂРµР·РµРЅС‚Р°С†РёРё',
+        title: 'Презентации',
       },
     },
     {
@@ -82,7 +82,7 @@ const router = createRouter({
       name: 'PresentationNew',
       component: () => import('../views/editor/PresentationEditor.vue'),
       meta: {
-        title: 'РќРѕРІР°СЏ РїСЂРµР·РµРЅС‚Р°С†РёСЏ',
+        title: 'Новая презентация',
       },
     },
     {
@@ -90,7 +90,7 @@ const router = createRouter({
       name: 'PresentationEdit',
       component: () => import('../views/editor/PresentationEditor.vue'),
       meta: {
-        title: 'Р РµРґР°РєС‚РѕСЂ РїСЂРµР·РµРЅС‚Р°С†РёРё',
+        title: 'Редактор презентации',
       },
     },
     {
@@ -98,7 +98,7 @@ const router = createRouter({
       name: 'PresentationViewOwner',
       component: () => import('../views/viewer/PresentationView.vue'),
       meta: {
-        title: 'РџСЂРѕСЃРјРѕС‚СЂ РїСЂРµР·РµРЅС‚Р°С†РёРё',
+        title: 'Просмотр презентации',
       },
     },
     {
@@ -106,7 +106,7 @@ const router = createRouter({
       name: 'PresentationViewPublicSlug',
       component: () => import('../views/viewer/PresentationView.vue'),
       meta: {
-        title: 'РџСЂРµР·РµРЅС‚Р°С†РёСЏ',
+        title: 'Презентация',
       },
     },
     {
@@ -114,7 +114,7 @@ const router = createRouter({
       name: 'PresentationViewPublic',
       component: () => import('../views/viewer/PresentationView.vue'),
       meta: {
-        title: 'РџСЂРµР·РµРЅС‚Р°С†РёСЏ',
+        title: 'Презентация',
       },
     },
     {
@@ -122,7 +122,7 @@ const router = createRouter({
       name: 'Calendar',
       component: () => import('../views/user-site/Others/Calendar.vue'),
       meta: {
-        title: 'РљР°Р»РµРЅРґР°СЂСЊ',
+        title: 'Календарь',
       },
     },
     {
@@ -130,7 +130,7 @@ const router = createRouter({
       name: 'Tasks',
       component: () => import('../views/user-site/Task/TaskKanban.vue'),
       meta: {
-        title: 'Р—Р°РґР°С‡Рё',
+        title: 'Задачи',
       },
     },
     {
@@ -138,7 +138,7 @@ const router = createRouter({
       name: 'Profile',
       component: () => import('../views/user-site/Others/UserProfile.vue'),
       meta: {
-        title: 'РџСЂРѕС„РёР»СЊ',
+        title: 'Профиль',
       },
     },
     {
@@ -146,7 +146,7 @@ const router = createRouter({
       name: 'AccountSettings',
       component: () => import('../views/user-site/Others/AccountSettings.vue'),
       meta: {
-        title: 'РќР°СЃС‚СЂРѕР№РєРё Р°РєРєР°СѓРЅС‚Р°',
+        title: 'Настройки аккаунта',
       },
     },
     {
@@ -154,7 +154,7 @@ const router = createRouter({
       name: 'Form Elements',
       component: () => import('../views/user-site/Forms/FormElements.vue'),
       meta: {
-        title: 'Р­Р»РµРјРµРЅС‚С‹ С„РѕСЂРјС‹',
+        title: 'Элементы формы',
       },
     },
     {
@@ -162,7 +162,7 @@ const router = createRouter({
       name: 'Basic Tables',
       component: () => import('../views/user-site/Tables/BasicTables.vue'),
       meta: {
-        title: 'Р‘Р°Р·РѕРІС‹Рµ С‚Р°Р±Р»РёС†С‹',
+        title: 'Базовые таблицы',
       },
     },
     {
@@ -202,7 +202,7 @@ const router = createRouter({
       name: 'Form Layout',
       component: () => import('../views/user-site/Forms/FormLayout.vue'),
       meta: {
-        title: 'РњР°РєРµС‚ С„РѕСЂРјС‹',
+        title: 'Макет формы',
       },
     },
     {
@@ -218,7 +218,7 @@ const router = createRouter({
       name: 'Tariffs',
       component: () => import('../views/user-site/Tariffs/Tariffs.vue'),
       meta: {
-        title: 'РўР°СЂРёС„С‹',
+        title: 'Тарифы',
       },
     },
     {
@@ -226,7 +226,7 @@ const router = createRouter({
       name: 'Documentation',
       component: () => import('../views/user-site/Documentation/Documentation.vue'),
       meta: {
-        title: 'Р”РѕРєСѓРјРµРЅС‚Р°С†РёСЏ',
+        title: 'Документация',
       },
     },
     {
@@ -234,7 +234,7 @@ const router = createRouter({
       name: 'Search',
       component: () => import('../views/user-site/Search/SearchResults.vue'),
       meta: {
-        title: 'РџРѕРёСЃРє',
+        title: 'Поиск',
       },
     },
     {
@@ -242,7 +242,7 @@ const router = createRouter({
       name: 'Support',
       component: () => import('../views/user-site/Support/SupportList.vue'),
       meta: {
-        title: 'РџРѕРґРґРµСЂР¶РєР°',
+        title: 'Поддержка',
       },
     },
     {
@@ -250,7 +250,7 @@ const router = createRouter({
       name: 'SupportTicket',
       component: () => import('../views/user-site/Support/SupportTicketView.vue'),
       meta: {
-        title: 'РўРёРєРµС‚',
+        title: 'Тикет',
       },
     },
     {
@@ -258,7 +258,7 @@ const router = createRouter({
       name: 'Admin Users',
       component: () => import('../views/admin-site/Admin/AdminUsers.vue'),
       meta: {
-        title: 'РџРѕР»СЊР·РѕРІР°С‚РµР»Рё',
+        title: 'Пользователи',
         requiresAdmin: true,
       },
     },
@@ -267,7 +267,7 @@ const router = createRouter({
       name: 'Admin Presentations',
       component: () => import('../views/admin-site/Admin/AdminPresentations.vue'),
       meta: {
-        title: 'РџСЂРµР·РµРЅС‚Р°С†РёРё',
+        title: 'Презентации',
         requiresAdmin: true,
       },
     },
@@ -276,7 +276,7 @@ const router = createRouter({
       name: 'Admin Tariffs',
       component: () => import('../views/admin-site/Admin/AdminTariffs.vue'),
       meta: {
-        title: 'РўР°СЂРёС„С‹',
+        title: 'Тарифы',
         requiresAdmin: true,
       },
     },
@@ -285,7 +285,7 @@ const router = createRouter({
       name: 'Admin Payments',
       component: () => import('../views/admin-site/Admin/AdminPayments.vue'),
       meta: {
-        title: 'РџР»Р°С‚РµР¶Рё',
+        title: 'Платежи',
         requiresAdmin: true,
       },
     },
@@ -294,7 +294,7 @@ const router = createRouter({
       name: 'Admin Requests',
       component: () => import('../views/admin-site/Admin/AdminRequests.vue'),
       meta: {
-        title: 'Р—Р°РїСЂРѕСЃС‹',
+        title: 'Запросы',
         requiresAdmin: true,
       },
     },
@@ -303,7 +303,7 @@ const router = createRouter({
       name: 'Admin Pages',
       component: () => import('../views/admin-site/Admin/AdminPages.vue'),
       meta: {
-        title: 'РќР°СЃС‚СЂРѕР№РєР° СЃС‚СЂР°РЅРёС†',
+        title: 'Настройка страниц',
         requiresAdmin: true,
       },
     },
@@ -312,7 +312,7 @@ const router = createRouter({
       name: 'Admin Page Home',
       component: () => import('../views/admin-site/Admin/AdminPageHome.vue'),
       meta: {
-        title: 'Р“Р»Р°РІРЅР°СЏ СЃС‚СЂР°РЅРёС†Р°',
+        title: 'Главная страница',
         requiresAdmin: true,
       },
     },
@@ -331,7 +331,7 @@ const router = createRouter({
       name: 'Alerts',
       component: () => import('../views/user-site/UiElements/Alerts.vue'),
       meta: {
-        title: 'РћРїРѕРІРµС‰РµРЅРёСЏ',
+        title: 'Оповещения',
       },
     },
     {
@@ -339,7 +339,7 @@ const router = createRouter({
       name: 'Avatars',
       component: () => import('../views/user-site/UiElements/Avatars.vue'),
       meta: {
-        title: 'РђРІР°С‚Р°СЂС‹',
+        title: 'Аватары',
       },
     },
     {
@@ -347,7 +347,7 @@ const router = createRouter({
       name: 'Badge',
       component: () => import('../views/user-site/UiElements/Badges.vue'),
       meta: {
-        title: 'Р—РЅР°С‡РєРё',
+        title: 'Значки',
       },
     },
     {
@@ -355,7 +355,7 @@ const router = createRouter({
       name: 'Buttons',
       component: () => import('../views/user-site/UiElements/Buttons.vue'),
       meta: {
-        title: 'РљРЅРѕРїРєРё',
+        title: 'Кнопки',
       },
     },
     {
@@ -363,7 +363,7 @@ const router = createRouter({
       name: 'Images',
       component: () => import('../views/user-site/UiElements/Images.vue'),
       meta: {
-        title: 'РР·РѕР±СЂР°Р¶РµРЅРёСЏ',
+        title: 'Изображения',
       },
     },
     {
@@ -371,7 +371,7 @@ const router = createRouter({
       name: 'Videos',
       component: () => import('../views/user-site/UiElements/Videos.vue'),
       meta: {
-        title: 'Р’РёРґРµРѕ',
+        title: 'Видео',
       },
     },
     {
@@ -403,7 +403,7 @@ const router = createRouter({
       name: 'Blank',
       component: () => import('../views/user-site/Pages/BlankPage.vue'),
       meta: {
-        title: 'РџСѓСЃС‚Р°СЏ СЃС‚СЂР°РЅРёС†Р°',
+        title: 'Пустая страница',
       },
     },
     {
@@ -419,7 +419,7 @@ const router = createRouter({
       name: 'Notifications',
       component: () => import('../views/user-site/Pages/NotificationsPage.vue'),
       meta: {
-        title: 'РЈРІРµРґРѕРјР»РµРЅРёСЏ',
+        title: 'Уведомления',
       },
     },
     {
@@ -427,7 +427,7 @@ const router = createRouter({
       name: '404 Error',
       component: () => import('../views/user-site/Errors/FourZeroFour.vue'),
       meta: {
-        title: 'РћС€РёР±РєР° 404',
+        title: 'Ошибка 404',
       },
     },
     {
@@ -435,7 +435,7 @@ const router = createRouter({
       name: 'Administration',
       component: () => import('../views/admin-site/Administration/AdministrationIndex.vue'),
       meta: {
-        title: 'РђРґРјРёРЅРёСЃС‚СЂРёСЂРѕРІР°РЅРёРµ',
+        title: 'Администрирование',
       },
     },
     {
@@ -443,7 +443,7 @@ const router = createRouter({
       name: 'Signin',
       component: () => import('../views/user-site/Auth/Signin.vue'),
       meta: {
-        title: 'Р’С…РѕРґ',
+        title: 'Вход',
       },
     },
     {
@@ -451,7 +451,7 @@ const router = createRouter({
       name: 'SigninTwoFactor',
       component: () => import('../views/user-site/Auth/SigninTwoFactor.vue'),
       meta: {
-        title: 'РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ 2FA',
+        title: 'Подтверждение 2FA',
       },
     },
     {
@@ -459,7 +459,7 @@ const router = createRouter({
       name: 'Signup',
       component: () => import('../views/user-site/Auth/Signup.vue'),
       meta: {
-        title: 'Р РµРіРёСЃС‚СЂР°С†РёСЏ',
+        title: 'Регистрация',
       },
     },
     {
@@ -467,7 +467,7 @@ const router = createRouter({
       name: 'ResetPassword',
       component: () => import('../views/user-site/Auth/ResetPassword.vue'),
       meta: {
-        title: 'Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РїР°СЂРѕР»СЏ',
+        title: 'Восстановление пароля',
       },
     },
     {
@@ -475,7 +475,7 @@ const router = createRouter({
       name: 'TwoStepVerification',
       component: () => import('../views/user-site/Auth/TwoStepVerification.vue'),
       meta: {
-        title: 'РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ',
+        title: 'Подтверждение',
       },
     },
     {
@@ -483,22 +483,22 @@ const router = createRouter({
       name: 'Maintenance',
       component: () => import('../views/user-site/Maintenance.vue'),
       meta: {
-        title: 'РЎР°Р№С‚ РІ СЂР°Р·СЂР°Р±РѕС‚РєРµ',
+        title: 'Сайт в разработке',
       },
     },
-    // Р’СЃРµ РЅРµРёР·РІРµСЃС‚РЅС‹Рµ РїСѓС‚Рё вЂ” СЂРµРґРёСЂРµРєС‚ РЅР° СЃС‚СЂР°РЅРёС†Сѓ 404
+    // Все неизвестные пути — редирект на страницу 404
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       redirect: () => ({ path: '/dashboard/error-404' }),
       meta: {
-        title: 'РћС€РёР±РєР° 404',
+        title: 'Ошибка 404',
       },
     },
   ],
 })
 
-// РћР±СЂР°Р±РѕС‚РєР° 404 РїСЂРё Р·Р°РіСЂСѓР·РєРµ С‡Р°РЅРєРѕРІ (РїРѕСЃР»Рµ РґРµРїР»РѕСЏ СЃС‚Р°СЂС‹Рµ URL С‡Р°РЅРєРѕРІ РїРµСЂРµСЃС‚Р°СЋС‚ СЂР°Р±РѕС‚Р°С‚СЊ)
+// Обработка 404 при загрузке чанков (после деплоя старые URL чанков перестают работать)
 router.onError((err) => {
   const msg = err?.message || ''
   if (
@@ -529,7 +529,7 @@ router.beforeEach(async (to, from, next) => {
 
   const token = getToken()
 
-  // РЎС‚СЂР°РЅРёС†Р° В«РЎР°Р№С‚ РІ СЂР°Р·СЂР°Р±РѕС‚РєРµВ» вЂ” РІСЃРµРіРґР° СЂР°Р·СЂРµС€РµРЅР°
+  // Страница «Сайт в разработке» — всегда разрешена
   if (to.path === '/maintenance') {
     const title = to.meta?.title
     document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
@@ -537,7 +537,7 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // РџСЂРѕРІРµСЂРєР° СЂСѓР±РёР»СЊРЅРёРєР° В«СЃР°Р№С‚ РѕС‚РєР»СЋС‡С‘РЅВ» (С‚РѕР»СЊРєРѕ РґР»СЏ Р°РґРјРёРЅР° РґРѕСЃС‚СѓРїРµРЅ РїРѕР»РЅС‹Р№ СЃР°Р№С‚)
+  // Проверка рубильника «сайт отключён» (только для админа доступен полный сайт)
   if (hasApi()) try {
     const base = getApiBase()
     const statusUrl = base ? `${base}/api/site/status` : '/api/site/status'
@@ -546,7 +546,7 @@ router.beforeEach(async (to, from, next) => {
     const siteDisabled = !!data?.siteDisabled
 
     if (siteDisabled) {
-      // Р’С…РѕРґ, СЂРµРіРёСЃС‚СЂР°С†РёСЏ Рё РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ СЂР°Р·СЂРµС€РµРЅС‹
+      // Вход, регистрация и подтверждение разрешены
       if (to.path === '/signin' || to.path === '/signin/2fa' || to.path === '/signup' || to.path === '/verify' || to.path === '/reset-password') {
         const title = to.meta?.title
         document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
@@ -562,10 +562,10 @@ router.beforeEach(async (to, from, next) => {
         next({ path: '/maintenance' })
         return
       }
-      // РђРґРјРёРЅ вЂ” РїСЂРѕРїСѓСЃРєР°РµРј
+      // Админ — пропускаем
     }
   } catch {
-    // РћС€РёР±РєР° Р·Р°РїСЂРѕСЃР° СЃС‚Р°С‚СѓСЃР° вЂ” РЅРµ Р±Р»РѕРєРёСЂСѓРµРј РЅР°РІРёРіР°С†РёСЋ
+    // Ошибка запроса статуса — не блокируем навигацию
   }
 
   const requiresAuth = to.path.startsWith('/dashboard') || to.path === '/administration'
@@ -592,4 +592,5 @@ router.beforeEach(async (to, from, next) => {
   document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
   next()
 })
+
 
