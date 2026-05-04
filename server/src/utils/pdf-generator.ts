@@ -36,29 +36,447 @@ function normalizePdfTemplateId(raw: unknown): 'basic' | 'urban_real_estate' | '
 }
 
 const UNIVERSAL_TEMPLATE_FALLBACK_CSS = `
-  .presentation-slider-wrap.booklet-view[data-template='universal'] { --universal-accent: var(--theme-main-color, #2c7f8d); background: #fff; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page__inner,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content { background: #fff; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__wrap { display: flex; justify-content: space-between; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img { flex: 0 1 480px; padding: 35px 0 35px 35px; background: var(--universal-accent); }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img img { object-fit: cover; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content { flex: 0 1 362px; background: #fff; padding: 40px 22px 24px 26px; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__top { font-size: 28px !important; color: #010217 !important; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__center { font-size: 25px !important; color: #010217 !important; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__wrap,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__wrap,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__shell,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__shell,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__shell,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__shell { display: grid; grid-template-columns: auto 1fr; column-gap: 22px; }
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__title,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__title,
-  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__title { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 32px; }
+/* Pixel-perfect "Универсальный шаблон" на основе template-example.css */
+.presentation-slider-wrap.booklet-view[data-template='universal'] {
+  --universal-accent: var(--theme-main-color, #2c7f8d);
+  --universal-bg: #ffffff;
+  --universal-text: #010217;
+  --universal-muted: #434446;
+  --universal-image-frame: 15px;
+  font-family: 'Roboto', 'Open Sans', sans-serif;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page__inner {
+  background: #ffffff;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content {
+  background: var(--universal-bg);
+}
+
+/* Cover */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__wrap {
+  display: flex;
+  justify-content: space-between;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img {
+  flex: 0 1 480px;
+  min-width: 0;
+  height: 100%;
+  box-shadow: 7px 7px 7px rgba(73, 71, 71, 0.2);
+  padding: 35px 0 35px 35px;
+  background: var(--universal-accent);
+}
+
+/* Единый фон кнопок загрузки изображений */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-upload-btn {
+  background: #d7d7d7 !important;
+  opacity: 1 !important;
+}
+
+/* Обложка: контейнер = цвет темы, загрузчик = как у остальных изображений */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  background: transparent;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface:not(:has(img)) {
+  background: #d7d7d7;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img .booklet-upload-btn {
+  background: #d7d7d7 !important;
+  opacity: 1 !important;
+}
+
+/* Если изображение уже загружено — не перекрываем его фоном загрузчика */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface:has(img) .booklet-upload-btn {
+  opacity: 0 !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface:has(img):hover .booklet-upload-btn {
+  opacity: 1 !important;
+  background: rgba(215, 215, 215, 0.55) !important;
+}
+
+/* То же поведение для всех остальных image-блоков шаблона */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img:has(img) .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__avatar:has(img) .booklet-upload-btn {
+  opacity: 0 !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img:has(img):hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__avatar:has(img):hover .booklet-upload-btn {
+  opacity: 1 !important;
+  background: rgba(215, 215, 215, 0.55) !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img:hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img:hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] [class*='__img']:hover .booklet-upload-btn,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img:hover .booklet-upload-btn {
+  opacity: 1 !important;
+  background: rgba(215, 215, 215, 0.55) !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img-upload-surface > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  border-radius: 0;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
+  flex: 0 1 362px;
+  min-width: 0;
+  padding: 40px 22px 24px 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__top {
+  font-size: 28px !important;
+  line-height: 1.2 !important;
+  color: var(--universal-text) !important;
+  text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__center {
+  font-size: 25px !important;
+  line-height: 1.2 !important;
+  color: var(--universal-text) !important;
+  text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__bottom {
+  align-items: flex-end;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__price-panel {
+  border-color: #d2d2d2 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Shared geometry */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-char,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-info,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-stroen,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-galery,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-layout,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-map,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-contacts {
+  padding: 0;
+  overflow: visible;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__shell,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__shell,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__shell,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__shell {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 22px;
+  min-height: 100%;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title-col,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title-col,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col .booklet-info__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title-col .booklet-stroen__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title-col .booklet-char__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title-col .booklet-contacts__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__title {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  text-align: center;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--universal-text);
+  text-shadow: none;
+  margin: 0;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col {
+  align-items: center;
+  justify-content: center;
+}
+
+/* Вертикальные заголовки должны быть отцентрованы по высоте */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__title-col .booklet-stroen__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__title-col .booklet-info__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__title-col .booklet-char__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__title-col .booklet-contacts__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__title,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__title {
+  align-self: center;
+  justify-self: center;
+}
+
+/* Description & Infrastructure */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__wrap,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__wrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 15px;
+  min-height: 100%;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__content {
+  background: #ffffff;
+  box-shadow: -1.92px 3.84px 9.6px rgba(12, 23, 27, 0.25);
+  padding: 16px 18px;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__block,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__block,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content {
+  box-shadow: none !important;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__text,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__text {
+  color: var(--universal-muted);
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img {
+  box-shadow: -3px 5px 15px 5px rgba(0, 0, 0, 0.25);
+}
+
+/* Gallery/Layout */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__wrap,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__wrap {
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;
+  column-gap: 22px;
+  min-height: 100%;
+}
+
+/* Characteristics */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__wrap {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 20px;
+  position: relative;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__content {
+  background: #fff;
+  box-shadow: -1.92px 3.84px 9.6px rgba(17, 40, 47, 0.12);
+}
+
+/* Location */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__wrap {
+  display: grid !important;
+  grid-template-columns: auto 1fr 300px !important;
+  grid-template-rows: 1fr !important;
+  column-gap: 20px;
+  row-gap: 0 !important;
+  height: 100%;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__title {
+  grid-column: 1;
+  grid-row: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__left {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content {
+  grid-column: 3;
+  grid-row: 1;
+  background: #ffffff;
+  box-shadow: 3px 0 4px rgba(0, 0, 0, 0.25);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contacts */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__wrap {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  min-height: 100%;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__avatar {
+  border: 5px solid var(--universal-accent);
+  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Фон image-блоков фиксированно белый (не зависит от theme color) */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-img__img {
+  background: #ffffff !important;
+}
+
+/* Decorative accent squares */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__grid::before,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__grid::before,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__grid::before,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__grid::before,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__wrap::before,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content::before,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__wrap::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 280px;
+  height: 160px;
+  background: var(--universal-accent);
+  z-index: 0;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__grid::after,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__grid::after,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__grid::after,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__grid::after,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__wrap::after,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content::after,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__wrap::after {
+  content: '';
+  position: absolute;
+  left: -20px;
+  bottom: -20px;
+  width: 100px;
+  height: 92px;
+  background: var(--universal-accent);
+  z-index: 0;
+}
+
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__info,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__img,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__left {
+  position: relative;
+  z-index: 1;
+}
+
+/* Контентные поверхности всегда белые, theme-color только для декора */
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__left,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__content,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__info,
+.presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
+  background: #ffffff;
+}
+
+/* В редакторе обрезаем декор по границам текущего слайда */
+.editor-slider-wrap .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-page__inner {
+  overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-char,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-info,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-stroen,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-galery,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-layout,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-map,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-content.booklet-contacts {
+    padding: 14px;
+  }
+
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__img {
+    padding: 14px;
+  }
+
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-main__content {
+    padding: 16px 12px;
+  }
+
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__grid::before,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__grid::before,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__grid::before,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__grid::before,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__wrap::before,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content::before,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__wrap::before,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-info__grid::after,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-stroen__grid::after,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-galery__grid::after,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-layout__grid::after,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-char__wrap::after,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-map__content::after,
+  .presentation-slider-wrap.booklet-view[data-template='universal'] .booklet-contacts__wrap::after {
+    display: none;
+  }
+}
 `
 
 /** URL статичной карты для PDF (Static API Яндекс.Карт) */
