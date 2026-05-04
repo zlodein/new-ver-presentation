@@ -835,6 +835,9 @@ export async function presentationRoutes(app: FastifyInstance) {
         const mysqlDb = db as unknown as import('drizzle-orm/mysql2').MySql2Database<typeof mysqlSchema>
         const existing = await findPresentationForUser(mysqlDb, mysqlId, userIdNum)
         if (!existing) return reply.status(404).send({ error: 'Презентация не найдена' })
+        if ((existing as { status?: string | null }).status === 'published') {
+          return reply.status(403).send({ error: 'Опубликованную презентацию нельзя редактировать' })
+        }
         const isAdmin = await getIsAdmin(String(userIdNum))
         const ownerId = (existing as { user_id: number }).user_id
         const isOwner = userIdNum === ownerId
@@ -892,6 +895,14 @@ export async function presentationRoutes(app: FastifyInstance) {
         })
       }
       const pgDbForUpdate = db as unknown as import('drizzle-orm/node-postgres').NodePgDatabase<typeof pgSchema>
+      const existingPg = await pgDbForUpdate.query.presentations.findFirst({
+        where: and(eq(pgSchema.presentations.id, id), eq(pgSchema.presentations.userId, userId!)),
+        columns: { status: true },
+      })
+      if (!existingPg) return reply.status(404).send({ error: 'Презентация не найдена' })
+      if ((existingPg as { status?: string | null }).status === 'published') {
+        return reply.status(403).send({ error: 'Опубликованную презентацию нельзя редактировать' })
+      }
       const userForUpdate = await pgDbForUpdate.query.users.findFirst({
         where: eq(pgSchema.users.id, userId!),
         columns: { tariff: true },

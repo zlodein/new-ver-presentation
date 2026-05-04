@@ -1091,7 +1091,7 @@
             </div>
           </div>
 
-          <!-- Кнопки: Просмотр и Сохранить (зелёная) в ряд; ниже — Экспорт в PDF (после первого сохранения) или Опубликовать -->
+          <!-- Кнопки: Просмотр и Сохранить в ряд; после публикации — Экспорт в PDF -->
           <div class="flex flex-col gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
             <template v-if="!isAdmin">
               <div class="grid grid-cols-2 gap-2">
@@ -1105,28 +1105,45 @@
                 <button
                   type="button"
                   class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-                  :disabled="saving"
-                  @click="savePresentation"
+                  :disabled="saving || isPublished"
+                  @click="openSaveConfirm"
                 >
                   Сохранить
                 </button>
               </div>
+              <div
+                v-if="showSaveConfirm"
+                class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/30 dark:text-amber-100"
+              >
+                <p class="font-semibold">После сохранения редактирование будет недоступно.</p>
+                <p class="mt-1 text-amber-800 dark:text-amber-200">Презентация перейдет в статус «Опубликованная», после чего можно будет только просматривать и экспортировать PDF.</p>
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    class="h-8 rounded-lg border border-green-600 bg-green-600 px-2 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
+                    :disabled="saving"
+                    @click="confirmSavePresentation"
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    type="button"
+                    class="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    :disabled="saving"
+                    @click="cancelSaveConfirm"
+                  >
+                    Вернуться к редактированию
+                  </button>
+                </div>
+              </div>
               <button
-                v-if="presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published'"
+                v-if="presentationMeta.status === 'published'"
                 type="button"
                 class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                 @click="exportToPDF"
                 title="Экспортировать презентацию в PDF"
               >
                 Экспорт в PDF
-              </button>
-              <button
-                v-else-if="presentationMeta.status !== 'published'"
-                type="button"
-                class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700"
-                @click="publishPresentation"
-              >
-                Опубликовать
               </button>
             </template>
             <template v-else>
@@ -1141,28 +1158,45 @@
                 <button
                   type="button"
                   class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-                  :disabled="saving"
-                  @click="savePresentation"
+                  :disabled="saving || isPublished"
+                  @click="openSaveConfirm"
                 >
                   Сохранить
                 </button>
               </div>
+              <div
+                v-if="showSaveConfirm"
+                class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/30 dark:text-amber-100"
+              >
+                <p class="font-semibold">После сохранения редактирование будет недоступно.</p>
+                <p class="mt-1 text-amber-800 dark:text-amber-200">Презентация перейдет в статус «Опубликованная», после чего можно будет только просматривать и экспортировать PDF.</p>
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    class="h-8 rounded-lg border border-green-600 bg-green-600 px-2 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
+                    :disabled="saving"
+                    @click="confirmSavePresentation"
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    type="button"
+                    class="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    :disabled="saving"
+                    @click="cancelSaveConfirm"
+                  >
+                    Вернуться к редактированию
+                  </button>
+                </div>
+              </div>
               <button
-                v-if="presentationSettings.exportEnabled === '1' || presentationMeta.status === 'published'"
+                v-if="presentationMeta.status === 'published'"
                 type="button"
                 class="h-8 w-full rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                 @click="exportToPDF"
                 title="Экспортировать презентацию в PDF"
               >
                 Экспорт в PDF
-              </button>
-              <button
-                v-else-if="presentationMeta.status !== 'published'"
-                type="button"
-                class="h-8 w-full rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700"
-                @click="publishPresentation"
-              >
-                Опубликовать
               </button>
             </template>
           </div>
@@ -1645,14 +1679,16 @@ const copyIdCopied = ref(false)
 
 /** Идёт сохранение по кнопке «Сохранить» */
 const saving = ref(false)
+const showSaveConfirm = ref(false)
 
 /** Статус автосохранения */
 const autoSaveStatus = ref('')
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-/** Интервал автосохранения после последнего изменения (промежуточное сохранение без кнопки) */
-const AUTO_SAVE_INTERVAL_MS = 12000
+/** Интервал автосохранения после последнего изменения (1 минута бездействия) */
+const AUTO_SAVE_INTERVAL_MS = 60000
 const initialLoadDone = ref(false)
 const presentationNotFound = ref(false)
+const hasPendingChanges = ref(false)
 
 /** Стили и иконка оповещения автосохранения (как в /dashboard/alerts) */
 const AUTO_SAVE_ALERT = {
@@ -2099,15 +2135,22 @@ function onSwiper(swiper: SwiperType) {
 }
 
 function onSlideChange(swiper: SwiperType) {
+  const prevSlideIndex = activeSlideIndex.value
   const visibleIdx = swiper.activeIndex
   const slide = visibleSlides.value[visibleIdx]
   if (slide) {
     const fullIdx = slides.value.findIndex((s) => s.id === slide.id)
     if (fullIdx >= 0) activeSlideIndex.value = fullIdx
+    if (fullIdx >= 0 && prevSlideIndex !== fullIdx) {
+      void saveDraftIfNeeded()
+    }
   }
 }
 
 function goToSlide(fullIndex: number) {
+  if (activeSlideIndex.value !== fullIndex) {
+    void saveDraftIfNeeded()
+  }
   activeSlideIndex.value = fullIndex
   const slide = slides.value[fullIndex]
   if (slide && !slide.hidden) {
@@ -2956,11 +2999,15 @@ provide(PRESENTATION_EDITOR_SLIDE_KEY, presentationEditorSlideContext)
 const presentationId = computed(() => route.params.id as string)
 
 watch(slides, () => {
-  if (initialLoadDone.value) scheduleAutoSave()
+  if (!initialLoadDone.value || isPublished.value) return
+  hasPendingChanges.value = true
+  scheduleAutoSave()
 }, { deep: true })
 
 watch(presentationSettings, () => {
-  if (initialLoadDone.value) scheduleAutoSave()
+  if (!initialLoadDone.value || isPublished.value) return
+  hasPendingChanges.value = true
+  scheduleAutoSave()
 }, { deep: true })
 
 function backupToLocalStorage() {
@@ -3137,6 +3184,7 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
       if (data?.publicUrl != null) presentationMeta.value.publicUrl = data.publicUrl
       if (data?.publicHash != null) presentationMeta.value.publicHash = data.publicHash
       if (data?.shortId != null) presentationMeta.value.shortId = data.shortId
+      hasPendingChanges.value = false
       if (!skipRedirect) router.push('/dashboard/presentations')
       return true
     } catch {
@@ -3145,20 +3193,29 @@ async function doSave(options?: { status?: string; skipRedirect?: boolean; creat
     }
   }
   saveToLocalStorage(skipRedirect)
+  hasPendingChanges.value = false
   return true
 }
 
-const PUBLISH_WARNING = 'После нажатия кнопки публикации невозможно будет заменить изображения в презентации. Презентация будет опубликована. Замена изображений возможна только через техническую поддержку.\n\nПродолжить публикацию?'
+function openSaveConfirm() {
+  if (isPublished.value) return
+  showSaveConfirm.value = true
+}
 
-async function savePresentation() {
+function cancelSaveConfirm() {
+  if (saving.value) return
+  showSaveConfirm.value = false
+}
+
+async function confirmSavePresentation() {
   if (saving.value) return
   saving.value = true
-  autoSaveStatus.value = 'Сохранение...'
+  autoSaveStatus.value = 'Публикация...'
   try {
-    const ok = await doSave({ skipRedirect: true, createNotification: false })
-    autoSaveStatus.value = ok ? 'Сохранено' : 'Ошибка сохранения'
+    const ok = await doSave({ status: 'published', skipRedirect: true, createNotification: true })
+    autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка сохранения'
     if (ok) {
-      presentationSettings.value.exportEnabled = '1'
+      showSaveConfirm.value = false
       setTimeout(() => { autoSaveStatus.value = '' }, 2000)
     }
   } finally {
@@ -3166,18 +3223,16 @@ async function savePresentation() {
   }
 }
 
-async function publishPresentation() {
-  if (!confirm(PUBLISH_WARNING)) return
-  autoSaveStatus.value = 'Публикация...'
-  const ok = await doSave({ status: 'published', skipRedirect: true, createNotification: true })
-  autoSaveStatus.value = ok ? 'Опубликовано' : 'Ошибка'
-  if (ok) setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+async function saveDraftIfNeeded() {
+  if (isPublished.value || saving.value || !hasPendingChanges.value) return
+  await doSave({ status: 'draft', skipRedirect: true, createNotification: false })
 }
 
 function scheduleAutoSave() {
+  if (isPublished.value) return
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   autoSaveTimer = setTimeout(async () => {
-    await doSave({ skipRedirect: true, createNotification: false })
+    await saveDraftIfNeeded()
   }, AUTO_SAVE_INTERVAL_MS)
 }
 
@@ -3220,7 +3275,9 @@ function onPasteStripFormat(e: ClipboardEvent) {
 
 /** Открыть страницу просмотра (сначала сохраняем, затем открываем) */
 async function openViewPage() {
-  await savePresentation()
+  if (hasPendingChanges.value) {
+    await doSave({ status: 'draft', skipRedirect: true, createNotification: false })
+  }
   if (presentationMeta.value.isPublic && presentationMeta.value.publicHash) {
     window.open(`/view/${presentationMeta.value.publicHash}`, '_blank')
   } else {
