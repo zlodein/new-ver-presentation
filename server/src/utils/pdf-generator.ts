@@ -1,13 +1,32 @@
 import puppeteer from 'puppeteer'
 import { existsSync } from 'node:fs'
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { ViewSlideItem } from './types.js'
 import type { PdfFigureDefinition } from './pdf-figure-definitions.js'
 import { figuresArrayToMap, renderPdfFiguresOverlayHtml } from './pdf-figures-html.js'
 
 const YANDEX_STATIC_API_KEY = process.env.YANDEX_STATIC_API_KEY ?? ''
-const UNIVERSAL_TEMPLATE_CSS_PATH = resolve(process.cwd(), 'src/assets/booklet-template-universal.css')
+const CURRENT_FILE_DIR = dirname(fileURLToPath(import.meta.url))
+const UNIVERSAL_TEMPLATE_CSS_PATHS = [
+  resolve(process.cwd(), 'src/assets/booklet-template-universal.css'),
+  resolve(process.cwd(), '../src/assets/booklet-template-universal.css'),
+  resolve(process.cwd(), '../../src/assets/booklet-template-universal.css'),
+  resolve(CURRENT_FILE_DIR, '../../../src/assets/booklet-template-universal.css'),
+  resolve(CURRENT_FILE_DIR, '../../../../src/assets/booklet-template-universal.css'),
+]
+
+function readUniversalTemplateCss(): string {
+  for (const path of UNIVERSAL_TEMPLATE_CSS_PATHS) {
+    try {
+      if (existsSync(path)) return readFileSync(path, 'utf8')
+    } catch {
+      // Пробуем следующий кандидат.
+    }
+  }
+  return ''
+}
 
 /** URL статичной карты для PDF (Static API Яндекс.Карт) */
 function getStaticMapImageUrl(lat: number, lng: number, width = 400, height = 300, zoom = 16): string {
@@ -970,11 +989,7 @@ function generatePresentationHTML(data: PresentationData, baseUrl: string): stri
   `
   let universalTemplateCss = ''
   if (isUniversal) {
-    try {
-      universalTemplateCss = readFileSync(UNIVERSAL_TEMPLATE_CSS_PATH, 'utf8')
-    } catch {
-      universalTemplateCss = ''
-    }
+    universalTemplateCss = readUniversalTemplateCss()
   }
 
   const googleFontsLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700&family=Open+Sans:ital,wght@0,400;0,600;0,700&family=Raleway:ital,wght@0,400;0,600;0,700&family=Rubik:ital,wght@0,400;0,600;0,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700&display=swap" rel="stylesheet">'
