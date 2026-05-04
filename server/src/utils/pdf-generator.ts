@@ -23,7 +23,15 @@ interface PresentationData {
   id: string
   title: string
   coverImage?: string
-  content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string; themeColor?: string } }
+  content: {
+    slides: ViewSlideItem[]
+    settings?: {
+      template?: string
+      fontFamily?: string
+      themeColor?: string
+      imageFrame?: string
+    }
+  }
   /** Библиотека фигур из БД — для отрисовки slide.data.figures в PDF */
   figureDefinitions?: PdfFigureDefinition[]
 }

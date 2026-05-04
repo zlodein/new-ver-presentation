@@ -38,6 +38,7 @@ import 'leaflet/dist/leaflet.css'
 const props = defineProps<{
   lat: number
   lng: number
+  forceYandexOnly?: boolean
 }>()
 
 const mapEl = ref<HTMLElement | null>(null)
@@ -51,7 +52,7 @@ const mapReady = ref(false)
 const yandexLoadError = ref(false)
 
 const yandexMapsApiKey = (import.meta as ImportMeta & { env: { VITE_YANDEX_MAPS_API_KEY?: string } }).env?.VITE_YANDEX_MAPS_API_KEY ?? ''
-const useYandexOnly = !!yandexMapsApiKey
+const useYandexOnly = (props.forceYandexOnly ?? false) || !!yandexMapsApiKey
 
 function isValidCoord(n: number): boolean {
   return typeof n === 'number' && !Number.isNaN(n) && n !== 0
@@ -137,6 +138,7 @@ function initMap() {
     mapReady.value = false
   }
 
+  if (props.forceYandexOnly) return
   initLeafletFallback()
 }
 

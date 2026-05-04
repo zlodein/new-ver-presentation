@@ -21,7 +21,7 @@
     max-height: 210mm !important;
     position: relative !important;
     display: block !important;
-    margin: 0 0 calc(210mm * (1 - 0.35) * -1 + 10px) 0 !important;
+    margin: 0 0 calc(210mm * (1 - 0.35) * -1 + 20px) 0 !important;
     transform: scale(0.35) !important;
     transform-origin: left top !important;
     left: 50% !important;

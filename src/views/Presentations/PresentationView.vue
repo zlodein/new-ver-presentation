@@ -121,7 +121,7 @@
                 <h2 class="booklet-map__title">{{ slide.data?.heading ?? slide.data?.title ?? 'МЕСТОПОЛОЖЕНИЕ' }}</h2>
                 <div class="booklet-map__left">
                   <div class="booklet-map__img">
-                    <LocationMap :lat="Number(slide.data?.lat)" :lng="Number(slide.data?.lng)" />
+                    <LocationMap :lat="Number(slide.data?.lat)" :lng="Number(slide.data?.lng)" :force-yandex-only="true" />
                   </div>
                 </div>
                 <div class="booklet-map__content">
@@ -1000,7 +1000,8 @@ onBeforeUnmount(() => {
   aspect-ratio: 1123 / 794;
   width: 100%;
   min-height: 0;
-  border-bottom: 5px solid #fff;
+  margin-bottom: 20px;
+  overflow: hidden;
   scroll-margin-top: 4rem; /* отступ при scrollIntoView, чтобы блок не уходил под sticky-навигацию */
 }
 .booklet-page--stacked .booklet-page__inner {
@@ -1013,7 +1014,7 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 .booklet-page--stacked:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 /* Контейнер: скролл на мобильных (scale задаётся в booklet-slides.css) */
 .presentation-view-fixed {

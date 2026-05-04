@@ -648,6 +648,49 @@
   z-index: 1;
 }
 
+/* Просмотр / публичная ссылка: декоративные элементы не должны выходить за рамки страницы */
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-page--stacked,
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-page--stacked .booklet-page__inner {
+  overflow: hidden !important;
+}
+
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::before {
+  top: 0;
+  left: 0;
+}
+
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-char__wrap::after {
+  bottom: 0;
+  left: calc((100% - 1rem) / 2 - 150px);
+}
+
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-info__grid::before,
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-stroen__grid::before {
+  inset: 0;
+}
+
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__grid::before,
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__grid::before {
+  top: 0;
+  left: 0;
+}
+
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-galery__grid::after,
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-layout__grid::after {
+  bottom: 0;
+  right: 0;
+}
+
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__wrap::before {
+  top: 0;
+  left: 0;
+}
+
+.presentation-view-fixed.presentation-slider-wrap.booklet-view[data-template="urban_real_estate"] .booklet-contacts__wrap::after {
+  bottom: 0;
+  left: calc((100% - 1.5rem) / 2 - 150px);
+}
+
 /* Мобильный редактор: одна колонка — нижний квадрат у правого нижнего угла фото */
 @media screen and (max-width: 768px) {
   .presentation-slider-wrap.booklet-view:not(.presentation-view-fixed)[data-template="urban_real_estate"] .booklet-char__wrap::after {

@@ -1261,7 +1261,20 @@ export async function presentationRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Неверный формат id презентации (ожидается целое число)' })
       }
 
-      let presentationData: { id: string; title: string; coverImage?: string; content: { slides: ViewSlideItem[]; settings?: { fontFamily?: string } } } | null = null
+      let presentationData: {
+        id: string
+        title: string
+        coverImage?: string
+        content: {
+          slides: ViewSlideItem[]
+          settings?: {
+            template?: string
+            fontFamily?: string
+            imageFrame?: string
+            themeColor?: string
+          }
+        }
+      } | null = null
 
       if (useFileStore) {
         const row = fileStore.getPresentationById(id, userId!)
@@ -1272,7 +1285,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           id: row.id,
           title: row.title,
           coverImage: row.coverImage ?? undefined,
-          content: { slides: normalized.slides as ViewSlideItem[], settings: getContentSettings(rawContent) },
+          content: { slides: normalized.slides as ViewSlideItem[], settings: normalized.settings },
         }
       } else if (useMysql) {
         const userIdNum = Number(userId)
@@ -1301,7 +1314,7 @@ export async function presentationRoutes(app: FastifyInstance) {
           id: row.id,
           title: row.title,
           coverImage: row.coverImage ?? undefined,
-          content: { slides: normalized.slides as ViewSlideItem[], settings: getContentSettings(rawContent) },
+          content: { slides: normalized.slides as ViewSlideItem[], settings: normalized.settings },
         }
       }
 
