@@ -634,8 +634,8 @@
               type="button"
               class="inline-flex h-[25px] w-[25px] items-center justify-center rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 dark:border-green-600 dark:hover:bg-green-700 disabled:opacity-50"
               title="Сохранить"
-              :disabled="saving"
-              @click="savePresentation"
+              :disabled="saving || isPublished"
+              @click="openSaveConfirm"
             >
               <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
