@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+﻿import { createRouter, createWebHistory } from 'vue-router'
 import { getToken, api, getApiBase, hasApi } from '@/api/client'
 
 const AUTH_PATHS = new Set(['/signin', '/signin/2fa', '/signup', '/reset-password', '/verify'])
@@ -24,7 +24,7 @@ function sanitizeRedirectTarget(rawRedirect: unknown, fallback = '/dashboard'): 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, from, savedPosition) {
-    /* Якоря #block-N обрабатывает PresentationView после загрузки слайдов */
+    /* РЇРєРѕСЂСЏ #block-N РѕР±СЂР°Р±Р°С‚С‹РІР°РµС‚ PresentationView РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё СЃР»Р°Р№РґРѕРІ */
     if (to.hash && to.hash.startsWith('#block-')) return false
     return savedPosition || { left: 0, top: 0 }
   },
@@ -32,7 +32,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'PublicIndex',
-      component: () => import('../views/Home/PublicIndex.vue'),
+      component: () => import('../views/public-site/Home/PublicIndex.vue'),
       meta: {
         title: 'E-Presentation',
       },
@@ -40,135 +40,135 @@ const router = createRouter({
     {
       path: '/tariffs',
       name: 'PublicTariffs',
-      component: () => import('../views/Tariffs/PublicTariffs.vue'),
+      component: () => import('../views/public-site/Tariffs/PublicTariffs.vue'),
       meta: {
-        title: 'Тарифы',
+        title: 'РўР°СЂРёС„С‹',
       },
     },
     {
       path: '/privacy',
       name: 'PrivacyPolicy',
-      component: () => import('../views/Legal/PrivacyPolicy.vue'),
+      component: () => import('../views/public-site/Legal/PrivacyPolicy.vue'),
       meta: {
-        title: 'Политика конфиденциальности',
+        title: 'РџРѕР»РёС‚РёРєР° РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё',
       },
     },
     {
       path: '/terms',
       name: 'TermsConditions',
-      component: () => import('../views/Legal/TermsConditions.vue'),
+      component: () => import('../views/public-site/Legal/TermsConditions.vue'),
       meta: {
-        title: 'Правила и условия',
+        title: 'РџСЂР°РІРёР»Р° Рё СѓСЃР»РѕРІРёСЏ',
       },
     },
     {
       path: '/dashboard',
       name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
+      component: () => import('../views/user-site/Ecommerce.vue'),
       meta: {
-        title: 'Панель управления',
+        title: 'РџР°РЅРµР»СЊ СѓРїСЂР°РІР»РµРЅРёСЏ',
       },
     },
     {
       path: '/dashboard/presentations',
       name: 'Presentations',
-      component: () => import('../views/Presentations/PresentationsList.vue'),
+      component: () => import('../views/user-site/Presentations/PresentationsList.vue'),
       meta: {
-        title: 'Презентации',
+        title: 'РџСЂРµР·РµРЅС‚Р°С†РёРё',
       },
     },
     {
       path: '/dashboard/presentations/new',
       name: 'PresentationNew',
-      component: () => import('../views/Presentations/PresentationEditor.vue'),
+      component: () => import('../views/editor/PresentationEditor.vue'),
       meta: {
-        title: 'Новая презентация',
+        title: 'РќРѕРІР°СЏ РїСЂРµР·РµРЅС‚Р°С†РёСЏ',
       },
     },
     {
       path: '/dashboard/presentations/:id/edit',
       name: 'PresentationEdit',
-      component: () => import('../views/Presentations/PresentationEditor.vue'),
+      component: () => import('../views/editor/PresentationEditor.vue'),
       meta: {
-        title: 'Редактор презентации',
+        title: 'Р РµРґР°РєС‚РѕСЂ РїСЂРµР·РµРЅС‚Р°С†РёРё',
       },
     },
     {
       path: '/dashboard/presentations/:id/view',
       name: 'PresentationViewOwner',
-      component: () => import('../views/Presentations/PresentationView.vue'),
+      component: () => import('../views/viewer/PresentationView.vue'),
       meta: {
-        title: 'Просмотр презентации',
+        title: 'РџСЂРѕСЃРјРѕС‚СЂ РїСЂРµР·РµРЅС‚Р°С†РёРё',
       },
     },
     {
       path: '/view/:shortId/:slug',
       name: 'PresentationViewPublicSlug',
-      component: () => import('../views/Presentations/PresentationView.vue'),
+      component: () => import('../views/viewer/PresentationView.vue'),
       meta: {
-        title: 'Презентация',
+        title: 'РџСЂРµР·РµРЅС‚Р°С†РёСЏ',
       },
     },
     {
       path: '/view/:hash',
       name: 'PresentationViewPublic',
-      component: () => import('../views/Presentations/PresentationView.vue'),
+      component: () => import('../views/viewer/PresentationView.vue'),
       meta: {
-        title: 'Презентация',
+        title: 'РџСЂРµР·РµРЅС‚Р°С†РёСЏ',
       },
     },
     {
       path: '/dashboard/calendar',
       name: 'Calendar',
-      component: () => import('../views/Others/Calendar.vue'),
+      component: () => import('../views/user-site/Others/Calendar.vue'),
       meta: {
-        title: 'Календарь',
+        title: 'РљР°Р»РµРЅРґР°СЂСЊ',
       },
     },
     {
       path: '/dashboard/tasks',
       name: 'Tasks',
-      component: () => import('../views/Task/TaskKanban.vue'),
+      component: () => import('../views/user-site/Task/TaskKanban.vue'),
       meta: {
-        title: 'Задачи',
+        title: 'Р—Р°РґР°С‡Рё',
       },
     },
     {
       path: '/dashboard/profile',
       name: 'Profile',
-      component: () => import('../views/Others/UserProfile.vue'),
+      component: () => import('../views/user-site/Others/UserProfile.vue'),
       meta: {
-        title: 'Профиль',
+        title: 'РџСЂРѕС„РёР»СЊ',
       },
     },
     {
       path: '/dashboard/settings',
       name: 'AccountSettings',
-      component: () => import('../views/Others/AccountSettings.vue'),
+      component: () => import('../views/user-site/Others/AccountSettings.vue'),
       meta: {
-        title: 'Настройки аккаунта',
+        title: 'РќР°СЃС‚СЂРѕР№РєРё Р°РєРєР°СѓРЅС‚Р°',
       },
     },
     {
       path: '/dashboard/form-elements',
       name: 'Form Elements',
-      component: () => import('../views/Forms/FormElements.vue'),
+      component: () => import('../views/user-site/Forms/FormElements.vue'),
       meta: {
-        title: 'Элементы формы',
+        title: 'Р­Р»РµРјРµРЅС‚С‹ С„РѕСЂРјС‹',
       },
     },
     {
       path: '/dashboard/basic-tables',
       name: 'Basic Tables',
-      component: () => import('../views/Tables/BasicTables.vue'),
+      component: () => import('../views/user-site/Tables/BasicTables.vue'),
       meta: {
-        title: 'Базовые таблицы',
+        title: 'Р‘Р°Р·РѕРІС‹Рµ С‚Р°Р±Р»РёС†С‹',
       },
     },
     {
       path: '/dashboard/analytics',
       name: 'Analytics',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/user-site/Pages/PlaceholderPage.vue'),
       meta: {
         title: 'Analytics',
       },
@@ -176,7 +176,7 @@ const router = createRouter({
     {
       path: '/dashboard/marketing',
       name: 'Marketing',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/user-site/Pages/PlaceholderPage.vue'),
       meta: {
         title: 'Marketing',
       },
@@ -184,7 +184,7 @@ const router = createRouter({
     {
       path: '/dashboard/crm',
       name: 'Crm',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/user-site/Pages/PlaceholderPage.vue'),
       meta: {
         title: 'CRM',
       },
@@ -192,7 +192,7 @@ const router = createRouter({
     {
       path: '/dashboard/data-tables',
       name: 'Data Tables',
-      component: () => import('../views/Tables/DataTables.vue'),
+      component: () => import('../views/user-site/Tables/DataTables.vue'),
       meta: {
         title: 'Data Tables',
       },
@@ -200,15 +200,15 @@ const router = createRouter({
     {
       path: '/dashboard/form-layout',
       name: 'Form Layout',
-      component: () => import('../views/Forms/FormLayout.vue'),
+      component: () => import('../views/user-site/Forms/FormLayout.vue'),
       meta: {
-        title: 'Макет формы',
+        title: 'РњР°РєРµС‚ С„РѕСЂРјС‹',
       },
     },
     {
       path: '/dashboard/doughnut-chart',
       name: 'Doughnut Chart',
-      component: () => import('../views/Pages/PlaceholderPage.vue'),
+      component: () => import('../views/user-site/Pages/PlaceholderPage.vue'),
       meta: {
         title: 'Doughnut Chart',
       },
@@ -216,168 +216,168 @@ const router = createRouter({
     {
       path: '/dashboard/tariffs',
       name: 'Tariffs',
-      component: () => import('../views/Tariffs/Tariffs.vue'),
+      component: () => import('../views/user-site/Tariffs/Tariffs.vue'),
       meta: {
-        title: 'Тарифы',
+        title: 'РўР°СЂРёС„С‹',
       },
     },
     {
       path: '/dashboard/docs',
       name: 'Documentation',
-      component: () => import('../views/Documentation/Documentation.vue'),
+      component: () => import('../views/user-site/Documentation/Documentation.vue'),
       meta: {
-        title: 'Документация',
+        title: 'Р”РѕРєСѓРјРµРЅС‚Р°С†РёСЏ',
       },
     },
     {
       path: '/dashboard/search',
       name: 'Search',
-      component: () => import('../views/Search/SearchResults.vue'),
+      component: () => import('../views/user-site/Search/SearchResults.vue'),
       meta: {
-        title: 'Поиск',
+        title: 'РџРѕРёСЃРє',
       },
     },
     {
       path: '/dashboard/support',
       name: 'Support',
-      component: () => import('../views/Support/SupportList.vue'),
+      component: () => import('../views/user-site/Support/SupportList.vue'),
       meta: {
-        title: 'Поддержка',
+        title: 'РџРѕРґРґРµСЂР¶РєР°',
       },
     },
     {
       path: '/dashboard/support/:id',
       name: 'SupportTicket',
-      component: () => import('../views/Support/SupportTicketView.vue'),
+      component: () => import('../views/user-site/Support/SupportTicketView.vue'),
       meta: {
-        title: 'Тикет',
+        title: 'РўРёРєРµС‚',
       },
     },
     {
       path: '/dashboard/admin/users',
       name: 'Admin Users',
-      component: () => import('../views/Admin/AdminUsers.vue'),
+      component: () => import('../views/admin-site/Admin/AdminUsers.vue'),
       meta: {
-        title: 'Пользователи',
+        title: 'РџРѕР»СЊР·РѕРІР°С‚РµР»Рё',
         requiresAdmin: true,
       },
     },
     {
       path: '/dashboard/admin/presentations',
       name: 'Admin Presentations',
-      component: () => import('../views/Admin/AdminPresentations.vue'),
+      component: () => import('../views/admin-site/Admin/AdminPresentations.vue'),
       meta: {
-        title: 'Презентации',
+        title: 'РџСЂРµР·РµРЅС‚Р°С†РёРё',
         requiresAdmin: true,
       },
     },
     {
       path: '/dashboard/admin/tariffs',
       name: 'Admin Tariffs',
-      component: () => import('../views/Admin/AdminTariffs.vue'),
+      component: () => import('../views/admin-site/Admin/AdminTariffs.vue'),
       meta: {
-        title: 'Тарифы',
+        title: 'РўР°СЂРёС„С‹',
         requiresAdmin: true,
       },
     },
     {
       path: '/dashboard/admin/payments',
       name: 'Admin Payments',
-      component: () => import('../views/Admin/AdminPayments.vue'),
+      component: () => import('../views/admin-site/Admin/AdminPayments.vue'),
       meta: {
-        title: 'Платежи',
+        title: 'РџР»Р°С‚РµР¶Рё',
         requiresAdmin: true,
       },
     },
     {
       path: '/dashboard/admin/requests',
       name: 'Admin Requests',
-      component: () => import('../views/Admin/AdminRequests.vue'),
+      component: () => import('../views/admin-site/Admin/AdminRequests.vue'),
       meta: {
-        title: 'Запросы',
+        title: 'Р—Р°РїСЂРѕСЃС‹',
         requiresAdmin: true,
       },
     },
     {
       path: '/dashboard/admin/pages',
       name: 'Admin Pages',
-      component: () => import('../views/Admin/AdminPages.vue'),
+      component: () => import('../views/admin-site/Admin/AdminPages.vue'),
       meta: {
-        title: 'Настройка страниц',
+        title: 'РќР°СЃС‚СЂРѕР№РєР° СЃС‚СЂР°РЅРёС†',
         requiresAdmin: true,
       },
     },
     {
       path: '/dashboard/admin/pages/home',
       name: 'Admin Page Home',
-      component: () => import('../views/Admin/AdminPageHome.vue'),
+      component: () => import('../views/admin-site/Admin/AdminPageHome.vue'),
       meta: {
-        title: 'Главная страница',
+        title: 'Р“Р»Р°РІРЅР°СЏ СЃС‚СЂР°РЅРёС†Р°',
         requiresAdmin: true,
       },
     },
     {
       path: '/dashboard/line-chart',
       name: 'Line Chart',
-      component: () => import('../views/Chart/LineChart/LineChart.vue'),
+      component: () => import('../views/user-site/Chart/LineChart/LineChart.vue'),
     },
     {
       path: '/dashboard/bar-chart',
       name: 'Bar Chart',
-      component: () => import('../views/Chart/BarChart/BarChart.vue'),
+      component: () => import('../views/user-site/Chart/BarChart/BarChart.vue'),
     },
     {
       path: '/dashboard/alerts',
       name: 'Alerts',
-      component: () => import('../views/UiElements/Alerts.vue'),
+      component: () => import('../views/user-site/UiElements/Alerts.vue'),
       meta: {
-        title: 'Оповещения',
+        title: 'РћРїРѕРІРµС‰РµРЅРёСЏ',
       },
     },
     {
       path: '/dashboard/avatars',
       name: 'Avatars',
-      component: () => import('../views/UiElements/Avatars.vue'),
+      component: () => import('../views/user-site/UiElements/Avatars.vue'),
       meta: {
-        title: 'Аватары',
+        title: 'РђРІР°С‚Р°СЂС‹',
       },
     },
     {
       path: '/dashboard/badge',
       name: 'Badge',
-      component: () => import('../views/UiElements/Badges.vue'),
+      component: () => import('../views/user-site/UiElements/Badges.vue'),
       meta: {
-        title: 'Значки',
+        title: 'Р—РЅР°С‡РєРё',
       },
     },
     {
       path: '/dashboard/buttons',
       name: 'Buttons',
-      component: () => import('../views/UiElements/Buttons.vue'),
+      component: () => import('../views/user-site/UiElements/Buttons.vue'),
       meta: {
-        title: 'Кнопки',
+        title: 'РљРЅРѕРїРєРё',
       },
     },
     {
       path: '/dashboard/images',
       name: 'Images',
-      component: () => import('../views/UiElements/Images.vue'),
+      component: () => import('../views/user-site/UiElements/Images.vue'),
       meta: {
-        title: 'Изображения',
+        title: 'РР·РѕР±СЂР°Р¶РµРЅРёСЏ',
       },
     },
     {
       path: '/dashboard/videos',
       name: 'Videos',
-      component: () => import('../views/UiElements/Videos.vue'),
+      component: () => import('../views/user-site/UiElements/Videos.vue'),
       meta: {
-        title: 'Видео',
+        title: 'Р’РёРґРµРѕ',
       },
     },
     {
       path: '/dashboard/breadcrumb',
       name: 'Breadcrumb',
-      component: () => import('../views/UiElements/Breadcrumbs.vue'),
+      component: () => import('../views/user-site/UiElements/Breadcrumbs.vue'),
       meta: {
         title: 'Breadcrumbs',
       },
@@ -385,7 +385,7 @@ const router = createRouter({
     {
       path: '/dashboard/cards',
       name: 'Cards',
-      component: () => import('../views/UiElements/Cards.vue'),
+      component: () => import('../views/user-site/UiElements/Cards.vue'),
       meta: {
         title: 'Cards',
       },
@@ -393,7 +393,7 @@ const router = createRouter({
     {
       path: '/dashboard/notifications-ui',
       name: 'Notifications UI',
-      component: () => import('../views/UiElements/Notifications.vue'),
+      component: () => import('../views/user-site/UiElements/Notifications.vue'),
       meta: {
         title: 'Notifications',
       },
@@ -401,15 +401,15 @@ const router = createRouter({
     {
       path: '/dashboard/blank',
       name: 'Blank',
-      component: () => import('../views/Pages/BlankPage.vue'),
+      component: () => import('../views/user-site/Pages/BlankPage.vue'),
       meta: {
-        title: 'Пустая страница',
+        title: 'РџСѓСЃС‚Р°СЏ СЃС‚СЂР°РЅРёС†Р°',
       },
     },
     {
       path: '/dashboard/faq',
       name: 'Faq',
-      component: () => import('../views/Pages/Faq.vue'),
+      component: () => import('../views/user-site/Pages/Faq.vue'),
       meta: {
         title: 'FAQ',
       },
@@ -417,88 +417,88 @@ const router = createRouter({
     {
       path: '/dashboard/notifications',
       name: 'Notifications',
-      component: () => import('../views/Pages/NotificationsPage.vue'),
+      component: () => import('../views/user-site/Pages/NotificationsPage.vue'),
       meta: {
-        title: 'Уведомления',
+        title: 'РЈРІРµРґРѕРјР»РµРЅРёСЏ',
       },
     },
     {
       path: '/dashboard/error-404',
       name: '404 Error',
-      component: () => import('../views/Errors/FourZeroFour.vue'),
+      component: () => import('../views/user-site/Errors/FourZeroFour.vue'),
       meta: {
-        title: 'Ошибка 404',
+        title: 'РћС€РёР±РєР° 404',
       },
     },
     {
       path: '/administration',
       name: 'Administration',
-      component: () => import('../views/Administration/AdministrationIndex.vue'),
+      component: () => import('../views/admin-site/Administration/AdministrationIndex.vue'),
       meta: {
-        title: 'Администрирование',
+        title: 'РђРґРјРёРЅРёСЃС‚СЂРёСЂРѕРІР°РЅРёРµ',
       },
     },
     {
       path: '/signin',
       name: 'Signin',
-      component: () => import('../views/Auth/Signin.vue'),
+      component: () => import('../views/user-site/Auth/Signin.vue'),
       meta: {
-        title: 'Вход',
+        title: 'Р’С…РѕРґ',
       },
     },
     {
       path: '/signin/2fa',
       name: 'SigninTwoFactor',
-      component: () => import('../views/Auth/SigninTwoFactor.vue'),
+      component: () => import('../views/user-site/Auth/SigninTwoFactor.vue'),
       meta: {
-        title: 'Подтверждение 2FA',
+        title: 'РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ 2FA',
       },
     },
     {
       path: '/signup',
       name: 'Signup',
-      component: () => import('../views/Auth/Signup.vue'),
+      component: () => import('../views/user-site/Auth/Signup.vue'),
       meta: {
-        title: 'Регистрация',
+        title: 'Р РµРіРёСЃС‚СЂР°С†РёСЏ',
       },
     },
     {
       path: '/reset-password',
       name: 'ResetPassword',
-      component: () => import('../views/Auth/ResetPassword.vue'),
+      component: () => import('../views/user-site/Auth/ResetPassword.vue'),
       meta: {
-        title: 'Восстановление пароля',
+        title: 'Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РїР°СЂРѕР»СЏ',
       },
     },
     {
       path: '/verify',
       name: 'TwoStepVerification',
-      component: () => import('../views/Auth/TwoStepVerification.vue'),
+      component: () => import('../views/user-site/Auth/TwoStepVerification.vue'),
       meta: {
-        title: 'Подтверждение',
+        title: 'РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ',
       },
     },
     {
       path: '/maintenance',
       name: 'Maintenance',
-      component: () => import('../views/Maintenance.vue'),
+      component: () => import('../views/user-site/Maintenance.vue'),
       meta: {
-        title: 'Сайт в разработке',
+        title: 'РЎР°Р№С‚ РІ СЂР°Р·СЂР°Р±РѕС‚РєРµ',
       },
     },
-    // Все неизвестные пути — редирект на страницу 404
+    // Р’СЃРµ РЅРµРёР·РІРµСЃС‚РЅС‹Рµ РїСѓС‚Рё вЂ” СЂРµРґРёСЂРµРєС‚ РЅР° СЃС‚СЂР°РЅРёС†Сѓ 404
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       redirect: () => ({ path: '/dashboard/error-404' }),
       meta: {
-        title: 'Ошибка 404',
+        title: 'РћС€РёР±РєР° 404',
       },
     },
   ],
 })
 
-// Обработка 404 при загрузке чанков (после деплоя старые URL чанков перестают работать)
+// РћР±СЂР°Р±РѕС‚РєР° 404 РїСЂРё Р·Р°РіСЂСѓР·РєРµ С‡Р°РЅРєРѕРІ (РїРѕСЃР»Рµ РґРµРїР»РѕСЏ СЃС‚Р°СЂС‹Рµ URL С‡Р°РЅРєРѕРІ РїРµСЂРµСЃС‚Р°СЋС‚ СЂР°Р±РѕС‚Р°С‚СЊ)
 router.onError((err) => {
   const msg = err?.message || ''
   if (
@@ -529,7 +529,7 @@ router.beforeEach(async (to, from, next) => {
 
   const token = getToken()
 
-  // Страница «Сайт в разработке» — всегда разрешена
+  // РЎС‚СЂР°РЅРёС†Р° В«РЎР°Р№С‚ РІ СЂР°Р·СЂР°Р±РѕС‚РєРµВ» вЂ” РІСЃРµРіРґР° СЂР°Р·СЂРµС€РµРЅР°
   if (to.path === '/maintenance') {
     const title = to.meta?.title
     document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
@@ -537,7 +537,7 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // Проверка рубильника «сайт отключён» (только для админа доступен полный сайт)
+  // РџСЂРѕРІРµСЂРєР° СЂСѓР±РёР»СЊРЅРёРєР° В«СЃР°Р№С‚ РѕС‚РєР»СЋС‡С‘РЅВ» (С‚РѕР»СЊРєРѕ РґР»СЏ Р°РґРјРёРЅР° РґРѕСЃС‚СѓРїРµРЅ РїРѕР»РЅС‹Р№ СЃР°Р№С‚)
   if (hasApi()) try {
     const base = getApiBase()
     const statusUrl = base ? `${base}/api/site/status` : '/api/site/status'
@@ -546,7 +546,7 @@ router.beforeEach(async (to, from, next) => {
     const siteDisabled = !!data?.siteDisabled
 
     if (siteDisabled) {
-      // Вход, регистрация и подтверждение разрешены
+      // Р’С…РѕРґ, СЂРµРіРёСЃС‚СЂР°С†РёСЏ Рё РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ СЂР°Р·СЂРµС€РµРЅС‹
       if (to.path === '/signin' || to.path === '/signin/2fa' || to.path === '/signup' || to.path === '/verify' || to.path === '/reset-password') {
         const title = to.meta?.title
         document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
@@ -562,10 +562,10 @@ router.beforeEach(async (to, from, next) => {
         next({ path: '/maintenance' })
         return
       }
-      // Админ — пропускаем
+      // РђРґРјРёРЅ вЂ” РїСЂРѕРїСѓСЃРєР°РµРј
     }
   } catch {
-    // Ошибка запроса статуса — не блокируем навигацию
+    // РћС€РёР±РєР° Р·Р°РїСЂРѕСЃР° СЃС‚Р°С‚СѓСЃР° вЂ” РЅРµ Р±Р»РѕРєРёСЂСѓРµРј РЅР°РІРёРіР°С†РёСЋ
   }
 
   const requiresAuth = to.path.startsWith('/dashboard') || to.path === '/administration'
@@ -592,3 +592,4 @@ router.beforeEach(async (to, from, next) => {
   document.title = title ? `${String(title)} | E-Presentation` : 'E-Presentation'
   next()
 })
+

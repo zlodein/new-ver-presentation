@@ -24,10 +24,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import PageBreadcrumb from '../../components/common/PageBreadcrumb.vue'
-import AdminLayout from '../../components/layout/AdminLayout.vue'
-import ComponentCard from '../../components/common/ComponentCard.vue'
-import Breadcrumb from '../../components/ui/Breadcrumb.vue'
+import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import AdminLayout from '@/components/layout/AdminLayout.vue'
+import ComponentCard from '@/components/common/ComponentCard.vue'
+import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 const currentPageTitle = ref('Breadcrumb')
 const breadcrumbItems = [{ label: 'Home', href: '/' }, { label: 'UI Kits' }]
 const breadcrumbItemsTwo = [
