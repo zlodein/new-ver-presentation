@@ -3336,13 +3336,16 @@ async function exportToPDF() {
     return
   }
   
-  // Сначала сохраняем презентацию
-  autoSaveStatus.value = 'Сохранение перед экспортом...'
-  const saved = await doSave({ skipRedirect: true })
-  if (!saved) {
-    autoSaveStatus.value = 'Ошибка сохранения'
-    setTimeout(() => { autoSaveStatus.value = '' }, 2000)
-    return
+  // Для черновика сохраняем изменения перед экспортом.
+  // Для опубликованной презентации повторное сохранение заблокировано на сервере.
+  if (!isPublished.value) {
+    autoSaveStatus.value = 'Сохранение перед экспортом...'
+    const saved = await doSave({ status: 'draft', skipRedirect: true })
+    if (!saved) {
+      autoSaveStatus.value = 'Ошибка сохранения'
+      setTimeout(() => { autoSaveStatus.value = '' }, 2000)
+      return
+    }
   }
   
   autoSaveStatus.value = 'Генерация PDF...'
