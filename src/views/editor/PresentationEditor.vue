@@ -3288,6 +3288,8 @@ function onPasteStripFormat(e: ClipboardEvent) {
   const value = target.value ?? ''
   const newValue = value.slice(0, start) + text + value.slice(end)
   target.value = newValue
+  // Важно для v-model/@input: синхронизируем реактивные данные после programmatic paste.
+  target.dispatchEvent(new Event('input', { bubbles: true }))
   const pos = start + text.length
   target.setSelectionRange(pos, pos)
 }
