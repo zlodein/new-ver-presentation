@@ -3404,6 +3404,11 @@ async function exportToPDF() {
   position: relative;
   z-index: 150;
 }
+/* Исключение для блока цены на обложке: здесь нужен прозрачный TailAdmin-like фон */
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block input:not([type='checkbox']):not([type='radio']),
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block select {
+  background-color: transparent !important;
+}
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-content [contenteditable='true'] {
   position: relative;
   z-index: 150;
