@@ -1251,7 +1251,6 @@ import draggable from 'vuedraggable'
 import 'swiper/css'
 import '@/assets/booklet-slides.css'
 import '@/assets/booklet-template-basic.css'
-import '@/assets/booklet-template-urban-real-estate.css'
 import universalTemplateCssUrl from '@/assets/booklet-template-universal.css?url'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import LocationMap from '@/components/presentations/LocationMap.vue'
@@ -1265,12 +1264,10 @@ import type { SlideItem } from '@/types/presentationSlide'
 import { createDefaultSlidesBasic, genSlideId } from '@/presentation-templates/basic/defaultSlides'
 import {
   BOOKLET_TEMPLATE_BASIC,
-  BOOKLET_TEMPLATE_URBAN_REAL_ESTATE,
   BOOKLET_TEMPLATE_UNIVERSAL,
   normalizeBookletTemplateId,
 } from '@/data/bookletTemplates'
 import PresentationEditorSlideBlockBasic from './slide-blocks/PresentationEditorSlideBlockBasic.vue'
-import PresentationEditorSlideBlockUrbanRealEstate from './slide-blocks/PresentationEditorSlideBlockUrbanRealEstate.vue'
 import {
   PRESENTATION_EDITOR_SLIDE_KEY,
   type PresentationEditorSlideInject,
@@ -1534,7 +1531,6 @@ const FONT_OPTIONS = [
 ]
 const TEMPLATE_OPTIONS = [
   { value: BOOKLET_TEMPLATE_BASIC, label: 'Базовый шаблон' },
-  { value: BOOKLET_TEMPLATE_URBAN_REAL_ESTATE, label: 'Городская недвижимость' },
   { value: BOOKLET_TEMPLATE_UNIVERSAL, label: 'Универсальный шаблон' },
 ]
 const RADIUS_OPTIONS = [
@@ -1587,11 +1583,7 @@ const DEFAULT_PRESENTATION_SETTINGS = {
 }
 const presentationSettings = ref<Record<string, string>>({ ...DEFAULT_PRESENTATION_SETTINGS })
 
-const editorSlideBlockComponent = computed(() =>
-  presentationSettings.value.template === BOOKLET_TEMPLATE_URBAN_REAL_ESTATE
-    ? PresentationEditorSlideBlockUrbanRealEstate
-    : PresentationEditorSlideBlockBasic
-)
+const editorSlideBlockComponent = computed(() => PresentationEditorSlideBlockBasic)
 
 const UNIVERSAL_TEMPLATE_STYLE_ID = 'booklet-template-universal-dynamic-style'
 let universalTemplateLinkEl: HTMLLinkElement | null = null
@@ -3436,15 +3428,15 @@ async function exportToPDF() {
   box-shadow: none !important;
   border-color: #d1d5db !important;
 }
-.editor-slider-wrap .presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-main__price-block,
-.editor-slider-wrap .presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-main__price-block > div {
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block,
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block > div {
   border-color: #d1d5db !important;
 }
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block input,
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block select {
   border-color: transparent !important;
 }
-.editor-slider-wrap .presentation-slider-wrap.booklet-view:not([data-template='urban_real_estate']) .booklet-main__price-block:focus-within {
+.editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__price-block:focus-within {
   box-shadow: none !important;
   border-color: #d1d5db !important;
 }
