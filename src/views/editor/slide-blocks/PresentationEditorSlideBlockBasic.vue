@@ -154,25 +154,25 @@ watch(
                             class="booklet-main__bottom relative"
                             :style="{ zIndex: priceZIndex }"
                           >
-                            <div class="booklet-main__price-block flex flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-transparent shadow-theme-xs">
-                              <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
+                            <div class="booklet-main__price-block flex h-11 flex-nowrap items-stretch overflow-hidden rounded-lg border border-gray-300 bg-white shadow-theme-xs dark:border-gray-700 dark:bg-gray-900">
+                              <div class="relative z-20 flex shrink-0 items-center border-r border-gray-200 bg-transparent dark:border-gray-800">
                                 <select
                                   v-model="slide.data.deal_type"
-                                  class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-3.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-400"
+                                  class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-3.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-300"
                                   @focus="isDealTypeSelectFocused = true"
                                   @blur="isDealTypeSelectFocused = false"
                                 >
                                   <option value="Аренда">Аренда</option>
                                   <option value="Продажа">Продажа</option>
                                 </select>
-                                <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                <span class="pointer-events-none absolute inset-y-0 right-2 z-30 flex items-center text-gray-700 dark:text-gray-400">
                                   <svg
                                     class="h-4 w-4 stroke-current transition-transform duration-150"
                                     :class="isDealTypeSelectFocused ? 'rotate-180' : ''"
                                     viewBox="0 0 20 20"
                                     fill="none"
                                   >
-                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                                   </svg>
                                 </span>
                               </div>
@@ -185,24 +185,24 @@ watch(
                                   @input="pe.onCoverPriceInput(slide, ($event.target as HTMLInputElement).value)"
                                 />
                               </div>
-                              <div class="relative z-20 flex shrink-0 items-center border-l border-gray-300 bg-transparent dark:border-gray-700">
+                              <div class="relative z-20 flex shrink-0 items-center border-l border-gray-200 bg-transparent dark:border-gray-800">
                                 <select
                                   :value="slide.data.currency"
-                                  class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-2.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-400"
+                                  class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-2.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-300"
                                   @focus="isCurrencySelectFocused = true"
                                   @blur="isCurrencySelectFocused = false"
                                   @change="pe.onCoverCurrencyChange(slide, $event)"
                                 >
                                   <option v-for="c in pe.CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
                                 </select>
-                                <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                                <span class="pointer-events-none absolute inset-y-0 right-2 z-30 flex items-center text-gray-700 dark:text-gray-400">
                                   <svg
                                     class="h-4 w-4 stroke-current transition-transform duration-150"
                                     :class="isCurrencySelectFocused ? 'rotate-180' : ''"
                                     viewBox="0 0 20 20"
                                     fill="none"
                                   >
-                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                                   </svg>
                                 </span>
                               </div>
