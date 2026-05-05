@@ -57,9 +57,15 @@ function handleCurrencyPointerDown(event: MouseEvent) {
   isCurrencySelectFocused.value = false
 }
 
+function ensureCharacteristicItems() {
+  if (slide.type !== 'characteristics') return
+  // Инициализируем один раз через контекст редактора, но не во время рендера.
+  pe.charItems(slide)
+}
+
 const characteristicItems = computed(() => {
-  if (slide.type !== 'characteristics') return []
-  return pe.charItems(slide) as CharacteristicItemView[]
+  if (slide.type !== 'characteristics') return [] as CharacteristicItemView[]
+  return Array.isArray(slide.data?.items) ? (slide.data.items as CharacteristicItemView[]) : ([] as CharacteristicItemView[])
 })
 
 function autosizeTextarea(el: HTMLTextAreaElement | null) {
@@ -69,6 +75,7 @@ function autosizeTextarea(el: HTMLTextAreaElement | null) {
 }
 
 onMounted(() => {
+  ensureCharacteristicItems()
   if (coverRootRef.value && priceBottomRef.value) {
     const zContainer =
       coverRootRef.value.closest('.booklet-scale-root') ??
@@ -88,6 +95,13 @@ onMounted(() => {
     })
   }
 })
+
+watch(
+  () => slide.type,
+  () => {
+    ensureCharacteristicItems()
+  }
+)
 
 // Динамически поддерживаем "всегда сверху":
 // если пользователь двигает слои фигур (z-index), пересчитаем maxZ и цену как max + 1.
