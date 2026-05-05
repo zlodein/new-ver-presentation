@@ -1185,7 +1185,7 @@
               :disabled="saving"
               @click="cancelSaveConfirm"
             >
-              Вернуться к редактированию
+              Вернуться
             </button>
           </div>
         </div>
