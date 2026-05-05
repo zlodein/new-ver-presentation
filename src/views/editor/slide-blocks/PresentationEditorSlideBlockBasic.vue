@@ -644,7 +644,7 @@ watch(
                         <div class="booklet-char__table">
                           <div
                             v-for="(item, i) in characteristicItems"
-                            :key="i"
+                            :key="item.id"
                             class="booklet-char__row"
                           >
                             <div class="booklet-char__item">

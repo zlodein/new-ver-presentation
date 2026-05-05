@@ -2193,11 +2193,21 @@ function toggleSlideVisibility(index: number) {
   }
 }
 
-const defaultCharItems = [
-  { label: 'Площадь', value: '—' },
-  { label: 'Этажность', value: '—' },
-  { label: 'Год', value: '—' },
-  { label: 'Материал', value: '—' },
+type CharacteristicItem = { id: string; label: string; value: string }
+
+function genCharacteristicId() {
+  return `char-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function createCharacteristicItem(label = '', value = ''): CharacteristicItem {
+  return { id: genCharacteristicId(), label, value }
+}
+
+const defaultCharItems: CharacteristicItem[] = [
+  createCharacteristicItem('Площадь', '—'),
+  createCharacteristicItem('Этажность', '—'),
+  createCharacteristicItem('Год', '—'),
+  createCharacteristicItem('Материал', '—'),
 ]
 
 function getSlideLabel(slide: SlideItem): string {
@@ -2536,27 +2546,43 @@ function onDragMove(_event: { relatedContext: { index: number } }) {
 
 const MAX_CHARACTERISTICS = 13
 
-function charItems(slide: SlideItem): Array<{ label: string; value: string }> {
-  const items = slide.data?.items
-  if (!Array.isArray(items) || items.length === 0) {
+function charItems(slide: SlideItem): CharacteristicItem[] {
+  if (!slide.data || typeof slide.data !== 'object') slide.data = {}
+  const raw = slide.data.items
+  if (!Array.isArray(raw)) {
     slide.data.items = defaultCharItems.map((x) => ({ ...x }))
-    return slide.data.items as Array<{ label: string; value: string }>
+    return slide.data.items as CharacteristicItem[]
   }
-  return items as Array<{ label: string; value: string }>
+  if (raw.length === 0) {
+    slide.data.items = defaultCharItems.map((x) => ({ ...x }))
+    return slide.data.items as CharacteristicItem[]
+  }
+  let needsNormalize = false
+  const normalized: CharacteristicItem[] = raw.map((item) => {
+    if (item && typeof item === 'object') {
+      const obj = item as { id?: unknown; label?: unknown; value?: unknown; text?: unknown }
+      const id = typeof obj.id === 'string' && obj.id.trim() ? obj.id : genCharacteristicId()
+      const label = obj.label != null ? String(obj.label) : obj.text != null ? String(obj.text) : ''
+      const value = obj.value != null ? String(obj.value) : ''
+      if (obj.id !== id || obj.label !== label || obj.value !== value) needsNormalize = true
+      return { id, label, value }
+    }
+    needsNormalize = true
+    return createCharacteristicItem('', '')
+  })
+  if (needsNormalize) slide.data.items = normalized
+  return (slide.data.items as CharacteristicItem[]) ?? normalized
 }
 
 function addCharacteristicItem(slide: SlideItem) {
   const arr = charItems(slide)
   if (arr.length >= MAX_CHARACTERISTICS) return
   if (!Array.isArray(slide.data?.items)) slide.data.items = []
-  ;(slide.data.items as Array<{ label: string; value: string }>).push({
-    label: '',
-    value: '',
-  })
+  ;(slide.data.items as CharacteristicItem[]).push(createCharacteristicItem('', ''))
 }
 
 function removeCharacteristicItem(slide: SlideItem, index: number) {
-  const arr = slide.data?.items as Array<{ label: string; value: string }> | undefined
+  const arr = slide.data?.items as CharacteristicItem[] | undefined
   if (Array.isArray(arr) && arr.length > 1) {
     arr.splice(index, 1)
   }
