@@ -122,6 +122,24 @@ jobs:
           if [ -n "$SSH_PASSWORD" ]; then
             sudo apt-get update && sudo apt-get install -y sshpass
           fi
+
+      - name: Preflight disk cleanup and diagnostics
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ConnectTimeout=60"
+          REMOTE_CMD="set -e; \
+            mkdir -p '${{ env.DEPLOY_DIR }}/backups' || true; \
+            rm -rf '${{ env.DEPLOY_DIR }}/.deploy_tmp' || true; \
+            find '${{ env.DEPLOY_DIR }}/backups' -type f -name 'backup-*.tar.gz' -mtime +14 -delete 2>/dev/null || true; \
+            df -h; \
+            du -sh '${{ env.DEPLOY_DIR }}' 2>/dev/null || true; \
+            du -sh '${{ env.DEPLOY_DIR }}/backups' 2>/dev/null || true"
+          if [ -n "$SSH_PASSWORD" ]; then
+            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+          else
+            ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "$REMOTE_CMD"
+          fi
       
       - name: Create backup
         continue-on-error: true
@@ -142,10 +160,6 @@ jobs:
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          cd deploy/frontend
-          tar -czf /tmp/frontend.tar.gz .
-          cd ../..
-          REMOTE_TMP_DIR="${{ env.DEPLOY_DIR }}/.deploy_tmp"
           SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ServerAliveCountMax=10 -o ConnectTimeout=60 -o TCPKeepAlive=yes"
           do_ssh() {
             for i in 1 2 3; do
@@ -159,31 +173,22 @@ jobs:
             done
             return 1
           }
-          do_scp() {
-            for i in 1 2 3; do
-              if [ -n "$SSH_PASSWORD" ]; then
-                sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
-              else
-                scp -i ~/.ssh/id_rsa $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
-              fi
-              echo "SCP attempt $i failed, retrying in 10s..."
-              sleep 10
-            done
-            return 1
-          }
-          do_ssh "mkdir -p ${{ env.DEPLOY_DIR }} \"$REMOTE_TMP_DIR\""
-          do_scp /tmp/frontend.tar.gz "$REMOTE_TMP_DIR/frontend.tar.gz"
-          do_ssh "cd ${{ env.DEPLOY_DIR }} && tar -xzf \"$REMOTE_TMP_DIR/frontend.tar.gz\" && rm -f \"$REMOTE_TMP_DIR/frontend.tar.gz\" && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} . 2>/dev/null || true"
-          rm -f /tmp/frontend.tar.gz
+          do_ssh "mkdir -p ${{ env.DEPLOY_DIR }}"
+          for i in 1 2 3; do
+            if [ -n "$SSH_PASSWORD" ]; then
+              tar -C deploy/frontend -czf - . | sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }} && tar -xzf -" && break
+            else
+              tar -C deploy/frontend -czf - . | ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }} && tar -xzf -" && break
+            fi
+            [ $i -lt 3 ] && echo "Frontend stream deploy attempt $i failed, retrying in 10s..." && sleep 10
+            [ $i -eq 3 ] && exit 1
+          done
+          do_ssh "chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }} 2>/dev/null || true"
 
       - name: Deploy backend
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          cd deploy/backend
-          tar -czf /tmp/backend.tar.gz .
-          cd ../..
-          REMOTE_TMP_DIR="${{ env.DEPLOY_DIR }}/.deploy_tmp"
           SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o ServerAliveInterval=15 -o ServerAliveCountMax=10 -o ConnectTimeout=60 -o TCPKeepAlive=yes"
           do_ssh() {
             for i in 1 2 3; do
@@ -197,22 +202,17 @@ jobs:
             done
             return 1
           }
-          do_scp() {
-            for i in 1 2 3; do
-              if [ -n "$SSH_PASSWORD" ]; then
-                sshpass -p "$SSH_PASSWORD" scp $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
-              else
-                scp -i ~/.ssh/id_rsa $SSH_OPTS "$1" ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:"$2" && return 0
-              fi
-              echo "SCP attempt $i failed, retrying in 10s..."
-              sleep 10
-            done
-            return 1
-          }
-          do_ssh "mkdir -p ${{ env.DEPLOY_DIR }}/server \"$REMOTE_TMP_DIR\""
-          do_scp /tmp/backend.tar.gz "$REMOTE_TMP_DIR/backend.tar.gz"
-          do_ssh "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf \"$REMOTE_TMP_DIR/backend.tar.gz\" && rm -f \"$REMOTE_TMP_DIR/backend.tar.gz\" && chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} . 2>/dev/null || true"
-          rm -f /tmp/backend.tar.gz
+          do_ssh "mkdir -p ${{ env.DEPLOY_DIR }}/server"
+          for i in 1 2 3; do
+            if [ -n "$SSH_PASSWORD" ]; then
+              tar -C deploy/backend -czf - . | sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf -" && break
+            else
+              tar -C deploy/backend -czf - . | ssh -i ~/.ssh/id_rsa $SSH_OPTS ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd ${{ env.DEPLOY_DIR }}/server && tar -xzf -" && break
+            fi
+            [ $i -lt 3 ] && echo "Backend stream deploy attempt $i failed, retrying in 10s..." && sleep 10
+            [ $i -eq 3 ] && exit 1
+          done
+          do_ssh "chown -R ${{ env.SITE_USER }}:${{ env.SITE_USER }} ${{ env.DEPLOY_DIR }}/server 2>/dev/null || true"
 
       # Подмешиваем SMTP в server/.env на сервере из GitHub Secrets (файл .env в git не попадает).
       # В настройках репозитория: Settings → Secrets and variables → Actions → добавить SMTP_HOST, SMTP_USER, SMTP_PASS.
