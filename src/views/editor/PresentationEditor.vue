@@ -1108,33 +1108,8 @@
                   :disabled="saving || isPublished"
                   @click="openSaveConfirm"
                 >
-                  Сохранить
+                  {{ saveButtonText }}
                 </button>
-              </div>
-              <div
-                v-if="showSaveConfirm"
-                class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/30 dark:text-amber-100"
-              >
-                <p class="font-semibold">После сохранения редактирование будет недоступно.</p>
-                <p class="mt-1 text-amber-800 dark:text-amber-200">Презентация перейдет в статус «Опубликованная», после чего можно будет только просматривать и экспортировать PDF.</p>
-                <div class="mt-3 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    class="h-8 rounded-lg border border-green-600 bg-green-600 px-2 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
-                    :disabled="saving"
-                    @click="confirmSavePresentation"
-                  >
-                    Сохранить
-                  </button>
-                  <button
-                    type="button"
-                    class="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                    :disabled="saving"
-                    @click="cancelSaveConfirm"
-                  >
-                    Вернуться к редактированию
-                  </button>
-                </div>
               </div>
               <button
                 v-if="presentationMeta.status === 'published'"
@@ -1161,33 +1136,8 @@
                   :disabled="saving || isPublished"
                   @click="openSaveConfirm"
                 >
-                  Сохранить
+                  {{ saveButtonText }}
                 </button>
-              </div>
-              <div
-                v-if="showSaveConfirm"
-                class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/30 dark:text-amber-100"
-              >
-                <p class="font-semibold">После сохранения редактирование будет недоступно.</p>
-                <p class="mt-1 text-amber-800 dark:text-amber-200">Презентация перейдет в статус «Опубликованная», после чего можно будет только просматривать и экспортировать PDF.</p>
-                <div class="mt-3 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    class="h-8 rounded-lg border border-green-600 bg-green-600 px-2 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-60"
-                    :disabled="saving"
-                    @click="confirmSavePresentation"
-                  >
-                    Сохранить
-                  </button>
-                  <button
-                    type="button"
-                    class="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                    :disabled="saving"
-                    @click="cancelSaveConfirm"
-                  >
-                    Вернуться к редактированию
-                  </button>
-                </div>
               </div>
               <button
                 v-if="presentationMeta.status === 'published'"
@@ -1203,6 +1153,44 @@
         </aside>
       </main>
     </div>
+
+    <Teleport to="body">
+      <div v-if="showSaveConfirm" class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+        <button
+          type="button"
+          class="absolute inset-0 bg-gray-400/50 backdrop-blur-[2px]"
+          aria-label="Закрыть окно подтверждения сохранения"
+          @click="cancelSaveConfirm"
+        />
+        <div class="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Подтвердите сохранение</h3>
+          <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            После сохранения редактирование презентации станет недоступным.
+          </p>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+            Презентация перейдет в статус «Опубликованная», после чего будет доступен только просмотр и экспорт в PDF.
+          </p>
+          <div class="mt-5 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              class="h-9 rounded-lg border border-green-600 bg-green-600 px-3 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60"
+              :disabled="saving"
+              @click="confirmSavePresentation"
+            >
+              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+            </button>
+            <button
+              type="button"
+              class="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              :disabled="saving"
+              @click="cancelSaveConfirm"
+            >
+              Вернуться к редактированию
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Всплывающее окно палитры: макет и сетка изображений -->
     <Teleport to="body">
@@ -1672,6 +1660,7 @@ const presentationMeta = ref<{
 
 /** Презентация опубликована — замена изображений недоступна владельцу (администратор может менять) */
 const isPublished = computed(() => presentationMeta.value.status === 'published')
+const saveButtonText = computed(() => (isPublished.value ? 'Сохранено' : 'Сохранить'))
 
 /** Успешное копирование: подсветка кнопки (публичная ссылка / ID) */
 const copyLinkCopied = ref(false)
