@@ -42,12 +42,18 @@ const coverCenterInputRef = ref<HTMLTextAreaElement | null>(null)
 const isDealTypeSelectFocused = ref(false)
 const isCurrencySelectFocused = ref(false)
 
-function toggleDealTypeChevron() {
-  isDealTypeSelectFocused.value = !isDealTypeSelectFocused.value
+function handleDealTypePointerDown(event: MouseEvent) {
+  if (!isDealTypeSelectFocused.value) return
+  event.preventDefault()
+  ;(event.currentTarget as HTMLSelectElement | null)?.blur()
+  isDealTypeSelectFocused.value = false
 }
 
-function toggleCurrencyChevron() {
-  isCurrencySelectFocused.value = !isCurrencySelectFocused.value
+function handleCurrencyPointerDown(event: MouseEvent) {
+  if (!isCurrencySelectFocused.value) return
+  event.preventDefault()
+  ;(event.currentTarget as HTMLSelectElement | null)?.blur()
+  isCurrencySelectFocused.value = false
 }
 
 function autosizeTextarea(el: HTMLTextAreaElement | null) {
@@ -167,7 +173,7 @@ watch(
                                 <select
                                   v-model="slide.data.deal_type"
                                   class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-3.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-300"
-                                  @click="toggleDealTypeChevron"
+                                  @mousedown="handleDealTypePointerDown"
                                   @focus="isDealTypeSelectFocused = true"
                                   @blur="isDealTypeSelectFocused = false"
                                   @change="isDealTypeSelectFocused = false"
@@ -199,7 +205,7 @@ watch(
                                 <select
                                   :value="slide.data.currency"
                                   class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-2.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-300"
-                                  @click="toggleCurrencyChevron"
+                                  @mousedown="handleCurrencyPointerDown"
                                   @focus="isCurrencySelectFocused = true"
                                   @blur="isCurrencySelectFocused = false"
                                   @change="(e) => { isCurrencySelectFocused = false; pe.onCoverCurrencyChange(slide, e) }"
