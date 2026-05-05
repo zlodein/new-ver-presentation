@@ -42,6 +42,14 @@ const coverCenterInputRef = ref<HTMLTextAreaElement | null>(null)
 const isDealTypeSelectFocused = ref(false)
 const isCurrencySelectFocused = ref(false)
 
+function toggleDealTypeChevron() {
+  isDealTypeSelectFocused.value = !isDealTypeSelectFocused.value
+}
+
+function toggleCurrencyChevron() {
+  isCurrencySelectFocused.value = !isCurrencySelectFocused.value
+}
+
 function autosizeTextarea(el: HTMLTextAreaElement | null) {
   if (!el) return
   el.style.height = 'auto'
@@ -159,8 +167,10 @@ watch(
                                 <select
                                   v-model="slide.data.deal_type"
                                   class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-3.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-300"
+                                  @click="toggleDealTypeChevron"
                                   @focus="isDealTypeSelectFocused = true"
                                   @blur="isDealTypeSelectFocused = false"
+                                  @change="isDealTypeSelectFocused = false"
                                 >
                                   <option value="Аренда">Аренда</option>
                                   <option value="Продажа">Продажа</option>
@@ -189,9 +199,10 @@ watch(
                                 <select
                                   :value="slide.data.currency"
                                   class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-2.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-300"
+                                  @click="toggleCurrencyChevron"
                                   @focus="isCurrencySelectFocused = true"
                                   @blur="isCurrencySelectFocused = false"
-                                  @change="pe.onCoverCurrencyChange(slide, $event)"
+                                  @change="(e) => { isCurrencySelectFocused = false; pe.onCoverCurrencyChange(slide, e) }"
                                 >
                                   <option v-for="c in pe.CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
                                 </select>
