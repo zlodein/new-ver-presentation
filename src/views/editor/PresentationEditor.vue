@@ -446,7 +446,8 @@
         <div
           ref="editorSliderWrapRef"
           class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
-          @paste.capture="onPasteStripFormat"
+          @input.capture="scheduleFieldAutoSave"
+          @paste.capture="onPasteStripFormat(); scheduleFieldAutoSave()"
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
@@ -1667,6 +1668,8 @@ const autoSaveStatus = ref('')
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
 /** Интервал автосохранения после последнего изменения (1 минута бездействия) */
 const AUTO_SAVE_INTERVAL_MS = 60000
+/** Быстрое автосохранение после ввода/вставки в поле */
+const FIELD_AUTO_SAVE_INTERVAL_MS = 1200
 const initialLoadDone = ref(false)
 const presentationNotFound = ref(false)
 const hasPendingChanges = ref(false)
@@ -3233,6 +3236,15 @@ async function confirmSavePresentation() {
 async function saveDraftIfNeeded() {
   if (isPublished.value || saving.value || !hasPendingChanges.value) return
   await doSave({ status: 'draft', skipRedirect: true, createNotification: false })
+}
+
+function scheduleFieldAutoSave() {
+  if (!initialLoadDone.value || isPublished.value || saving.value) return
+  hasPendingChanges.value = true
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  autoSaveTimer = setTimeout(async () => {
+    await saveDraftIfNeeded()
+  }, FIELD_AUTO_SAVE_INTERVAL_MS)
 }
 
 function scheduleAutoSave() {
