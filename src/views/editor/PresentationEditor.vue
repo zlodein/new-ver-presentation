@@ -447,7 +447,7 @@
           ref="editorSliderWrapRef"
           class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-6"
           @input.capture="scheduleFieldAutoSave"
-          @paste.capture="onPasteStripFormat(); scheduleFieldAutoSave()"
+          @paste.capture="(e) => { onPasteStripFormat(e as ClipboardEvent); scheduleFieldAutoSave() }"
         >
           <!-- Высота слайдера ограничена, на мобиле больше места под контент. Настройки шрифта и скруглений применяются здесь и в просмотре/PDF. -->
           <div
