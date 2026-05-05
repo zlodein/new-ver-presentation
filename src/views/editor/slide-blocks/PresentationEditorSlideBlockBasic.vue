@@ -18,6 +18,7 @@ const pe: PresentationEditorSlideInject = peInjected
 const coverRootRef = ref<HTMLDivElement | null>(null)
 const priceBottomRef = ref<HTMLDivElement | null>(null)
 const priceZIndex = ref<number>(20)
+type CharacteristicItemView = { id: string; label: string; value: string }
 
 function zNum(v: string): number | null {
   if (!v || v === 'auto') return null
@@ -58,7 +59,7 @@ function handleCurrencyPointerDown(event: MouseEvent) {
 
 const characteristicItems = computed(() => {
   if (slide.type !== 'characteristics') return []
-  return pe.charItems(slide)
+  return pe.charItems(slide) as CharacteristicItemView[]
 })
 
 function autosizeTextarea(el: HTMLTextAreaElement | null) {
