@@ -39,6 +39,8 @@ function computeMaxZ(container: Element): number {
 
 const coverTopInputRef = ref<HTMLTextAreaElement | null>(null)
 const coverCenterInputRef = ref<HTMLTextAreaElement | null>(null)
+const isDealTypeSelectFocused = ref(false)
+const isCurrencySelectFocused = ref(false)
 
 function autosizeTextarea(el: HTMLTextAreaElement | null) {
   if (!el) return
@@ -156,13 +158,22 @@ watch(
                               <div class="relative z-20 flex shrink-0 items-center border-r border-gray-300 bg-transparent dark:border-gray-700">
                                 <select
                                   v-model="slide.data.deal_type"
-                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-3 pr-7 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
+                                  class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-3.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-400"
+                                  @focus="isDealTypeSelectFocused = true"
+                                  @blur="isDealTypeSelectFocused = false"
                                 >
                                   <option value="Аренда">Аренда</option>
                                   <option value="Продажа">Продажа</option>
                                 </select>
                                 <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
-                                  <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                  <svg
+                                    class="h-4 w-4 stroke-current transition-transform duration-150"
+                                    :class="isDealTypeSelectFocused ? 'rotate-180' : ''"
+                                    viewBox="0 0 20 20"
+                                    fill="none"
+                                  >
+                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                  </svg>
                                 </span>
                               </div>
                               <div class="booklet-main__price flex-1 min-w-0">
@@ -177,19 +188,28 @@ watch(
                               <div class="relative z-20 flex shrink-0 items-center border-l border-gray-300 bg-transparent dark:border-gray-700">
                                 <select
                                   :value="slide.data.currency"
-                                  class="dark:bg-dark-900 h-11 min-w-0 appearance-none bg-transparent bg-none pl-2 pr-6 py-2.5 text-sm text-gray-800 focus:outline-none dark:bg-gray-900 dark:text-white/90"
+                                  class="focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 min-w-0 appearance-none border-0 bg-transparent bg-none py-3 pl-2.5 pr-8 text-sm leading-tight text-gray-700 focus:ring-3 focus:outline-hidden dark:text-gray-400"
+                                  @focus="isCurrencySelectFocused = true"
+                                  @blur="isCurrencySelectFocused = false"
                                   @change="pe.onCoverCurrencyChange(slide, $event)"
                                 >
                                   <option v-for="c in pe.CURRENCIES" :key="c.code" :value="c.code" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ c.symbol }}</option>
                                 </select>
                                 <span class="absolute right-2 top-1/2 z-30 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
-                                  <svg class="h-3.5 w-3.5 stroke-current" viewBox="0 0 20 20" fill="none"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                  <svg
+                                    class="h-4 w-4 stroke-current transition-transform duration-150"
+                                    :class="isCurrencySelectFocused ? 'rotate-180' : ''"
+                                    viewBox="0 0 20 20"
+                                    fill="none"
+                                  >
+                                    <path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                  </svg>
                                 </span>
                               </div>
                             </div>
-                            <label class="mt-3 inline-flex items-center gap-0 text-sm font-medium leading-none text-gray-700 cursor-pointer select-none dark:text-gray-400" data-no-drag="1">
-                              <div class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center self-center">
-                                <input v-model="slide.data.show_all_currencies" type="checkbox" class="absolute h-0 w-0 opacity-0" />
+                            <label class="mt-3 inline-flex cursor-pointer items-center text-sm font-medium text-gray-700 select-none dark:text-gray-400" data-no-drag="1">
+                              <div class="relative">
+                                <input v-model="slide.data.show_all_currencies" type="checkbox" class="sr-only" />
                                 <div
                                   :class="slide.data.show_all_currencies ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
                                   class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
@@ -461,18 +481,18 @@ watch(
                             <span>{{ pe.locationMetroLoading(slide) ? 'Поиск...' : 'Найти ближайшее метро' }}</span>
                           </button>
                           <label
-                            class="inline-flex w-full cursor-pointer select-none items-center gap-3 text-sm font-medium leading-none text-gray-700 dark:text-gray-400"
+                            class="inline-flex w-full cursor-pointer select-none items-center text-sm font-medium text-gray-700 dark:text-gray-400"
                             data-no-drag="1"
                           >
-                            <span class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
+                            <span class="relative">
                               <input
                                 v-model="slide.data.show_metro"
                                 type="checkbox"
-                                class="peer absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none rounded-md opacity-0"
+                                class="sr-only"
                               />
                               <span
                                 :class="slide.data.show_metro ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
-                                class="pointer-events-none flex h-full w-full items-center justify-center rounded-md border-[1.25px] peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/40 peer-focus-visible:ring-offset-0 hover:border-brand-500 dark:hover:border-brand-500"
+                                class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] hover:border-brand-500 dark:hover:border-brand-500"
                                 aria-hidden="true"
                               >
                                 <span :class="slide.data.show_metro ? '' : 'opacity-0'">

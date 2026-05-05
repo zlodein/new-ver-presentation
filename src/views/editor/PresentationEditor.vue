@@ -39,8 +39,8 @@
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400">Скопируйте идентификатор, при обращении в тех. поддержку</p>
       </div>
-      <!-- Публичная ссылка — скрыта на тарифе «Тест драйв» -->
-      <div v-if="!isTestDrive" class="rounded-lg md:hidden">
+      <!-- Публичная ссылка — скрыта до сохранения (публикации) и на тарифе «Тест драйв» -->
+      <div v-if="!isTestDrive && isPublished" class="rounded-lg md:hidden">
         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
         <div class="flex items-center gap-3">
           <button
@@ -668,8 +668,8 @@
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-400">Скопируйте идентификатор, при обращении в тех. поддержку</p>
           </div>
-          <!-- Публичная ссылка — скрыта на тарифе «Тест драйв» -->
-          <div v-if="!isTestDrive" class="border-b border-gray-200 p-3 dark:border-gray-700">
+          <!-- Публичная ссылка — скрыта до сохранения (публикации) и на тарифе «Тест драйв» -->
+          <div v-if="!isTestDrive && isPublished" class="border-b border-gray-200 p-3 dark:border-gray-700">
             <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Публичная ссылка</label>
             <div class="flex items-center gap-3">
               <button
