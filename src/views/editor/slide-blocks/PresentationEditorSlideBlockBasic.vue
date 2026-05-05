@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
 import type { SlideItem } from '@/types/presentationSlide'
 import LocationMap from '@/components/presentations/LocationMap.vue'
 import MessengerIcons from '@/components/profile/MessengerIcons.vue'
@@ -55,6 +55,11 @@ function handleCurrencyPointerDown(event: MouseEvent) {
   ;(event.currentTarget as HTMLSelectElement | null)?.blur()
   isCurrencySelectFocused.value = false
 }
+
+const characteristicItems = computed(() => {
+  if (slide.type !== 'characteristics') return []
+  return pe.charItems(slide)
+})
 
 function autosizeTextarea(el: HTMLTextAreaElement | null) {
   if (!el) return
@@ -638,30 +643,28 @@ watch(
                       <div class="booklet-char__content">
                         <div class="booklet-char__table">
                           <div
-                            v-for="(item, i) in pe.charItems(slide)"
+                            v-for="(item, i) in characteristicItems"
                             :key="i"
                             class="booklet-char__row"
                           >
                             <div class="booklet-char__item">
                               <input
-                                :value="item.label"
+                                v-model="item.label"
                                 type="text"
                                 placeholder="Метка"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                                @input="(e) => { const arr = slide.data?.items as Array<{ label: string; value: string }>; if (Array.isArray(arr) && arr[i]) arr[i].label = (e.target as HTMLInputElement).value }"
                               />
                             </div>
                             <div class="booklet-char__item">
                               <input
-                                :value="item.value"
+                                v-model="item.value"
                                 type="text"
                                 placeholder="Значение"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                                @input="(e) => { const arr = slide.data?.items as Array<{ label: string; value: string }>; if (Array.isArray(arr) && arr[i]) arr[i].value = (e.target as HTMLInputElement).value }"
                               />
                             </div>
                             <button
-                              v-if="pe.charItems(slide).length > 1"
+                              v-if="characteristicItems.length > 1"
                               type="button"
                               class="booklet-btn booklet-btn--icon shrink-0 rounded-md p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
                               title="Удалить"
@@ -673,7 +676,7 @@ watch(
                             </button>
                           </div>
                           <button
-                            v-if="pe.charItems(slide).length < 13"
+                            v-if="characteristicItems.length < 13"
                             type="button"
                             class="booklet-btn booklet-btn--secondary add-row mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 py-1.5 px-2.5 text-xs font-medium text-gray-600 transition hover:border-brand-500 hover:text-brand-600"
                             @click="pe.addCharacteristicItem(slide)"
