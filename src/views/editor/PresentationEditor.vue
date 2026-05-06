@@ -3429,6 +3429,12 @@ async function exportToPDF() {
 .editor-slider-wrap .presentation-slider-wrap.booklet-view {
   background-color: #fff !important;
 }
+@media (min-width: 1024px) {
+  .editor-slider-wrap .presentation-slider-wrap.booklet-view {
+    max-width: none;
+    width: 100%;
+  }
+}
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__content {
   padding: 25px 25px !important;
   background: #ffffff !important;
