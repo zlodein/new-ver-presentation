@@ -445,7 +445,7 @@
       >
         <div
           ref="editorSliderWrapRef"
-          class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-0 dark:border-gray-800 dark:bg-gray-900/50 md:p-4 lg:p-0"
+          class="editor-slider-wrap min-w-0 flex-1 min-h-0 flex flex-col rounded-2xl bg-gray-50 p-0 dark:bg-gray-900/50 md:p-4 lg:p-0"
           @input.capture="scheduleFieldAutoSave"
           @paste.capture="(e) => { onPasteStripFormat(e as ClipboardEvent); scheduleFieldAutoSave() }"
         >
@@ -3433,6 +3433,10 @@ async function exportToPDF() {
   .editor-slider-wrap .presentation-slider-wrap.booklet-view {
     max-width: none;
     width: 100%;
+    border: 1px solid #e5e7eb;
+  }
+  .dark .editor-slider-wrap .presentation-slider-wrap.booklet-view {
+    border-color: #1f2937;
   }
 }
 .editor-slider-wrap .presentation-slider-wrap.booklet-view .booklet-main__content {
